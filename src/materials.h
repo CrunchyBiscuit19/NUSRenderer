@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vk_pipelines.h>
+#include <vk_descriptors.h>
 
 #include <fastgltf/types.hpp>
 
@@ -22,12 +23,10 @@ struct MaterialImage { // One AllocatedImage images can be shared across multipl
 	{}
 };
 
-struct MaterialConstants {
+struct alignas(16) MaterialConstants {
     glm::vec4 baseFactor;
     glm::vec4 emissiveFactor;
-    float metallicFactor;
-    float roughnessFactor;
-    glm::vec2 padding;
+    glm::vec4 metallicRoughnessFactor; // Combine for alignment
 };
 
 struct MaterialResources {
@@ -47,15 +46,19 @@ struct PbrData {
 
 class PbrMaterial {
     Renderer* mRenderer;
+    DescriptorAllocatorGrowable* mDescriptorAllocator;
 
 public:
     std::string mName;
     PipelineBundle* mPipeline;
     PbrData mPbrData;
-    vk::Buffer buffer;
-    uint32_t bufferOffset;
+    vk::Buffer mConstantsBuffer;
+    uint32_t mConstantsBufferOffset;
+    vk::raii::DescriptorSet mResourcesDescriptorSet;
+    static vk::raii::DescriptorSetLayout mResourcesDescriptorSetLayout;
 
-    PbrMaterial(Renderer* renderer);
+    PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descriptorAllocator);
 
     void getMaterialPipeline();
+    void writeMaterial();
 };

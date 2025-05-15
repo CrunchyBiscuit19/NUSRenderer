@@ -12,8 +12,6 @@ ResourceManager::ResourceManager(Renderer* renderer):
 
 void ResourceManager::init()
 {
-    mMaterialConstantsStagingBuffer = std::move(createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants)));
-    mInstanceStagingBuffer = std::move(createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData)));
     mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
 	mMeshStagingBuffer = std::move(createStagingBuffer(static_cast<size_t>(DEFAULT_VERTEX_BUFFER_SIZE) + DEFAULT_INDEX_BUFFER_SIZE));
     initDefault();
@@ -142,8 +140,8 @@ void ResourceManager::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcInde
     const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
     const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-    mesh->mVertexBuffer = createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-    mesh->mIndexBuffer = createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh->mVertexBuffer = createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh->mIndexBuffer = createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 
     std::memcpy(static_cast<char*>(mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
     std::memcpy(static_cast<char*>(mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
@@ -157,68 +155,16 @@ void ResourceManager::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcInde
     indexCopy.srcOffset = srcVertexVectorSize;
     indexCopy.size = srcIndexVectorSize;
 
-    mPerModelBufferCopyBatches.emplace_back(
-        *mMeshStagingBuffer.buffer,
-        *mesh->mVertexBuffer.buffer,
-        vk::BufferCopy { vertexCopy } 
-    );
-    mPerModelBufferCopyBatches.emplace_back(
-        *mMeshStagingBuffer.buffer,
-        *mesh->mIndexBuffer.buffer,
-        vk::BufferCopy { indexCopy } 
-    );
-}
-
-void ResourceManager::updateInstanceBuffer(GLTFModel* model)
-{
-
-}
-
-void ResourceManager::loadMaterialsConstantsBuffer(GLTFModel* model) {
-    int constantsIndex = 0;
-    for (auto material : model->mMaterials) {
-        std::memcpy(static_cast<MaterialConstants*>(mMaterialConstantsStagingBuffer.info.pMappedData) + constantsIndex, &material->mPbrData.constants, sizeof(MaterialConstants));
-        constantsIndex++;
-    }
-
-    vk::BufferCopy materialConstantsCopy{};
-    materialConstantsCopy.srcOffset = 0;
-    materialConstantsCopy.dstOffset = 0;
-    materialConstantsCopy.size = constantsIndex * sizeof(MaterialConstants);
-
-    mPerModelBufferCopyBatches.emplace_back(
-        *mMaterialConstantsStagingBuffer.buffer,
-        *model->mMaterialConstantsBuffer.buffer,
-        vk::BufferCopy { materialConstantsCopy } 
-    );
-}
-
-void ResourceManager::submitPerDrawBufferUpdates()
-{
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        for (const auto& bufferCopyBatch : mPerDrawBufferCopyBatches) {
-            cmd.copyBuffer(bufferCopyBatch.srcBuffer, bufferCopyBatch.dstBuffer, bufferCopyBatch.bufferCopies);
-        }
+        cmd.copyBuffer(*mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
+        cmd.copyBuffer(*mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
     });
-    mPerDrawBufferCopyBatches.clear();
-}
-
-void ResourceManager::submitPerModelBufferUpdates()
-{
-    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        for (const auto& bufferCopyBatch : mPerModelBufferCopyBatches) {
-            cmd.copyBuffer(bufferCopyBatch.srcBuffer, bufferCopyBatch.dstBuffer, bufferCopyBatch.bufferCopies);
-        }
-    });
-    mPerModelBufferCopyBatches.clear();
 }
 
 void ResourceManager::cleanup()
 {
-    mInstanceStagingBuffer.cleanup();
     mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
-    mMaterialConstantsStagingBuffer.cleanup();
     mRenderer->mDefaultImages.clear();
 	mRenderer->mDefaultSampler.clear();
 }
@@ -226,9 +172,7 @@ void ResourceManager::cleanup()
 ResourceManager::ResourceManager(ResourceManager&& other) noexcept : 
     mRenderer(std::exchange(other.mRenderer, nullptr)),
     mImageStagingBuffer(std::move(other.mImageStagingBuffer)),
-    mMeshStagingBuffer(std::move(other.mMeshStagingBuffer)),
-    mPerDrawBufferCopyBatches(std::move(other.mPerDrawBufferCopyBatches)),
-    mPerModelBufferCopyBatches(std::move(other.mPerModelBufferCopyBatches)) 
+    mMeshStagingBuffer(std::move(other.mMeshStagingBuffer))
 {}
 
 ResourceManager& ResourceManager::operator=(ResourceManager && other) noexcept {
@@ -236,8 +180,6 @@ ResourceManager& ResourceManager::operator=(ResourceManager && other) noexcept {
         mRenderer = std::exchange(other.mRenderer, nullptr);
         mImageStagingBuffer = std::move(other.mImageStagingBuffer);
         mMeshStagingBuffer = std::move(other.mMeshStagingBuffer);
-        mPerDrawBufferCopyBatches = std::move(other.mPerDrawBufferCopyBatches);
-        mPerModelBufferCopyBatches = std::move(other.mPerModelBufferCopyBatches);
     }
     return *this;
 }

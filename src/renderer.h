@@ -114,13 +114,14 @@ public:
     uint32_t mGraphicsQueueFamily;
 
     VmaAllocator mAllocator;
-    DescriptorAllocatorGrowable mDescriptorAllocator;
 
     bool mResizeRequested;
     vk::raii::SwapchainKHR mSwapchain;
     vk::Format mSwapchainImageFormat;
     vk::Extent2D mSwapchainExtent;
     std::vector<vk::raii::ImageView> mSwapchainImageViews;
+
+    DescriptorAllocatorGrowable mDescriptorAllocator;
 
     AllocatedImage mDrawImage;
     AllocatedImage mDepthImage;
@@ -131,10 +132,8 @@ public:
     std::unordered_map<std::string, GLTFModel> mModels;
     std::vector<RenderItem> mRenderItems;
 
-    SSBOAddresses mPushConstants;
-    SceneData mSceneData;
-    AllocatedBuffer mSceneBuffer;
-    DescriptorBundle mMaterialTexturesArray;
+    PushConstants mPushConstants;
+    SceneEncapsulation mSceneEncapsulation;
 
     std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
     vk::raii::Sampler mDefaultSampler;

@@ -118,13 +118,22 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
     return newImage;
 }
 
-void GLTFModel::createBuffers()
+void GLTFModel::initDescriptors()
+{
+    std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes = { 
+        { vk::DescriptorType::eUniformBuffer, 1 },
+        { vk::DescriptorType::eCombinedImageSampler, 5 },
+    };
+    mDescriptorAllocator.init(mRenderer->mDevice, mAsset.materials.size(), sizes);
+}
+
+void GLTFModel::initBuffers()
 {
     fmt::println("{} Model [Create Buffers]", mName);
 
     mMaterialConstantsBuffer = mRenderer->mResourceManager.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY);
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+        VMA_MEMORY_USAGE_CPU_TO_GPU);
     mInstanceBuffer = mRenderer->mResourceManager.createBuffer(MAX_INSTANCES * sizeof(TransformationData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
@@ -159,10 +168,12 @@ void GLTFModel::loadMaterials()
 {
     fmt::println("{} Model [Load Materials]", mName);
 
+    auto materialConstantsBufferPtr = static_cast<MaterialConstants*>(mMaterialConstantsBuffer.info.pMappedData);
+
     mMaterials.reserve(mAsset.materials.size());
     int materialIndex = 0;
     for (fastgltf::Material& mat : mAsset.materials) {
-        auto newMat = std::make_shared<PbrMaterial>(mRenderer);
+        auto newMat = std::make_shared<PbrMaterial>(mRenderer, &mDescriptorAllocator);
         auto matName = std::string(mat.name);
         if (matName.empty()) {
             matName = fmt::format("{}", materialIndex);
@@ -170,9 +181,10 @@ void GLTFModel::loadMaterials()
         newMat->mName = fmt::format("{}_mat{}", mName, matName);
 
         newMat->mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
-        newMat->mPbrData.constants.metallicFactor = mat.pbrData.metallicFactor;
-        newMat->mPbrData.constants.roughnessFactor = mat.pbrData.roughnessFactor;
         newMat->mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
+        newMat->mPbrData.constants.metallicRoughnessFactor.x = mat.pbrData.metallicFactor;
+        newMat->mPbrData.constants.metallicRoughnessFactor.y = mat.pbrData.roughnessFactor;
+        materialConstantsBufferPtr[materialIndex] = newMat->mPbrData.constants;
 
         newMat->mPbrData.alphaMode = mat.alphaMode;
         newMat->mPbrData.doubleSided = mat.doubleSided;
@@ -208,16 +220,14 @@ void GLTFModel::loadMaterials()
             size_t sampler = mAsset.textures[mat.emissiveTexture.value().textureIndex].samplerIndex.value();
             newMat->mPbrData.resources.emissive = { &mImages[img], *mSamplers[sampler] };
         }
-        newMat->getMaterialPipeline();
 
-        newMat->buffer = *mMaterialConstantsBuffer.buffer;
-        newMat->bufferOffset = materialIndex * sizeof(MaterialConstants);
+        newMat->mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
+        newMat->mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
+        newMat->writeMaterial();
 
         mMaterials.push_back(newMat);
         materialIndex++;
     }
-
-    mRenderer->mResourceManager.loadMaterialsConstantsBuffer(this);
 }
 
 void GLTFModel::loadMeshes()
@@ -335,20 +345,19 @@ void GLTFModel::loadNodes()
         // First function if it's a mat4 transform, second function if it's separate transform / rotate / scale quaternion or vec3
         std::visit(fastgltf::visitor{ 
             [&](const fastgltf::Node::TransformMatrix& matrix) {
-                memcpy(&newNode->mLocalTransform, matrix.data(), sizeof(matrix));
+                std::memcpy(&newNode->mLocalTransform, matrix.data(), sizeof(matrix));
             },
             [&](const fastgltf::Node::TRS& transform) {
-                const glm::vec3 tl(transform.translation[0], transform.translation[1],
-                    transform.translation[2]);
-                const glm::quat rot(transform.rotation[3], transform.rotation[0], transform.rotation[1],
-                    transform.rotation[2]);
+                const glm::vec3 tl(transform.translation[0], transform.translation[1], transform.translation[2]);
+                const glm::quat rot(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
                 const glm::vec3 sc(transform.scale[0], transform.scale[1], transform.scale[2]);
 
                 const glm::mat4 tm = glm::translate(glm::mat4(1.f), tl);
                 const glm::mat4 rm = glm::toMat4(rot);
                 const glm::mat4 sm = glm::scale(glm::mat4(1.f), sc);
 
-                newNode->mLocalTransform = tm * rm * sm;
+                glm::mat4 localTransform = tm * rm * sm;
+                newNode->mLocalTransform = localTransform;
             } },
             node.transform);
         
@@ -376,7 +385,8 @@ void GLTFModel::loadNodes()
 
 void GLTFModel::load()
 {
-    createBuffers();
+    initDescriptors();
+    initBuffers();
     loadSamplers();
     loadImages();
 	loadMaterials();
@@ -399,8 +409,8 @@ GLTFInstance::GLTFInstance() :
     id(0),
     toDelete(false)
 {
-    transformComponents.rotation = glm::vec3();
-    transformComponents.scale = 1;
-    transformComponents.translation = glm::vec3();
+    data.transformation.rotation = glm::vec3();
+    data.transformation.scale = 1;
+    data.transformation.translation = glm::vec3();
 }   
 

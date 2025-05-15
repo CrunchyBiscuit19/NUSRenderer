@@ -2,6 +2,7 @@
 
 #include <meshes.h>
 #include <scene_manager.h>
+#include <vk_descriptors.h>
 
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/parser.hpp>
@@ -17,7 +18,6 @@ class GLTFInstance {
 public:
     int id;
     bool toDelete;
-    TransformationData transformComponents;
     InstanceData data;
 
     GLTFInstance();
@@ -29,7 +29,7 @@ private:
 
 public:
     std::string mName;
-    bool mToDelete{ false };
+    bool mToDelete { false };
     bool mLoaded { false };
     int mLatestId{ 0 };
 
@@ -42,6 +42,7 @@ public:
     std::vector<std::shared_ptr<PbrMaterial>> mMaterials;
     std::vector<GLTFInstance> mInstances;
 
+    DescriptorAllocatorGrowable mDescriptorAllocator;
     AllocatedBuffer mMaterialConstantsBuffer;
     AllocatedBuffer mInstanceBuffer;
 
@@ -50,7 +51,8 @@ private:
     vk::SamplerMipmapMode extractMipmapMode(fastgltf::Filter filter);
     AllocatedImage loadImage(fastgltf::Image& image);
 
-    void createBuffers();
+    void initDescriptors();
+    void initBuffers();
     void loadSamplers();
     void loadImages();
     void loadMaterials();

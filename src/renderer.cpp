@@ -4,6 +4,8 @@
 
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
@@ -23,6 +25,7 @@ Renderer::Renderer():
     mComputeQueue(nullptr),
     mGraphicsQueue(nullptr),
     mSwapchain(nullptr),
+    mSceneEncapsulation(SceneEncapsulation(this)),
     mDefaultSampler(nullptr)
 {
     mFrames.resize(FRAME_OVERLAP + 1);
@@ -48,8 +51,10 @@ void Renderer::run()
     while (!bQuit) {
         auto start = std::chrono::system_clock::now();
         while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT)
+            if (e.type == SDL_QUIT) {
+                mModels.clear();
                 bQuit = true;
+            }
             if (e.type == SDL_WINDOWEVENT) {
                 if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
                     mStopRendering = true;
@@ -82,6 +87,8 @@ void Renderer::run()
 
 void Renderer::cleanup()
 {
+    PbrMaterial::mResourcesDescriptorSetLayout.clear();
+    SceneEncapsulation::mSceneDescriptorSetLayout.clear();
     for (auto& frame : mFrames) {
         frame.cleanup();
     }
@@ -95,7 +102,7 @@ void Renderer::cleanup()
 
 void Renderer::draw()
 {
-    vk::Result a = mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
+    mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
     mDevice.resetFences(*getCurrentFrame().mRenderFence); // Flip to unsignalled
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
@@ -138,7 +145,7 @@ void Renderer::draw()
         vk::Extent2D{ mDefaultImages[DefaultImage::Blue].imageExtent.width, mDefaultImages[DefaultImage::Blue].imageExtent.height, },
         vk::Extent2D{ mDrawImage.imageExtent.width, mDrawImage.imageExtent.height, });
 
-    // Transition to color output for drawing coloured triangle
+    // Transition to color output for drawing geometry
     vkutil::transitionImage(cmd, *mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
@@ -255,21 +262,17 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
-    auto draw = [&](const RenderItem& r) {
-        if (r.material != lastMaterial) {
-            lastMaterial = r.material;
-
-            vk::BufferDeviceAddressInfo deviceAddressInfo;
-            deviceAddressInfo.buffer = r.material->buffer;
-            mPushConstants.materialBuffer = mDevice.getBufferAddress(deviceAddressInfo);
-
-            // [TODO] Rework material system for models
-            //mSceneManager.updateMaterialTextureArray(r.material);
+    for (auto& renderItem : mRenderItems) {
+        if (renderItem.material != lastMaterial) {
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->layout, 0, *renderItem.material->mResourcesDescriptorSet, nullptr);
+            lastMaterial = renderItem.material;
         }
 
-        if (*r.material->mPipeline->pipeline != lastPipeline) {
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *r.material->mPipeline->pipeline);
-            lastPipeline = *r.material->mPipeline->pipeline;
+        if (*renderItem.material->mPipeline->pipeline != lastPipeline) {
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->pipeline);
+            lastPipeline = *renderItem.material->mPipeline->pipeline;
+
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->layout, 1, *mSceneEncapsulation.mSceneDescriptorSet, nullptr);
 
             vk::Viewport viewport = {
                 0,
@@ -287,23 +290,20 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             cmd.setScissor(0, scissor);
         }
 
-        if (r.indexBuffer != lastIndexBuffer) {
-            cmd.bindIndexBuffer(r.indexBuffer, 0, vk::IndexType::eUint32);
-            lastIndexBuffer = r.indexBuffer;
+        if (renderItem.indexBuffer != lastIndexBuffer) {
+            cmd.bindIndexBuffer(renderItem.indexBuffer, 0, vk::IndexType::eUint32);
+            lastIndexBuffer = renderItem.indexBuffer;
         }
 
-        mPushConstants.vertexBuffer = r.vertexBufferAddress;
-        cmd.pushConstants<SSBOAddresses>(*r.material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, mPushConstants);
+        mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
+        mPushConstants.worldMatrix = renderItem.transform;
+        cmd.pushConstants<PushConstants>(*renderItem.material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mPushConstants);
 
-        cmd.drawIndexed(r.indexCount, 1, r.indexStart, 0, 0);
+        cmd.drawIndexed(renderItem.indexCount, 1, renderItem.indexStart, 0, 0);
         // [TODO] Instancing support
 
         mStats.mDrawCallCount++;
     };
-
-    for (auto& renderItem : mRenderItems) {
-        draw(renderItem);
-    }
 
     cmd.endRendering();
 
@@ -315,8 +315,6 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 void Renderer::drawCleanup()
 {
     mRenderItems.clear();
-    mResourceManager.mPerDrawBufferCopyBatches.clear();
-    mResourceManager.mPerModelBufferCopyBatches.clear();
     mFlags = { false, false };
 }
 
@@ -328,10 +326,7 @@ void Renderer::drawUpdate()
     mSceneManager.deleteInstances();
 
     mSceneManager.generateRenderItems();
-    mSceneManager.updateSceneBuffer();
-
-    mResourceManager.submitPerDrawBufferUpdates();
-    mResourceManager.submitPerModelBufferUpdates();
+    mSceneManager.updateScene();
      
     const auto end = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

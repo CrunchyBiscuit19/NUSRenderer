@@ -6,21 +6,15 @@
 
 #include <ranges>
 
+vk::raii::DescriptorSetLayout SceneEncapsulation::mSceneDescriptorSetLayout = nullptr;
+
 SceneManager::SceneManager(Renderer* renderer):
 	mRenderer(renderer)
 {}
 
 void SceneManager::init()
 {
-	mRenderer->mSceneBuffer = mRenderer->mResourceManager.createBuffer(sizeof(SceneData), 
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, 
-		VMA_MEMORY_USAGE_GPU_ONLY);
-
-	mSceneStagingBuffer = mRenderer->mResourceManager.createStagingBuffer(sizeof(SceneData));
-
-	vk::BufferDeviceAddressInfo deviceAddressInfo;
-	deviceAddressInfo.buffer = *mRenderer->mSceneBuffer.buffer;
-	mRenderer->mPushConstants.sceneBuffer = mRenderer->mDevice.getBufferAddress(deviceAddressInfo);
+	mRenderer->mSceneEncapsulation.init();
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -55,49 +49,56 @@ void SceneManager::generateRenderItems()
 	}
 }
 
-void SceneManager::updateSceneBuffer()
+void SceneManager::updateScene()
 {
-	mRenderer->mSceneData.ambientColor = glm::vec4(1.f);
-	mRenderer->mSceneData.sunlightColor = glm::vec4(1.f);
-	mRenderer->mSceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
+	mRenderer->mSceneEncapsulation.mSceneData.ambientColor = glm::vec4(.1f);
+	mRenderer->mSceneEncapsulation.mSceneData.sunlightColor = glm::vec4(1.f);
+	mRenderer->mSceneEncapsulation.mSceneData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
 
 	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
-	mRenderer->mSceneData.view = mRenderer->mCamera.getViewMatrix();
-	mRenderer->mSceneData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mWindowExtent.width) / static_cast<float>(mRenderer->mWindowExtent.height), 10000.f, 0.1f);
-	mRenderer->mSceneData.proj[1][1] *= -1;
+	mRenderer->mSceneEncapsulation.mSceneData.view = mRenderer->mCamera.getViewMatrix();
+	mRenderer->mSceneEncapsulation.mSceneData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mWindowExtent.width) / static_cast<float>(mRenderer->mWindowExtent.height), 10000.f, 0.1f);
+	mRenderer->mSceneEncapsulation.mSceneData.proj[1][1] *= -1;
 
-	const VkDeviceSize sceneDataSize = sizeof(SceneData);
-	std::memcpy(mSceneStagingBuffer.info.pMappedData, &mRenderer->mSceneData, sceneDataSize);
+	auto* sceneBufferPtr = static_cast<SceneData*>(mRenderer->mSceneEncapsulation.mSceneBuffer.info.pMappedData);
+	*sceneBufferPtr = mRenderer->mSceneEncapsulation.mSceneData;
 
-	VkBufferCopy sceneCopy{}; 
-	sceneCopy.dstOffset = 0;
-	sceneCopy.srcOffset = 0;
-	sceneCopy.size = sceneDataSize;
-
-	mRenderer->mResourceManager.mPerDrawBufferCopyBatches.emplace_back(
-		*mSceneStagingBuffer.buffer,
-		*mRenderer->mSceneBuffer.buffer,
-		vk::BufferCopy { sceneCopy }
-	);
-}
-
-void SceneManager::updateMaterialTextureArray(std::shared_ptr<PbrMaterial> material)
-{
-	DescriptorWriter writer;
-
-	writer.writeImageArray(0, *material->mPbrData.resources.base.image->imageView, material->mPbrData.resources.base.sampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler, 0);
-	writer.writeImageArray(0, *material->mPbrData.resources.emissive.image->imageView, material->mPbrData.resources.emissive.sampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler, 1);
-	writer.writeImageArray(0, *material->mPbrData.resources.metallicRoughness.image->imageView, material->mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler, 2);
-	writer.writeImageArray(0, *material->mPbrData.resources.normal.image->imageView, material->mPbrData.resources.normal.sampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler, 3);
-	writer.writeImageArray(0, *material->mPbrData.resources.occlusion.image->imageView, material->mPbrData.resources.occlusion.sampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler, 4);
-	
-	writer.updateSet(mRenderer->mDevice, mRenderer->mMaterialTexturesArray.set);
+	mRenderer->mSceneEncapsulation.writeScene();
 }
 
 void SceneManager::cleanup()
 {
-	mSceneStagingBuffer.cleanup();
-	mRenderer->mSceneBuffer.cleanup();
+	mRenderer->mSceneEncapsulation.cleanup();
 	mRenderer->mModels.clear();
 }
 
+SceneEncapsulation::SceneEncapsulation(Renderer* renderer) :
+	mRenderer(renderer),
+	mDescriptorAllocator(nullptr),
+	mSceneDescriptorSet(nullptr)
+{}
+
+void SceneEncapsulation::init()
+{
+	mSceneBuffer = mRenderer->mResourceManager.createBuffer(sizeof(SceneData),
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+		VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+	DescriptorLayoutBuilder builder;
+	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
+	mSceneDescriptorSetLayout = builder.build(mRenderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+	mSceneDescriptorSet = mRenderer->mDescriptorAllocator.allocate(mRenderer->mDevice, *mSceneDescriptorSetLayout);
+}
+
+void SceneEncapsulation::writeScene()
+{
+	DescriptorWriter writer;
+	writer.writeBuffer(0, *mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
+	writer.updateSet(mRenderer->mDevice, *mSceneDescriptorSet);
+}
+
+void SceneEncapsulation::cleanup()
+{
+	mSceneDescriptorSet.clear();
+	mSceneBuffer.cleanup();
+}

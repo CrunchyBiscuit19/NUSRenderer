@@ -165,12 +165,6 @@ private:
     Renderer* mRenderer;
     AllocatedBuffer mImageStagingBuffer;
     AllocatedBuffer mMeshStagingBuffer;
-    AllocatedBuffer mInstanceStagingBuffer;
-    AllocatedBuffer mMaterialConstantsStagingBuffer;
-
-public:
-    std::vector<BufferCopyBatch> mPerDrawBufferCopyBatches;
-    std::vector<BufferCopyBatch> mPerModelBufferCopyBatches;
 
 public:
     ResourceManager(Renderer* renderer);
@@ -185,11 +179,6 @@ public:
     AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
 
     void loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector);
-    void updateInstanceBuffer(GLTFModel* model);
-    void loadMaterialsConstantsBuffer(GLTFModel* model);
-
-    void submitPerDrawBufferUpdates();
-	void submitPerModelBufferUpdates();
 
 	void cleanup();
 

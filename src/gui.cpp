@@ -84,7 +84,6 @@ void GUI::imguiFrame() {
                     
                     if (!model.mLoaded) {
                         model.load();
-                        model.mLoaded = true;
                     }
 					
                     model.mInstances.push_back(newInstance);
@@ -101,13 +100,13 @@ void GUI::imguiFrame() {
                 for (auto& instance : model.mInstances) {
                     ImGui::SeparatorText(fmt::format("Instance {}-{}", model.mName, instance.id).c_str());
                     ImGui::PushID(fmt::format("Instance {}-{}", model.mName, instance.id).c_str());
-                    if (ImGui::InputFloat3("Translation", &instance.transformComponents.translation[0])) {
+                    if (ImGui::InputFloat3("Translation", &instance.data.transformation.translation[0])) {
                         mRenderer->mFlags.updateInstances = true;
                     }
-                    if (ImGui::SliderFloat3("Pitch / Yaw / Roll", &instance.transformComponents.rotation[0], -glm::pi<float>(), glm::pi<float>())) {
+                    if (ImGui::SliderFloat3("Pitch / Yaw / Roll", &instance.data.transformation.rotation[0], -glm::pi<float>(), glm::pi<float>())) {
                         mRenderer->mFlags.updateInstances = true;
                     }
-                    if (ImGui::SliderFloat("Scale", &instance.transformComponents.scale, 0.f, 100.f)) {
+                    if (ImGui::SliderFloat("Scale", &instance.data.transformation.scale, 0.f, 100.f)) {
                         mRenderer->mFlags.updateInstances = true;
                     }
                     ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));

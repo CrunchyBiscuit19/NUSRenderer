@@ -10,11 +10,9 @@
 
 class Renderer;
 
-struct SSBOAddresses {
+struct PushConstants {
+    glm::mat4 worldMatrix;
     vk::DeviceAddress vertexBuffer;
-    vk::DeviceAddress sceneBuffer;
-    vk::DeviceAddress materialBuffer;
-    vk::DeviceAddress instanceBuffer;
 };
 
 struct SceneData {
@@ -25,6 +23,25 @@ struct SceneData {
     glm::vec4 sunlightColor;
 };
 
+class SceneEncapsulation {
+    Renderer* mRenderer;
+    DescriptorAllocatorGrowable* mDescriptorAllocator;
+
+public:
+    SceneData mSceneData;
+    AllocatedBuffer mSceneBuffer;
+    vk::raii::DescriptorSet mSceneDescriptorSet;
+    static vk::raii::DescriptorSetLayout mSceneDescriptorSetLayout;
+
+    SceneEncapsulation(Renderer* renderer);
+
+    void init();
+
+    void writeScene();
+
+    void cleanup();
+};
+
 struct TransformationData {
     glm::vec3 translation;
     glm::vec3 rotation;
@@ -32,13 +49,12 @@ struct TransformationData {
 };
 
 struct InstanceData {
-    glm::mat4 transformation;
+    TransformationData transformation;
 };
 
 class SceneManager {
 private:
     Renderer* mRenderer;
-    AllocatedBuffer mSceneStagingBuffer;
 
 public:
     SceneManager(Renderer* renderer);
@@ -50,8 +66,7 @@ public:
     void deleteInstances();
 
     void generateRenderItems();
-	void updateSceneBuffer();   
-	void updateMaterialTextureArray(std::shared_ptr<PbrMaterial> material);
+	void updateScene();   
 
     void cleanup();
 };

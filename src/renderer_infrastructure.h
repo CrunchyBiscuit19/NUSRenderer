@@ -14,9 +14,8 @@ public:
     void init();
 
     void initCommands();
-    void initSyncStructures();
-
     void initDescriptors();
+    void initSyncStructures();
 
     void createSwapchain();
     void destroySwapchain();

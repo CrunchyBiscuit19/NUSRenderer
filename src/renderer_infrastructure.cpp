@@ -14,8 +14,8 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 void RendererInfrastructure::init() {
     createSwapchain();
     initCommands();
+    initDescriptors();
 	initSyncStructures();   
-	initDescriptors();
 }
 
 void RendererInfrastructure::initCommands() 
@@ -26,6 +26,14 @@ void RendererInfrastructure::initCommands()
         vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
         frame.mCommandBuffer = std::move(mRenderer->mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
     }
+}
+
+void RendererInfrastructure::initDescriptors()
+{
+    std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes = {
+        { vk::DescriptorType::eUniformBuffer, 1 },
+    };
+    mRenderer->mDescriptorAllocator.init(mRenderer->mDevice, FRAME_OVERLAP + 1, sizes);
 }
 
 void RendererInfrastructure::initSyncStructures()
@@ -40,21 +48,6 @@ void RendererInfrastructure::initSyncStructures()
 		frame.mSwapchainSemaphore = mRenderer->mDevice.createSemaphore(semaphoreCreateInfo);
 		frame.mRenderSemaphore = mRenderer->mDevice.createSemaphore(semaphoreCreateInfo);
     }
-}
-
-void RendererInfrastructure::initDescriptors()
-{
-    std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes = {
-        { vk::DescriptorType::eCombinedImageSampler, 10000 },
-    };
-    mRenderer->mDescriptorAllocator.init(mRenderer->mDevice, 10, sizes);
-
-    int materialTexturesArraySize = 1000;
-    DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, materialTexturesArraySize);
-    vk::raii::DescriptorSetLayout newDescriptorSetLayout = builder.build(mRenderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, true);
-    vk::raii::DescriptorSet newDescriptorSet = mRenderer->mDescriptorAllocator.allocate(mRenderer->mDevice, newDescriptorSetLayout, true, materialTexturesArraySize);
-    mRenderer->mMaterialTexturesArray = std::move(DescriptorBundle{ std::move(newDescriptorSet), std::move(newDescriptorSetLayout) });
 }
 
 void RendererInfrastructure::createSwapchain()
@@ -155,19 +148,19 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(shaderDir / "mesh.frag.spv", mRenderer->mDevice); // TODO Custom paths
     vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(shaderDir / "mesh.vert.spv", mRenderer->mDevice);
 
-    vk::PushConstantRange ssboAddressesRange{};
-    ssboAddressesRange.offset = 0;
-    ssboAddressesRange.size = sizeof(SSBOAddresses);
-    ssboAddressesRange.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
+    vk::PushConstantRange pushConstantRange{};
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(PushConstants);
+    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
-    std::vector<vk::DescriptorSetLayout> descriptorLayouts = { *mRenderer->mMaterialTexturesArray.layout };
-    vk::PipelineLayoutCreateInfo descriptorLayoutInfo = vkinit::pipelineLayoutCreateInfo();
-    descriptorLayoutInfo.pSetLayouts = descriptorLayouts.data();
-    descriptorLayoutInfo.setLayoutCount = descriptorLayouts.size();
-    descriptorLayoutInfo.pPushConstantRanges = &ssboAddressesRange;
-    descriptorLayoutInfo.pushConstantRangeCount = 1;
+    std::vector<vk::DescriptorSetLayout> descriptorLayouts = { *PbrMaterial::mResourcesDescriptorSetLayout, *SceneEncapsulation::mSceneDescriptorSetLayout };
+    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
+    pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
+    pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
+    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    vk::raii::PipelineLayout pipelineLayout = mRenderer->mDevice.createPipelineLayout(descriptorLayoutInfo);
+    vk::raii::PipelineLayout pipelineLayout = mRenderer->mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
 
     vk::CullModeFlags cullMode;
     (pipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
@@ -225,8 +218,7 @@ void RendererInfrastructure::destroyPipelines()
 }
 
 void RendererInfrastructure::cleanup() {
-    mRenderer->mMaterialTexturesArray.cleanup();
-    mRenderer->mDescriptorAllocator.cleanup();
     destroyPipelines();
     destroySwapchain();
+    mRenderer->mDescriptorAllocator.cleanup();
 }

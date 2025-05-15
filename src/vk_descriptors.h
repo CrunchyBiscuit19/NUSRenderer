@@ -49,7 +49,7 @@ struct DescriptorLayoutBuilder {
 
     void addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count = 1);
     void clear();
-    const vk::raii::DescriptorSetLayout build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless = false);
+    vk::raii::DescriptorSetLayout build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless = false);
 };
 
 struct DescriptorAllocatorGrowable {
@@ -64,7 +64,7 @@ public:
 
     void clearPools();
     void destroyPools();
-    vk::raii::DescriptorSet allocate(const vk::raii::Device& device, const vk::raii::DescriptorSetLayout& layout, bool useBindless = false, uint32_t maxBindings = 1);
+    vk::raii::DescriptorSet allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout, bool useBindless = false, uint32_t maxBindings = 1);
 
 private:
     vk::raii::DescriptorPool getPool(const vk::raii::Device& device);
@@ -86,5 +86,5 @@ struct DescriptorWriter {
     void writeBuffer(int binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
 
     void clear();
-    void updateSet(const vk::raii::Device& device, const vk::raii::DescriptorSet& set);
+    void updateSet(const vk::raii::Device& device, const vk::DescriptorSet set);
 };

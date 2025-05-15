@@ -15,7 +15,7 @@ void DescriptorLayoutBuilder::clear()
     mBindings.clear();
 }
 
-const vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless)
+vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless)
 {
     for (auto& b : mBindings) {
         b.stageFlags |= shaderStages;
@@ -25,17 +25,6 @@ const vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Dev
     info.pNext = nullptr;
     info.pBindings = mBindings.data();
     info.bindingCount = static_cast<uint32_t>(mBindings.size());
-    //info.flags = 0;
-
-    vk::DescriptorBindingFlags bindlessFlags = vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::eUpdateAfterBind;
-    vk::DescriptorSetLayoutBindingFlagsCreateInfo extended_info{};
-    extended_info.pNext = nullptr;
-    extended_info.bindingCount = static_cast<uint32_t>(mBindings.size());
-    extended_info.pBindingFlags = &bindlessFlags;
-    if (useBindless) {
-        info.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
-        info.pNext = &extended_info;
-    }
 
     return device.createDescriptorSetLayout(info, nullptr);
 }
@@ -71,7 +60,7 @@ void DescriptorAllocatorGrowable::destroyPools()
     mFullPools.clear();
 }
 
-vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::Device& device, const vk::raii::DescriptorSetLayout& layout, bool useBindless, uint32_t maxBindings)
+vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout, bool useBindless, uint32_t maxBindings)
 {
     vk::raii::DescriptorPool poolToUse = getPool(device);
 
@@ -79,7 +68,7 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::De
     allocInfo.pNext = nullptr;
     allocInfo.descriptorPool = *poolToUse;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &(*layout);
+    allocInfo.pSetLayouts = &layout;
 
     vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT countInfo{};
     uint32_t maxBinding = maxBindings - 1;
@@ -183,9 +172,9 @@ void DescriptorWriter::clear()
     mWrites.clear();
 }
 
-void DescriptorWriter::updateSet(const vk::raii::Device& device, const vk::raii::DescriptorSet& set)
+void DescriptorWriter::updateSet(const vk::raii::Device& device, const vk::DescriptorSet set)
 {
     for (vk::WriteDescriptorSet& write : mWrites)
-        write.dstSet = *set;
+        write.dstSet = set;
     device.updateDescriptorSets(mWrites, nullptr);
 }
