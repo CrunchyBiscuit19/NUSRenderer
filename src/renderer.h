@@ -44,8 +44,6 @@ struct RendererStats {
     float mDrawTime;
     int mDrawCallCount;
     float mSceneUpdateTime;
-    int mPipelineBinds;
-    int mLayoutBinds;
 };
 
 struct RendererFlags {

@@ -245,12 +245,10 @@ void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 void Renderer::drawGeometry(vk::CommandBuffer cmd)
 {
     auto start = std::chrono::system_clock::now();
-    
-    // [TODO] Sorting and culling
-
+ 
     mStats.mDrawCallCount = 0;
-    mStats.mPipelineBinds = 0;
-    mStats.mLayoutBinds = 0;
+
+    // [TODO] Sorting and culling
     
     vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mDrawImage.imageView, nullptr, vk::ImageLayout::eGeneral);
     vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);

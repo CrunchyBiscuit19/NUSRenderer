@@ -66,8 +66,6 @@ void GUI::imguiFrame() {
         ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
         ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
-        ImGui::Text("Pipeline binds: %i", mRenderer->mStats.mPipelineBinds);
-        ImGui::Text("Layout binds: %i", mRenderer->mStats.mLayoutBinds);
         ImGui::End();
     }
     if (ImGui::Begin("Models")) {
