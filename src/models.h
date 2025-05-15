@@ -30,8 +30,7 @@ private:
 public:
     std::string mName;
     bool mToDelete { false };
-    bool mLoaded { false };
-    int mLatestId{ 0 };
+    int mLatestId { 0 };
 
     fastgltf::Asset mAsset;
     std::vector<std::shared_ptr<Node>> mTopNodes;

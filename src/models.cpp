@@ -27,6 +27,8 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
     if (load) { gltf = std::move(load.get()); } else { fmt::println("Failed to load GLTF Model for {}: {}", mName, fastgltf::to_underlying(load.error())); }
 
     mAsset = std::move(gltf);
+
+    this->load();
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
@@ -398,15 +400,13 @@ void GLTFModel::load()
 	loadMeshes();
 	loadNodes();
 
-    mLoaded = true;
-
     fmt::println("{} Model [Finished Loading]", mName);
 }
 
 void GLTFModel::generateRenderItems()
 {
     for (auto& n : mTopNodes) {
-        n->generateRenderItems(mRenderer, glm::mat4 { 1.f });
+        n->generateRenderItems(mRenderer, glm::mat4{ 1.f });
     }
 }
 

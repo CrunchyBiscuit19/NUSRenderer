@@ -79,11 +79,6 @@ void GUI::imguiFrame() {
                     GLTFInstance newInstance;
                     newInstance.id = model.mLatestId;
                     model.mLatestId++;
-                    
-                    if (!model.mLoaded) {
-                        model.load();
-                    }
-					
                     model.mInstances.push_back(newInstance);
                     mRenderer->mFlags.updateInstances = true;
                 }

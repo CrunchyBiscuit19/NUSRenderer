@@ -75,8 +75,8 @@ void Renderer::run()
 
         mGUI.imguiFrame();
 
-        drawCleanup();
         drawUpdate();
+        drawCleanup();
         draw();
 
         auto end = std::chrono::system_clock::now();
@@ -314,7 +314,6 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
 void Renderer::drawCleanup()
 {
-    mRenderItems.clear();
     mFlags = { false, false };
 }
 
@@ -325,7 +324,12 @@ void Renderer::drawUpdate()
     mSceneManager.deleteModels();
     mSceneManager.deleteInstances();
 
-    mSceneManager.generateRenderItems();
+    // Only when add / remove models, then need to regen render items
+    if (mFlags.updateModels) { 
+        mRenderItems.clear();
+        mSceneManager.generateRenderItems(); 
+        mFlags.updateModels = false; 
+    }
     mSceneManager.updateScene();
      
     const auto end = std::chrono::system_clock::now();
