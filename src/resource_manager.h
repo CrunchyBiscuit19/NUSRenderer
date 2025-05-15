@@ -1,5 +1,7 @@
 #pragma once
 
+#include <materials.h>
+
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
 
@@ -165,6 +167,7 @@ private:
     Renderer* mRenderer;
     AllocatedBuffer mImageStagingBuffer;
     AllocatedBuffer mMeshStagingBuffer;
+    AllocatedBuffer mMaterialConstantsStagingBuffer;
 
 public:
     ResourceManager(Renderer* renderer);
@@ -178,6 +181,7 @@ public:
     AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
     AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
 
+    void loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstants);
     void loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector);
 
 	void cleanup();

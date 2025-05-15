@@ -14,6 +14,7 @@ void ResourceManager::init()
 {
     mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
 	mMeshStagingBuffer = std::move(createStagingBuffer(static_cast<size_t>(DEFAULT_VERTEX_BUFFER_SIZE) + DEFAULT_INDEX_BUFFER_SIZE));
+    mMaterialConstantsStagingBuffer = std::move(createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants)));
     initDefault();
 }
 
@@ -135,6 +136,20 @@ AllocatedBuffer ResourceManager::createStagingBuffer(size_t allocSize)
     return createBuffer(allocSize,  vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
+void ResourceManager::loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstants)
+{
+    std::memcpy(static_cast<char*>(mMaterialConstantsStagingBuffer.info.pMappedData), materialConstants.data(), materialConstants.size() * sizeof(MaterialConstants));
+
+    vk::BufferCopy materialConstantsCopy {};
+    materialConstantsCopy.dstOffset = 0;
+    materialConstantsCopy.srcOffset = 0;
+    materialConstantsCopy.size = materialConstants.size() * sizeof(MaterialConstants);
+
+    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        cmd.copyBuffer(*mMaterialConstantsStagingBuffer.buffer, *model->mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+    });
+}
+
 void ResourceManager::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector)
 {
     const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
@@ -146,11 +161,11 @@ void ResourceManager::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcInde
     std::memcpy(static_cast<char*>(mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
     std::memcpy(static_cast<char*>(mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
 
-    vk::BufferCopy vertexCopy{};
+    vk::BufferCopy vertexCopy {};
     vertexCopy.dstOffset = 0;
     vertexCopy.srcOffset = 0;
     vertexCopy.size = srcVertexVectorSize;
-    vk::BufferCopy indexCopy{};
+    vk::BufferCopy indexCopy {};
     indexCopy.dstOffset = 0;
     indexCopy.srcOffset = srcVertexVectorSize;
     indexCopy.size = srcIndexVectorSize;
@@ -165,6 +180,7 @@ void ResourceManager::cleanup()
 {
     mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
+    mMaterialConstantsStagingBuffer.cleanup();
     mRenderer->mDefaultImages.clear();
 	mRenderer->mDefaultSampler.clear();
 }

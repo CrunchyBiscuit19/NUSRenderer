@@ -297,6 +297,8 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
         mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
         mPushConstants.worldMatrix = renderItem.transform;
+        mPushConstants.materialBuffer = renderItem.materialConstantBufferAddress;
+        mPushConstants.materialIndex = renderItem.material->mMaterialIndex;
         cmd.pushConstants<PushConstants>(*renderItem.material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mPushConstants);
 
         cmd.drawIndexed(renderItem.indexCount, 1, renderItem.indexStart, 0, 0);

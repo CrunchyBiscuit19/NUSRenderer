@@ -19,16 +19,19 @@ void MeshNode::generateRenderItems(Renderer* renderer, const glm::mat4& topMatri
     const glm::mat4 nodeMatrix = topMatrix * mWorldTransform;
 
     for (Primitive& primitive : mMesh->mPrimitives) {
-        vk::BufferDeviceAddressInfo deviceAddressInfo;
-        deviceAddressInfo.buffer = *mMesh->mVertexBuffer.buffer;
+        vk::BufferDeviceAddressInfo vertexBufferDeviceAddressInfo;
+        vertexBufferDeviceAddressInfo.buffer = *mMesh->mVertexBuffer.buffer;
+        vk::BufferDeviceAddressInfo materialConstantBufferDeviceAddressInfo;
+        materialConstantBufferDeviceAddressInfo.buffer = primitive.material->mConstantsBuffer;
 
         renderer->mRenderItems.emplace_back(
             primitive.indexStart,
             primitive.indexCount,
             *mMesh->mIndexBuffer.buffer,
-            renderer->mDevice.getBufferAddress(deviceAddressInfo),
+            renderer->mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
             primitive.bounds,
             primitive.material,
+            renderer->mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo),
             nodeMatrix
         );
     }

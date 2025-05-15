@@ -73,6 +73,7 @@ struct RenderItem {
     Bounds bounds;
 
     std::shared_ptr<PbrMaterial> material;
+    vk::DeviceAddress materialConstantBufferAddress;
 
     glm::mat4 transform;
 };

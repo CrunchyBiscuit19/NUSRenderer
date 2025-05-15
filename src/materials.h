@@ -23,7 +23,7 @@ struct MaterialImage { // One AllocatedImage images can be shared across multipl
 	{}
 };
 
-struct alignas(16) MaterialConstants {
+struct MaterialConstants {
     glm::vec4 baseFactor;
     glm::vec4 emissiveFactor;
     glm::vec4 metallicRoughnessFactor; // Combine for alignment
@@ -50,6 +50,7 @@ class PbrMaterial {
 
 public:
     std::string mName;
+    uint32_t mMaterialIndex;
     PipelineBundle* mPipeline;
     PbrData mPbrData;
     vk::Buffer mConstantsBuffer;
@@ -60,5 +61,5 @@ public:
     PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descriptorAllocator);
 
     void getMaterialPipeline();
-    void writeMaterial();
+    void writeMaterialResources();
 };

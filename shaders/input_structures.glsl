@@ -1,16 +1,11 @@
 
 #extension GL_EXT_buffer_reference : require
 
-layout (set = 0, binding = 0) uniform MaterialConstants {
-    vec4 baseFactor;
-    vec4 emissiveFactor;
-    vec4 metallicRoughnessFactor;
-} materialConstants;
-layout (set = 0, binding = 1) uniform sampler2D baseTex;
-layout (set = 0, binding = 2) uniform sampler2D metalRoughTex;
-layout (set = 0, binding = 3) uniform sampler2D normalTex;
-layout (set = 0, binding = 4) uniform sampler2D occlusiveTex;
-layout (set = 0, binding = 5) uniform sampler2D emissiveTex;
+layout (set = 0, binding = 0) uniform sampler2D baseTex;
+layout (set = 0, binding = 1) uniform sampler2D metalRoughTex;
+layout (set = 0, binding = 2) uniform sampler2D normalTex;
+layout (set = 0, binding = 3) uniform sampler2D occlusiveTex;
+layout (set = 0, binding = 4) uniform sampler2D emissiveTex;
 layout (set = 1, binding = 0) uniform SceneData {   
 	mat4 view;
 	mat4 proj;
@@ -26,12 +21,23 @@ struct Vertex {
 	float uv_y;
 	vec4 color;
 }; 
-layout(buffer_reference, std430) readonly buffer VertexBuffer{ 
+layout (buffer_reference, std430) readonly buffer VertexBuffer { 
 	Vertex vertices[];
+};
+
+struct MaterialConstant {
+    vec4 baseFactor;
+    vec4 emissiveFactor;
+    vec4 metallicRoughnessFactor;
+};
+layout (buffer_reference, std430) readonly buffer MaterialConstantBuffer {
+	MaterialConstant materialConstants[];
 };
 
 layout( push_constant ) uniform PushConstants
 {
-	mat4 worldMatrix;
 	VertexBuffer vertexBuffer;
+	MaterialConstantBuffer materialConstantsBuffer;
+	mat4 worldMatrix;
+    int materialIndex;
 } pushConstants;

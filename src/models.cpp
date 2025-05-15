@@ -132,8 +132,8 @@ void GLTFModel::initBuffers()
     fmt::println("{} Model [Create Buffers]", mName);
 
     mMaterialConstantsBuffer = mRenderer->mResourceManager.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
-        VMA_MEMORY_USAGE_CPU_TO_GPU);
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mInstanceBuffer = mRenderer->mResourceManager.createBuffer(MAX_INSTANCES * sizeof(TransformationData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
@@ -168,7 +168,8 @@ void GLTFModel::loadMaterials()
 {
     fmt::println("{} Model [Load Materials]", mName);
 
-    auto materialConstantsBufferPtr = static_cast<MaterialConstants*>(mMaterialConstantsBuffer.info.pMappedData);
+    std::vector<MaterialConstants> materialConstants;
+    materialConstants.reserve(mAsset.materials.size());
 
     mMaterials.reserve(mAsset.materials.size());
     int materialIndex = 0;
@@ -184,7 +185,8 @@ void GLTFModel::loadMaterials()
         newMat->mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
         newMat->mPbrData.constants.metallicRoughnessFactor.x = mat.pbrData.metallicFactor;
         newMat->mPbrData.constants.metallicRoughnessFactor.y = mat.pbrData.roughnessFactor;
-        materialConstantsBufferPtr[materialIndex] = newMat->mPbrData.constants;
+
+        materialConstants.push_back(newMat->mPbrData.constants);
 
         newMat->mPbrData.alphaMode = mat.alphaMode;
         newMat->mPbrData.doubleSided = mat.doubleSided;
@@ -221,13 +223,16 @@ void GLTFModel::loadMaterials()
             newMat->mPbrData.resources.emissive = { &mImages[img], *mSamplers[sampler] };
         }
 
+        newMat->mMaterialIndex = materialIndex;
         newMat->mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
         newMat->mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
-        newMat->writeMaterial();
+        newMat->writeMaterialResources();
 
         mMaterials.push_back(newMat);
         materialIndex++;
     }
+
+    mRenderer->mResourceManager.loadMaterialsConstantsBuffer(this, materialConstants);
 }
 
 void GLTFModel::loadMeshes()
