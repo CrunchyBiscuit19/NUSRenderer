@@ -1,13 +1,7 @@
-
 #extension GL_EXT_buffer_reference : require
 
-layout (set = 0, binding = 0) uniform sampler2D baseTex;
-layout (set = 0, binding = 1) uniform sampler2D metalRoughTex;
-layout (set = 0, binding = 2) uniform sampler2D normalTex;
-layout (set = 0, binding = 3) uniform sampler2D occlusiveTex;
-layout (set = 0, binding = 4) uniform sampler2D emissiveTex;
-
-layout (set = 1, binding = 0) uniform SceneData {   
+// Sets of UBOs and Images
+layout (set = 0, binding = 0) uniform SceneData {   
 	mat4 view;
 	mat4 proj;
 	vec4 ambientColor;
@@ -15,6 +9,11 @@ layout (set = 1, binding = 0) uniform SceneData {
 	vec4 sunlightColor;
 } scene;
 
+layout (set = 1, binding = 0) uniform sampler2D baseTex;
+layout (set = 1, binding = 1) uniform sampler2D metalRoughTex;
+layout (set = 1, binding = 2) uniform sampler2D normalTex;
+layout (set = 1, binding = 3) uniform sampler2D occlusiveTex;
+layout (set = 1, binding = 4) uniform sampler2D emissiveTex;
 
 struct InstanceData {
 	mat4 transformMatrix;
@@ -23,6 +22,7 @@ layout (set = 2, binding = 0) uniform InstanceBuffer {
 	InstanceData instances[500];
 } instanceBuffer;
 
+// SSBO addresses and buffer definitions
 struct Vertex {
 	vec3 position;
 	float uv_x;

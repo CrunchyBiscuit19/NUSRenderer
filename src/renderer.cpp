@@ -267,22 +267,17 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     cmd.beginRendering(renderInfo);
 
-    std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
     vk::Pipeline lastPipeline = nullptr;
+    std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
     vk::Buffer lastInstancesBuffer = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
     for (auto& renderItem : mRenderItems) {
-        if (renderItem.primitive->material != lastMaterial) {
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *renderItem.primitive->material->mResourcesDescriptorSet, nullptr);
-            lastMaterial = renderItem.primitive->material;
-        }
-
         if (*renderItem.primitive->material->mPipeline->pipeline != lastPipeline) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->pipeline);
             lastPipeline = *renderItem.primitive->material->mPipeline->pipeline;
 
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 1, *mSceneEncapsulation.mSceneDescriptorSet, nullptr);
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneEncapsulation.mSceneDescriptorSet, nullptr);
 
             vk::Viewport viewport = {
                 0,
@@ -300,6 +295,11 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             cmd.setScissor(0, scissor);
         }
 
+        if (renderItem.primitive->material != lastMaterial) {
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 1, *renderItem.primitive->material->mResourcesDescriptorSet, nullptr);
+            lastMaterial = renderItem.primitive->material;
+        }
+        
         if (*renderItem.model->mInstancesBuffer.buffer != lastInstancesBuffer) {
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 2, *renderItem.model->mInstancesDescriptorSet, nullptr);
             lastInstancesBuffer = *renderItem.model->mInstancesBuffer.buffer;

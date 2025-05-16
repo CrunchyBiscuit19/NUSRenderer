@@ -153,7 +153,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pushConstantRange.size = sizeof(PushConstants);
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
-    std::vector<vk::DescriptorSetLayout> descriptorLayouts = { *PbrMaterial::mResourcesDescriptorSetLayout, *SceneEncapsulation::mSceneDescriptorSetLayout, *GLTFModel::mInstancesDescriptorSetLayout };
+    std::vector<vk::DescriptorSetLayout> descriptorLayouts = { *SceneEncapsulation::mSceneDescriptorSetLayout, *PbrMaterial::mResourcesDescriptorSetLayout, *GLTFModel::mInstancesDescriptorSetLayout };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
     pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
