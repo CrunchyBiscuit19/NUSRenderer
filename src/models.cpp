@@ -33,6 +33,66 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
     this->load();
 }
 
+GLTFModel::~GLTFModel()
+{
+    // Jank solution to cleanup per-material resource description sets.
+    // Somehow with it being a shared_ptr it does not get cleaned up when the model is deleted.
+    for (auto& material : mMaterials) {
+        material->mResourcesDescriptorSet.clear();
+    }
+}
+
+GLTFModel::GLTFModel(GLTFModel&& other) noexcept: 
+    mRenderer(other.mRenderer),
+    mName(std::move(other.mName)),
+    mLatestId(other.mLatestId),
+    mToDelete(other.mToDelete),
+    mAsset(std::move(other.mAsset)),
+    mTopNodes(std::move(other.mTopNodes)),
+    mNodes(std::move(other.mNodes)),
+    mMeshes(std::move(other.mMeshes)),
+    mSamplers(std::move(other.mSamplers)),
+    mImages(std::move(other.mImages)),
+    mDescriptorAllocator(std::move(other.mDescriptorAllocator)),
+    mMaterials(std::move(other.mMaterials)),
+    mMaterialConstantsBuffer(std::move(other.mMaterialConstantsBuffer)),
+    mInstances(std::move(other.mInstances)),
+    mInstancesBuffer(std::move(other.mInstancesBuffer)),
+    mInstancesDescriptorSet(std::move(other.mInstancesDescriptorSet))
+{
+    other.mRenderer = nullptr;
+    other.mLatestId = 0;
+    other.mToDelete = false;
+}
+
+GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
+{
+    if (this != &other)
+    {
+        mRenderer = other.mRenderer;
+        mName = std::move(other.mName);
+        mLatestId = other.mLatestId;
+        mToDelete = other.mToDelete;
+        mAsset = std::move(other.mAsset);
+        mTopNodes = std::move(other.mTopNodes);
+        mNodes = std::move(other.mNodes);
+        mMeshes = std::move(other.mMeshes);
+        mSamplers = std::move(other.mSamplers);
+        mImages = std::move(other.mImages);
+        mDescriptorAllocator = std::move(other.mDescriptorAllocator);
+        mMaterials = std::move(other.mMaterials);
+        mMaterialConstantsBuffer = std::move(other.mMaterialConstantsBuffer);
+        mInstances = std::move(other.mInstances);
+        mInstancesBuffer = std::move(other.mInstancesBuffer);
+        mInstancesDescriptorSet = std::move(other.mInstancesDescriptorSet);
+
+        other.mRenderer = nullptr;
+        other.mLatestId = 0;
+        other.mToDelete = false;
+    }
+    return *this;
+}
+
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
 {
     switch (filter) {

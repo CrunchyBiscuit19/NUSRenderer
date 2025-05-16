@@ -57,11 +57,6 @@ void Renderer::run()
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
-                for (auto& model : mModels | std::views::values) {
-                    for (auto& material : model.mMaterials) {
-                        material->mResourcesDescriptorSet.clear();
-                    }
-                }
                 mModels.clear();
                 mRenderItems.clear();
                 bQuit = true;

@@ -75,6 +75,10 @@ private:
 
 public:
     GLTFModel(Renderer* renderer, std::filesystem::path modelPath);
+    ~GLTFModel();
+
+    GLTFModel(GLTFModel&& other) noexcept;
+    GLTFModel& operator=(GLTFModel&& other) noexcept;
 
     static void createInstanceDescriptorSetLayout(Renderer* renderer);
 
