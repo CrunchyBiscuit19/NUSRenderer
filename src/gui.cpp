@@ -20,6 +20,12 @@ void GUI::init() {
     ImGui::CreateContext();
     ImGui_ImplSDL2_InitForVulkan(mRenderer->mWindow);
 
+    vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
+    auto colorAttachmentFormat = vk::Format::eR16G16B16A16Sfloat;
+    pipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    pipelineRenderingCreateInfo.pColorAttachmentFormats = &colorAttachmentFormat;
+    pipelineRenderingCreateInfo.depthAttachmentFormat = vk::Format::eD32Sfloat;
+
     ImGui_ImplVulkan_InitInfo initInfo = {};
     initInfo.Instance = *mRenderer->mInstance;
     initInfo.PhysicalDevice = *mRenderer->mChosenGPU;
@@ -29,12 +35,13 @@ void GUI::init() {
     initInfo.MinImageCount = 3;
     initInfo.ImageCount = 3;
     initInfo.UseDynamicRendering = true;
-    initInfo.ColorAttachmentFormat = static_cast<VkFormat>(mRenderer->mSwapchainImageFormat);
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    ImGui_ImplVulkan_Init(&initInfo, VK_NULL_HANDLE);
+    initInfo.UseDynamicRendering = true;
+    initInfo.PipelineRenderingCreateInfo = pipelineRenderingCreateInfo;
+    ImGui_ImplVulkan_Init(&initInfo);
 
-    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) { ImGui_ImplVulkan_CreateFontsTexture(*cmd); });
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    ImGui_ImplVulkan_CreateFontsTexture(); 
+    ImGui_ImplVulkan_DestroyFontsTexture(); // ?
 
     mRenderer->mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, RESOURCES_PATH);
     mRenderer->mSelectModelFileDialog.SetTitle("Select GLTF / GLB file");
@@ -48,7 +55,7 @@ void GUI::cleanup() {
 
 void GUI::imguiFrame() {
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplSDL2_NewFrame(mRenderer->mWindow);
+    ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
     if (ImGui::Begin("Camera")) {
         ImGui::Text("[F1] Camera Mode: %s", magic_enum::enum_name(mRenderer->mCamera.movementMode).data());
