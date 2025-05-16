@@ -267,22 +267,22 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     cmd.beginRendering(renderInfo);
 
-    vk::Pipeline lastPipeline = nullptr;
     std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
+    vk::Pipeline lastPipeline = nullptr;
     vk::Buffer lastInstancesBuffer = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
     for (auto& renderItem : mRenderItems) {
-        if (renderItem.material != lastMaterial) {
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->layout, 0, *renderItem.material->mResourcesDescriptorSet, nullptr);
-            lastMaterial = renderItem.material;
+        if (renderItem.primitive->material != lastMaterial) {
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *renderItem.primitive->material->mResourcesDescriptorSet, nullptr);
+            lastMaterial = renderItem.primitive->material;
         }
 
-        if (*renderItem.material->mPipeline->pipeline != lastPipeline) {
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->pipeline);
-            lastPipeline = *renderItem.material->mPipeline->pipeline;
+        if (*renderItem.primitive->material->mPipeline->pipeline != lastPipeline) {
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->pipeline);
+            lastPipeline = *renderItem.primitive->material->mPipeline->pipeline;
 
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->layout, 1, *mSceneEncapsulation.mSceneDescriptorSet, nullptr);
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 1, *mSceneEncapsulation.mSceneDescriptorSet, nullptr);
 
             vk::Viewport viewport = {
                 0,
@@ -301,22 +301,22 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
         }
 
         if (*renderItem.model->mInstancesBuffer.buffer != lastInstancesBuffer) {
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->layout, 2, *renderItem.model->mInstancesDescriptorSet, nullptr);
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 2, *renderItem.model->mInstancesDescriptorSet, nullptr);
             lastInstancesBuffer = *renderItem.model->mInstancesBuffer.buffer;
         }
 
-        if (renderItem.indexBuffer != lastIndexBuffer) {
-            cmd.bindIndexBuffer(renderItem.indexBuffer, 0, vk::IndexType::eUint32);
-            lastIndexBuffer = renderItem.indexBuffer;
+        if (*renderItem.mesh->mIndexBuffer.buffer != lastIndexBuffer) {
+            cmd.bindIndexBuffer(*renderItem.mesh->mIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+            lastIndexBuffer = *renderItem.mesh->mIndexBuffer.buffer;
         }
 
         mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
         mPushConstants.worldMatrix = renderItem.transform;
         mPushConstants.materialBuffer = renderItem.materialConstantBufferAddress;
-        mPushConstants.materialIndex = renderItem.material->mMaterialIndex;
-        cmd.pushConstants<PushConstants>(*renderItem.material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mPushConstants);
+        mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
+        cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mPushConstants);
 
-        cmd.drawIndexed(renderItem.indexCount, renderItem.model->mInstances.size(), renderItem.indexStart, 0, 0);
+        cmd.drawIndexed(renderItem.primitive->indexCount, renderItem.model->mInstances.size(), renderItem.primitive->indexStart, 0, 0);
 
         mStats.mDrawCallCount++;
     };

@@ -51,17 +51,12 @@ struct MeshNode : Node {
 };
 
 struct RenderItem {
-    uint32_t indexStart;
-    uint32_t indexCount;
-    vk::Buffer indexBuffer;
-    vk::DeviceAddress vertexBufferAddress;
-
-    Bounds bounds;
-
-    std::shared_ptr<PbrMaterial> material;
-    vk::DeviceAddress materialConstantBufferAddress;
-
+    Primitive* primitive;
+    Mesh* mesh;
     GLTFModel* model;
 
     glm::mat4 transform;
+
+    vk::DeviceAddress vertexBufferAddress;
+    vk::DeviceAddress materialConstantBufferAddress;
 };
