@@ -42,7 +42,14 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
-add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES})
+
+file(GLOB_RECURSE GLSL_EXTRA_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.glsl"
+)
+
+set(SHADER_SOURCES ${GLSL_SOURCE_FILES} ${GLSL_EXTRA_FILES})
+
+add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES} SOURCES ${SHADER_SOURCES})
 
 # Vulkan
 find_package(Vulkan REQUIRED)
