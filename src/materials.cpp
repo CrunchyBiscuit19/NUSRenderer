@@ -11,13 +11,17 @@ PbrMaterial::PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descri
     mPipeline(nullptr),
     mResourcesDescriptorSet(nullptr)
 {
+}
+
+void PbrMaterial::createResourcesDescriptorSetLayout(Renderer* renderer)
+{
     DescriptorLayoutBuilder builder;
     builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler);
     builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler);
     builder.addBinding(2, vk::DescriptorType::eCombinedImageSampler);
     builder.addBinding(3, vk::DescriptorType::eCombinedImageSampler);
     builder.addBinding(4, vk::DescriptorType::eCombinedImageSampler);
-    mResourcesDescriptorSetLayout = builder.build(mRenderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    mResourcesDescriptorSetLayout = builder.build(renderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 }
 
 void PbrMaterial::getMaterialPipeline()

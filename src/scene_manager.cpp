@@ -38,7 +38,7 @@ void SceneManager::deleteModels()
 void SceneManager::deleteInstances()
 {
 	for (auto& model : mRenderer->mModels | std::views::values) {
-		std::erase_if(model.mInstances, [](const auto& instance) { return instance.toDelete; });
+		std::erase_if(model.mInstances, [](const auto& instance) { return instance.mToDelete; });
 	}
 }
 
@@ -61,9 +61,11 @@ void SceneManager::updateScene()
 	mRenderer->mSceneEncapsulation.mSceneData.proj[1][1] *= -1;
 
 	auto* sceneBufferPtr = static_cast<SceneData*>(mRenderer->mSceneEncapsulation.mSceneBuffer.info.pMappedData);
-	*sceneBufferPtr = mRenderer->mSceneEncapsulation.mSceneData;
+	*sceneBufferPtr = mRenderer->mSceneEncapsulation.mSceneData; // Since it's only one mSceneData copied in, no need for memcpy
 
-	mRenderer->mSceneEncapsulation.writeScene();
+	DescriptorWriter writer;
+	writer.writeBuffer(0, *mRenderer->mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
+	writer.updateSet(mRenderer->mDevice, *mRenderer->mSceneEncapsulation.mSceneDescriptorSet);
 }
 
 void SceneManager::cleanup()
@@ -88,13 +90,6 @@ void SceneEncapsulation::init()
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
 	mSceneDescriptorSetLayout = builder.build(mRenderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 	mSceneDescriptorSet = mRenderer->mDescriptorAllocator.allocate(mRenderer->mDevice, *mSceneDescriptorSetLayout);
-}
-
-void SceneEncapsulation::writeScene()
-{
-	DescriptorWriter writer;
-	writer.writeBuffer(0, *mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
-	writer.updateSet(mRenderer->mDevice, *mSceneDescriptorSet);
 }
 
 void SceneEncapsulation::cleanup()

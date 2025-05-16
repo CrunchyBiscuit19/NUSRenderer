@@ -60,6 +60,8 @@ public:
 
     PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descriptorAllocator);
 
+    static void createResourcesDescriptorSetLayout(Renderer* renderer);
+
     void getMaterialPipeline();
     void writeMaterialResources();
 };

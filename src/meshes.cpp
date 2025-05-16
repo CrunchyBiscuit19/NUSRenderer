@@ -8,13 +8,13 @@ void Node::refreshTransform(const glm::mat4& parentTransform)
         c->refreshTransform(mWorldTransform);
 }
 
-void Node::generateRenderItems(Renderer* renderer, const glm::mat4& topMatrix)
+void Node::generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix)
 {
     for (const auto& c : mChildren)
-        c->generateRenderItems(renderer, topMatrix);
+        c->generateRenderItems(renderer, model, topMatrix);
 }
 
-void MeshNode::generateRenderItems(Renderer* renderer, const glm::mat4& topMatrix)
+void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix)
 {
     const glm::mat4 nodeMatrix = topMatrix * mWorldTransform;
 
@@ -32,9 +32,10 @@ void MeshNode::generateRenderItems(Renderer* renderer, const glm::mat4& topMatri
             primitive.bounds,
             primitive.material,
             renderer->mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo),
+            model,
             nodeMatrix
         );
     }
 
-    Node::generateRenderItems(renderer, topMatrix);
+    Node::generateRenderItems(renderer, model, topMatrix);
 }

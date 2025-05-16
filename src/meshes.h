@@ -39,7 +39,7 @@ struct Node {
     glm::mat4 mWorldTransform;
 
     void refreshTransform(const glm::mat4& parentTransform);
-    virtual void generateRenderItems(Renderer* renderer, const glm::mat4& topMatrix);
+    virtual void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix);
 
     virtual ~Node() = default;
 };
@@ -47,5 +47,21 @@ struct Node {
 struct MeshNode : Node {
     std::shared_ptr<Mesh> mMesh;
      
-    void generateRenderItems(Renderer* renderer, const glm::mat4& topMatrix) override;
+    void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix) override;
+};
+
+struct RenderItem {
+    uint32_t indexStart;
+    uint32_t indexCount;
+    vk::Buffer indexBuffer;
+    vk::DeviceAddress vertexBufferAddress;
+
+    Bounds bounds;
+
+    std::shared_ptr<PbrMaterial> material;
+    vk::DeviceAddress materialConstantBufferAddress;
+
+    GLTFModel* model;
+
+    glm::mat4 transform;
 };

@@ -6,6 +6,7 @@ layout (set = 0, binding = 1) uniform sampler2D metalRoughTex;
 layout (set = 0, binding = 2) uniform sampler2D normalTex;
 layout (set = 0, binding = 3) uniform sampler2D occlusiveTex;
 layout (set = 0, binding = 4) uniform sampler2D emissiveTex;
+
 layout (set = 1, binding = 0) uniform SceneData {   
 	mat4 view;
 	mat4 proj;
@@ -13,6 +14,14 @@ layout (set = 1, binding = 0) uniform SceneData {
 	vec4 sunlightDirection; //w for sun power
 	vec4 sunlightColor;
 } scene;
+
+
+struct InstanceData {
+	mat4 transformMatrix;
+};
+layout (set = 2, binding = 0) uniform InstanceBuffer {   
+	InstanceData instances[500];
+} instanceBuffer;
 
 struct Vertex {
 	vec3 position;

@@ -62,27 +62,14 @@ struct FrameResources {
     void cleanup();
 };
 
-struct RenderItem {
-    uint32_t indexStart;
-    uint32_t indexCount;
-    vk::Buffer indexBuffer;
-    vk::DeviceAddress vertexBufferAddress;
-
-    Bounds bounds;
-
-    std::shared_ptr<PbrMaterial> material;
-    vk::DeviceAddress materialConstantBufferAddress;
-
-    glm::mat4 transform;
-};
-
 class Renderer {
 public:
-    bool mIsInitialized{ false };
-    bool mStopRendering{ false };
+    bool mIsInitialized { false };
+    bool mStopRendering { false };
 
     RendererStats mStats;
     RendererFlags mFlags;
+    bool mRegenRenderItems { false };
 
     RendererCore mRendererCore;
     RendererInfrastructure mRendererInfrastructure;

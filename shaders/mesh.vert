@@ -12,9 +12,9 @@ void main()
 {
 	Vertex v = pushConstants.vertexBuffer.vertices[gl_VertexIndex];
 	vec4 position = vec4(v.position, 1.0f);
-	mat4 instanceMatrix = mat4(1.0f);
+	InstanceData instance = instanceBuffer.instances[gl_InstanceIndex];
 
-	gl_Position = scene.proj * scene.view * pushConstants.worldMatrix * position; 
+	gl_Position = scene.proj * scene.view * (instance.transformMatrix * pushConstants.worldMatrix * position); 
 
 	MaterialConstant materialConstant = pushConstants.materialConstantsBuffer.materialConstants[pushConstants.materialIndex];
 

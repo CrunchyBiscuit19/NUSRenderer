@@ -3,14 +3,16 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#define UUID_SYSTEM_GENERATOR   
-#include <uuid.h>
+#include <glm/gtx/euler_angles.hpp>
 #include <fmt/core.h>
+
+vk::raii::DescriptorSetLayout GLTFModel::mInstancesDescriptorSetLayout = nullptr;
 
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
 	mRenderer(renderer),
     mName(modelPath.stem().string()),
-	mToDelete(false)
+	mToDelete(false),
+    mInstancesDescriptorSet(nullptr)
 {
     fmt::println("{} Model [Open File]", modelPath.filename().string());
 
@@ -127,6 +129,8 @@ void GLTFModel::initDescriptors()
         { vk::DescriptorType::eCombinedImageSampler, 5 },
     };
     mDescriptorAllocator.init(mRenderer->mDevice, mAsset.materials.size(), sizes);
+
+    mInstancesDescriptorSet = mRenderer->mDescriptorAllocator.allocate(mRenderer->mDevice, *mInstancesDescriptorSetLayout);
 }
 
 void GLTFModel::initBuffers()
@@ -136,9 +140,9 @@ void GLTFModel::initBuffers()
     mMaterialConstantsBuffer = mRenderer->mResourceManager.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
-    mInstanceBuffer = mRenderer->mResourceManager.createBuffer(MAX_INSTANCES * sizeof(TransformationData),
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY);
+    mInstancesBuffer = mRenderer->mResourceManager.createBuffer(MAX_INSTANCES * sizeof(TransformData),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
+        VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
 void GLTFModel::loadSamplers()
@@ -390,6 +394,40 @@ void GLTFModel::loadNodes()
     }
 }
 
+void GLTFModel::createInstanceDescriptorSetLayout(Renderer* renderer)
+{
+    DescriptorLayoutBuilder builder;
+    builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
+    mInstancesDescriptorSetLayout = builder.build(renderer->mDevice, vk::ShaderStageFlagBits::eVertex);
+}
+
+void GLTFModel::createInstance()
+{
+    mInstances.emplace_back(this);
+    mLatestId++;
+}
+
+void GLTFModel::updateInstances()
+{
+    std::vector<InstanceData> instanceDataVector;
+    instanceDataVector.reserve(mInstances.size());
+    for (auto& instance : mInstances) {
+        const glm::mat4 tm = glm::translate(glm::mat4(1.f), instance.mTransformComponents.translation);
+        const glm::mat4 rm = glm::yawPitchRoll(instance.mTransformComponents.rotation.x, instance.mTransformComponents.rotation.y, instance.mTransformComponents.rotation.z);
+        const glm::mat4 sm = glm::scale(glm::mat4(1.f), glm::vec3(instance.mTransformComponents.scale));
+
+        InstanceData instanceData { tm * rm * sm };
+        instanceDataVector.push_back(instanceData);
+    }
+
+    auto* instancesBufferPtr = static_cast<InstanceData*>(mInstancesBuffer.info.pMappedData);
+    std::memcpy(instancesBufferPtr, instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
+
+    DescriptorWriter writer;
+    writer.writeBuffer(0, *mInstancesBuffer.buffer, instanceDataVector.size() * sizeof(InstanceData), 0, vk::DescriptorType::eUniformBuffer);
+    writer.updateSet(mRenderer->mDevice, *mInstancesDescriptorSet);
+}
+
 void GLTFModel::load()
 {
     initDescriptors();
@@ -406,16 +444,17 @@ void GLTFModel::load()
 void GLTFModel::generateRenderItems()
 {
     for (auto& n : mTopNodes) {
-        n->generateRenderItems(mRenderer, glm::mat4{ 1.f });
+        n->generateRenderItems(mRenderer, this, glm::mat4{ 1.f });
     }
 }
 
-GLTFInstance::GLTFInstance() :
-    id(0),
-    toDelete(false)
+GLTFInstance::GLTFInstance(GLTFModel* model) :
+    mModel(model),
+    mId(model->mLatestId),
+    mToDelete(false)
 {
-    data.transformation.rotation = glm::vec3();
-    data.transformation.scale = 1;
-    data.transformation.translation = glm::vec3();
+    mTransformComponents.translation = glm::vec3();
+    mTransformComponents.rotation = glm::vec3();
+    mTransformComponents.scale = 1;
 }   
 

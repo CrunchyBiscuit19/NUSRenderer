@@ -9,6 +9,8 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
+#include <ranges>
+
 Renderer::Renderer():
     mRendererCore(RendererCore(this)),
     mRendererInfrastructure(RendererInfrastructure(this)),
@@ -41,6 +43,8 @@ void Renderer::init()
     mSceneManager.init();
     mGUI.init();
     mCamera.init();
+    PbrMaterial::createResourcesDescriptorSetLayout(this);
+    GLTFModel::createInstanceDescriptorSetLayout(this);
 }
 
 void Renderer::run()
@@ -52,7 +56,13 @@ void Renderer::run()
         auto start = std::chrono::system_clock::now();
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
+                for (auto& model : mModels | std::views::values) {
+                    for (auto& material : model.mMaterials) {
+                        material->mResourcesDescriptorSet.clear();
+                    }
+                }
                 mModels.clear();
+                mRenderItems.clear();
                 bQuit = true;
             }
             if (e.type == SDL_WINDOWEVENT) {
@@ -87,6 +97,7 @@ void Renderer::run()
 
 void Renderer::cleanup()
 {
+    GLTFModel::mInstancesDescriptorSetLayout.clear();
     PbrMaterial::mResourcesDescriptorSetLayout.clear();
     SceneEncapsulation::mSceneDescriptorSetLayout.clear();
     for (auto& frame : mFrames) {
@@ -258,6 +269,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     vk::Pipeline lastPipeline = nullptr;
     std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
+    vk::Buffer lastInstancesBuffer = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
     for (auto& renderItem : mRenderItems) {
@@ -288,6 +300,11 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             cmd.setScissor(0, scissor);
         }
 
+        if (*renderItem.model->mInstancesBuffer.buffer != lastInstancesBuffer) {
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.material->mPipeline->layout, 2, *renderItem.model->mInstancesDescriptorSet, nullptr);
+            lastInstancesBuffer = *renderItem.model->mInstancesBuffer.buffer;
+        }
+
         if (renderItem.indexBuffer != lastIndexBuffer) {
             cmd.bindIndexBuffer(renderItem.indexBuffer, 0, vk::IndexType::eUint32);
             lastIndexBuffer = renderItem.indexBuffer;
@@ -299,8 +316,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
         mPushConstants.materialIndex = renderItem.material->mMaterialIndex;
         cmd.pushConstants<PushConstants>(*renderItem.material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mPushConstants);
 
-        cmd.drawIndexed(renderItem.indexCount, 1, renderItem.indexStart, 0, 0);
-        // [TODO] Instancing support
+        cmd.drawIndexed(renderItem.indexCount, renderItem.model->mInstances.size(), renderItem.indexStart, 0, 0);
 
         mStats.mDrawCallCount++;
     };
@@ -314,7 +330,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
 void Renderer::drawCleanup()
 {
-    mFlags = { false, false };
+    mRegenRenderItems = false;
 }
 
 void Renderer::drawUpdate()
@@ -325,10 +341,13 @@ void Renderer::drawUpdate()
     mSceneManager.deleteInstances();
 
     // Only when add / remove models, then need to regen render items
-    if (mFlags.updateModels) { 
+    if (mRegenRenderItems) { 
         mRenderItems.clear();
         mSceneManager.generateRenderItems(); 
-        mFlags.updateModels = false; 
+        mRegenRenderItems = false; 
+    }
+    for (auto& model : mModels | std::views::values) {
+        model.updateInstances();
     }
     mSceneManager.updateScene();
      

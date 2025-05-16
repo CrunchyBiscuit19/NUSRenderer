@@ -8,6 +8,7 @@
 #include <vulkan/vulkan_raii.hpp>
 #include <fmt/core.h>
 #include <uuid.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <ranges>
 
@@ -76,36 +77,25 @@ void GUI::imguiFrame() {
             const auto name = model.mName;
             if (ImGui::TreeNode(name.c_str())) {
                 if (ImGui::Button("Add Instance")) {
-                    GLTFInstance newInstance;
-                    newInstance.id = model.mLatestId;
-                    model.mLatestId++;
-                    model.mInstances.push_back(newInstance);
-                    mRenderer->mFlags.updateInstances = true;
+                    model.createInstance();
                 }
                 ImGui::SameLine();
                 ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
                 if (ImGui::Button("Delete Model")) {
                     model.mToDelete = true;
-                    mRenderer->mFlags.updateModels = true;
+                    mRenderer->mRegenRenderItems = true;
                 }
                 ImGui::PopStyleColor();
 
                 for (auto& instance : model.mInstances) {
-                    ImGui::SeparatorText(fmt::format("Instance {}-{}", model.mName, instance.id).c_str());
-                    ImGui::PushID(fmt::format("Instance {}-{}", model.mName, instance.id).c_str());
-                    if (ImGui::InputFloat3("Translation", &instance.data.transformation.translation[0])) {
-                        mRenderer->mFlags.updateInstances = true;
-                    }
-                    if (ImGui::SliderFloat3("Pitch / Yaw / Roll", &instance.data.transformation.rotation[0], -glm::pi<float>(), glm::pi<float>())) {
-                        mRenderer->mFlags.updateInstances = true;
-                    }
-                    if (ImGui::SliderFloat("Scale", &instance.data.transformation.scale, 0.f, 100.f)) {
-                        mRenderer->mFlags.updateInstances = true;
-                    }
+                    ImGui::SeparatorText(fmt::format("Instance {}-{}", model.mName, instance.mId).c_str());
+                    ImGui::PushID(fmt::format("Instance {}-{}", model.mName, instance.mId).c_str());
+                    ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation));
+                    ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>());
+                    ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f);
                     ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
                     if (ImGui::Button("Delete Instance")) {
-                        instance.toDelete = true;
-                        mRenderer->mFlags.updateInstances = true;
+                        instance.mToDelete = true;
                     }
                     ImGui::PopStyleColor();
                     ImGui::PopID();
@@ -122,7 +112,7 @@ void GUI::imguiFrame() {
             auto selectedFiles = mRenderer->mSelectModelFileDialog.GetMultiSelected();
             mRenderer->mSceneManager.loadModels(selectedFiles);
             mRenderer->mSelectModelFileDialog.ClearSelected();
-            mRenderer->mFlags.updateModels = true;
+            mRenderer->mRegenRenderItems = true;
         }
     }
 

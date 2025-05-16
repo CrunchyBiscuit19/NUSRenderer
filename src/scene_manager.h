@@ -39,19 +39,7 @@ public:
 
     void init();
 
-    void writeScene();
-
     void cleanup();
-};
-
-struct TransformationData {
-    glm::vec3 translation;
-    glm::vec3 rotation;
-    glm::f32 scale;
-};
-
-struct InstanceData {
-    TransformationData transformation;
 };
 
 class SceneManager {

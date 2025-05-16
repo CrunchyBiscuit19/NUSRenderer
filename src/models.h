@@ -14,13 +14,24 @@
 
 class Renderer;
 
+struct TransformData {
+    glm::vec3 translation;
+    glm::vec3 rotation;
+    glm::f32 scale;
+};
+
+struct InstanceData {
+    glm::mat4 transformMatrix;
+};
+
 class GLTFInstance {
 public:
-    int id;
-    bool toDelete;
-    InstanceData data;
+    GLTFModel* mModel;
+    int mId;
+    bool mToDelete;
+    TransformData mTransformComponents;
 
-    GLTFInstance();
+    GLTFInstance(GLTFModel* model);
 };
 
 class GLTFModel {
@@ -29,8 +40,8 @@ private:
 
 public:
     std::string mName;
-    bool mToDelete { false };
     int mLatestId { 0 };
+    bool mToDelete { false };
 
     fastgltf::Asset mAsset;
     std::vector<std::shared_ptr<Node>> mTopNodes;
@@ -38,12 +49,16 @@ public:
     std::vector<std::shared_ptr<Mesh>> mMeshes;
     std::vector<vk::raii::Sampler> mSamplers;
 	std::vector<AllocatedImage> mImages;
-    std::vector<std::shared_ptr<PbrMaterial>> mMaterials;
-    std::vector<GLTFInstance> mInstances;
 
     DescriptorAllocatorGrowable mDescriptorAllocator;
+
+    std::vector<std::shared_ptr<PbrMaterial>> mMaterials;
     AllocatedBuffer mMaterialConstantsBuffer;
-    AllocatedBuffer mInstanceBuffer;
+    
+    std::vector<GLTFInstance> mInstances;
+    AllocatedBuffer mInstancesBuffer;
+    static vk::raii::DescriptorSetLayout mInstancesDescriptorSetLayout;
+    vk::raii::DescriptorSet mInstancesDescriptorSet;
 
 private:
     vk::Filter extractFilter(fastgltf::Filter filter);
@@ -58,11 +73,15 @@ private:
     void loadMeshes();
     void loadNodes();
 
-    void updateInstances();
-
 public:
     GLTFModel(Renderer* renderer, std::filesystem::path modelPath);
 
+    static void createInstanceDescriptorSetLayout(Renderer* renderer);
+
     void load();
+
     void generateRenderItems();
+    
+    void createInstance();
+    void updateInstances();
 };
