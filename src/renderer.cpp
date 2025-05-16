@@ -54,6 +54,7 @@ void Renderer::run()
 
     while (!bQuit) {
         auto start = std::chrono::system_clock::now();
+
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 for (auto& model : mModels | std::views::values) {
@@ -113,6 +114,8 @@ void Renderer::cleanup()
 
 void Renderer::draw()
 {
+    auto start = std::chrono::system_clock::now();
+
     mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
     mDevice.resetFences(*getCurrentFrame().mRenderFence); // Flip to unsignalled
 
@@ -184,7 +187,7 @@ void Renderer::draw()
         vk::AccessFlagBits2::eNone,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferWrite,
-        vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
 
     // Copy draw image into the swapchain image
     vkutil::copyImage(cmd, *mDrawImage.image, mSwapchain.getImages()[swapchainImageIndex],
@@ -241,6 +244,10 @@ void Renderer::draw()
     }
 
     mFrameNumber++;
+
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    mStats.mDrawTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
 }
 
 void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
@@ -255,8 +262,6 @@ void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 
 void Renderer::drawGeometry(vk::CommandBuffer cmd)
 {
-    auto start = std::chrono::system_clock::now();
- 
     mStats.mDrawCallCount = 0;
 
     // [TODO] Sorting and culling
@@ -322,10 +327,6 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     };
 
     cmd.endRendering();
-
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    mStats.mDrawTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
 }
 
 void Renderer::drawCleanup()
