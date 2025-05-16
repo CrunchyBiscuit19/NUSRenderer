@@ -3,11 +3,11 @@
 
 #include <magic_enum.hpp>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan_raii.hpp>
 #include <fmt/core.h>
-#include <uuid.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <ranges>
@@ -41,7 +41,10 @@ void GUI::init() {
     ImGui_ImplVulkan_Init(&initInfo);
 
     ImGui_ImplVulkan_CreateFontsTexture(); 
-    ImGui_ImplVulkan_DestroyFontsTexture(); // ?
+    ImGui_ImplVulkan_DestroyFontsTexture(); 
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     mRenderer->mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, RESOURCES_PATH);
     mRenderer->mSelectModelFileDialog.SetTitle("Select GLTF / GLB file");
