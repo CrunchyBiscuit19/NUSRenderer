@@ -333,8 +333,8 @@ void Renderer::drawUpdate()
 {
     const auto start = std::chrono::system_clock::now();
 
-    mSceneManager.deleteModels();
     mSceneManager.deleteInstances();
+    mSceneManager.deleteModels();
 
     // Only when add / remove models, then need to regen render items
     if (mRegenRenderItems) { 

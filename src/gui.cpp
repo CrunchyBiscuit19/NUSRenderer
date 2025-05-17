@@ -21,10 +21,9 @@ void GUI::init() {
     ImGui_ImplSDL2_InitForVulkan(mRenderer->mWindow);
 
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
-    auto colorAttachmentFormat = vk::Format::eR16G16B16A16Sfloat;
     pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    pipelineRenderingCreateInfo.pColorAttachmentFormats = &colorAttachmentFormat;
-    pipelineRenderingCreateInfo.depthAttachmentFormat = vk::Format::eD32Sfloat;
+    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mDrawImage.imageFormat;
+    pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mDepthImage.imageFormat;
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
     initInfo.Instance = *mRenderer->mInstance;
@@ -92,6 +91,9 @@ void GUI::imguiFrame() {
                 ImGui::SameLine();
                 ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
                 if (ImGui::Button("Delete Model")) {
+                    for (auto& instance : model.mInstances) {
+                        instance.mToDelete = true;
+                    }
                     model.mToDelete = true;
                     mRenderer->mRegenRenderItems = true;
                 }

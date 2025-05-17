@@ -10,11 +10,11 @@ vk::raii::DescriptorSetLayout GLTFModel::mInstancesDescriptorSetLayout = nullptr
 
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
 	mRenderer(renderer),
-    mName(modelPath.stem().string()),
 	mToDelete(false),
     mInstancesDescriptorSet(nullptr)
 {
-    fmt::println("{} Model [Open File]", modelPath.filename().string());
+    mName = modelPath.stem().string();
+    fmt::println("{} Model [Open File]", mName);
 
     fastgltf::Parser parser{};
     fastgltf::Asset gltf;
@@ -40,6 +40,8 @@ GLTFModel::~GLTFModel()
     for (auto& material : mMaterials) {
         material->mResourcesDescriptorSet.clear();
     }
+
+    fmt::println("{} Model [Deletion]", mName);
 }
 
 GLTFModel::GLTFModel(GLTFModel&& other) noexcept: 
