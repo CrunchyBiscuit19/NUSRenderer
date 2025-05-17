@@ -66,6 +66,15 @@ glm::mat4 Camera::getRotationMatrix() const
     return glm::toMat4(yawRotation) * glm::toMat4(pitchRotation);
 }
 
+glm::vec3 Camera::getDirectionVector() const
+{
+    glm::vec3 direction;
+    direction.x = cos(pitch) * sin(yaw);
+    direction.y = sin(pitch);
+    direction.z = -cos(pitch) * cos(yaw);
+    return glm::normalize(direction);
+}
+
 void Camera::update(float deltaTime, float expectedDeltaTime)
 {
     switch (movementMode) {

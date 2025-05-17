@@ -30,6 +30,8 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
     mAsset = std::move(gltf);
 
     this->load();
+
+    createInstance();
 }
 
 GLTFModel::~GLTFModel()
@@ -463,6 +465,7 @@ void GLTFModel::createInstanceDescriptorSetLayout(Renderer* renderer)
 void GLTFModel::createInstance()
 {
     mInstances.emplace_back(this);
+    mInstances.back().mTransformComponents.translation = mRenderer->mCamera.position + mRenderer->mCamera.getDirectionVector();
     mLatestId++;
 }
 

@@ -36,7 +36,7 @@ void DescriptorAllocatorGrowable::init(const vk::raii::Device& device, uint32_t 
         mRatios.push_back(r);
 
     vk::raii::DescriptorPool newPool = createPool(device, maxSets, poolRatios);
-    mReadyPools.push_back(std::move(newPool));
+    mReadyPools.emplace_back(std::move(newPool));
 
     mSetsPerPool *= 1.5; // Grow it next allocation
 }
@@ -48,7 +48,7 @@ void DescriptorAllocatorGrowable::clearPools()
 
     for (vk::raii::DescriptorPool& p : mFullPools) {
         p.reset();
-        mReadyPools.push_back(std::move(p));
+        mReadyPools.emplace_back(std::move(p));
     }
 
     mFullPools.clear();
@@ -73,14 +73,14 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::De
     std::vector<vk::raii::DescriptorSet> ds;
     try {
         ds = device.allocateDescriptorSets(allocInfo);
-        mReadyPools.push_back(std::move(poolToUse));
+        mReadyPools.emplace_back(std::move(poolToUse));
     }
     catch (vk::SystemError e) {
-        mFullPools.push_back(std::move(poolToUse));
+        mFullPools.emplace_back(std::move(poolToUse));
         vk::raii::DescriptorPool poolToUse1 = getPool(device);
         allocInfo.descriptorPool = *poolToUse1;
         ds = device.allocateDescriptorSets(allocInfo);
-        mReadyPools.push_back(std::move(poolToUse1));
+        mReadyPools.emplace_back(std::move(poolToUse1));
     }
     return std::move(ds[0]);
 }

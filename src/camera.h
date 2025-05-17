@@ -30,6 +30,7 @@ public:
     glm::quat getPitchMatrix() const;
     glm::quat getYawMatrix() const;
     glm::mat4 getRotationMatrix() const;
+    glm::vec3 getDirectionVector() const;
 
     void processSDLEvent(const SDL_Event& e);
 
