@@ -38,7 +38,7 @@ void SceneManager::deleteModels()
 void SceneManager::deleteInstances()
 {
 	for (auto& model : mRenderer->mModels | std::views::values) {
-		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mToDelete; });
+		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
 	}
 }
 

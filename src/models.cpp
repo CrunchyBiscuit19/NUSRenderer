@@ -487,6 +487,11 @@ void GLTFModel::updateInstances()
     writer.updateSet(mRenderer->mDevice, *mInstancesDescriptorSet);
 }
 
+void GLTFModel::markDelete()
+{
+    mDeleteInfo = { true, mRenderer->mFrameNumber + FRAME_OVERLAP };
+}
+
 void GLTFModel::load()
 {
     initDescriptors();
@@ -512,7 +517,7 @@ void GLTFModel::generateRenderItems()
 GLTFInstance::GLTFInstance(GLTFModel* model) :
     mModel(model),
     mId(model->mLatestId),
-    mToDelete(false)
+    mDeleteSignal(false)
 {
     mTransformComponents.translation = glm::vec3();
     mTransformComponents.rotation = glm::vec3();

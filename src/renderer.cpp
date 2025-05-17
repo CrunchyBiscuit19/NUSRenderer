@@ -51,16 +51,19 @@ void Renderer::init()
 void Renderer::run()
 {
     SDL_Event e;
-    bool bQuit = false;
+    std::optional<uint64_t> programEndFrameNumber = std::nullopt;
 
-    while (!bQuit) {
+    while (true) {
         auto start = std::chrono::system_clock::now();
+
+        if (programEndFrameNumber.has_value() && (mFrameNumber < programEndFrameNumber.value())) {
+            break;
+        }
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
-                mModels.clear();
-                mRenderItems.clear();
-                bQuit = true;
+                for (auto& model : mModels | std::views::values) { model.markDelete(); }
+                programEndFrameNumber = mFrameNumber + FRAME_OVERLAP + 1;
             }
             if (e.type == SDL_WINDOWEVENT) {
                 if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
@@ -85,6 +88,8 @@ void Renderer::run()
         drawUpdate();
         drawCleanup();
         draw();
+
+        mFrameNumber++;
 
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -246,8 +251,6 @@ void Renderer::draw()
     catch (vk::OutOfDateKHRError e) {
         mResizeRequested = true;
     }
-
-    mFrameNumber++;
 
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

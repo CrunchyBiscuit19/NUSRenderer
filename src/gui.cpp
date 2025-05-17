@@ -92,9 +92,9 @@ void GUI::imguiFrame() {
                 ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
                 if (ImGui::Button("Delete Model")) {
                     for (auto& instance : model.mInstances) {
-                        instance.mToDelete = true;
+                        instance.mDeleteSignal = true;
                     }
-                    model.mDeleteInfo = { true, mRenderer->mFrameNumber + FRAME_OVERLAP };
+                    model.markDelete();
                     mRenderer->mRegenRenderItems = true;
                 }
                 ImGui::PopStyleColor();
@@ -107,7 +107,7 @@ void GUI::imguiFrame() {
                     ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f);
                     ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
                     if (ImGui::Button("Delete Instance")) {
-                        instance.mToDelete = true;
+                        instance.mDeleteSignal = true;
                     }
                     ImGui::PopStyleColor();
                     ImGui::PopID();

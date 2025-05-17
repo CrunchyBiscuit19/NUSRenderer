@@ -28,7 +28,7 @@ class GLTFInstance {
 public:
     GLTFModel* mModel;
     int mId;
-    bool mToDelete;
+    bool mDeleteSignal;
     TransformData mTransformComponents;
 
     GLTFInstance(GLTFModel* model);
@@ -94,4 +94,6 @@ public:
     
     void createInstance();
     void updateInstances();
+
+    void markDelete();
 };
