@@ -10,7 +10,6 @@ vk::raii::DescriptorSetLayout GLTFModel::mInstancesDescriptorSetLayout = nullptr
 
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
 	mRenderer(renderer),
-	mToDelete(false),
     mInstancesDescriptorSet(nullptr)
 {
     mName = modelPath.stem().string();
@@ -48,7 +47,7 @@ GLTFModel::GLTFModel(GLTFModel&& other) noexcept:
     mRenderer(other.mRenderer),
     mName(std::move(other.mName)),
     mLatestId(other.mLatestId),
-    mToDelete(other.mToDelete),
+    mDeleteInfo(std::move(other.mDeleteInfo)),
     mAsset(std::move(other.mAsset)),
     mTopNodes(std::move(other.mTopNodes)),
     mNodes(std::move(other.mNodes)),
@@ -64,7 +63,6 @@ GLTFModel::GLTFModel(GLTFModel&& other) noexcept:
 {
     other.mRenderer = nullptr;
     other.mLatestId = 0;
-    other.mToDelete = false;
 }
 
 GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
@@ -74,7 +72,7 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
         mRenderer = other.mRenderer;
         mName = std::move(other.mName);
         mLatestId = other.mLatestId;
-        mToDelete = other.mToDelete;
+        mDeleteInfo = std::move(other.mDeleteInfo),
         mAsset = std::move(other.mAsset);
         mTopNodes = std::move(other.mTopNodes);
         mNodes = std::move(other.mNodes);
@@ -90,7 +88,6 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
 
         other.mRenderer = nullptr;
         other.mLatestId = 0;
-        other.mToDelete = false;
     }
     return *this;
 }
@@ -505,8 +502,10 @@ void GLTFModel::load()
 
 void GLTFModel::generateRenderItems()
 {
-    for (auto& n : mTopNodes) {
-        n->generateRenderItems(mRenderer, this, glm::mat4{ 1.f });
+    if (mDeleteInfo.deleteSignal == false) {
+        for (auto& n : mTopNodes) {
+            n->generateRenderItems(mRenderer, this, glm::mat4{ 1.f });
+        }
     }
 }
 

@@ -52,7 +52,7 @@ struct RendererFlags {
 };
 
 struct FrameResources {
-    int id;
+    int mId;
     vk::raii::CommandPool mCommandPool;
     vk::raii::CommandBuffer mCommandBuffer;
     vk::raii::Semaphore mSwapchainSemaphore, mRenderSemaphore;
@@ -80,7 +80,7 @@ public:
     GUI mGUI;
     Camera mCamera;
 
-    int mFrameNumber{ 0 };
+    uint64_t mFrameNumber{ 0 }; // Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
     std::vector<FrameResources> mFrames;
     const FrameResources& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
     const FrameResources& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }

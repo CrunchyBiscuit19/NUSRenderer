@@ -30,15 +30,15 @@ void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 
 void SceneManager::deleteModels()
 {
-	std::erase_if(mRenderer->mModels, [](const auto& pair) {
-		return pair.second.mToDelete; 
+	std::erase_if(mRenderer->mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
+		return (pair.second.mDeleteInfo.deleteSignal) && (pair.second.mDeleteInfo.deleteFrame == mRenderer->mFrameNumber);
 	});
 }
 
 void SceneManager::deleteInstances()
 {
 	for (auto& model : mRenderer->mModels | std::views::values) {
-		std::erase_if(model.mInstances, [](const auto& instance) { return instance.mToDelete; });
+		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mToDelete; });
 	}
 }
 

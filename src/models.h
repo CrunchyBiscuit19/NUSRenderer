@@ -35,13 +35,19 @@ public:
 };
 
 class GLTFModel {
+    struct DeleteInfo {
+        bool deleteSignal;
+        uint64_t deleteFrame;
+    };
+
 private:
     Renderer* mRenderer;
 
 public:
     std::string mName;
     int mLatestId { 0 };
-    bool mToDelete { false };
+    DeleteInfo mDeleteInfo { false, 0 };
+
 
     fastgltf::Asset mAsset;
     std::vector<std::shared_ptr<Node>> mTopNodes;

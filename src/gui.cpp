@@ -94,7 +94,7 @@ void GUI::imguiFrame() {
                     for (auto& instance : model.mInstances) {
                         instance.mToDelete = true;
                     }
-                    model.mToDelete = true;
+                    model.mDeleteInfo = { true, mRenderer->mFrameNumber + FRAME_OVERLAP };
                     mRenderer->mRegenRenderItems = true;
                 }
                 ImGui::PopStyleColor();
