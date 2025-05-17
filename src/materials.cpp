@@ -33,7 +33,7 @@ void PbrMaterial::getMaterialPipeline()
 void PbrMaterial::writeMaterialResources()
 {
     getMaterialPipeline();
-    mResourcesDescriptorSet = mDescriptorAllocator->allocate(mRenderer->mDevice, *mResourcesDescriptorSetLayout, false, 1);
+    mResourcesDescriptorSet = mDescriptorAllocator->allocate(mRenderer->mDevice, *mResourcesDescriptorSetLayout);
 
     DescriptorWriter writer;
     writer.writeImage(0, *mPbrData.resources.base.image->imageView, mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);

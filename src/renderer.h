@@ -20,10 +20,10 @@
 
 #include <map>
 
-#ifdef NDEBUG
-constexpr bool bUseValidationLayers = false;
+#ifdef RELDEB
+constexpr bool useValidationLayers = false;
 #else
-constexpr bool bUseValidationLayers = true;
+constexpr bool useValidationLayers = true;
 #endif
 
 constexpr unsigned int FRAME_OVERLAP = 2;

@@ -49,7 +49,7 @@ struct DescriptorLayoutBuilder {
 
     void addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count = 1);
     void clear();
-    vk::raii::DescriptorSetLayout build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless = false);
+    vk::raii::DescriptorSetLayout build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages);
 };
 
 struct DescriptorAllocatorGrowable {
@@ -64,7 +64,7 @@ public:
 
     void clearPools();
     void destroyPools();
-    vk::raii::DescriptorSet allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout, bool useBindless = false, uint32_t maxBindings = 1);
+    vk::raii::DescriptorSet allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout);
 
 private:
     vk::raii::DescriptorPool getPool(const vk::raii::Device& device);

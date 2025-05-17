@@ -68,7 +68,7 @@ void RendererCore::init()
     vkb::InstanceBuilder builder;
     VkValidationFeatureEnableEXT validationFeaturesEnables[] = { static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf) };
     auto instResult = builder.set_app_name("Vulkan renderer")
-        .request_validation_layers(bUseValidationLayers)
+        .request_validation_layers(useValidationLayers)
         .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning))
         .set_debug_callback(debugMessageFunc)
         .require_api_version(1, 3, 0)

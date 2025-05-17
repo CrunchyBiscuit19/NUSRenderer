@@ -24,6 +24,10 @@ file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/
 add_executable(NUSRenderer ${CPP_SOURCES} ${HEADER_SOURCES})
 set_property(TARGET NUSRenderer PROPERTY CXX_STANDARD 23)
 
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    add_compile_definitions(RELDEB)
+endif()
+
 # Get all GLSL shaders and build them
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 file(GLOB_RECURSE GLSL_SOURCE_FILES

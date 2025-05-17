@@ -15,7 +15,7 @@ void DescriptorLayoutBuilder::clear()
     mBindings.clear();
 }
 
-vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless)
+vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages)
 {
     for (auto& b : mBindings) {
         b.stageFlags |= shaderStages;
@@ -60,7 +60,7 @@ void DescriptorAllocatorGrowable::destroyPools()
     mFullPools.clear();
 }
 
-vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout, bool useBindless, uint32_t maxBindings)
+vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout)
 {
     vk::raii::DescriptorPool poolToUse = getPool(device);
 
@@ -69,13 +69,6 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::De
     allocInfo.descriptorPool = *poolToUse;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layout;
-
-    vk::DescriptorSetVariableDescriptorCountAllocateInfoEXT countInfo{};
-    uint32_t maxBinding = maxBindings - 1;
-    countInfo.descriptorSetCount = 1;
-    countInfo.pDescriptorCounts = &maxBinding;
-    if (useBindless)
-        allocInfo.pNext = &countInfo;
 
     std::vector<vk::raii::DescriptorSet> ds;
     try {

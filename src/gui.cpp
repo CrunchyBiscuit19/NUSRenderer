@@ -71,7 +71,7 @@ void GUI::imguiFrame() {
         ImGui::End();
     }
     if (ImGui::Begin("Stats")) {
-        ImGui::Text("Compile Mode: %s", (bUseValidationLayers ? "DEBUG" : "RELEASE"));
+        ImGui::Text("Compile Mode: %s", (useValidationLayers ? "DEBUG" : "RELEASE"));
         ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrametime);
         ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
