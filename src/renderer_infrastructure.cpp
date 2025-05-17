@@ -21,7 +21,10 @@ void RendererInfrastructure::init() {
 void RendererInfrastructure::initCommands() 
 {
     const vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    int id = 0;
     for (FrameResources& frame : mRenderer->mFrames) {
+        frame.id = id;
+        id++;
 		frame.mCommandPool = mRenderer->mDevice.createCommandPool(commandPoolInfo);
         vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
         frame.mCommandBuffer = std::move(mRenderer->mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);

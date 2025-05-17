@@ -52,6 +52,7 @@ struct RendererFlags {
 };
 
 struct FrameResources {
+    int id;
     vk::raii::CommandPool mCommandPool;
     vk::raii::CommandBuffer mCommandBuffer;
     vk::raii::Semaphore mSwapchainSemaphore, mRenderSemaphore;
