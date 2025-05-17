@@ -117,15 +117,8 @@ void Renderer::draw()
 {
     auto start = std::chrono::system_clock::now();
 
-    std::string modelNames;
-    for (const auto& [key, val] : mModels) {
-        modelNames += fmt::format("{}({}), ", key, val.mInstances.size());
-    }
-
     mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
-    fmt::println("frame {} FINISH \t\t [{}]", getCurrentFrame().mId, modelNames);
     mDevice.resetFences(*getCurrentFrame().mRenderFence); // Flip to unsignalled
-    fmt::println("frame {} START \t\t [{}]", getCurrentFrame().mId, modelNames);
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     uint32_t swapchainImageIndex = 0;
@@ -233,7 +226,6 @@ void Renderer::draw()
     // _swapchainSemaphore gets waited on until it is signalled when the next image is acquired.
     // _renderSemaphore will be signalled by this function when this queue's commands are executed.
     mGraphicsQueue.submit2(submit, *getCurrentFrame().mRenderFence);
-    fmt::println("frame {} SUBMITTED \t [{}]", getCurrentFrame().mId, modelNames);
 
     // Prepare present.
     // Wait on the _renderSemaphore for queue commands to finish before image is presented.
