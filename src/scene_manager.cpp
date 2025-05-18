@@ -52,9 +52,7 @@ void SceneManager::generateRenderItems()
 
 void SceneManager::updateScene()
 {
-	mSceneEncapsulation.mSceneData.ambientColor = glm::vec4(.1f);
-	mSceneEncapsulation.mSceneData.sunlightColor = glm::vec4(1.f);
-	mSceneEncapsulation.mSceneData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
+	mSceneEncapsulation.mSceneData.sunlightDirection = glm::vec4(mSceneEncapsulation.mSceneData.sunlightDirection[0], mRenderer->mCamera.getDirectionVector());
 
 	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mSceneEncapsulation.mSceneData.view = mRenderer->mCamera.getViewMatrix();
