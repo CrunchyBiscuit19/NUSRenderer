@@ -58,5 +58,6 @@ struct RenderItem {
     glm::mat4 transform;
 
     vk::DeviceAddress vertexBufferAddress;
-    vk::DeviceAddress materialConstantBufferAddress;
+    vk::DeviceAddress instancesBufferAddress;
+    vk::DeviceAddress materialConstantsBufferAddress;
 };

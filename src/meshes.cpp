@@ -24,6 +24,8 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
         vertexBufferDeviceAddressInfo.buffer = *mMesh->mVertexBuffer.buffer;
         vk::BufferDeviceAddressInfo materialConstantBufferDeviceAddressInfo;
         materialConstantBufferDeviceAddressInfo.buffer = primitive.material->mConstantsBuffer;
+        vk::BufferDeviceAddressInfo instancesBufferDeviceAddressInfo;
+        instancesBufferDeviceAddressInfo.buffer = *model->mInstancesBuffer.buffer;
 
         renderer->mSceneManager.mRenderItems.emplace_back(
             &primitive,
@@ -31,6 +33,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
             model,
             nodeMatrix,
             renderer->mRendererCore.mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
+            renderer->mRendererCore.mDevice.getBufferAddress(instancesBufferDeviceAddressInfo),
             renderer->mRendererCore.mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo)
         );
     }

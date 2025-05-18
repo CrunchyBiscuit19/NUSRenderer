@@ -202,6 +202,7 @@ void ResourceManager::cleanup()
     mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
     mMaterialConstantsStagingBuffer.cleanup();
+    mInstancesStagingBuffer.cleanup();
     mDefaultImages.clear();
 	mDefaultSampler.clear();
 }

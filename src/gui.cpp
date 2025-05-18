@@ -100,7 +100,7 @@ void GUI::imguiFrame() {
 
                 for (auto& instance : model.mInstances) {
                     ImGui::SeparatorText(fmt::format("Instance {}-{}", model.mName, instance.mId).c_str());
-                    ImGui::PushID(fmt::format("Instance {}-{}", model.mName, instance.mId).c_str());
+                    ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
                     ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation));
                     ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>());
                     ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f);

@@ -16,6 +16,7 @@ struct PushConstants {
     vk::DeviceAddress instanceBuffer;
     vk::DeviceAddress materialBuffer;
     uint32_t materialIndex;
+    uint32_t _pad;
     glm::mat4 worldMatrix;
 };
 

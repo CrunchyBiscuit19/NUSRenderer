@@ -252,7 +252,6 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     vk::Pipeline lastPipeline = nullptr;
     std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
-    vk::Buffer lastInstancesBuffer = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
     for (auto& renderItem : mSceneManager.mRenderItems) {
@@ -282,11 +281,6 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 1, *renderItem.primitive->material->mResourcesDescriptorSet, nullptr);
             lastMaterial = renderItem.primitive->material;
         }
-        
-        if (*renderItem.model->mInstancesBuffer.buffer != lastInstancesBuffer) {
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 2, *renderItem.model->mInstancesDescriptorSet, nullptr);
-            lastInstancesBuffer = *renderItem.model->mInstancesBuffer.buffer;
-        }
 
         if (*renderItem.mesh->mIndexBuffer.buffer != lastIndexBuffer) {
             cmd.bindIndexBuffer(*renderItem.mesh->mIndexBuffer.buffer, 0, vk::IndexType::eUint32);
@@ -294,9 +288,10 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
         }
 
         mSceneManager.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
-        mSceneManager.mPushConstants.worldMatrix = renderItem.transform;
-        mSceneManager.mPushConstants.materialBuffer = renderItem.materialConstantBufferAddress;
+        mSceneManager.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
+        mSceneManager.mPushConstants.materialBuffer = renderItem.materialConstantsBufferAddress;
         mSceneManager.mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
+        mSceneManager.mPushConstants.worldMatrix = renderItem.transform;
         cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mSceneManager.mPushConstants);
 
         cmd.drawIndexed(renderItem.primitive->indexCount, renderItem.model->mInstances.size(), renderItem.primitive->indexStart, 0, 0);

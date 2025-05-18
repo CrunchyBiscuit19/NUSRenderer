@@ -22,4 +22,4 @@ void main()
 	outUV.x = v.uv_x;
 	outUV.y = v.uv_y;
 	outColor = v.color.xyz * materialConstant.baseFactor.xyz;
-} 
+}

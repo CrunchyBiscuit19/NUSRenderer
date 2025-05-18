@@ -47,5 +47,6 @@ layout( push_constant ) uniform PushConstants
 	InstanceBuffer instancesBuffer;
 	MaterialConstantBuffer materialConstantsBuffer;
 	int materialIndex;
+	int _pad;
 	mat4 worldMatrix;
 } pushConstants;
