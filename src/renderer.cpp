@@ -31,8 +31,6 @@ void Renderer::init()
     mSceneManager.init();
     mGUI.init();
     mCamera.init();
-    PbrMaterial::createResourcesDescriptorSetLayout(this);
-    GLTFModel::createInstanceDescriptorSetLayout(this);
 }
 
 void Renderer::run()
@@ -86,10 +84,6 @@ void Renderer::run()
 
 void Renderer::cleanup()
 {
-    GLTFModel::mInstancesDescriptorSetLayout.clear();
-    PbrMaterial::mResourcesDescriptorSetLayout.clear();
-    SceneEncapsulation::mSceneDescriptorSetLayout.clear();
-
     mGUI.cleanup();
     mSceneManager.cleanup();
     mImmSubmit.cleanup();

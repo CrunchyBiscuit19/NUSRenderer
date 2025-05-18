@@ -72,6 +72,7 @@ void SceneManager::updateScene()
 
 void SceneManager::cleanup()
 {
+	SceneEncapsulation::mSceneDescriptorSetLayout.clear();
 	mSceneEncapsulation.cleanup();
 	mModels.clear();
 }

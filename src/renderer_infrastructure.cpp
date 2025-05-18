@@ -33,6 +33,9 @@ void RendererInfrastructure::initCommands()
 
 void RendererInfrastructure::initDescriptors()
 {
+    PbrMaterial::createResourcesDescriptorSetLayout(mRenderer);
+    GLTFModel::createInstanceDescriptorSetLayout(mRenderer);
+
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
         { vk::DescriptorType::eUniformBuffer, 1 },
     };
@@ -221,6 +224,8 @@ void RendererInfrastructure::destroyPipelines()
 }
 
 void RendererInfrastructure::cleanup() {
+    GLTFModel::mInstancesDescriptorSetLayout.clear();
+    PbrMaterial::mResourcesDescriptorSetLayout.clear();
     for (auto& frame : mFrames) {
         frame.cleanup();
     }
