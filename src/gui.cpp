@@ -2,7 +2,6 @@
 #include <renderer.h>
 
 #include <magic_enum.hpp>
-#include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
@@ -45,9 +44,9 @@ void GUI::init() {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    mRenderer->mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, RESOURCES_PATH);
-    mRenderer->mSelectModelFileDialog.SetTitle("Select GLTF / GLB file");
-    mRenderer->mSelectModelFileDialog.SetTypeFilters({ ".glb", ".gltf" });
+    mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, RESOURCES_PATH);
+    mSelectModelFileDialog.SetTitle("Select GLTF / GLB file");
+    mSelectModelFileDialog.SetTypeFilters({ ".glb", ".gltf" });
 }
 
 void GUI::cleanup() {
@@ -80,7 +79,7 @@ void GUI::imguiFrame() {
     }
     if (ImGui::Begin("Models")) {
         if (ImGui::Button("Add Model")) {
-            mRenderer->mSelectModelFileDialog.Open();
+            mSelectModelFileDialog.Open();
         }
         for (auto& model : mRenderer->mSceneManager.mModels | std::views::values) {
             const auto name = model.mName;
@@ -119,11 +118,11 @@ void GUI::imguiFrame() {
         }
         ImGui::End();
 
-        mRenderer->mSelectModelFileDialog.Display();
-        if (mRenderer->mSelectModelFileDialog.HasSelected()) {
-            auto selectedFiles = mRenderer->mSelectModelFileDialog.GetMultiSelected();
+        mSelectModelFileDialog.Display();
+        if (mSelectModelFileDialog.HasSelected()) {
+            auto selectedFiles = mSelectModelFileDialog.GetMultiSelected();
             mRenderer->mSceneManager.loadModels(selectedFiles);
-            mRenderer->mSelectModelFileDialog.ClearSelected();
+            mSelectModelFileDialog.ClearSelected();
             mRenderer->mRegenRenderItems = true;
         }
     }

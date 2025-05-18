@@ -1,10 +1,16 @@
 #pragma once
 
+#include <imgui.h>
+#define NOMINMAX // imfilebrowser.h contains windows.h
+#include <imfilebrowser.h>
+
 class Renderer;
 
 class GUI {
 private:
 	Renderer* mRenderer;
+
+	ImGui::FileBrowser mSelectModelFileDialog;
 
 public:
 	GUI(Renderer* renderer);

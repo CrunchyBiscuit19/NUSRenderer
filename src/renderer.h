@@ -1,7 +1,5 @@
 #pragma once
 
-#define NOMINMAX // imfilebrowser.h contains windows.h
-
 #include <renderer_core.h>
 #include <renderer_infrastructure.h>
 #include <resource_manager.h>
@@ -9,9 +7,6 @@
 #include <imm_submit.h>
 #include <gui.h>
 #include <camera.h>
-
-#include <imgui.h>
-#include <imfilebrowser.h>
 
 constexpr unsigned int EXPECTED_FRAME_RATE = 60;
 
@@ -47,8 +42,6 @@ public:
     ImmSubmit mImmSubmit;
     GUI mGUI;
     Camera mCamera;
-
-    ImGui::FileBrowser mSelectModelFileDialog;
 
     Renderer();
 
