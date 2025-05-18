@@ -22,8 +22,8 @@ void GUI::init() {
 
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
     pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mDrawImage.imageFormat;
-    pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mDepthImage.imageFormat;
+    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mDrawImage.imageFormat;
+    pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mRendererInfrastructure.mDepthImage.imageFormat;
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
     initInfo.Instance = *mRenderer->mRendererCore.mInstance;
@@ -82,7 +82,7 @@ void GUI::imguiFrame() {
         if (ImGui::Button("Add Model")) {
             mRenderer->mSelectModelFileDialog.Open();
         }
-        for (auto& model : mRenderer->mModels | std::views::values) {
+        for (auto& model : mRenderer->mSceneManager.mModels | std::views::values) {
             const auto name = model.mName;
             if (ImGui::TreeNode(name.c_str())) {
                 if (ImGui::Button("Add Instance")) {

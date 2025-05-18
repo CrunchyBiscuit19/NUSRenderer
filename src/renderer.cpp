@@ -17,12 +17,9 @@ Renderer::Renderer():
     mSceneManager(SceneManager(this)),
     mImmSubmit(ImmSubmit(this)),
     mGUI(GUI(this)),
-    mSwapchain(nullptr),
-    mDescriptorAllocator(DescriptorAllocatorGrowable(this)),
-    mSceneEncapsulation(SceneEncapsulation(this)),
     mDefaultSampler(nullptr)
 {
-    mFrames.resize(FRAME_OVERLAP);
+    
     mCamera = Camera();
 }
 
@@ -47,14 +44,14 @@ void Renderer::run()
     while (true) {
         auto start = std::chrono::system_clock::now();
 
-        if (programEndFrameNumber.has_value() && (mFrameNumber < programEndFrameNumber.value())) {
+        if (programEndFrameNumber.has_value() && (mRendererInfrastructure.mFrameNumber < programEndFrameNumber.value())) {
             break;
         }
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
-                for (auto& model : mModels | std::views::values) { model.markDelete(); }
-                programEndFrameNumber = mFrameNumber + FRAME_OVERLAP + 1;
+                for (auto& model : mSceneManager.mModels | std::views::values) { model.markDelete(); }
+                programEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
             }
             if (e.type == SDL_WINDOWEVENT) {
                 if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
@@ -72,7 +69,7 @@ void Renderer::run()
         }
 
         SDL_SetRelativeMouseMode(mCamera.relativeMode);
-        if (mResizeRequested) { mRendererInfrastructure.resizeSwapchain(); }
+        if (mRendererInfrastructure.mResizeRequested) { mRendererInfrastructure.resizeSwapchain(); }
 
         mGUI.imguiFrame();
 
@@ -80,7 +77,7 @@ void Renderer::run()
         drawCleanup();
         draw();
 
-        mFrameNumber++;
+        mRendererInfrastructure.mFrameNumber++;
 
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -93,7 +90,7 @@ void Renderer::cleanup()
     GLTFModel::mInstancesDescriptorSetLayout.clear();
     PbrMaterial::mResourcesDescriptorSetLayout.clear();
     SceneEncapsulation::mSceneDescriptorSetLayout.clear();
-    for (auto& frame : mFrames) {
+    for (auto& frame : mRendererInfrastructure.mFrames) {
         frame.cleanup();
     }
     mGUI.cleanup();
@@ -108,29 +105,29 @@ void Renderer::draw()
 {
     auto start = std::chrono::system_clock::now();
 
-    mRendererCore.mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
-    mRendererCore.mDevice.resetFences(*getCurrentFrame().mRenderFence); // Flip to unsignalled
+    mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
+    mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence); // Flip to unsignalled
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     uint32_t swapchainImageIndex = 0;
     try {
-        auto output = mSwapchain.acquireNextImage(1e9, *getCurrentFrame().mSwapchainSemaphore, nullptr);
+        auto output = mRendererInfrastructure.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentFrame().mSwapchainSemaphore, nullptr);
         swapchainImageIndex = output.second;
     }
     catch (vk::OutOfDateKHRError e) {
-        mResizeRequested = true;
+        mRendererInfrastructure.mResizeRequested = true;
         return;
     }
 
-    vk::CommandBuffer cmd = *getCurrentFrame().mCommandBuffer;
+    vk::CommandBuffer cmd = *mRendererInfrastructure.getCurrentFrame().mCommandBuffer;
     cmd.reset();
     vk::CommandBufferBeginInfo cmdBeginInfo = vkinit::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
     // Multiply by render scale for dynamic resolution
     // When resizing bigger, don't make swapchain extent go beyond draw image extent
-    mDrawImage.imageExtent.height = std::min(mSwapchainExtent.height, mDrawImage.imageExtent.height);
-    mDrawImage.imageExtent.width = std::min(mSwapchainExtent.width, mDrawImage.imageExtent.width);
+    mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
+    mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
     // Transition stock and draw image into transfer layouts
     vkutil::transitionImage(cmd, *mDefaultImages[DefaultImage::Blue].image,
@@ -139,7 +136,7 @@ void Renderer::draw()
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-    vkutil::transitionImage(cmd, *mDrawImage.image,
+    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eNone,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -147,18 +144,18 @@ void Renderer::draw()
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     // Copy stock image as the initial colour for the draw image (the background)
-    vkutil::copyImage(cmd, *mDefaultImages[DefaultImage::Blue].image, *mDrawImage.image,
+    vkutil::copyImage(cmd, *mDefaultImages[DefaultImage::Blue].image, *mRendererInfrastructure.mDrawImage.image,
         vk::Extent2D{ mDefaultImages[DefaultImage::Blue].imageExtent.width, mDefaultImages[DefaultImage::Blue].imageExtent.height, },
-        vk::Extent2D{ mDrawImage.imageExtent.width, mDrawImage.imageExtent.height, });
+        vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height, });
 
     // Transition to color output for drawing geometry
-    vkutil::transitionImage(cmd, *mDrawImage.image,
+    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
         vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
-    vkutil::transitionImage(cmd, *mDepthImage.image,
+    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDepthImage.image,
         vk::PipelineStageFlagBits2::eEarlyFragmentTests,
         vk::AccessFlagBits2::eDepthStencilAttachmentRead,
         vk::PipelineStageFlagBits2::eEarlyFragmentTests,
@@ -168,13 +165,13 @@ void Renderer::draw()
     drawGeometry(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
-    vkutil::transitionImage(cmd, *mDrawImage.image,
+    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferRead,
         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
-    vkutil::transitionImage(cmd, mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eNone,
         vk::PipelineStageFlagBits2::eTransfer,
@@ -182,22 +179,22 @@ void Renderer::draw()
         vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
 
     // Copy draw image into the swapchain image
-    vkutil::copyImage(cmd, *mDrawImage.image, mSwapchain.getImages()[swapchainImageIndex],
-        vk::Extent2D{ mDrawImage.imageExtent.width, mDrawImage.imageExtent.height, },
-        mSwapchainExtent);
+    vkutil::copyImage(cmd, *mRendererInfrastructure.mDrawImage.image, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
+        vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height, },
+        mRendererInfrastructure.mSwapchainExtent);
 
     // Set swapchain image to be attachment optimal to draw it
-    vkutil::transitionImage(cmd, mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferWrite,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
         vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
-    drawGui(cmd, *mSwapchainImageViews[swapchainImageIndex]);
+    drawGui(cmd, *mRendererInfrastructure.mSwapchainImageViews[swapchainImageIndex]);
 
     // Set swapchain image layout to presentable layout
-    vkutil::transitionImage(cmd, mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -208,23 +205,23 @@ void Renderer::draw()
 
     // Prepare the submission to the queue. (Reading semaphore states)
     vk::CommandBufferSubmitInfo cmdinfo = vkinit::commandBufferSubmitInfo(cmd);
-    vk::SemaphoreSubmitInfo waitInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *getCurrentFrame().mSwapchainSemaphore);
-    vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eAllGraphics, *getCurrentFrame().mRenderSemaphore);
+    vk::SemaphoreSubmitInfo waitInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentFrame().mSwapchainSemaphore);
+    vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eAllGraphics, *mRendererInfrastructure.getCurrentFrame().mRenderSemaphore);
     const vk::SubmitInfo2 submit = vkinit::submitInfo(&cmdinfo, &signalInfo, &waitInfo);
 
     // Submit command buffer to the queue and execute it.
     // _renderFence will block CPU from going to next frame, stays unsignalled until this is done.
     // _swapchainSemaphore gets waited on until it is signalled when the next image is acquired.
     // _renderSemaphore will be signalled by this function when this queue's commands are executed.
-    mRendererCore.mGraphicsQueue.submit2(submit, *getCurrentFrame().mRenderFence);
+    mRendererCore.mGraphicsQueue.submit2(submit, *mRendererInfrastructure.getCurrentFrame().mRenderFence);
 
     // Prepare present.
     // Wait on the _renderSemaphore for queue commands to finish before image is presented.
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.pNext = nullptr;
-    presentInfo.pSwapchains = &(*mSwapchain);
+    presentInfo.pSwapchains = &(*mRendererInfrastructure.mSwapchain);
     presentInfo.swapchainCount = 1;
-    presentInfo.pWaitSemaphores = &(*getCurrentFrame().mRenderSemaphore);
+    presentInfo.pWaitSemaphores = &(*mRendererInfrastructure.getCurrentFrame().mRenderSemaphore);
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
 
@@ -232,7 +229,7 @@ void Renderer::draw()
         mRendererCore.mGraphicsQueue.presentKHR(presentInfo);
     }
     catch (vk::OutOfDateKHRError e) {
-        mResizeRequested = true;
+        mRendererInfrastructure.mResizeRequested = true;
     }
 
     auto end = std::chrono::system_clock::now();
@@ -243,7 +240,7 @@ void Renderer::draw()
 void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 {
     vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(targetImageView, nullptr, vk::ImageLayout::eGeneral);
-    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mSwapchainExtent, &colorAttachment, nullptr);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
@@ -256,9 +253,9 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     // [TODO] Sorting and culling
     
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mDrawImage.imageView, nullptr, vk::ImageLayout::eGeneral);
-    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mDrawImage.imageExtent.width, mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eGeneral);
+    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
 
@@ -267,25 +264,25 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     vk::Buffer lastInstancesBuffer = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
-    for (auto& renderItem : mRenderItems) {
+    for (auto& renderItem : mSceneManager.mRenderItems) {
         if (*renderItem.primitive->material->mPipeline->pipeline != lastPipeline) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->pipeline);
             lastPipeline = *renderItem.primitive->material->mPipeline->pipeline;
 
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneEncapsulation.mSceneDescriptorSet, nullptr);
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneManager.mSceneEncapsulation.mSceneDescriptorSet, nullptr);
 
             vk::Viewport viewport = {
                 0,
                 0,
-                static_cast<float>(mDrawImage.imageExtent.width),
-                static_cast<float>(mDrawImage.imageExtent.height),
+                static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
+                static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
                 0.f,
                 1.f,
             };
             cmd.setViewport(0, viewport);
             vk::Rect2D scissor = {
                 vk::Offset2D {0, 0},
-                vk::Extent2D {mDrawImage.imageExtent.width, mDrawImage.imageExtent.height},
+                vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height},
             };
             cmd.setScissor(0, scissor);
         }
@@ -305,11 +302,11 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             lastIndexBuffer = *renderItem.mesh->mIndexBuffer.buffer;
         }
 
-        mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
-        mPushConstants.worldMatrix = renderItem.transform;
-        mPushConstants.materialBuffer = renderItem.materialConstantBufferAddress;
-        mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
-        cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mPushConstants);
+        mSceneManager.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
+        mSceneManager.mPushConstants.worldMatrix = renderItem.transform;
+        mSceneManager.mPushConstants.materialBuffer = renderItem.materialConstantBufferAddress;
+        mSceneManager.mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
+        cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mSceneManager.mPushConstants);
 
         cmd.drawIndexed(renderItem.primitive->indexCount, renderItem.model->mInstances.size(), renderItem.primitive->indexStart, 0, 0);
 
@@ -333,11 +330,11 @@ void Renderer::drawUpdate()
 
     // Only when add / remove models, then need to regen render items
     if (mRegenRenderItems) { 
-        mRenderItems.clear();
+        mSceneManager.mRenderItems.clear();
         mSceneManager.generateRenderItems(); 
         mRegenRenderItems = false; 
     }
-    for (auto& model : mModels | std::views::values) {
+    for (auto& model : mSceneManager.mModels | std::views::values) {
         model.updateInstances();
     }
     mSceneManager.updateScene();

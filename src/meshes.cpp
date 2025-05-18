@@ -4,14 +4,14 @@
 void Node::refreshTransform(const glm::mat4& parentTransform)
 {
     mWorldTransform = parentTransform * mLocalTransform;
-    for (const auto& c : mChildren)
-        c->refreshTransform(mWorldTransform);
+    for (const auto& child : mChildren)
+        child->refreshTransform(mWorldTransform);
 }
 
 void Node::generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix)
 {
-    for (const auto& c : mChildren)
-        c->generateRenderItems(renderer, model, topMatrix);
+    for (const auto& child : mChildren)
+        child->generateRenderItems(renderer, model, topMatrix);
 }
 
 void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix)
@@ -25,7 +25,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
         vk::BufferDeviceAddressInfo materialConstantBufferDeviceAddressInfo;
         materialConstantBufferDeviceAddressInfo.buffer = primitive.material->mConstantsBuffer;
 
-        renderer->mRenderItems.emplace_back(
+        renderer->mSceneManager.mRenderItems.emplace_back(
             &primitive,
             mMesh.get(),
             model,

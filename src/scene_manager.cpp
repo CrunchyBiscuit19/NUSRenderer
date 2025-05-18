@@ -9,70 +9,71 @@
 vk::raii::DescriptorSetLayout SceneEncapsulation::mSceneDescriptorSetLayout = nullptr;
 
 SceneManager::SceneManager(Renderer* renderer):
-	mRenderer(renderer)
+	mRenderer(renderer),
+	mSceneEncapsulation(SceneEncapsulation(renderer))
 {}
 
 void SceneManager::init()
 {
-	mRenderer->mSceneEncapsulation.init();
+	mSceneEncapsulation.init();
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 {
 	for (const auto& modelPath : paths) {
-		if (mRenderer->mModels.contains(modelPath.stem().string())) {
+		if (mModels.contains(modelPath.stem().string())) {
 			continue;
 		}
 		auto modelFullPath = RESOURCES_PATH / modelPath;
-		mRenderer->mModels.emplace(modelPath.stem().string(), std::move(GLTFModel(mRenderer, modelFullPath)));
+		mModels.emplace(modelPath.stem().string(), std::move(GLTFModel(mRenderer, modelFullPath)));
 	}
 }
 
 void SceneManager::deleteModels()
 {
-	std::erase_if(mRenderer->mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
-		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mFrameNumber);
+	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
+		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
 	});
 }
 
 void SceneManager::deleteInstances()
 {
-	for (auto& model : mRenderer->mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values) {
 		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
 	}
 }
 
 void SceneManager::generateRenderItems()
 {
-	for (auto& model : mRenderer->mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values) {
 		model.generateRenderItems();
 	}
 }
 
 void SceneManager::updateScene()
 {
-	mRenderer->mSceneEncapsulation.mSceneData.ambientColor = glm::vec4(.1f);
-	mRenderer->mSceneEncapsulation.mSceneData.sunlightColor = glm::vec4(1.f);
-	mRenderer->mSceneEncapsulation.mSceneData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
+	mSceneEncapsulation.mSceneData.ambientColor = glm::vec4(.1f);
+	mSceneEncapsulation.mSceneData.sunlightColor = glm::vec4(1.f);
+	mSceneEncapsulation.mSceneData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
 
 	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
-	mRenderer->mSceneEncapsulation.mSceneData.view = mRenderer->mCamera.getViewMatrix();
-	mRenderer->mSceneEncapsulation.mSceneData.proj = glm::perspective(glm::radians(70.f), 
+	mSceneEncapsulation.mSceneData.view = mRenderer->mCamera.getViewMatrix();
+	mSceneEncapsulation.mSceneData.proj = glm::perspective(glm::radians(70.f), 
 		static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
-	mRenderer->mSceneEncapsulation.mSceneData.proj[1][1] *= -1;
+	mSceneEncapsulation.mSceneData.proj[1][1] *= -1;
 
-	auto* sceneBufferPtr = static_cast<SceneData*>(mRenderer->mSceneEncapsulation.mSceneBuffer.info.pMappedData);
-	std::memcpy(sceneBufferPtr, &mRenderer->mSceneEncapsulation.mSceneData, 1 * sizeof(SceneData));
+	auto* sceneBufferPtr = static_cast<SceneData*>(mSceneEncapsulation.mSceneBuffer.info.pMappedData);
+	std::memcpy(sceneBufferPtr, &mSceneEncapsulation.mSceneData, 1 * sizeof(SceneData));
 
 	DescriptorWriter writer;
-	writer.writeBuffer(0, *mRenderer->mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
-	writer.updateSet(mRenderer->mRendererCore.mDevice, *mRenderer->mSceneEncapsulation.mSceneDescriptorSet);
+	writer.writeBuffer(0, *mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
+	writer.updateSet(mRenderer->mRendererCore.mDevice, *mSceneEncapsulation.mSceneDescriptorSet);
 }
 
 void SceneManager::cleanup()
 {
-	mRenderer->mSceneEncapsulation.cleanup();
-	mRenderer->mModels.clear();
+	mSceneEncapsulation.cleanup();
+	mModels.clear();
 }
 
 SceneEncapsulation::SceneEncapsulation(Renderer* renderer) :
@@ -90,7 +91,7 @@ void SceneEncapsulation::init()
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
 	mSceneDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-	mSceneDescriptorSet = mRenderer->mDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
+	mSceneDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
 }
 
 void SceneEncapsulation::cleanup()

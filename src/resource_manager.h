@@ -156,12 +156,6 @@ struct AllocatedBuffer {
     }	
 };
 
-struct BufferCopyBatch {
-    vk::Buffer srcBuffer;
-    vk::Buffer dstBuffer;
-    vk::BufferCopy bufferCopies;
-};
-
 class ResourceManager {
 private:
     Renderer* mRenderer;

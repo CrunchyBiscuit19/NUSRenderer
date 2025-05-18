@@ -1,11 +1,12 @@
 #pragma once
 
 #include <resource_manager.h>
-#include <materials.h>
+#include <meshes.h>
 
 #include <glm/fwd.hpp>
 
 #include <vector>
+#include <map>
 #include <filesystem>
 
 class Renderer;
@@ -47,6 +48,13 @@ private:
     Renderer* mRenderer;
 
 public:
+    std::vector<RenderItem> mRenderItems;
+
+    std::unordered_map<std::string, GLTFModel> mModels;
+
+    PushConstants mPushConstants;
+    SceneEncapsulation mSceneEncapsulation;
+
     SceneManager(Renderer* renderer);
 
     void init();

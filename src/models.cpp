@@ -192,7 +192,7 @@ void GLTFModel::initDescriptors()
     };
     mDescriptorAllocator.init(mAsset.materials.size(), sizes);
 
-    mInstancesDescriptorSet = mRenderer->mDescriptorAllocator.allocate(*mInstancesDescriptorSetLayout);
+    mInstancesDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mInstancesDescriptorSetLayout);
 }
 
 void GLTFModel::initBuffers()
@@ -493,7 +493,7 @@ void GLTFModel::updateInstances()
 
 void GLTFModel::markDelete()
 {
-    mDeleteSignal = mRenderer->mFrameNumber + FRAME_OVERLAP;
+    mDeleteSignal = mRenderer->mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP;
 }
 
 void GLTFModel::load()
