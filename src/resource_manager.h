@@ -5,6 +5,8 @@
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
 
+#include <map>
+
 struct GLTFModel;
 struct Mesh;
 struct Vertex;
@@ -164,6 +166,9 @@ private:
     AllocatedBuffer mMaterialConstantsStagingBuffer;
 
 public:
+    std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
+    vk::raii::Sampler mDefaultSampler;
+
     ResourceManager(Renderer* renderer);
 
     void init();

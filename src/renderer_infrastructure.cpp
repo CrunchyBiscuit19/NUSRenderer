@@ -221,6 +221,9 @@ void RendererInfrastructure::destroyPipelines()
 }
 
 void RendererInfrastructure::cleanup() {
+    for (auto& frame : mFrames) {
+        frame.cleanup();
+    }
     destroyPipelines();
     destroySwapchain();
     mDescriptorAllocator.cleanup();

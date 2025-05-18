@@ -16,8 +16,7 @@ Renderer::Renderer():
     mResourceManager(ResourceManager(this)),
     mSceneManager(SceneManager(this)),
     mImmSubmit(ImmSubmit(this)),
-    mGUI(GUI(this)),
-    mDefaultSampler(nullptr)
+    mGUI(GUI(this))
 {
     
     mCamera = Camera();
@@ -90,9 +89,7 @@ void Renderer::cleanup()
     GLTFModel::mInstancesDescriptorSetLayout.clear();
     PbrMaterial::mResourcesDescriptorSetLayout.clear();
     SceneEncapsulation::mSceneDescriptorSetLayout.clear();
-    for (auto& frame : mRendererInfrastructure.mFrames) {
-        frame.cleanup();
-    }
+
     mGUI.cleanup();
     mSceneManager.cleanup();
     mImmSubmit.cleanup();
@@ -130,7 +127,7 @@ void Renderer::draw()
     mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
     // Transition stock and draw image into transfer layouts
-    vkutil::transitionImage(cmd, *mDefaultImages[DefaultImage::Blue].image,
+    vkutil::transitionImage(cmd, *mResourceManager.mDefaultImages[DefaultImage::Blue].image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eNone,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -144,8 +141,8 @@ void Renderer::draw()
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     // Copy stock image as the initial colour for the draw image (the background)
-    vkutil::copyImage(cmd, *mDefaultImages[DefaultImage::Blue].image, *mRendererInfrastructure.mDrawImage.image,
-        vk::Extent2D{ mDefaultImages[DefaultImage::Blue].imageExtent.width, mDefaultImages[DefaultImage::Blue].imageExtent.height, },
+    vkutil::copyImage(cmd, *mResourceManager.mDefaultImages[DefaultImage::Blue].image, *mRendererInfrastructure.mDrawImage.image,
+        vk::Extent2D{ mResourceManager.mDefaultImages[DefaultImage::Blue].imageExtent.width, mResourceManager.mDefaultImages[DefaultImage::Blue].imageExtent.height, },
         vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height, });
 
     // Transition to color output for drawing geometry

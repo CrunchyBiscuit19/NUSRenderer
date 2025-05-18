@@ -259,11 +259,11 @@ void GLTFModel::loadMaterials()
         newMat->mPbrData.alphaMode = mat.alphaMode;
         newMat->mPbrData.doubleSided = mat.doubleSided;
 
-        newMat->mPbrData.resources.base = { &mRenderer->mDefaultImages[DefaultImage::White], *mRenderer->mDefaultSampler };
-        newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mDefaultImages[DefaultImage::White], *mRenderer->mDefaultSampler };
-        newMat->mPbrData.resources.normal = { &mRenderer->mDefaultImages[DefaultImage::White], *mRenderer->mDefaultSampler };
-        newMat->mPbrData.resources.occlusion = { &mRenderer->mDefaultImages[DefaultImage::White], * mRenderer->mDefaultSampler };
-        newMat->mPbrData.resources.emissive = { &mRenderer->mDefaultImages[DefaultImage::White], *mRenderer->mDefaultSampler };
+        newMat->mPbrData.resources.base = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
+        newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
+        newMat->mPbrData.resources.normal = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
+        newMat->mPbrData.resources.occlusion = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], * mRenderer->mResourceManager.mDefaultSampler };
+        newMat->mPbrData.resources.emissive = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
 
         if (mat.pbrData.baseColorTexture.has_value()) {
             size_t img = mAsset.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();

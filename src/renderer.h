@@ -13,8 +13,6 @@
 #include <imgui.h>
 #include <imfilebrowser.h>
 
-#include <map>
-
 constexpr unsigned int EXPECTED_FRAME_RATE = 60;
 
 constexpr unsigned int ONE_SECOND_IN_MS = 1000;
@@ -49,9 +47,6 @@ public:
     ImmSubmit mImmSubmit;
     GUI mGUI;
     Camera mCamera;
-
-    std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
-    vk::raii::Sampler mDefaultSampler;
 
     ImGui::FileBrowser mSelectModelFileDialog;
 

@@ -7,7 +7,8 @@
 #include <bit>
 
 ResourceManager::ResourceManager(Renderer* renderer):
-    mRenderer(renderer)
+    mRenderer(renderer),
+    mDefaultSampler(nullptr)
 {}   
 
 void ResourceManager::init()
@@ -22,13 +23,13 @@ void ResourceManager::initDefault()
 {
     // Colour data interpreted as little endian
     constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
-    mRenderer->mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
     constexpr uint32_t grey = std::byteswap(0xAAAAAAFF);
-    mRenderer->mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
     constexpr uint32_t black = std::byteswap(0x000000FF);
-    mRenderer->mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
     constexpr uint32_t blue = std::byteswap(0x769DDBFF);
-    mRenderer->mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
     std::array<uint32_t, 16 * 16> pixels;
     for (int x = 0; x < 16; x++) {
         for (int y = 0; y < 16; y++) {
@@ -36,12 +37,12 @@ void ResourceManager::initDefault()
             pixels[static_cast<std::array<uint32_t, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
         }
     }
-    mRenderer->mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 
     vk::SamplerCreateInfo sampl;
     sampl.magFilter = vk::Filter::eLinear;
     sampl.minFilter = vk::Filter::eLinear;
-    mRenderer->mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
+    mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
 }
 
 AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -181,14 +182,16 @@ void ResourceManager::cleanup()
     mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
     mMaterialConstantsStagingBuffer.cleanup();
-    mRenderer->mDefaultImages.clear();
-	mRenderer->mDefaultSampler.clear();
+    mDefaultImages.clear();
+	mDefaultSampler.clear();
 }
 
 ResourceManager::ResourceManager(ResourceManager&& other) noexcept : 
     mRenderer(std::exchange(other.mRenderer, nullptr)),
     mImageStagingBuffer(std::move(other.mImageStagingBuffer)),
-    mMeshStagingBuffer(std::move(other.mMeshStagingBuffer))
+    mMeshStagingBuffer(std::move(other.mMeshStagingBuffer)),
+    mDefaultImages(std::move(other.mDefaultImages)),
+    mDefaultSampler(std::move(other.mDefaultSampler))
 {}
 
 ResourceManager& ResourceManager::operator=(ResourceManager && other) noexcept {
@@ -196,6 +199,8 @@ ResourceManager& ResourceManager::operator=(ResourceManager && other) noexcept {
         mRenderer = std::exchange(other.mRenderer, nullptr);
         mImageStagingBuffer = std::move(other.mImageStagingBuffer);
         mMeshStagingBuffer = std::move(other.mMeshStagingBuffer);
+        mDefaultImages = std::move(other.mDefaultImages);
+        mDefaultSampler = std::move(other.mDefaultSampler);
     }
     return *this;
 }
