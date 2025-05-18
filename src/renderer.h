@@ -20,7 +20,7 @@
 
 #include <map>
 
-#ifdef RELDEB
+#ifdef RELEASE
 constexpr bool useValidationLayers = false;
 #else
 constexpr bool useValidationLayers = true;

@@ -24,10 +24,6 @@ file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/
 add_executable(NUSRenderer ${CPP_SOURCES} ${HEADER_SOURCES})
 set_property(TARGET NUSRenderer PROPERTY CXX_STANDARD 23)
 
-if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    add_compile_definitions(RELDEB)
-endif()
-
 # Get all GLSL shaders and build them
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 file(GLOB_RECURSE GLSL_SOURCE_FILES
@@ -110,6 +106,7 @@ target_precompile_headers(NUSRenderer PUBLIC <optional> <vector> <memory> <strin
 target_compile_definitions(NUSRenderer PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/") # This is useful to get an ASSETS_PATH in your IDE during development but you should comment this if you compile a release version and uncomment the next line
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SHADERS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/shaders/")
+target_compile_definitions(NUSRenderer PRIVATE $<$<CONFIG:Release>:RELEASE>)
 #target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/") # Uncomment this line to setup the ASSETS_PATH macro to the final assets directory when you share the project
 
 # After compilation, copy SDL DLL
