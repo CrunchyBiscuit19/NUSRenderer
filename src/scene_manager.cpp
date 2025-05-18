@@ -57,7 +57,8 @@ void SceneManager::updateScene()
 
 	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mRenderer->mSceneEncapsulation.mSceneData.view = mRenderer->mCamera.getViewMatrix();
-	mRenderer->mSceneEncapsulation.mSceneData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mWindowExtent.width) / static_cast<float>(mRenderer->mWindowExtent.height), 10000.f, 0.1f);
+	mRenderer->mSceneEncapsulation.mSceneData.proj = glm::perspective(glm::radians(70.f), 
+		static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
 	mRenderer->mSceneEncapsulation.mSceneData.proj[1][1] *= -1;
 
 	auto* sceneBufferPtr = static_cast<SceneData*>(mRenderer->mSceneEncapsulation.mSceneBuffer.info.pMappedData);
@@ -65,7 +66,7 @@ void SceneManager::updateScene()
 
 	DescriptorWriter writer;
 	writer.writeBuffer(0, *mRenderer->mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
-	writer.updateSet(mRenderer->mDevice, *mRenderer->mSceneEncapsulation.mSceneDescriptorSet);
+	writer.updateSet(mRenderer->mRendererCore.mDevice, *mRenderer->mSceneEncapsulation.mSceneDescriptorSet);
 }
 
 void SceneManager::cleanup()
@@ -88,7 +89,7 @@ void SceneEncapsulation::init()
 
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-	mSceneDescriptorSetLayout = builder.build(mRenderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+	mSceneDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 	mSceneDescriptorSet = mRenderer->mDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
 }
 

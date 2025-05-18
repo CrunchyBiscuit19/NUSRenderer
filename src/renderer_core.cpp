@@ -1,11 +1,11 @@
-#include <renderer.h>
 #include <renderer_core.h>
 #include <vk_initializers.h>
 
-#include <Vkbootstrap.h>
-#include <SDL.h>
-#include <SDL_vulkan.h>
 #include <fmt/core.h>
+#include <Vkbootstrap.h>
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
     VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
@@ -49,38 +49,46 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 }
 
 RendererCore::RendererCore(Renderer* renderer) :
-    mRenderer(renderer)
+    mRenderer(renderer),
+    mContext(),
+    mInstance(nullptr),
+    mDebugMessenger(nullptr),
+    mChosenGPU(nullptr),
+    mDevice(nullptr),
+    mSurface(nullptr),
+    mComputeQueue(nullptr),
+    mGraphicsQueue(nullptr)
 {}
 
 void RendererCore::init()
 {
     SDL_Init(SDL_INIT_VIDEO);
-    mRenderer->mWindow = SDL_CreateWindow(
-        "Renderer",
+    mWindow = SDL_CreateWindow(
+        "NUSRenderer",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        static_cast<int>(mRenderer->mWindowExtent.width),
-        static_cast<int>(mRenderer->mWindowExtent.height),
+        static_cast<int>(mWindowExtent.width),
+        static_cast<int>(mWindowExtent.height),
         SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
-    mRenderer->mContext = vk::raii::Context();
+    mContext = vk::raii::Context();
 
     vkb::InstanceBuilder builder;
     VkValidationFeatureEnableEXT validationFeaturesEnables[] = { static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf) };
     auto instResult = builder.set_app_name("Vulkan renderer")
-        .request_validation_layers(useValidationLayers)
+        .request_validation_layers(USE_VALIDATION_LAYERS)
         .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning))
         .set_debug_callback(debugMessageFunc)
         .require_api_version(1, 3, 0)
         .add_validation_feature_enable(validationFeaturesEnables[0])
         .build();
     const vkb::Instance vkbInst = instResult.value();
-    mRenderer->mInstance = vk::raii::Instance(mRenderer->mContext, vkbInst.instance);
-    vk::raii::DebugUtilsMessengerEXT debugMessenger(mRenderer->mInstance, vkbInst.debug_messenger);
-    mRenderer->mDebugMessenger = std::move(debugMessenger);
+    mInstance = vk::raii::Instance(mContext, vkbInst.instance);
+    vk::raii::DebugUtilsMessengerEXT debugMessenger(mInstance, vkbInst.debug_messenger);
+    mDebugMessenger = std::move(debugMessenger);
 
     VkSurfaceKHR tempSurface = nullptr;
-    SDL_Vulkan_CreateSurface(mRenderer->mWindow, *mRenderer->mInstance, &tempSurface);
+    SDL_Vulkan_CreateSurface(mWindow, *mInstance, &tempSurface);
 
     vk::PhysicalDeviceVulkan13Features features13{};
     features13.dynamicRendering = true;
@@ -110,37 +118,37 @@ void RendererCore::init()
         .value();
     vkb::DeviceBuilder deviceBuilder{ physicalDevice };
     vkb::Device vkbDevice = deviceBuilder.build().value();
-    vk::raii::PhysicalDevice chosenGPU(mRenderer->mInstance, vkbDevice.physical_device);
+    vk::raii::PhysicalDevice chosenGPU(mInstance, vkbDevice.physical_device);
     vk::raii::Device device(chosenGPU, vkbDevice.device);
-    mRenderer->mChosenGPU = std::move(chosenGPU);
-    mRenderer->mDevice = std::move(device);
+    mChosenGPU = std::move(chosenGPU);
+    mDevice = std::move(device);
 
-    mRenderer->mSurface = vk::raii::SurfaceKHR(mRenderer->mInstance, tempSurface);
+    mSurface = vk::raii::SurfaceKHR(mInstance, tempSurface);
 
-    vk::raii::Queue computeQueue(mRenderer->mDevice, vkbDevice.get_queue(vkb::QueueType::compute).value());
-    vk::raii::Queue graphicsQueue(mRenderer->mDevice, vkbDevice.get_queue(vkb::QueueType::graphics).value());
-    mRenderer->mComputeQueue = std::move(computeQueue);
-    mRenderer->mGraphicsQueue = std::move(graphicsQueue);
-    mRenderer->mComputeQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
-    mRenderer->mGraphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+    vk::raii::Queue computeQueue(mDevice, vkbDevice.get_queue(vkb::QueueType::compute).value());
+    vk::raii::Queue graphicsQueue(mDevice, vkbDevice.get_queue(vkb::QueueType::graphics).value());
+    mComputeQueue = std::move(computeQueue);
+    mGraphicsQueue = std::move(graphicsQueue);
+    mComputeQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
+    mGraphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
     VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = *mRenderer->mChosenGPU;
-    allocatorInfo.device = *mRenderer->mDevice;
-    allocatorInfo.instance = *mRenderer->mInstance;
+    allocatorInfo.physicalDevice = *mChosenGPU;
+    allocatorInfo.device = *mDevice;
+    allocatorInfo.instance = *mInstance;
     allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-    vmaCreateAllocator(&allocatorInfo, &mRenderer->mAllocator);
+    vmaCreateAllocator(&allocatorInfo, &mVmaAllocator);
 }
 
 void RendererCore::cleanup()
 {
-    mRenderer->mGraphicsQueue.clear();
-    mRenderer->mComputeQueue.clear();
-    mRenderer->mSurface.clear();
-    mRenderer->mDebugMessenger.clear();
-    vmaDestroyAllocator(mRenderer->mAllocator);
-    mRenderer->mDevice.clear();
-    mRenderer->mChosenGPU.clear();
-    mRenderer->mInstance.clear();
-    SDL_DestroyWindow(mRenderer->mWindow);
+    mGraphicsQueue.clear();
+    mComputeQueue.clear();
+    mSurface.clear();
+    mDebugMessenger.clear();
+    vmaDestroyAllocator(mVmaAllocator);
+    mDevice.clear();
+    mChosenGPU.clear();
+    mInstance.clear();
+    SDL_DestroyWindow(mWindow);
 }

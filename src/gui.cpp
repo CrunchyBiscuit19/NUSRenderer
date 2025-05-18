@@ -18,7 +18,7 @@ GUI::GUI(Renderer* renderer) :
 
 void GUI::init() {
     ImGui::CreateContext();
-    ImGui_ImplSDL2_InitForVulkan(mRenderer->mWindow);
+    ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
 
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
     pipelineRenderingCreateInfo.colorAttachmentCount = 1;
@@ -26,10 +26,10 @@ void GUI::init() {
     pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mDepthImage.imageFormat;
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
-    initInfo.Instance = *mRenderer->mInstance;
-    initInfo.PhysicalDevice = *mRenderer->mChosenGPU;
-    initInfo.Device = *mRenderer->mDevice;
-    initInfo.Queue = *mRenderer->mGraphicsQueue;
+    initInfo.Instance = *mRenderer->mRendererCore.mInstance;
+    initInfo.PhysicalDevice = *mRenderer->mRendererCore.mChosenGPU;
+    initInfo.Device = *mRenderer->mRendererCore.mDevice;
+    initInfo.Queue = *mRenderer->mRendererCore.mGraphicsQueue;
     initInfo.DescriptorPool = *mRenderer->mImmSubmit.mDescriptorPool;
     initInfo.MinImageCount = 3;
     initInfo.ImageCount = 3;
@@ -71,7 +71,7 @@ void GUI::imguiFrame() {
         ImGui::End();
     }
     if (ImGui::Begin("Stats")) {
-        ImGui::Text("Compile Mode: %s", (useValidationLayers ? "DEBUG" : "RELEASE"));
+        ImGui::Text("Compile Mode: %s", (USE_VALIDATION_LAYERS ? "DEBUG" : "RELEASE"));
         ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrametime);
         ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);

@@ -7,8 +7,6 @@
 #include <imgui_impl_vulkan.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
 
 #include <ranges>
 
@@ -19,14 +17,6 @@ Renderer::Renderer():
     mSceneManager(SceneManager(this)),
     mImmSubmit(ImmSubmit(this)),
     mGUI(GUI(this)),
-    mContext(),
-    mInstance(nullptr),
-    mDebugMessenger(nullptr),
-    mChosenGPU(nullptr),
-    mDevice(nullptr),
-    mSurface(nullptr),
-    mComputeQueue(nullptr),
-    mGraphicsQueue(nullptr),
     mSwapchain(nullptr),
     mDescriptorAllocator(DescriptorAllocatorGrowable(this)),
     mSceneEncapsulation(SceneEncapsulation(this)),
@@ -118,8 +108,8 @@ void Renderer::draw()
 {
     auto start = std::chrono::system_clock::now();
 
-    mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
-    mDevice.resetFences(*getCurrentFrame().mRenderFence); // Flip to unsignalled
+    mRendererCore.mDevice.waitForFences(*getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
+    mRendererCore.mDevice.resetFences(*getCurrentFrame().mRenderFence); // Flip to unsignalled
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     uint32_t swapchainImageIndex = 0;
@@ -226,7 +216,7 @@ void Renderer::draw()
     // _renderFence will block CPU from going to next frame, stays unsignalled until this is done.
     // _swapchainSemaphore gets waited on until it is signalled when the next image is acquired.
     // _renderSemaphore will be signalled by this function when this queue's commands are executed.
-    mGraphicsQueue.submit2(submit, *getCurrentFrame().mRenderFence);
+    mRendererCore.mGraphicsQueue.submit2(submit, *getCurrentFrame().mRenderFence);
 
     // Prepare present.
     // Wait on the _renderSemaphore for queue commands to finish before image is presented.
@@ -239,7 +229,7 @@ void Renderer::draw()
     presentInfo.pImageIndices = &swapchainImageIndex;
 
     try {
-        mGraphicsQueue.presentKHR(presentInfo);
+        mRendererCore.mGraphicsQueue.presentKHR(presentInfo);
     }
     catch (vk::OutOfDateKHRError e) {
         mResizeRequested = true;

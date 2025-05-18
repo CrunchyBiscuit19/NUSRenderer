@@ -20,11 +20,11 @@ void RendererInfrastructure::init() {
 
 void RendererInfrastructure::initCommands() 
 {
-    const vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    const vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
     for (FrameResources& frame : mRenderer->mFrames) {
-		frame.mCommandPool = mRenderer->mDevice.createCommandPool(commandPoolInfo);
+		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
         vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
-        frame.mCommandBuffer = std::move(mRenderer->mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
+        frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
     }
 }
 
@@ -44,35 +44,35 @@ void RendererInfrastructure::initSyncStructures()
     vk::FenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
     for (FrameResources& frame : mRenderer->mFrames) {
-		frame.mRenderFence = mRenderer->mDevice.createFence(fenceCreateInfo);
-		frame.mSwapchainSemaphore = mRenderer->mDevice.createSemaphore(semaphoreCreateInfo);
-		frame.mRenderSemaphore = mRenderer->mDevice.createSemaphore(semaphoreCreateInfo);
+		frame.mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
+		frame.mSwapchainSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
+		frame.mRenderSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
     }
 }
 
 void RendererInfrastructure::createSwapchain()
 {
-    vkb::SwapchainBuilder swapchainBuilder{ *mRenderer->mChosenGPU, *mRenderer->mDevice, *mRenderer->mSurface };
+    vkb::SwapchainBuilder swapchainBuilder{ *mRenderer->mRendererCore.mChosenGPU, *mRenderer->mRendererCore.mDevice, *mRenderer->mRendererCore.mSurface };
 
     mRenderer->mSwapchainImageFormat = vk::Format::eB8G8R8A8Unorm;
     vkb::Swapchain vkbSwapchain = swapchainBuilder
         .set_desired_format(VkSurfaceFormatKHR{ .format = static_cast<VkFormat>(mRenderer->mSwapchainImageFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear) })
         .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
-        .set_desired_extent(mRenderer->mWindowExtent.width, mRenderer->mWindowExtent.height)
+        .set_desired_extent(mRenderer->mRendererCore.mWindowExtent.width, mRenderer->mRendererCore.mWindowExtent.height)
         .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
         .build()
         .value();
 
     mRenderer->mSwapchainExtent = vkbSwapchain.extent;
-    vk::raii::SwapchainKHR swapchain(mRenderer->mDevice, vkbSwapchain.swapchain);
+    vk::raii::SwapchainKHR swapchain(mRenderer->mRendererCore.mDevice, vkbSwapchain.swapchain);
     mRenderer->mSwapchain = std::move(swapchain);
     for (auto& imageView : vkbSwapchain.get_image_views().value())
-        mRenderer->mSwapchainImageViews.emplace_back(vk::raii::ImageView(mRenderer->mDevice, imageView));
+        mRenderer->mSwapchainImageViews.emplace_back(vk::raii::ImageView(mRenderer->mRendererCore.mDevice, imageView));
 
     mRenderer->mDrawImage.imageFormat = vk::Format::eR16G16B16A16Sfloat;
     mRenderer->mDrawImage.imageExtent = vk::Extent3D{
-        mRenderer->mWindowExtent.width,
-        mRenderer->mWindowExtent.height,
+        mRenderer->mRendererCore.mWindowExtent.width,
+        mRenderer->mRendererCore.mWindowExtent.height,
         1 };
     vk::ImageUsageFlags drawImageUsages{};
     drawImageUsages |= vk::ImageUsageFlagBits::eTransferSrc;
@@ -87,12 +87,12 @@ void RendererInfrastructure::createSwapchain()
     imageAllocateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     VkImage swapchainDrawImage;
-    vmaCreateImage(mRenderer->mAllocator, &drawImageCreateInfo1, &imageAllocateInfo, &swapchainDrawImage, &mRenderer->mDrawImage.allocation, nullptr);
-    mRenderer->mDrawImage.image = vk::raii::Image(mRenderer->mDevice, swapchainDrawImage);
-	mRenderer->mDrawImage.allocator = &mRenderer->mAllocator;
+    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &drawImageCreateInfo1, &imageAllocateInfo, &swapchainDrawImage, &mRenderer->mDrawImage.allocation, nullptr);
+    mRenderer->mDrawImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, swapchainDrawImage);
+	mRenderer->mDrawImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
 
     vk::ImageViewCreateInfo drawImageViewCreateInfo = vkinit::imageViewCreateInfo(mRenderer->mDrawImage.imageFormat, *mRenderer->mDrawImage.image, vk::ImageAspectFlagBits::eColor);
-    mRenderer->mDrawImage.imageView = mRenderer->mDevice.createImageView(drawImageViewCreateInfo);
+    mRenderer->mDrawImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(drawImageViewCreateInfo);
 
     mRenderer->mDepthImage.imageFormat = vk::Format::eD32Sfloat;
     mRenderer->mDepthImage.imageExtent = mRenderer->mDrawImage.imageExtent;
@@ -101,12 +101,12 @@ void RendererInfrastructure::createSwapchain()
     VkImageCreateInfo depthImageCreateInfo1 = static_cast<VkImageCreateInfo>(depthImageCreateInfo);
 
     VkImage swapchainDepthImage;
-    vmaCreateImage(mRenderer->mAllocator, &depthImageCreateInfo1, &imageAllocateInfo, &swapchainDepthImage, &mRenderer->mDepthImage.allocation, nullptr);
-    mRenderer->mDepthImage.image = vk::raii::Image(mRenderer->mDevice, swapchainDepthImage);
-    mRenderer->mDepthImage.allocator = &mRenderer->mAllocator;
+    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &depthImageCreateInfo1, &imageAllocateInfo, &swapchainDepthImage, &mRenderer->mDepthImage.allocation, nullptr);
+    mRenderer->mDepthImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, swapchainDepthImage);
+    mRenderer->mDepthImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
 
     vk::ImageViewCreateInfo depthImageViewCreateInfo = vkinit::imageViewCreateInfo(mRenderer->mDepthImage.imageFormat, *mRenderer->mDepthImage.image, vk::ImageAspectFlagBits::eDepth);
-    mRenderer->mDepthImage.imageView = mRenderer->mDevice.createImageView(depthImageViewCreateInfo);
+    mRenderer->mDepthImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(depthImageViewCreateInfo);
 }
 
 void RendererInfrastructure::destroySwapchain()
@@ -120,14 +120,14 @@ void RendererInfrastructure::destroySwapchain()
 
 void RendererInfrastructure::resizeSwapchain()
 {
-    mRenderer->mDevice.waitIdle();
+    mRenderer->mRendererCore.mDevice.waitIdle();
 
     destroySwapchain();
 
     int w, h;
-    SDL_GetWindowSize(mRenderer->mWindow, &w, &h);
-    mRenderer->mWindowExtent.width = w;
-    mRenderer->mWindowExtent.height = h;
+    SDL_GetWindowSize(mRenderer->mRendererCore.mWindow, &w, &h);
+    mRenderer->mRendererCore.mWindowExtent.width = w;
+    mRenderer->mRendererCore.mWindowExtent.height = h;
 
     createSwapchain();
 
@@ -145,8 +145,8 @@ PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipe
 
 void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOptions)
 {
-    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(shaderDir / "mesh.frag.spv", mRenderer->mDevice); // TODO Custom paths
-    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(shaderDir / "mesh.vert.spv", mRenderer->mDevice);
+    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(shaderDir / "mesh.frag.spv", mRenderer->mRendererCore.mDevice); // TODO Custom paths
+    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(shaderDir / "mesh.vert.spv", mRenderer->mRendererCore.mDevice);
 
     vk::PushConstantRange pushConstantRange{};
     pushConstantRange.offset = 0;
@@ -160,7 +160,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-    vk::raii::PipelineLayout pipelineLayout = mRenderer->mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
+    vk::raii::PipelineLayout pipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
 
     vk::CullModeFlags cullMode;
     (pipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
@@ -184,7 +184,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
     PipelineBundle materialPipeline = PipelineBundle {
-        std::move(pipelineBuilder.buildPipeline(mRenderer->mDevice)),
+        std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
         std::move(pipelineLayout) 
     }; 
     mRenderer->mMaterialPipelines.emplace(pipelineOptions, std::move(materialPipeline));
@@ -192,20 +192,20 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 
 void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptions)
 {
-    vk::raii::ShaderModule computeShaderModule = vkutil::loadShaderModule("Placeholder path", mRenderer->mDevice);
+    vk::raii::ShaderModule computeShaderModule = vkutil::loadShaderModule("Placeholder path", mRenderer->mRendererCore.mDevice);
 
     vk::PipelineLayoutCreateInfo computeLayoutInfo{};
     computeLayoutInfo.setLayoutCount = 0;
     computeLayoutInfo.pSetLayouts = nullptr;
 
-    vk::raii::PipelineLayout computePipelineLayout = mRenderer->mDevice.createPipelineLayout(computeLayoutInfo);
+    vk::raii::PipelineLayout computePipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(computeLayoutInfo);
 
     ComputePipelineBuilder computePipelineBuilder;
     computePipelineBuilder.setShader(*computeShaderModule);
     computePipelineBuilder.mPipelineLayout = *computePipelineLayout;
 
     PipelineBundle computePipeline = PipelineBundle{
-        std::move(computePipelineBuilder.buildPipeline(mRenderer->mDevice)),
+        std::move(computePipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
         std::move(computePipelineLayout) 
     }; 
     mRenderer->mComputePipelines.emplace(pipelineOptions, std::move(computePipeline));

@@ -30,8 +30,8 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
             mMesh.get(),
             model,
             nodeMatrix,
-            renderer->mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
-            renderer->mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo)
+            renderer->mRendererCore.mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
+            renderer->mRendererCore.mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo)
         );
     }
 

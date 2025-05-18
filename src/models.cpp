@@ -220,7 +220,7 @@ void GLTFModel::loadSamplers()
         sampl.magFilter = extractFilter(sampler.magFilter.value_or(fastgltf::Filter::Nearest));
         sampl.minFilter = extractFilter(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
         sampl.mipmapMode = extractMipmapMode(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
-        mSamplers.emplace_back(mRenderer->mDevice.createSampler(sampl));
+        mSamplers.emplace_back(mRenderer->mRendererCore.mDevice.createSampler(sampl));
     }
 }
 
@@ -460,7 +460,7 @@ void GLTFModel::createInstanceDescriptorSetLayout(Renderer* renderer)
 {
     DescriptorLayoutBuilder builder;
     builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-    mInstancesDescriptorSetLayout = builder.build(renderer->mDevice, vk::ShaderStageFlagBits::eVertex);
+    mInstancesDescriptorSetLayout = builder.build(renderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex);
 }
 
 void GLTFModel::createInstance()
@@ -488,7 +488,7 @@ void GLTFModel::updateInstances()
 
     DescriptorWriter writer;
     writer.writeBuffer(0, *mInstancesBuffer.buffer, instanceDataVector.size() * sizeof(InstanceData), 0, vk::DescriptorType::eUniformBuffer);
-    writer.updateSet(mRenderer->mDevice, *mInstancesDescriptorSet);
+    writer.updateSet(mRenderer->mRendererCore.mDevice, *mInstancesDescriptorSet);
 }
 
 void GLTFModel::markDelete()

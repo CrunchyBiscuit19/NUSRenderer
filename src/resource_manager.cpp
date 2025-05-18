@@ -41,7 +41,7 @@ void ResourceManager::initDefault()
     vk::SamplerCreateInfo sampl;
     sampl.magFilter = vk::Filter::eLinear;
     sampl.minFilter = vk::Filter::eLinear;
-    mRenderer->mDefaultSampler = mRenderer->mDevice.createSampler(sampl);
+    mRenderer->mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
 }
 
 AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -58,9 +58,9 @@ AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageF
 
     AllocatedBuffer newBuffer;
     VkBuffer tempBuffer;
-    vmaCreateBuffer(mRenderer->mAllocator, &bufferInfo1, &vmaAllocInfo, &tempBuffer, &newBuffer.allocation, &newBuffer.info);
-    newBuffer.buffer = vk::raii::Buffer(mRenderer->mDevice, tempBuffer);
-	newBuffer.allocator = &mRenderer->mAllocator;
+    vmaCreateBuffer(mRenderer->mRendererCore.mVmaAllocator, &bufferInfo1, &vmaAllocInfo, &tempBuffer, &newBuffer.allocation, &newBuffer.info);
+    newBuffer.buffer = vk::raii::Buffer(mRenderer->mRendererCore.mDevice, tempBuffer);
+	newBuffer.allocator = &mRenderer->mRendererCore.mVmaAllocator;
 
     return newBuffer;
 }
@@ -79,9 +79,9 @@ AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format form
 	newImage.imageFormat = format;
     newImage.imageExtent = extent;
     VkImage tempImage;
-    vmaCreateImage(mRenderer->mAllocator, &newImageCreateInfo1, &vmaAllocInfo, &tempImage, &newImage.allocation, nullptr);
-    newImage.image = vk::raii::Image(mRenderer->mDevice, tempImage);
-	newImage.allocator = &mRenderer->mAllocator;
+    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &newImageCreateInfo1, &vmaAllocInfo, &tempImage, &newImage.allocation, nullptr);
+    newImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, tempImage);
+	newImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
 
     vk::ImageAspectFlagBits aspectFlag = vk::ImageAspectFlagBits::eColor;
     if (format == vk::Format::eD32Sfloat)
@@ -89,7 +89,7 @@ AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format form
     vk::ImageViewCreateInfo newImageViewCreateInfo = vkinit::imageViewCreateInfo(format, *newImage.image, aspectFlag);
     newImageViewCreateInfo.subresourceRange.levelCount = newImageCreateInfo.mipLevels;
 
-    newImage.imageView = mRenderer->mDevice.createImageView(newImageViewCreateInfo);
+    newImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(newImageViewCreateInfo);
 
     return newImage;
 }

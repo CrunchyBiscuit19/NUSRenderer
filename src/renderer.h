@@ -15,16 +15,7 @@
 #include <imgui.h>
 #include <imfilebrowser.h>
 
-#define SDL_MAIN_HANDLED
-#include <SDL.h>
-
 #include <map>
-
-#ifdef RELEASE
-constexpr bool useValidationLayers = false;
-#else
-constexpr bool useValidationLayers = true;
-#endif
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int EXPECTED_FRAME_RATE = 60;
@@ -77,23 +68,6 @@ public:
     std::vector<FrameResources> mFrames;
     const FrameResources& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
     const FrameResources& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
-
-    vk::raii::Context mContext;
-    vk::raii::Instance mInstance;
-    vk::raii::DebugUtilsMessengerEXT mDebugMessenger;
-
-    vk::raii::PhysicalDevice mChosenGPU;
-    vk::raii::Device mDevice;
-    vk::raii::SurfaceKHR mSurface;
-    SDL_Window* mWindow{ nullptr };
-    vk::Extent2D mWindowExtent{ 1700, 900 };
-
-    vk::raii::Queue mComputeQueue;
-    uint32_t mComputeQueueFamily;
-    vk::raii::Queue mGraphicsQueue;
-    uint32_t mGraphicsQueueFamily;
-
-    VmaAllocator mAllocator;
 
     bool mResizeRequested;
     vk::raii::SwapchainKHR mSwapchain;

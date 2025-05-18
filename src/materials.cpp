@@ -21,7 +21,7 @@ void PbrMaterial::createResourcesDescriptorSetLayout(Renderer* renderer)
     builder.addBinding(2, vk::DescriptorType::eCombinedImageSampler);
     builder.addBinding(3, vk::DescriptorType::eCombinedImageSampler);
     builder.addBinding(4, vk::DescriptorType::eCombinedImageSampler);
-    mResourcesDescriptorSetLayout = builder.build(renderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    mResourcesDescriptorSetLayout = builder.build(renderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 }
 
 void PbrMaterial::getMaterialPipeline()
@@ -41,6 +41,6 @@ void PbrMaterial::writeMaterialResources()
     writer.writeImage(2, *mPbrData.resources.normal.image->imageView, mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
     writer.writeImage(3, *mPbrData.resources.occlusion.image->imageView, mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
     writer.writeImage(4, *mPbrData.resources.emissive.image->imageView, mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.updateSet(mRenderer->mDevice, *mResourcesDescriptorSet);
+    writer.updateSet(mRenderer->mRendererCore.mDevice, *mResourcesDescriptorSet);
 }
  
