@@ -28,6 +28,7 @@ Renderer::Renderer():
     mComputeQueue(nullptr),
     mGraphicsQueue(nullptr),
     mSwapchain(nullptr),
+    mDescriptorAllocator(DescriptorAllocatorGrowable(this)),
     mSceneEncapsulation(SceneEncapsulation(this)),
     mDefaultSampler(nullptr)
 {

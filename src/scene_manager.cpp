@@ -89,7 +89,7 @@ void SceneEncapsulation::init()
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
 	mSceneDescriptorSetLayout = builder.build(mRenderer->mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-	mSceneDescriptorSet = mRenderer->mDescriptorAllocator.allocate(mRenderer->mDevice, *mSceneDescriptorSetLayout);
+	mSceneDescriptorSet = mRenderer->mDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
 }
 
 void SceneEncapsulation::cleanup()

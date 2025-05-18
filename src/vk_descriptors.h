@@ -1,48 +1,11 @@
 #pragma once
 
+#include <renderer.h>
+
 #include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
 #include <span>
-
-struct DescriptorBundle {
-    vk::raii::DescriptorSet set;
-    vk::raii::DescriptorSetLayout layout;
-
-    DescriptorBundle() :
-        set(nullptr),
-        layout(nullptr)
-    {
-    };
-
-    DescriptorBundle(vk::raii::DescriptorSet set, vk::raii::DescriptorSetLayout layout) :
-        set(std::move(set)),
-        layout(std::move(layout))
-    {
-    }
-
-    DescriptorBundle(DescriptorBundle&& other) noexcept :
-        set(std::move(other.set)),
-        layout(std::move(other.layout))
-    {
-    }
-
-    DescriptorBundle& operator=(DescriptorBundle&& other) noexcept {
-        if (this != &other) {
-            set = std::move(other.set);
-            layout = std::move(other.layout);
-        }
-        return *this;
-    }
-
-    void cleanup() {
-        set.clear();
-        layout.clear();
-    }
-
-    DescriptorBundle(const DescriptorBundle&) = delete;
-    DescriptorBundle& operator=(const DescriptorBundle&) = delete;
-};
 
 struct DescriptorLayoutBuilder {
     std::vector<vk::DescriptorSetLayoutBinding> mBindings;
@@ -53,24 +16,30 @@ struct DescriptorLayoutBuilder {
 };
 
 struct DescriptorAllocatorGrowable {
+private:
+    Renderer* mRenderer;
+
 public:
-    struct PoolSizeRatio {
+    struct DescriptorTypeRatio {
         vk::DescriptorType type;
-        float ratio;
+        int amountPerSet;
     };
 
-    void init(const vk::raii::Device& device, uint32_t initialSets, std::span<PoolSizeRatio> poolRatios);
-    void cleanup();
+    DescriptorAllocatorGrowable(Renderer* renderer);
+
+    void init(uint32_t initialSets, std::vector<DescriptorTypeRatio>& poolRatios);
 
     void clearPools();
     void destroyPools();
-    vk::raii::DescriptorSet allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout);
+    vk::raii::DescriptorSet allocate(const vk::DescriptorSetLayout layout);
+    
+    void cleanup();
 
 private:
-    vk::raii::DescriptorPool getPool(const vk::raii::Device& device);
-    static vk::raii::DescriptorPool createPool(const vk::raii::Device& device, uint32_t setCount, std::span<PoolSizeRatio> poolRatios);
+    vk::raii::DescriptorPool getPool();
+    vk::raii::DescriptorPool createPool(uint32_t setCount, std::vector<DescriptorTypeRatio>& poolRatios);
 
-    std::vector<PoolSizeRatio> mRatios;
+    std::vector<DescriptorTypeRatio> mRatios;
     std::vector<vk::raii::DescriptorPool> mFullPools;
     std::vector<vk::raii::DescriptorPool> mReadyPools;
     uint32_t mSetsPerPool = 0;

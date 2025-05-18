@@ -185,13 +185,13 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 
 void GLTFModel::initDescriptors()
 {
-    std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes = { 
+    std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = { 
         { vk::DescriptorType::eUniformBuffer, 1 },
         { vk::DescriptorType::eCombinedImageSampler, 5 },
     };
-    mDescriptorAllocator.init(mRenderer->mDevice, mAsset.materials.size(), sizes);
+    mDescriptorAllocator.init(mAsset.materials.size(), sizes);
 
-    mInstancesDescriptorSet = mRenderer->mDescriptorAllocator.allocate(mRenderer->mDevice, *mInstancesDescriptorSetLayout);
+    mInstancesDescriptorSet = mRenderer->mDescriptorAllocator.allocate(*mInstancesDescriptorSetLayout);
 }
 
 void GLTFModel::initBuffers()

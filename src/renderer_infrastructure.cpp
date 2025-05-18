@@ -30,10 +30,10 @@ void RendererInfrastructure::initCommands()
 
 void RendererInfrastructure::initDescriptors()
 {
-    std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes = {
+    std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
         { vk::DescriptorType::eUniformBuffer, 1 },
     };
-    mRenderer->mDescriptorAllocator.init(mRenderer->mDevice, FRAME_OVERLAP + 1, sizes);
+    mRenderer->mDescriptorAllocator.init(FRAME_OVERLAP + 1, sizes);
 }
 
 void RendererInfrastructure::initSyncStructures()

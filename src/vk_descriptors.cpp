@@ -29,16 +29,18 @@ vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& d
     return device.createDescriptorSetLayout(info, nullptr);
 }
 
-void DescriptorAllocatorGrowable::init(const vk::raii::Device& device, uint32_t maxSets, std::span<PoolSizeRatio> poolRatios)
-{
-    mRatios.clear();
-    for (auto r : poolRatios)
-        mRatios.push_back(r);
+DescriptorAllocatorGrowable::DescriptorAllocatorGrowable(Renderer* renderer):
+    mRenderer(renderer)
+{}
 
-    vk::raii::DescriptorPool newPool = createPool(device, maxSets, poolRatios);
+void DescriptorAllocatorGrowable::init(uint32_t maxSets, std::vector<DescriptorTypeRatio>& poolRatios)
+{
+    mRatios = poolRatios;
+
+    vk::raii::DescriptorPool newPool = createPool(maxSets, poolRatios);
     mReadyPools.emplace_back(std::move(newPool));
 
-    mSetsPerPool *= 1.5; // Grow it next allocation
+    mSetsPerPool *= 1.5;
 }
 
 void DescriptorAllocatorGrowable::clearPools()
@@ -60,9 +62,9 @@ void DescriptorAllocatorGrowable::destroyPools()
     mFullPools.clear();
 }
 
-vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::Device& device, const vk::DescriptorSetLayout layout)
+vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::DescriptorSetLayout layout)
 {
-    vk::raii::DescriptorPool poolToUse = getPool(device);
+    vk::raii::DescriptorPool poolToUse = getPool();
 
     vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.pNext = nullptr;
@@ -72,20 +74,20 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::raii::De
 
     std::vector<vk::raii::DescriptorSet> ds;
     try {
-        ds = device.allocateDescriptorSets(allocInfo);
+        ds = mRenderer->mDevice.allocateDescriptorSets(allocInfo);
         mReadyPools.emplace_back(std::move(poolToUse));
     }
     catch (vk::SystemError e) {
         mFullPools.emplace_back(std::move(poolToUse));
-        vk::raii::DescriptorPool poolToUse1 = getPool(device);
+        vk::raii::DescriptorPool poolToUse1 = getPool();
         allocInfo.descriptorPool = *poolToUse1;
-        ds = device.allocateDescriptorSets(allocInfo);
+        ds = mRenderer->mDevice.allocateDescriptorSets(allocInfo);
         mReadyPools.emplace_back(std::move(poolToUse1));
     }
     return std::move(ds[0]);
 }
 
-vk::raii::DescriptorPool DescriptorAllocatorGrowable::getPool(const vk::raii::Device& device)
+vk::raii::DescriptorPool DescriptorAllocatorGrowable::getPool()
 {
     // Check if available pools to use, else create new pool
     if (!mReadyPools.empty()) {
@@ -94,7 +96,7 @@ vk::raii::DescriptorPool DescriptorAllocatorGrowable::getPool(const vk::raii::De
         return newPool;
     }
     else {
-        vk::raii::DescriptorPool newPool = createPool(device, mSetsPerPool, mRatios);
+        vk::raii::DescriptorPool newPool = createPool(mSetsPerPool, mRatios);
         mSetsPerPool *= 1.5;
         if (mSetsPerPool > 4092) 
             mSetsPerPool = 4092;
@@ -102,17 +104,17 @@ vk::raii::DescriptorPool DescriptorAllocatorGrowable::getPool(const vk::raii::De
     }
 }
 
-vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(const vk::raii::Device& device, uint32_t setCount, std::span<PoolSizeRatio> poolRatios)
+vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(uint32_t setCount, std::vector<DescriptorTypeRatio>& poolRatios)
 {
     std::vector<vk::DescriptorPoolSize> poolSizes;
-    for (const PoolSizeRatio ratio : poolRatios)
-        poolSizes.push_back(vk::DescriptorPoolSize(ratio.type, static_cast<uint32_t>(ratio.ratio * setCount)));
+    for (const DescriptorTypeRatio ratio : poolRatios)
+        poolSizes.push_back(vk::DescriptorPoolSize(ratio.type, static_cast<uint32_t>(ratio.amountPerSet * setCount)));
     vk::DescriptorPoolCreateInfo pool_info = {};
     pool_info.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
     pool_info.maxSets = setCount;
     pool_info.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     pool_info.pPoolSizes = poolSizes.data();
-    return device.createDescriptorPool(pool_info, nullptr);
+    return mRenderer->mDevice.createDescriptorPool(pool_info, nullptr);
 }
 
 void DescriptorAllocatorGrowable::cleanup() 
