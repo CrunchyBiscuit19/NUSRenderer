@@ -15,13 +15,6 @@ layout (set = 1, binding = 2) uniform sampler2D normalTex;
 layout (set = 1, binding = 3) uniform sampler2D occlusiveTex;
 layout (set = 1, binding = 4) uniform sampler2D emissiveTex;
 
-struct InstanceData {
-	mat4 transformMatrix;
-};
-layout (set = 2, binding = 0) uniform InstanceBuffer {   
-	InstanceData instances[500];
-} instanceBuffer;
-
 // SSBO addresses and buffer definitions
 struct Vertex {
 	vec3 position;
@@ -33,7 +26,12 @@ struct Vertex {
 layout (buffer_reference, std430) readonly buffer VertexBuffer { 
 	Vertex vertices[];
 };
-
+struct InstanceData {
+	mat4 transformMatrix;
+};
+layout (buffer_reference, std430) readonly buffer InstanceBuffer {   
+	InstanceData instances[];
+} instanceBuffer;
 struct MaterialConstant {
     vec4 baseFactor;
     vec4 emissiveFactor;
@@ -46,7 +44,8 @@ layout (buffer_reference, std430) readonly buffer MaterialConstantBuffer {
 layout( push_constant ) uniform PushConstants
 {
 	VertexBuffer vertexBuffer;
+	InstanceBuffer instancesBuffer;
 	MaterialConstantBuffer materialConstantsBuffer;
+	int materialIndex;
 	mat4 worldMatrix;
-    int materialIndex;
 } pushConstants;

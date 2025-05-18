@@ -2,6 +2,7 @@
 
 #include <meshes.h>
 #include <scene_manager.h>
+#include <instances.h>
 #include <vk_descriptors.h>
 
 #include <fastgltf/glm_element_traits.hpp>
@@ -13,26 +14,6 @@
 #include <unordered_map>
 
 class Renderer;
-
-struct TransformData {
-    glm::vec3 translation;
-    glm::vec3 rotation;
-    glm::f32 scale;
-};
-
-struct InstanceData {
-    glm::mat4 transformMatrix;
-};
-
-class GLTFInstance {
-public:
-    GLTFModel* mModel;
-    int mId;
-    bool mDeleteSignal;
-    TransformData mTransformComponents;
-
-    GLTFInstance(GLTFModel* model);
-};
 
 class GLTFModel {
 private:

@@ -13,10 +13,16 @@ ResourceManager::ResourceManager(Renderer* renderer):
 
 void ResourceManager::init()
 {
-    mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
-	mMeshStagingBuffer = std::move(createStagingBuffer(static_cast<size_t>(DEFAULT_VERTEX_BUFFER_SIZE) + DEFAULT_INDEX_BUFFER_SIZE));
-    mMaterialConstantsStagingBuffer = std::move(createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants)));
+    initStaging();
     initDefault();
+}
+
+void ResourceManager::initStaging()
+{
+    mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
+    mMeshStagingBuffer = std::move(createStagingBuffer(DEFAULT_VERTEX_BUFFER_SIZE + DEFAULT_INDEX_BUFFER_SIZE));
+    mMaterialConstantsStagingBuffer = std::move(createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants)));
+    mInstancesStagingBuffer = std::move(createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData)));
 }
 
 void ResourceManager::initDefault()
@@ -137,17 +143,31 @@ AllocatedBuffer ResourceManager::createStagingBuffer(size_t allocSize)
     return createBuffer(allocSize,  vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
-void ResourceManager::loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstants)
+void ResourceManager::loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstantsVector)
 {
-    std::memcpy(static_cast<char*>(mMaterialConstantsStagingBuffer.info.pMappedData), materialConstants.data(), materialConstants.size() * sizeof(MaterialConstants));
+    std::memcpy(static_cast<char*>(mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
 
     vk::BufferCopy materialConstantsCopy {};
     materialConstantsCopy.dstOffset = 0;
     materialConstantsCopy.srcOffset = 0;
-    materialConstantsCopy.size = materialConstants.size() * sizeof(MaterialConstants);
+    materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
         cmd.copyBuffer(*mMaterialConstantsStagingBuffer.buffer, *model->mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+    });
+}
+
+void ResourceManager::loadInstancesBuffer(GLTFModel* model, std::vector<InstanceData>& instanceDataVector)
+{
+    std::memcpy(static_cast<char*>(mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
+
+    vk::BufferCopy instancesCopy{};
+    instancesCopy.dstOffset = 0;
+    instancesCopy.srcOffset = 0;
+    instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
+
+    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        cmd.copyBuffer(*mInstancesStagingBuffer.buffer, *model->mInstancesBuffer.buffer, instancesCopy);
     });
 }
 

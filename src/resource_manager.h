@@ -1,6 +1,7 @@
 #pragma once
 
 #include <materials.h>
+#include <instances.h>
 
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
@@ -164,6 +165,7 @@ private:
     AllocatedBuffer mImageStagingBuffer;
     AllocatedBuffer mMeshStagingBuffer;
     AllocatedBuffer mMaterialConstantsStagingBuffer;
+    AllocatedBuffer mInstancesStagingBuffer;
 
 public:
     std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
@@ -173,6 +175,7 @@ public:
 
     void init();
 
+    void initStaging();
     void initDefault();
 
     AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
@@ -180,7 +183,8 @@ public:
     AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
     AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
 
-    void loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstants);
+    void loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstantsVector);
+    void loadInstancesBuffer(GLTFModel* model, std::vector<InstanceData>& instanceDataVector);
     void loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector);
 
 	void cleanup();

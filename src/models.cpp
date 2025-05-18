@@ -187,7 +187,6 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 void GLTFModel::initDescriptors()
 {
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = { 
-        { vk::DescriptorType::eUniformBuffer, 1 },
         { vk::DescriptorType::eCombinedImageSampler, 5 },
     };
     mDescriptorAllocator.init(mAsset.materials.size(), sizes);
@@ -203,8 +202,8 @@ void GLTFModel::initBuffers()
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
     mInstancesBuffer = mRenderer->mResourceManager.createBuffer(MAX_INSTANCES * sizeof(TransformData),
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
-        VMA_MEMORY_USAGE_CPU_TO_GPU);
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
 }
 
 void GLTFModel::loadSamplers()
@@ -478,17 +477,10 @@ void GLTFModel::updateInstances()
         const glm::mat4 tm = glm::translate(glm::mat4(1.f), instance.mTransformComponents.translation);
         const glm::mat4 rm = glm::yawPitchRoll(instance.mTransformComponents.rotation.x, instance.mTransformComponents.rotation.y, instance.mTransformComponents.rotation.z);
         const glm::mat4 sm = glm::scale(glm::mat4(1.f), glm::vec3(instance.mTransformComponents.scale));
-
         InstanceData instanceData { tm * rm * sm };
         instanceDataVector.push_back(instanceData);
     }
-
-    auto* instancesBufferPtr = static_cast<InstanceData*>(mInstancesBuffer.info.pMappedData);
-    std::memcpy(instancesBufferPtr, instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
-
-    DescriptorWriter writer;
-    writer.writeBuffer(0, *mInstancesBuffer.buffer, instanceDataVector.size() * sizeof(InstanceData), 0, vk::DescriptorType::eUniformBuffer);
-    writer.updateSet(mRenderer->mRendererCore.mDevice, *mInstancesDescriptorSet);
+    mRenderer->mResourceManager.loadInstancesBuffer(this, instanceDataVector);
 }
 
 void GLTFModel::markDelete()
@@ -517,14 +509,4 @@ void GLTFModel::generateRenderItems()
         }
     }
 }
-
-GLTFInstance::GLTFInstance(GLTFModel* model) :
-    mModel(model),
-    mId(model->mLatestId),
-    mDeleteSignal(false)
-{
-    mTransformComponents.translation = glm::vec3();
-    mTransformComponents.rotation = glm::vec3();
-    mTransformComponents.scale = 1;
-}   
 

@@ -13,9 +13,10 @@ class Renderer;
 
 struct PushConstants {
     vk::DeviceAddress vertexBuffer;
+    vk::DeviceAddress instanceBuffer;
     vk::DeviceAddress materialBuffer;
-    glm::mat4 worldMatrix;
     uint32_t materialIndex;
+    glm::mat4 worldMatrix;
 };
 
 struct SceneData {

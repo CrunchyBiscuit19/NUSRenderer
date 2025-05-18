@@ -12,7 +12,7 @@ void main()
 {
 	Vertex v = pushConstants.vertexBuffer.vertices[gl_VertexIndex];
 	vec4 position = vec4(v.position, 1.0f);
-	InstanceData instance = instanceBuffer.instances[gl_InstanceIndex];
+	InstanceData instance = pushConstants.instancesBuffer.instances[gl_InstanceIndex];
 
 	gl_Position = scene.proj * scene.view * (instance.transformMatrix * pushConstants.worldMatrix * position); 
 
