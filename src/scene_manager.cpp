@@ -31,7 +31,7 @@ void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 void SceneManager::deleteModels()
 {
 	std::erase_if(mRenderer->mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
-		return (pair.second.mDeleteInfo.deleteSignal) && (pair.second.mDeleteInfo.deleteFrame == mRenderer->mFrameNumber);
+		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mFrameNumber);
 	});
 }
 
@@ -61,7 +61,7 @@ void SceneManager::updateScene()
 	mRenderer->mSceneEncapsulation.mSceneData.proj[1][1] *= -1;
 
 	auto* sceneBufferPtr = static_cast<SceneData*>(mRenderer->mSceneEncapsulation.mSceneBuffer.info.pMappedData);
-	*sceneBufferPtr = mRenderer->mSceneEncapsulation.mSceneData; // Since it's only one mSceneData copied in, no need for memcpy
+	std::memcpy(sceneBufferPtr, &mRenderer->mSceneEncapsulation.mSceneData, 1 * sizeof(SceneData));
 
 	DescriptorWriter writer;
 	writer.writeBuffer(0, *mRenderer->mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);

@@ -49,7 +49,7 @@ GLTFModel::GLTFModel(GLTFModel&& other) noexcept:
     mRenderer(other.mRenderer),
     mName(std::move(other.mName)),
     mLatestId(other.mLatestId),
-    mDeleteInfo(std::move(other.mDeleteInfo)),
+    mDeleteSignal(std::move(other.mDeleteSignal)),
     mAsset(std::move(other.mAsset)),
     mTopNodes(std::move(other.mTopNodes)),
     mNodes(std::move(other.mNodes)),
@@ -74,7 +74,7 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
         mRenderer = other.mRenderer;
         mName = std::move(other.mName);
         mLatestId = other.mLatestId;
-        mDeleteInfo = std::move(other.mDeleteInfo),
+        mDeleteSignal = std::move(other.mDeleteSignal),
         mAsset = std::move(other.mAsset);
         mTopNodes = std::move(other.mTopNodes);
         mNodes = std::move(other.mNodes);
@@ -492,7 +492,7 @@ void GLTFModel::updateInstances()
 
 void GLTFModel::markDelete()
 {
-    mDeleteInfo = { true, mRenderer->mFrameNumber + FRAME_OVERLAP };
+    mDeleteSignal = mRenderer->mFrameNumber + FRAME_OVERLAP;
 }
 
 void GLTFModel::load()
@@ -510,7 +510,7 @@ void GLTFModel::load()
 
 void GLTFModel::generateRenderItems()
 {
-    if (mDeleteInfo.deleteSignal == false) {
+    if (!mDeleteSignal.has_value()) {
         for (auto& n : mTopNodes) {
             n->generateRenderItems(mRenderer, this, glm::mat4{ 1.f });
         }
