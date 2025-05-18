@@ -1,11 +1,11 @@
 #pragma once
 
-#include <renderer.h>
-
 #include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
 #include <span>
+
+class Renderer;
 
 struct DescriptorLayoutBuilder {
     std::vector<vk::DescriptorSetLayoutBinding> mBindings;

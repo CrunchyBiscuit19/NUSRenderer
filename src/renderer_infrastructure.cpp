@@ -33,7 +33,7 @@ void RendererInfrastructure::initDescriptors()
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
         { vk::DescriptorType::eUniformBuffer, 1 },
     };
-    mRenderer->mDescriptorAllocator.init(FRAME_OVERLAP + 1, sizes);
+    mRenderer->mDescriptorAllocator.init(1, sizes);
 }
 
 void RendererInfrastructure::initSyncStructures()

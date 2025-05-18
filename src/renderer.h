@@ -46,11 +46,6 @@ struct RendererStats {
     float mSceneUpdateTime;
 };
 
-struct RendererFlags {
-    bool updateModels = false;
-    bool updateInstances = false;
-};
-
 struct FrameResources {
     vk::raii::CommandPool mCommandPool;
     vk::raii::CommandBuffer mCommandBuffer;
@@ -68,7 +63,6 @@ public:
     bool mStopRendering { false };
 
     RendererStats mStats;
-    RendererFlags mFlags;
     bool mRegenRenderItems { false };
 
     RendererCore mRendererCore;

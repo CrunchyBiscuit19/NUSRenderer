@@ -10,7 +10,8 @@ vk::raii::DescriptorSetLayout GLTFModel::mInstancesDescriptorSetLayout = nullptr
 
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
 	mRenderer(renderer),
-    mInstancesDescriptorSet(nullptr)
+    mInstancesDescriptorSet(nullptr),
+    mDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
 {
     mName = modelPath.stem().string();
     fmt::println("{} Model [Open File]", mName);

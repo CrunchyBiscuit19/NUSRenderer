@@ -1,3 +1,4 @@
+#include <renderer.h>
 #include <vk_descriptors.h>
 
 void DescriptorLayoutBuilder::addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count)
@@ -40,7 +41,7 @@ void DescriptorAllocatorGrowable::init(uint32_t maxSets, std::vector<DescriptorT
     vk::raii::DescriptorPool newPool = createPool(maxSets, poolRatios);
     mReadyPools.emplace_back(std::move(newPool));
 
-    mSetsPerPool *= 1.5;
+    mSetsPerPool = maxSets * 1.5;
 }
 
 void DescriptorAllocatorGrowable::clearPools()
@@ -77,7 +78,7 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::Descript
         ds = mRenderer->mDevice.allocateDescriptorSets(allocInfo);
         mReadyPools.emplace_back(std::move(poolToUse));
     }
-    catch (vk::SystemError e) {
+    catch (vk::SystemError e) { // OutOfPoolMemory or FragmentedPool Errors
         mFullPools.emplace_back(std::move(poolToUse));
         vk::raii::DescriptorPool poolToUse1 = getPool();
         allocInfo.descriptorPool = *poolToUse1;
