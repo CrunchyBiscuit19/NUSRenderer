@@ -12,6 +12,8 @@ struct GLTFModel;
 struct Mesh;
 struct Vertex;
 
+constexpr int NUMBER_OF_CUBEMAP_FACES = 6;
+
 enum class DefaultImage {
 	White,
 	Grey,
@@ -181,8 +183,12 @@ public:
 
     AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
     AllocatedBuffer createStagingBuffer(size_t allocSize);
+
     AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
     AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
+
+    AllocatedImage createCubemap(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
+    AllocatedImage createCubemap(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
 
 	void cleanup();
 

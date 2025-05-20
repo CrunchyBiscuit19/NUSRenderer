@@ -23,13 +23,14 @@ void Skybox::loadSkyboxImage(fs::path right, fs::path left, fs::path top, fs::pa
 
     for (auto& path : skyboxImagePaths) {
         if (unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &nrChannels, 4)) {
-            std::memcpy(skyboxImageData.data() + offset, data, sizeof(data));
-            offset += sizeof(data);
+            int imageSize = width * height * 4;
+            std::memcpy(skyboxImageData.data() + offset, data, imageSize);
+            offset += imageSize;
             stbi_image_free(data);
         }
     }
 
-    //mSkyboxImage = mRenderer->mResourceManager.createCubemap(skyboxImageData.data(), vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false);
+    mSkyboxImage = mRenderer->mResourceManager.createCubemap(skyboxImageData.data(), vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 }
 
 void Skybox::cleanup()

@@ -59,7 +59,7 @@ namespace vkutil {
     }
 
     // Add another barrier to all the mipmap levels to transition the image into VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
-    void vkutil::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize)
+    void generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize)
     {
         // 2^(mipLevels) = max(width / height), rounded down to nearest 2 power.
         const int mipLevels = static_cast<int>(std::floor(std::log2(std::max(imageSize.width, imageSize.height)))) + 1;
@@ -130,6 +130,20 @@ namespace vkutil {
             vk::PipelineStageFlagBits2::eAllGraphics,
             vk::AccessFlagBits2::eMemoryRead,
             vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    }
+
+    int getFormatTexelSize(vk::Format format) 
+    {
+        int bytesPerTexel = 0;
+        switch (format) {
+        case vk::Format::eR8G8B8A8Unorm:
+            bytesPerTexel = 4;
+            break;
+        default:
+            break;
+        }
+
+        return bytesPerTexel;
     }
 
 }

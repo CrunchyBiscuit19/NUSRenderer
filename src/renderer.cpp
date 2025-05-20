@@ -31,6 +31,8 @@ void Renderer::init()
     mSceneManager.init();
     mGUI.init();
     mCamera.init();
+
+
 }
 
 void Renderer::run()
@@ -157,6 +159,7 @@ void Renderer::draw()
     drawGeometry(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
+    // 
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
