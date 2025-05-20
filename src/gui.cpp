@@ -41,7 +41,7 @@ void GUI::init() {
     ImGui_ImplVulkan_CreateFontsTexture(); 
     ImGui_ImplVulkan_DestroyFontsTexture(); 
 
-    mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, RESOURCES_PATH);
+    mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
     mSelectModelFileDialog.SetTitle("Select GLTF / GLB file");
     mSelectModelFileDialog.SetTypeFilters({ ".glb", ".gltf" });
 }

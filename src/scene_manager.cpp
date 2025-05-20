@@ -18,12 +18,12 @@ void SceneManager::init()
 {
 	mSceneEncapsulation.init();
 	mSkybox.loadSkyboxImage(
-		fs::path(std::string(RESOURCES_PATH) + "skybox/right.jpg"),
-		fs::path(std::string(RESOURCES_PATH) + "skybox/left.jpg"),
-		fs::path(std::string(RESOURCES_PATH) + "skybox/top.jpg"),
-		fs::path(std::string(RESOURCES_PATH) + "skybox/bottom.jpg"),
-		fs::path(std::string(RESOURCES_PATH) + "skybox/front.jpg"),
-		fs::path(std::string(RESOURCES_PATH) + "skybox/back.jpg"));
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/right.jpg"),
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/left.jpg"),
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/top.jpg"),
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/bottom.jpg"),
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/front.jpg"),
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/back.jpg"));
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -32,7 +32,7 @@ void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 		if (mModels.contains(modelPath.stem().string())) {
 			continue;
 		}
-		auto modelFullPath = RESOURCES_PATH / modelPath;
+		auto modelFullPath = MODELS_PATH / modelPath;
 		mModels.emplace(modelPath.stem().string(), std::move(GLTFModel(mRenderer, modelFullPath)));
 	}
 }
