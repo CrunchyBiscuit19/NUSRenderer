@@ -21,7 +21,7 @@ void GUI::init() {
 
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
     pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mDrawImage.imageFormat;
+    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mSwapchainImageFormat;
     pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mRendererInfrastructure.mDepthImage.imageFormat;
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
