@@ -1,6 +1,7 @@
 #include <renderer.h>
 #include <renderer_infrastructure.h>
 #include <vk_initializers.h>
+#include <vk_images.h>
 
 #include <VkBootstrap.h>
 
@@ -24,7 +25,7 @@ void RendererInfrastructure::init() {
 void RendererInfrastructure::initCommands() 
 {
     const vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-    for (FrameResources& frame : mFrames) {
+    for (Frame& frame : mFrames) {
 		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
         vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
         frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
@@ -49,7 +50,7 @@ void RendererInfrastructure::initSyncStructures()
     // Fence to start signalled so we can wait on it on the first frame
     vk::FenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
-    for (FrameResources& frame : mFrames) {
+    for (Frame& frame : mFrames) {
 		frame.mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
 		frame.mSwapchainSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
 		frame.mRenderSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
@@ -113,6 +114,17 @@ void RendererInfrastructure::createSwapchain()
 
     vk::ImageViewCreateInfo depthImageViewCreateInfo = vkinit::imageViewCreateInfo(mDepthImage.imageFormat, *mDepthImage.image, vk::ImageAspectFlagBits::eDepth);
     mDepthImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(depthImageViewCreateInfo);
+
+    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        for (int frame = 0; frame < FRAME_OVERLAP; frame++) {
+            vkutil::transitionImage(*cmd, mSwapchain.getImages()[frame],
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+        }
+    });
 }
 
 void RendererInfrastructure::destroySwapchain()

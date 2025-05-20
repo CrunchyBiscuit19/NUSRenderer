@@ -69,9 +69,9 @@ glm::mat4 Camera::getRotationMatrix() const
 glm::vec3 Camera::getDirectionVector() const
 {
     glm::vec3 direction;
-    direction.x = cos(pitch) * sin(yaw);
-    direction.y = sin(pitch);
-    direction.z = -cos(pitch) * cos(yaw);
+    direction.x = std::cos(pitch) * std::sin(yaw);
+    direction.y = std::sin(pitch);
+    direction.z = -std::cos(pitch) * std::cos(yaw);
     return glm::normalize(direction);
 }
 

@@ -8,13 +8,13 @@ constexpr unsigned int FRAME_OVERLAP = 2;
 
 class Renderer;
 
-struct FrameResources {
+struct Frame {
     vk::raii::CommandPool mCommandPool;
     vk::raii::CommandBuffer mCommandBuffer;
     vk::raii::Semaphore mSwapchainSemaphore, mRenderSemaphore;
     vk::raii::Fence mRenderFence;
 
-    FrameResources();
+    Frame();
 
     void cleanup();
 };
@@ -25,9 +25,9 @@ private:
 
 public:
     uint64_t mFrameNumber{ 0 }; // Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
-    std::vector<FrameResources> mFrames;
-    const FrameResources& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
-    const FrameResources& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
+    std::vector<Frame> mFrames;
+    const Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
+    const Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
 
     bool mResizeRequested;
     vk::raii::SwapchainKHR mSwapchain;

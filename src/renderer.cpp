@@ -25,14 +25,12 @@ Renderer::Renderer():
 void Renderer::init()
 {
     mRendererCore.init();
-    mRendererInfrastructure.init();
     mImmSubmit.init();
+    mRendererInfrastructure.init();
     mResourceManager.init();
     mSceneManager.init();
     mGUI.init();
     mCamera.init();
-
-
 }
 
 void Renderer::run()
@@ -118,8 +116,7 @@ void Renderer::draw()
     vk::CommandBufferBeginInfo cmdBeginInfo = vkinit::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
-    // Multiply by render scale for dynamic resolution
-    // When resizing bigger, don't make swapchain extent go beyond draw image extent
+    // Resizing bigger window, don't make swapchain extent go beyond draw image extent
     mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
     mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
@@ -159,7 +156,6 @@ void Renderer::draw()
     drawGeometry(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
-    // 
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
@@ -334,7 +330,7 @@ void Renderer::drawUpdate()
     mStats.mSceneUpdateTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
 }
 
-FrameResources::FrameResources() :
+Frame::Frame() :
     mCommandPool(nullptr),
     mCommandBuffer(nullptr),
     mSwapchainSemaphore(nullptr),
@@ -342,7 +338,7 @@ FrameResources::FrameResources() :
     mRenderFence(nullptr)
 {}
 
-void FrameResources::cleanup()
+void Frame::cleanup()
 {
     mRenderFence.clear();
     mRenderSemaphore.clear();
