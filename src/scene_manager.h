@@ -1,7 +1,8 @@
 #pragma once
 
-#include <resource_manager.h>
+//#include <resource_manager.h>
 #include <meshes.h>
+#include <skybox.h>
 
 #include <glm/fwd.hpp>
 
@@ -52,6 +53,7 @@ private:
 public:
     std::vector<RenderItem> mRenderItems;
 
+    Skybox mSkybox;
     std::unordered_map<std::string, GLTFModel> mModels;
 
     PushConstants mPushConstants;

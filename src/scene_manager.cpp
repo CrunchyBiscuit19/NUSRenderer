@@ -10,12 +10,20 @@ vk::raii::DescriptorSetLayout SceneEncapsulation::mSceneDescriptorSetLayout = nu
 
 SceneManager::SceneManager(Renderer* renderer):
 	mRenderer(renderer),
-	mSceneEncapsulation(SceneEncapsulation(renderer))
+	mSceneEncapsulation(SceneEncapsulation(renderer)),
+	mSkybox(Skybox(renderer))
 {}
 
 void SceneManager::init()
 {
 	mSceneEncapsulation.init();
+	mSkybox.loadSkyboxImage(
+		fs::path(std::string(RESOURCES_PATH) + "skybox/right.jpg"),
+		fs::path(std::string(RESOURCES_PATH) + "skybox/left.jpg"),
+		fs::path(std::string(RESOURCES_PATH) + "skybox/top.jpg"),
+		fs::path(std::string(RESOURCES_PATH) + "skybox/bottom.jpg"),
+		fs::path(std::string(RESOURCES_PATH) + "skybox/front.jpg"),
+		fs::path(std::string(RESOURCES_PATH) + "skybox/back.jpg"));
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -73,6 +81,7 @@ void SceneManager::cleanup()
 	SceneEncapsulation::mSceneDescriptorSetLayout.clear();
 	mSceneEncapsulation.cleanup();
 	mModels.clear();
+	mSkybox.cleanup();
 }
 
 SceneEncapsulation::SceneEncapsulation(Renderer* renderer) :
@@ -83,6 +92,10 @@ SceneEncapsulation::SceneEncapsulation(Renderer* renderer) :
 
 void SceneEncapsulation::init()
 {
+	mSceneData.ambientColor = glm::vec4(.1f);
+	mSceneData.sunlightColor = glm::vec4(1.f);
+	mSceneData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
+
 	mSceneBuffer = mRenderer->mResourceManager.createBuffer(sizeof(SceneData),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer,
 		VMA_MEMORY_USAGE_CPU_TO_GPU);
