@@ -299,7 +299,7 @@ void GLTFModel::loadMaterials()
         materialIndex++;
     }
 
-    mRenderer->mResourceManager.loadMaterialsConstantsBuffer(this, materialConstants);
+    loadMaterialsConstantsBuffer(materialConstants);
 }
 
 void GLTFModel::loadMeshes()
@@ -393,7 +393,7 @@ void GLTFModel::loadMeshes()
             newMesh->mPrimitives.push_back(newPrimitive);
         }
 
-        mRenderer->mResourceManager.loadMeshBuffers(newMesh.get(), indices, vertices);
+        loadMeshBuffers(newMesh.get(), indices, vertices);
 
         mMeshes.push_back(newMesh);
     }
@@ -455,6 +455,60 @@ void GLTFModel::loadNodes()
     }
 }
 
+void GLTFModel::loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& materialConstantsVector)
+{
+    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
+
+    vk::BufferCopy materialConstantsCopy{};
+    materialConstantsCopy.dstOffset = 0;
+    materialConstantsCopy.srcOffset = 0;
+    materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
+
+    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        cmd.copyBuffer(*mRenderer->mResourceManager.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+    });
+}
+
+void GLTFModel::loadInstancesBuffer(std::vector<InstanceData>& instanceDataVector)
+{
+    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
+
+    vk::BufferCopy instancesCopy{};
+    instancesCopy.dstOffset = 0;
+    instancesCopy.srcOffset = 0;
+    instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
+
+    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        cmd.copyBuffer(*mRenderer->mResourceManager.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+    });
+}
+
+void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector)
+{
+    const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
+    const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
+
+    mesh->mVertexBuffer = mRenderer->mResourceManager.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh->mIndexBuffer = mRenderer->mResourceManager.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+
+    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
+    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
+
+    vk::BufferCopy vertexCopy{};
+    vertexCopy.dstOffset = 0;
+    vertexCopy.srcOffset = 0;
+    vertexCopy.size = srcVertexVectorSize;
+    vk::BufferCopy indexCopy{};
+    indexCopy.dstOffset = 0;
+    indexCopy.srcOffset = srcVertexVectorSize;
+    indexCopy.size = srcIndexVectorSize;
+
+    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
+        cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
+    });
+}
+
 void GLTFModel::createInstanceDescriptorSetLayout(Renderer* renderer)
 {
     DescriptorLayoutBuilder builder;
@@ -480,7 +534,7 @@ void GLTFModel::updateInstances()
         InstanceData instanceData { tm * rm * sm };
         instanceDataVector.push_back(instanceData);
     }
-    mRenderer->mResourceManager.loadInstancesBuffer(this, instanceDataVector);
+    loadInstancesBuffer(instanceDataVector);
 }
 
 void GLTFModel::markDelete()

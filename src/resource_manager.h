@@ -163,11 +163,12 @@ class ResourceManager {
 private:
     Renderer* mRenderer;
     AllocatedBuffer mImageStagingBuffer;
+
+public:
     AllocatedBuffer mMeshStagingBuffer;
     AllocatedBuffer mMaterialConstantsStagingBuffer;
     AllocatedBuffer mInstancesStagingBuffer;
 
-public:
     std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
     vk::raii::Sampler mDefaultSampler;
 
@@ -182,10 +183,6 @@ public:
     AllocatedBuffer createStagingBuffer(size_t allocSize);
     AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
     AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false);
-
-    void loadMaterialsConstantsBuffer(GLTFModel* model, std::vector<MaterialConstants>& materialConstantsVector);
-    void loadInstancesBuffer(GLTFModel* model, std::vector<InstanceData>& instanceDataVector);
-    void loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector);
 
 	void cleanup();
 

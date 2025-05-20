@@ -42,6 +42,7 @@ void Renderer::run()
         auto start = std::chrono::system_clock::now();
 
         if (programEndFrameNumber.has_value() && (mRendererInfrastructure.mFrameNumber < programEndFrameNumber.value())) {
+            mRendererCore.mDevice.waitIdle();
             break;
         }
 

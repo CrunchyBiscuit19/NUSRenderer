@@ -111,7 +111,7 @@ vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(uint32_t setCou
     for (const DescriptorTypeRatio ratio : poolRatios)
         poolSizes.push_back(vk::DescriptorPoolSize(ratio.type, static_cast<uint32_t>(ratio.amountPerSet * setCount)));
     vk::DescriptorPoolCreateInfo pool_info = {};
-    pool_info.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
+    pool_info.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind | vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
     pool_info.maxSets = setCount;
     pool_info.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     pool_info.pPoolSizes = poolSizes.data();

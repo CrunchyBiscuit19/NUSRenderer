@@ -55,6 +55,10 @@ private:
     void loadMeshes();
     void loadNodes();
 
+    void loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& materialConstantsVector);
+    void loadInstancesBuffer(std::vector<InstanceData>& instanceDataVector);
+    void loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector);
+
 public:
     GLTFModel(Renderer* renderer, std::filesystem::path modelPath);
     ~GLTFModel();
