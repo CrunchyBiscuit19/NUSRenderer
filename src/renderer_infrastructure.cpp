@@ -35,10 +35,10 @@ void RendererInfrastructure::initCommands()
 void RendererInfrastructure::initDescriptors()
 {
     PbrMaterial::createResourcesDescriptorSetLayout(mRenderer);
-    GLTFModel::createInstanceDescriptorSetLayout(mRenderer);
 
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
-        { vk::DescriptorType::eUniformBuffer, 1 },
+        { vk::DescriptorType::eUniformBuffer, 1 }, // Scene UBO
+        { vk::DescriptorType::eCombinedImageSampler, 1 }, // Skybox UBO
     };
     mDescriptorAllocator.init(1, sizes);
 }
@@ -171,7 +171,10 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pushConstantRange.size = sizeof(PushConstants);
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
-    std::vector<vk::DescriptorSetLayout> descriptorLayouts = { *SceneEncapsulation::mSceneDescriptorSetLayout, *PbrMaterial::mResourcesDescriptorSetLayout, *GLTFModel::mInstancesDescriptorSetLayout };
+    std::vector<vk::DescriptorSetLayout> descriptorLayouts = { 
+        *mRenderer->mSceneManager.mSceneEncapsulation.mSceneDescriptorSetLayout, 
+        *PbrMaterial::mResourcesDescriptorSetLayout 
+    };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
     pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
@@ -236,7 +239,6 @@ void RendererInfrastructure::destroyPipelines()
 }
 
 void RendererInfrastructure::cleanup() {
-    GLTFModel::mInstancesDescriptorSetLayout.clear();
     PbrMaterial::mResourcesDescriptorSetLayout.clear();
     for (auto& frame : mFrames) {
         frame.cleanup();

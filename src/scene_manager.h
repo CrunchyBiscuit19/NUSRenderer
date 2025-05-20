@@ -37,7 +37,7 @@ public:
     SceneData mSceneData;
     AllocatedBuffer mSceneBuffer;
     vk::raii::DescriptorSet mSceneDescriptorSet;
-    static vk::raii::DescriptorSetLayout mSceneDescriptorSetLayout;
+    vk::raii::DescriptorSetLayout mSceneDescriptorSetLayout;
 
     SceneEncapsulation(Renderer* renderer);
 

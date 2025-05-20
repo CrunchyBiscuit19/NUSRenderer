@@ -6,8 +6,6 @@
 
 #include <ranges>
 
-vk::raii::DescriptorSetLayout SceneEncapsulation::mSceneDescriptorSetLayout = nullptr;
-
 SceneManager::SceneManager(Renderer* renderer):
 	mRenderer(renderer),
 	mSceneEncapsulation(SceneEncapsulation(renderer)),
@@ -78,7 +76,6 @@ void SceneManager::updateScene()
 
 void SceneManager::cleanup()
 {
-	SceneEncapsulation::mSceneDescriptorSetLayout.clear();
 	mSceneEncapsulation.cleanup();
 	mModels.clear();
 	mSkybox.cleanup();
@@ -87,7 +84,8 @@ void SceneManager::cleanup()
 SceneEncapsulation::SceneEncapsulation(Renderer* renderer) :
 	mRenderer(renderer),
 	mDescriptorAllocator(nullptr),
-	mSceneDescriptorSet(nullptr)
+	mSceneDescriptorSet(nullptr),
+	mSceneDescriptorSetLayout(nullptr)
 {}
 
 void SceneEncapsulation::init()
@@ -109,5 +107,6 @@ void SceneEncapsulation::init()
 void SceneEncapsulation::cleanup()
 {
 	mSceneDescriptorSet.clear();
+	mSceneDescriptorSetLayout.clear();
 	mSceneBuffer.cleanup();
 }

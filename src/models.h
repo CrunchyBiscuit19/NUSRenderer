@@ -39,8 +39,6 @@ public:
     
     std::vector<GLTFInstance> mInstances;
     AllocatedBuffer mInstancesBuffer;
-    static vk::raii::DescriptorSetLayout mInstancesDescriptorSetLayout;
-    vk::raii::DescriptorSet mInstancesDescriptorSet;
 
 private:
     vk::Filter extractFilter(fastgltf::Filter filter);
@@ -65,8 +63,6 @@ public:
 
     GLTFModel(GLTFModel&& other) noexcept;
     GLTFModel& operator=(GLTFModel&& other) noexcept;
-
-    static void createInstanceDescriptorSetLayout(Renderer* renderer);
 
     void load();
 

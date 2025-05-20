@@ -6,11 +6,8 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <fmt/core.h>
 
-vk::raii::DescriptorSetLayout GLTFModel::mInstancesDescriptorSetLayout = nullptr;
-
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
 	mRenderer(renderer),
-    mInstancesDescriptorSet(nullptr),
     mDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
 {
     mName = modelPath.stem().string();
@@ -61,8 +58,7 @@ GLTFModel::GLTFModel(GLTFModel&& other) noexcept:
     mMaterials(std::move(other.mMaterials)),
     mMaterialConstantsBuffer(std::move(other.mMaterialConstantsBuffer)),
     mInstances(std::move(other.mInstances)),
-    mInstancesBuffer(std::move(other.mInstancesBuffer)),
-    mInstancesDescriptorSet(std::move(other.mInstancesDescriptorSet))
+    mInstancesBuffer(std::move(other.mInstancesBuffer))
 {
     other.mRenderer = nullptr;
     other.mLatestId = 0;
@@ -87,7 +83,6 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
         mMaterialConstantsBuffer = std::move(other.mMaterialConstantsBuffer);
         mInstances = std::move(other.mInstances);
         mInstancesBuffer = std::move(other.mInstancesBuffer);
-        mInstancesDescriptorSet = std::move(other.mInstancesDescriptorSet);
 
         other.mRenderer = nullptr;
         other.mLatestId = 0;
@@ -190,8 +185,6 @@ void GLTFModel::initDescriptors()
         { vk::DescriptorType::eCombinedImageSampler, 5 },
     };
     mDescriptorAllocator.init(mAsset.materials.size(), sizes);
-
-    mInstancesDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mInstancesDescriptorSetLayout);
 }
 
 void GLTFModel::initBuffers()
@@ -507,13 +500,6 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
         cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
         cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
     });
-}
-
-void GLTFModel::createInstanceDescriptorSetLayout(Renderer* renderer)
-{
-    DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-    mInstancesDescriptorSetLayout = builder.build(renderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex);
 }
 
 void GLTFModel::createInstance()
