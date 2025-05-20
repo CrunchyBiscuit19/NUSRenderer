@@ -30,7 +30,7 @@ void Skybox::loadSkyboxImage(fs::path right, fs::path left, fs::path top, fs::pa
         }
     }
 
-    mSkyboxImage = mRenderer->mResourceManager.createCubemap(skyboxImageData.data(), vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
+    mSkyboxImage = mRenderer->mResourceManager.createImage(skyboxImageData.data(), vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, true);
 }
 
 void Skybox::cleanup()

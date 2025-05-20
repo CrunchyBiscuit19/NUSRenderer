@@ -1,5 +1,6 @@
 #include <vk_images.h>
 #include <vk_initializers.h>
+#include <renderer.h>
 
 namespace vkutil {
 
@@ -59,14 +60,15 @@ namespace vkutil {
     }
 
     // Add another barrier to all the mipmap levels to transition the image into VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
-    void generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize)
+    void generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize, bool cubemap)
     {
-        // 2^(mipLevels) = max(width / height), rounded down to nearest 2 power.
+        int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
         const int mipLevels = static_cast<int>(std::floor(std::log2(std::max(imageSize.width, imageSize.height)))) + 1;
 
-        // For each level, copy the image from previous level into next level at half resolution.
-        // On each copy, transition previous level mipmap layout to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL. 
         for (int mip = 0; mip < mipLevels; mip++) {
+            
+
+            // Transition current mipmap level from eTransferDstOptimal to eTransferSrcOptimal
             vk::Extent2D halfSize = imageSize;
             halfSize.width /= 2;
             halfSize.height /= 2;
@@ -90,36 +92,38 @@ namespace vkutil {
 
             cmd.pipelineBarrier2(depInfo);
 
-            // Not the last level
-            if (mip < mipLevels - 1) {
-                vk::ImageBlit2 blitRegion{};
-                blitRegion.pNext = nullptr;
-                blitRegion.srcOffsets[1].x = imageSize.width;
-                blitRegion.srcOffsets[1].y = imageSize.height;
-                blitRegion.srcOffsets[1].z = 1;
-                blitRegion.dstOffsets[1].x = halfSize.width;
-                blitRegion.dstOffsets[1].y = halfSize.height;
-                blitRegion.dstOffsets[1].z = 1;
-                blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-                blitRegion.srcSubresource.baseArrayLayer = 0;
-                blitRegion.srcSubresource.layerCount = 1;
-                blitRegion.srcSubresource.mipLevel = mip;
-                blitRegion.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-                blitRegion.dstSubresource.baseArrayLayer = 0;
-                blitRegion.dstSubresource.layerCount = 1;
-                blitRegion.dstSubresource.mipLevel = mip + 1;
-                vk::BlitImageInfo2 blitInfo{};
-                blitInfo.pNext = nullptr;
-                blitInfo.dstImage = image;
-                blitInfo.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
-                blitInfo.srcImage = image;
-                blitInfo.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
-                blitInfo.filter = vk::Filter::eLinear;
-                blitInfo.regionCount = 1;
-                blitInfo.pRegions = &blitRegion;
+            for (int face = 0; face < numFaces; face++) {
+                // Copy the image from previous level into next level at half resolution (except if at last level).
+                if (mip < mipLevels - 1) {
+                    vk::ImageBlit2 blitRegion{};
+                    blitRegion.pNext = nullptr;
+                    blitRegion.srcOffsets[1].x = imageSize.width;
+                    blitRegion.srcOffsets[1].y = imageSize.height;
+                    blitRegion.srcOffsets[1].z = 1;
+                    blitRegion.dstOffsets[1].x = halfSize.width;
+                    blitRegion.dstOffsets[1].y = halfSize.height;
+                    blitRegion.dstOffsets[1].z = 1;
+                    blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    blitRegion.srcSubresource.baseArrayLayer = face;
+                    blitRegion.srcSubresource.layerCount = 1;
+                    blitRegion.srcSubresource.mipLevel = mip;
+                    blitRegion.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    blitRegion.dstSubresource.baseArrayLayer = face;
+                    blitRegion.dstSubresource.layerCount = 1;
+                    blitRegion.dstSubresource.mipLevel = mip + 1;
+                    vk::BlitImageInfo2 blitInfo{};
+                    blitInfo.pNext = nullptr;
+                    blitInfo.dstImage = image;
+                    blitInfo.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
+                    blitInfo.srcImage = image;
+                    blitInfo.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
+                    blitInfo.filter = vk::Filter::eLinear;
+                    blitInfo.regionCount = 1;
+                    blitInfo.pRegions = &blitRegion;
 
-                cmd.blitImage2(blitInfo);
-                imageSize = halfSize;
+                    cmd.blitImage2(blitInfo);
+                    imageSize = halfSize;
+                }
             }
         }
 

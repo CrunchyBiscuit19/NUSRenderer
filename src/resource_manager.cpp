@@ -74,15 +74,21 @@ AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageF
     return newBuffer;
 }
 
-AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped)
+AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool cubemap)
 {
     vk::ImageCreateInfo newImageCreateInfo = vkinit::imageCreateInfo(format, usage, extent);
-    if (mipmapped) { newImageCreateInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1; }
+    if (mipmapped) { 
+        newImageCreateInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1; 
+    }
+    if (cubemap) {
+        newImageCreateInfo.arrayLayers = NUMBER_OF_CUBEMAP_FACES;
+        newImageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    }
     VkImageCreateInfo newImageCreateInfo1 = static_cast<vk::ImageCreateInfo>(newImageCreateInfo);
 
     VmaAllocationCreateInfo vmaAllocInfo = {};
     vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    vmaAllocInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vmaAllocInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     AllocatedImage newImage;
 	newImage.imageFormat = format;
@@ -97,19 +103,26 @@ AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format form
         aspectFlag = vk::ImageAspectFlagBits::eDepth;
     vk::ImageViewCreateInfo newImageViewCreateInfo = vkinit::imageViewCreateInfo(format, *newImage.image, aspectFlag);
     newImageViewCreateInfo.subresourceRange.levelCount = newImageCreateInfo.mipLevels;
+    if (cubemap) {
+        newImageViewCreateInfo.subresourceRange.layerCount = NUMBER_OF_CUBEMAP_FACES;
+        newImageViewCreateInfo.viewType = vk::ImageViewType::eCube;
+    }
 
     newImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(newImageViewCreateInfo);
 
     return newImage;
 }
 
-AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped)
+AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool cubemap)
 {
+    int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
+
     int bytesPerTexel = vkutil::getFormatTexelSize(format);
-    const size_t dataSize = extent.depth * extent.width * extent.height * bytesPerTexel;
+    const size_t faceSize = extent.depth * extent.width * extent.height * bytesPerTexel;
+    const size_t dataSize = faceSize * numFaces;
     std::memcpy(mImageStagingBuffer.info.pMappedData, data, dataSize);
 
-    AllocatedImage newImage = createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped);
+    AllocatedImage newImage = createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, cubemap);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
         vkutil::transitionImage(*cmd, *newImage.image, 
@@ -117,82 +130,9 @@ AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D exten
         vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentRead, 
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
-        vk::BufferImageCopy copyRegion = {};
-        copyRegion.bufferOffset = 0;
-        copyRegion.bufferRowLength = 0;
-        copyRegion.bufferImageHeight = 0;
-        copyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-        copyRegion.imageSubresource.mipLevel = 0;
-        copyRegion.imageSubresource.baseArrayLayer = 0;
-        copyRegion.imageSubresource.layerCount = 1;
-        copyRegion.imageExtent = extent;
-
-        cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegion);
-
-        if (mipmapped)
-            vkutil::generateMipmaps(*cmd, *newImage.image, vk::Extent2D{ newImage.imageExtent.width, newImage.imageExtent.height });
-        else
-            vkutil::transitionImage(*cmd, *newImage.image,
-                vk::PipelineStageFlagBits2KHR::eAllGraphics, vk::AccessFlagBits2::eMemoryRead,
-                vk::PipelineStageFlagBits2KHR::eAllGraphics, vk::AccessFlagBits2::eMemoryRead,
-                vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    });
-
-    return newImage;
-}
-
-AllocatedImage ResourceManager::createCubemap(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped)
-{
-    vk::ImageCreateInfo newImageCreateInfo = vkinit::imageCreateInfo(format, usage, extent);
-    if (mipmapped) { newImageCreateInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1; }
-    newImageCreateInfo.arrayLayers = NUMBER_OF_CUBEMAP_FACES;
-    newImageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    VkImageCreateInfo newImageCreateInfo1 = static_cast<vk::ImageCreateInfo>(newImageCreateInfo);
-
-    VmaAllocationCreateInfo vmaAllocInfo = {};
-    vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    vmaAllocInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    AllocatedImage newImage;
-    newImage.imageFormat = format;
-    newImage.imageExtent = extent;
-    VkImage tempImage;
-    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &newImageCreateInfo1, &vmaAllocInfo, &tempImage, &newImage.allocation, nullptr);
-    newImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, tempImage);
-    newImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
-
-    vk::ImageAspectFlagBits aspectFlag = vk::ImageAspectFlagBits::eColor;
-    if (format == vk::Format::eD32Sfloat)
-        aspectFlag = vk::ImageAspectFlagBits::eDepth;
-    vk::ImageViewCreateInfo newImageViewCreateInfo = vkinit::imageViewCreateInfo(format, *newImage.image, aspectFlag);
-    newImageViewCreateInfo.subresourceRange.levelCount = newImageCreateInfo.mipLevels;
-    newImageViewCreateInfo.subresourceRange.layerCount = NUMBER_OF_CUBEMAP_FACES;
-    newImageViewCreateInfo.viewType = vk::ImageViewType::eCube;
-
-    newImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(newImageViewCreateInfo);
-
-    return newImage;
-}
-
-AllocatedImage ResourceManager::createCubemap(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped)
-{
-    int bytesPerTexel = vkutil::getFormatTexelSize(format);
-    const size_t faceSize = extent.depth * extent.width * extent.height * bytesPerTexel;
-    const size_t dataSize = faceSize * NUMBER_OF_CUBEMAP_FACES;
-    std::memcpy(mImageStagingBuffer.info.pMappedData, data, dataSize);
-
-    AllocatedImage newImage = createCubemap(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped);
-
-    mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        vkutil::transitionImage(*cmd, *newImage.image,
-            vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentRead,
-            vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-
         std::vector<vk::BufferImageCopy> copyRegions;
-        copyRegions.reserve(NUMBER_OF_CUBEMAP_FACES);
-
-        for (int face = 0; face < NUMBER_OF_CUBEMAP_FACES; face++) {
+        copyRegions.reserve(numFaces);
+        for (int face = 0; face < numFaces; face++) {
             vk::BufferImageCopy copyRegion;
             copyRegion.bufferOffset = face * faceSize;
             copyRegion.bufferRowLength = 0;
@@ -208,7 +148,7 @@ AllocatedImage ResourceManager::createCubemap(const void* data, vk::Extent3D ext
         cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegions);
 
         if (mipmapped)
-            vkutil::generateMipmaps(*cmd, *newImage.image, vk::Extent2D{ newImage.imageExtent.width, newImage.imageExtent.height });
+            vkutil::generateMipmaps(*cmd, *newImage.image, vk::Extent2D{ newImage.imageExtent.width, newImage.imageExtent.height }, cubemap);
         else
             vkutil::transitionImage(*cmd, *newImage.image,
                 vk::PipelineStageFlagBits2KHR::eAllGraphics, vk::AccessFlagBits2::eMemoryRead,
