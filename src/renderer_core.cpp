@@ -20,30 +20,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
     message += std::string("\t") + "messageIDName   = <" + pCallbackData->pMessageIdName + ">\n";
     message += std::string("\t") + "messageIdNumber = " + std::to_string(pCallbackData->messageIdNumber) + "\n";
     message += std::string("\t") + "message         = <" + pCallbackData->pMessage + ">\n";
-    if (0 < pCallbackData->queueLabelCount)
-    {
-        message += std::string("\t") + "Queue Labels:\n";
-        for (uint32_t i = 0; i < pCallbackData->queueLabelCount; i++)
-            message += std::string("\t\t") + "labelName = <" + pCallbackData->pQueueLabels[i].pLabelName + ">\n";
-    }
-    if (0 < pCallbackData->cmdBufLabelCount)
-    {
-        message += std::string("\t") + "CommandBuffer Labels:\n";
-        for (uint32_t i = 0; i < pCallbackData->cmdBufLabelCount; i++)
-            message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
 
-    }
-    if (0 < pCallbackData->objectCount)
+    message += std::string("\t") + "Queue Labels:\n";
+    for (uint32_t i = 0; i < pCallbackData->queueLabelCount; i++)
+        message += std::string("\t\t") + "labelName = <" + pCallbackData->pQueueLabels[i].pLabelName + ">\n";
+    message += std::string("\t") + "CommandBuffer Labels:\n";
+    for (uint32_t i = 0; i < pCallbackData->cmdBufLabelCount; i++)
+        message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
+    for (uint32_t i = 0; i < pCallbackData->objectCount; i++)
     {
-        for (uint32_t i = 0; i < pCallbackData->objectCount; i++)
-        {
-            message += std::string("\t") + "Object " + std::to_string(i) + "\n";
-            message += std::string("\t\t") + "objectType   = " + vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)) + "\n";
-            message += std::string("\t\t") + "objectHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "\n";
-            if (pCallbackData->pObjects[i].pObjectName)
-                message += std::string("\t\t") + "objectName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
-        }
+        message += std::string("\t") + "Resource " + std::to_string(i) + "\n";
+        message += std::string("\t\t") + "ResourceType   = " + vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)) + "\n";
+        message += std::string("\t\t") + "ResourceHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "\n";
+        if (pCallbackData->pObjects[i].pObjectName)
+            message += std::string("\t\t") + "ResourceName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
     }
+    
     fmt::println("{}", message);
     return false;
 }
@@ -77,7 +69,8 @@ void RendererCore::init()
     VkValidationFeatureEnableEXT validationFeaturesEnables[] = { static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf) };
     auto instResult = builder.set_app_name("Vulkan renderer")
         .request_validation_layers(USE_VALIDATION_LAYERS)
-        .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning))
+        .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
+        .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
         .set_debug_callback(debugMessageFunc)
         .require_api_version(1, 3, 0)
         .add_validation_feature_enable(validationFeaturesEnables[0])
@@ -105,6 +98,7 @@ void RendererCore::init()
     features11.shaderDrawParameters = true;
     vk::PhysicalDeviceFeatures features{};
     features.multiDrawIndirect = true;
+    features.samplerAnisotropy = true;
 
     vkb::PhysicalDeviceSelector selector{ vkbInst };
     vkb::PhysicalDevice physicalDevice = selector
@@ -122,6 +116,7 @@ void RendererCore::init()
     vk::raii::Device device(chosenGPU, vkbDevice.device);
     mChosenGPU = std::move(chosenGPU);
     mDevice = std::move(device);
+    mChosenGPUProperties = mChosenGPU.getProperties();
 
     mSurface = vk::raii::SurfaceKHR(mInstance, tempSurface);
 

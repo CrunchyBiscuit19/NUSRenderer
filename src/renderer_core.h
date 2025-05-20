@@ -33,6 +33,7 @@ public:
 
     vk::raii::PhysicalDevice mChosenGPU;
     vk::raii::Device mDevice;
+    vk::PhysicalDeviceProperties mChosenGPUProperties;
 
     vk::raii::SurfaceKHR mSurface;
     SDL_Window* mWindow{ nullptr };
