@@ -163,8 +163,8 @@ PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipe
 
 void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOptions)
 {
-    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh.frag.spv", mRenderer->mRendererCore.mDevice); 
-    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh.vert.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv", mRenderer->mRendererCore.mDevice); 
+    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv", mRenderer->mRendererCore.mDevice);
 
     vk::PushConstantRange pushConstantRange{};
     pushConstantRange.offset = 0;
