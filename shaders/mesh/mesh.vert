@@ -2,7 +2,7 @@
 
 #extension GL_GOOGLE_include_directive : require
 
-#include "input_structures.glsl"
+#include "mesh_inputs.glsl"
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;

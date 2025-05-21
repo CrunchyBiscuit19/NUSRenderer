@@ -156,10 +156,10 @@ void GUI::imguiFrame() {
     }
     
     if (ImGui::Begin("Scene")) {
-        ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mSceneManager.mSceneEncapsulation.mSceneData.ambientColor));
-        ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mSceneManager.mSceneEncapsulation.mSceneData.sunlightColor));
-        ImGui::InputFloat3("Sunlight Direction", &mRenderer->mSceneManager.mSceneEncapsulation.mSceneData.sunlightDirection[1]);
-        ImGui::InputFloat("Sunlight Power", &mRenderer->mSceneManager.mSceneEncapsulation.mSceneData.sunlightDirection[0]);
+        ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.ambientColor));
+        ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightColor));
+        ImGui::InputFloat3("Sunlight Direction", &mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightDirection[1]);
+        ImGui::InputFloat("Sunlight Power", &mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightDirection[0]);
         ImGui::End();
     }
 

@@ -29,7 +29,7 @@ struct SceneData {
     glm::vec4 sunlightColor;
 };
 
-class SceneEncapsulation {
+class SceneResources {
     Renderer* mRenderer;
     DescriptorAllocatorGrowable* mDescriptorAllocator;
 
@@ -39,7 +39,7 @@ public:
     vk::raii::DescriptorSet mSceneDescriptorSet;
     vk::raii::DescriptorSetLayout mSceneDescriptorSetLayout;
 
-    SceneEncapsulation(Renderer* renderer);
+    SceneResources(Renderer* renderer);
 
     void init();
 
@@ -53,11 +53,11 @@ private:
 public:
     std::vector<RenderItem> mRenderItems;
 
-    Skybox mSkybox;
     std::unordered_map<std::string, GLTFModel> mModels;
 
     PushConstants mPushConstants;
-    SceneEncapsulation mSceneEncapsulation;
+    SceneResources mSceneResources;
+    Skybox mSkybox;
 
     SceneManager(Renderer* renderer);
 

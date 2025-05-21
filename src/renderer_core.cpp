@@ -29,9 +29,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
         message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
     for (uint32_t i = 0; i < pCallbackData->objectCount; i++)
     {
-        message += std::string("\t") + "Resource " + std::to_string(i) + "\n";
-        message += std::string("\t\t") + "ResourceType   = " + vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)) + "\n";
-        message += std::string("\t\t") + "ResourceHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "\n";
+        message += std::string("\t") + "Resource " + std::to_string(i);
+        message += std::string("\t\t") + "[ ResourceType   = " + vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)) + ", ";
+        message += std::string("\t\t") + "ResourceHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "] \n";
         if (pCallbackData->pObjects[i].pObjectName)
             message += std::string("\t\t") + "ResourceName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
     }

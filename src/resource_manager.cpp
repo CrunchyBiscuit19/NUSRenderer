@@ -10,7 +10,8 @@
 
 ResourceManager::ResourceManager(Renderer* renderer):
     mRenderer(renderer),
-    mDefaultSampler(nullptr)
+    mDefaultSampler(nullptr),
+    mDefaultClearValue(vk::ClearColorValue(.463f, .616f, .859f, 1.f))
 {}   
 
 void ResourceManager::init()

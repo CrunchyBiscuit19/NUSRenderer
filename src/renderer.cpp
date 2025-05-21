@@ -120,32 +120,13 @@ void Renderer::draw()
     mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
     mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
-    // Transition stock and draw image into transfer layouts
-    vkutil::transitionImage(cmd, *mResourceManager.mDefaultImages[DefaultImage::Blue].image,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead,
-        vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-
-    // Copy stock image as the initial colour for the draw image (the background)
-    vkutil::copyImage(cmd, *mResourceManager.mDefaultImages[DefaultImage::Blue].image, *mRendererInfrastructure.mDrawImage.image,
-        vk::Extent2D{ mResourceManager.mDefaultImages[DefaultImage::Blue].imageExtent.width, mResourceManager.mDefaultImages[DefaultImage::Blue].imageExtent.height, },
-        vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height, });
-
     // Transition to color output for drawing geometry
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+        vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDepthImage.image,
         vk::PipelineStageFlagBits2::eEarlyFragmentTests,
         vk::AccessFlagBits2::eDepthStencilAttachmentRead,
@@ -153,7 +134,9 @@ void Renderer::draw()
         vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
 
-    drawGeometry(cmd);
+    //drawGeometry(cmd);
+
+    drawSkybox(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
@@ -244,7 +227,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     // [TODO] Sorting and culling
     
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eGeneral);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, &mResourceManager.mDefaultClearValue, vk::ImageLayout::eColorAttachmentOptimal);
     vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
@@ -259,7 +242,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->pipeline);
             lastPipeline = *renderItem.primitive->material->mPipeline->pipeline;
 
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneManager.mSceneEncapsulation.mSceneDescriptorSet, nullptr);
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneManager.mSceneResources.mSceneDescriptorSet, nullptr);
 
             vk::Viewport viewport = {
                 0,
@@ -304,14 +287,15 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
 void Renderer::drawSkybox(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eGeneral);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eColorAttachmentOptimal);
     vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.pipeline);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, *mSceneManager.mSkybox.mSkyboxDescriptorSet, nullptr);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, *mSceneManager.mSceneResources.mSceneDescriptorSet, nullptr);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 1, *mSceneManager.mSkybox.mSkyboxDescriptorSet, nullptr);
     vk::Viewport viewport = {
         0,
         0,

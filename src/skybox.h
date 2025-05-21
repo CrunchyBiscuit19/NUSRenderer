@@ -38,8 +38,6 @@ public:
 	void initSkyboxBuffer();
 
 	void init(fs::path right, fs::path left, fs::path top, fs::path bottom, fs::path front, fs::path back);
-	 
-	void updateSkybox();
 
 	void cleanup();
 };

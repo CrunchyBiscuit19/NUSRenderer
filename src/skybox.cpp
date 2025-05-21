@@ -33,15 +33,19 @@ void Skybox::loadSkyboxImage(fs::path right, fs::path left, fs::path top, fs::pa
 void Skybox::initSkyboxDescriptor()
 {
     DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-    mSkyboxDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler);
+    mSkyboxDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eFragment);
     mSkyboxDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mSkyboxDescriptorSetLayout);
+
+    DescriptorWriter writer;
+    writer.writeImage(0, *mSkyboxImage.imageView, *mRenderer->mResourceManager.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.updateSet(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
 }
 
 void Skybox::initSkyboxPipeline()
 {
-    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox.frag.spv", mRenderer->mRendererCore.mDevice); // [TODO] Write shaders
-    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox.vert.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv", mRenderer->mRendererCore.mDevice);
 
     vk::PushConstantRange pushConstantRange{};
     pushConstantRange.offset = 0;
@@ -49,7 +53,8 @@ void Skybox::initSkyboxPipeline()
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
     std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-        *mSkyboxDescriptorSetLayout
+        *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout,
+        *mSkyboxDescriptorSetLayout,
     };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
@@ -81,47 +86,47 @@ void Skybox::initSkyboxPipeline()
 void Skybox::initSkyboxBuffer()
 {
     mSkyboxVertices = {
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+        -1.f,  1.f, -1.f, 0.f,
+        -1.f, -1.f, -1.f, 0.f,
+         1.f, -1.f, -1.f, 0.f,
+         1.f, -1.f, -1.f, 0.f,
+         1.f,  1.f, -1.f, 0.f,
+        -1.f,  1.f, -1.f, 0.f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+        -1.f, -1.f,  1.f, 0.f,
+        -1.f, -1.f, -1.f, 0.f,
+        -1.f,  1.f, -1.f, 0.f,
+        -1.f,  1.f, -1.f, 0.f,
+        -1.f,  1.f,  1.f, 0.f,
+        -1.f, -1.f,  1.f, 0.f,
 
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
+         1.f, -1.f, -1.f, 0.f,
+         1.f, -1.f,  1.f, 0.f,
+         1.f,  1.f,  1.f, 0.f,
+         1.f,  1.f,  1.f, 0.f,
+         1.f,  1.f, -1.f, 0.f,
+         1.f, -1.f, -1.f, 0.f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+        -1.f, -1.f,  1.f, 0.f,
+        -1.f,  1.f,  1.f, 0.f,
+         1.f,  1.f,  1.f, 0.f,
+         1.f,  1.f,  1.f, 0.f,
+         1.f, -1.f,  1.f, 0.f,
+        -1.f, -1.f,  1.f, 0.f,
 
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
+        -1.f,  1.f, -1.f, 0.f,
+         1.f,  1.f, -1.f, 0.f,
+         1.f,  1.f,  1.f, 0.f,
+         1.f,  1.f,  1.f, 0.f,
+        -1.f,  1.f,  1.f, 0.f,
+        -1.f,  1.f, -1.f, 0.f,
 
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
+        -1.f, -1.f, -1.f, 0.f,
+        -1.f, -1.f,  1.f, 0.f,
+         1.f, -1.f, -1.f, 0.f,
+         1.f, -1.f, -1.f, 0.f,
+        -1.f, -1.f,  1.f, 0.f,
+         1.f, -1.f,  1.f, 0.f,
     };
 
     int skyboxVertexSize = mSkyboxVertices.size() * sizeof(float);
@@ -148,15 +153,8 @@ void Skybox::init(fs::path right, fs::path left, fs::path top, fs::path bottom, 
 {
     loadSkyboxImage(right, left, top, bottom, front, back);
     initSkyboxDescriptor();
-    //initSkyboxPipeline(); // [TODO] Uncomment when shaders are written
+    initSkyboxPipeline(); 
     initSkyboxBuffer();
-}
-
-void Skybox::updateSkybox()
-{
-    DescriptorWriter writer;
-    writer.writeBuffer(0, *mRenderer->mSceneManager.mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer); // Reuse camera data
-    writer.updateSet(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
 }
 
 void Skybox::cleanup()
@@ -165,4 +163,5 @@ void Skybox::cleanup()
     mSkyboxDescriptorSet.clear();
     mSkyboxDescriptorSetLayout.clear();
     mSkyboxVertexBuffer.cleanup();
+    mSkyboxPipeline.cleanup();
 }

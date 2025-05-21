@@ -173,6 +173,7 @@ public:
 
     std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
     vk::raii::Sampler mDefaultSampler;
+    vk::ClearValue mDefaultClearValue;
 
     ResourceManager(Renderer* renderer);
 

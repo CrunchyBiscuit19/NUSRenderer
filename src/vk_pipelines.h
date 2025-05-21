@@ -22,6 +22,10 @@ struct PipelineBundle {
 		layout(std::move(layout))
 	{}
 
+    ~PipelineBundle() {
+        cleanup();
+    }
+
     PipelineBundle(PipelineBundle&& other) noexcept : 
         pipeline(std::move(other.pipeline)), 
         layout(std::move(other.layout)) 
@@ -38,6 +42,10 @@ struct PipelineBundle {
     PipelineBundle(const PipelineBundle&) = delete;
     PipelineBundle& operator=(const PipelineBundle&) = delete;
 
+    void cleanup() {
+        layout.clear();
+        pipeline.clear();
+    }
 };
 
 struct PipelineOptions {

@@ -37,8 +37,8 @@ void RendererInfrastructure::initDescriptors()
     PbrMaterial::createResourcesDescriptorSetLayout(mRenderer);
 
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
-        { vk::DescriptorType::eUniformBuffer, 1 }, // Scene UBO
-        { vk::DescriptorType::eCombinedImageSampler, 1 }, // Skybox UBO
+        { vk::DescriptorType::eUniformBuffer, 1 },          // Scene UBO
+        { vk::DescriptorType::eCombinedImageSampler, 1 },   // Skybox Cubemap
     };
     mDescriptorAllocator.init(1, sizes);
 }
@@ -172,7 +172,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
     std::vector<vk::DescriptorSetLayout> descriptorLayouts = { 
-        *mRenderer->mSceneManager.mSceneEncapsulation.mSceneDescriptorSetLayout, 
+        *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout, 
         *PbrMaterial::mResourcesDescriptorSetLayout 
     };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
