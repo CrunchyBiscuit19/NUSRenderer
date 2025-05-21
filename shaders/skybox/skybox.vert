@@ -10,7 +10,8 @@ void main()
 {
 	Vertex v = pushConstants.vertexBuffer.vertices[gl_VertexIndex];
 	vec4 position = v.position;
-	gl_Position = scene.proj * scene.view * position; 
+	gl_Position = scene.proj * mat4(mat3(scene.view)) * position; 
+	gl_Position = gl_Position.xyww;
 
 	outUVW = v.position.xyz;
 } 

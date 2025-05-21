@@ -73,8 +73,8 @@ void Skybox::initSkyboxPipeline()
     pipelineBuilder.disableBlending();
     pipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
     pipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
-    pipelineBuilder.enableBlendingAdditive();
-    pipelineBuilder.enableDepthtest(false, vk::CompareOp::eLessOrEqual); // [TODO] Depth shite
+    //pipelineBuilder.enableBlendingAdditive();
+    pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual); // [TODO] Depth shite
     pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
     mSkyboxPipeline = PipelineBundle{
@@ -86,47 +86,47 @@ void Skybox::initSkyboxPipeline()
 void Skybox::initSkyboxBuffer()
 {
     mSkyboxVertices = {
-        -1.f,  1.f, -1.f, 0.f,
-        -1.f, -1.f, -1.f, 0.f,
-         1.f, -1.f, -1.f, 0.f,
-         1.f, -1.f, -1.f, 0.f,
-         1.f,  1.f, -1.f, 0.f,
-        -1.f,  1.f, -1.f, 0.f,
+        -1.0f,  1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, -1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f, 1.0f,
+         1.0f,  1.0f, -1.0f, 1.0f,
+        -1.0f,  1.0f, -1.0f, 1.0f,
 
-        -1.f, -1.f,  1.f, 0.f,
-        -1.f, -1.f, -1.f, 0.f,
-        -1.f,  1.f, -1.f, 0.f,
-        -1.f,  1.f, -1.f, 0.f,
-        -1.f,  1.f,  1.f, 0.f,
-        -1.f, -1.f,  1.f, 0.f,
-
-         1.f, -1.f, -1.f, 0.f,
-         1.f, -1.f,  1.f, 0.f,
-         1.f,  1.f,  1.f, 0.f,
-         1.f,  1.f,  1.f, 0.f,
-         1.f,  1.f, -1.f, 0.f,
-         1.f, -1.f, -1.f, 0.f,
-
-        -1.f, -1.f,  1.f, 0.f,
-        -1.f,  1.f,  1.f, 0.f,
-         1.f,  1.f,  1.f, 0.f,
-         1.f,  1.f,  1.f, 0.f,
-         1.f, -1.f,  1.f, 0.f,
-        -1.f, -1.f,  1.f, 0.f,
-
-        -1.f,  1.f, -1.f, 0.f,
-         1.f,  1.f, -1.f, 0.f,
-         1.f,  1.f,  1.f, 0.f,
-         1.f,  1.f,  1.f, 0.f,
-        -1.f,  1.f,  1.f, 0.f,
-        -1.f,  1.f, -1.f, 0.f,
-
-        -1.f, -1.f, -1.f, 0.f,
-        -1.f, -1.f,  1.f, 0.f,
-         1.f, -1.f, -1.f, 0.f,
-         1.f, -1.f, -1.f, 0.f,
-        -1.f, -1.f,  1.f, 0.f,
-         1.f, -1.f,  1.f, 0.f,
+        -1.0f, -1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f, -1.0f, 1.0f,
+        -1.0f,  1.0f, -1.0f, 1.0f,
+        -1.0f,  1.0f, -1.0f, 1.0f,
+        -1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f, 1.0f,
+                             
+         1.0f, -1.0f, -1.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 1.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f,  1.0f, -1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f, 1.0f,
+                             
+        -1.0f, -1.0f,  1.0f, 1.0f,
+        -1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f, 1.0f,
+                             
+        -1.0f,  1.0f, -1.0f, 1.0f,
+         1.0f,  1.0f, -1.0f, 1.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f,  1.0f, -1.0f, 1.0f,
+                             
+        -1.0f, -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 1.0f,
     };
 
     int skyboxVertexSize = mSkyboxVertices.size() * sizeof(float);

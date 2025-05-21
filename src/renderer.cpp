@@ -138,7 +138,7 @@ void Renderer::draw()
 
     drawGeometry(cmd);
 
-    //drawSkybox(cmd);
+    drawSkybox(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
@@ -220,9 +220,6 @@ void Renderer::drawClearScreen(vk::CommandBuffer cmd)
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
-
-
-
     cmd.endRendering();
 }
 
@@ -249,19 +246,9 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneManager.mSceneResources.mSceneDescriptorSet, nullptr);
 
-            vk::Viewport viewport = {
-                0,
-                0,
-                static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
-                static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
-                0.f,
-                1.f,
-            };
+            vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
             cmd.setViewport(0, viewport);
-            vk::Rect2D scissor = {
-                vk::Offset2D {0, 0},
-                vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height},
-            };
+            vk::Rect2D scissor = { vk::Offset2D {0, 0}, vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height}, };
             cmd.setScissor(0, scissor);
         }
 
@@ -301,19 +288,9 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.pipeline);
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, *mSceneManager.mSceneResources.mSceneDescriptorSet, nullptr);
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 1, *mSceneManager.mSkybox.mSkyboxDescriptorSet, nullptr);
-    vk::Viewport viewport = {
-        0,
-        0,
-        static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
-        static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
-        0.f,
-        1.f,
-    };
+    vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
     cmd.setViewport(0, viewport);
-    vk::Rect2D scissor = {
-        vk::Offset2D {0, 0},
-        vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height},
-    };
+    vk::Rect2D scissor = { vk::Offset2D {0, 0}, vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height}, };
     cmd.setScissor(0, scissor);
     cmd.pushConstants<SkyBoxPushConstants>(*mSceneManager.mSkybox.mSkyboxPipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, mSceneManager.mSkybox.mSkyboxPushConstants);
 
