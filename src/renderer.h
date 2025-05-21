@@ -50,9 +50,10 @@ public:
     void cleanup();
 
     void draw();
-    void drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView);
+    void drawClearScreen(vk::CommandBuffer cmd);
     void drawGeometry(vk::CommandBuffer cmd);
     void drawSkybox(vk::CommandBuffer cmd);
+    void drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView);
 
     void drawCleanup();
     void drawUpdate();

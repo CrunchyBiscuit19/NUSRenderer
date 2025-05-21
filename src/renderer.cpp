@@ -134,9 +134,11 @@ void Renderer::draw()
         vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
         vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
 
-    //drawGeometry(cmd);
+    drawClearScreen(cmd);
 
-    drawSkybox(cmd);
+    drawGeometry(cmd);
+
+    //drawSkybox(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
@@ -211,13 +213,16 @@ void Renderer::draw()
     mStats.mDrawTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
 }
 
-void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
+void Renderer::drawClearScreen(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(targetImageView, nullptr, vk::ImageLayout::eGeneral);
-    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, &mResourceManager.mDefaultClearValue, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+
+
     cmd.endRendering();
 }
 
@@ -227,7 +232,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     // [TODO] Sorting and culling
     
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, &mResourceManager.mDefaultClearValue, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eColorAttachmentOptimal);
     vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
@@ -315,6 +320,16 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
     cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
     mStats.mDrawCallCount++;
 
+    cmd.endRendering();
+}
+
+void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
+{
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(targetImageView, nullptr, vk::ImageLayout::eGeneral);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
+
+    cmd.beginRendering(renderInfo);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
     cmd.endRendering();
 }
 
