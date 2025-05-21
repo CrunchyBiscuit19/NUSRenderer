@@ -302,6 +302,38 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     cmd.endRendering();
 }
 
+void Renderer::drawSkybox(vk::CommandBuffer cmd)
+{
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eGeneral);
+    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
+
+    cmd.beginRendering(renderInfo);
+
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.pipeline);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, *mSceneManager.mSkybox.mSkyboxDescriptorSet, nullptr);
+    vk::Viewport viewport = {
+        0,
+        0,
+        static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
+        static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
+        0.f,
+        1.f,
+    };
+    cmd.setViewport(0, viewport);
+    vk::Rect2D scissor = {
+        vk::Offset2D {0, 0},
+        vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height},
+    };
+    cmd.setScissor(0, scissor);
+    cmd.pushConstants<SkyBoxPushConstants>(*mSceneManager.mSkybox.mSkyboxPipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, mSceneManager.mSkybox.mSkyboxPushConstants);
+
+    cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
+    mStats.mDrawCallCount++;
+
+    cmd.endRendering();
+}
+
 void Renderer::drawCleanup()
 {
     mRegenRenderItems = false;

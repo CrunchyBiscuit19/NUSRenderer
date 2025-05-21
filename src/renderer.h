@@ -52,6 +52,7 @@ public:
     void draw();
     void drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView);
     void drawGeometry(vk::CommandBuffer cmd);
+    void drawSkybox(vk::CommandBuffer cmd);
 
     void drawCleanup();
     void drawUpdate();

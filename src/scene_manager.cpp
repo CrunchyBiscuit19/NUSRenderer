@@ -15,13 +15,13 @@ SceneManager::SceneManager(Renderer* renderer):
 void SceneManager::init()
 {
 	mSceneEncapsulation.init();
-	mSkybox.loadSkyboxImage(
+	mSkybox.init(
 		fs::path(std::string(SKYBOXES_PATH) + "ocean/right.jpg"),
 		fs::path(std::string(SKYBOXES_PATH) + "ocean/left.jpg"),
 		fs::path(std::string(SKYBOXES_PATH) + "ocean/top.jpg"),
 		fs::path(std::string(SKYBOXES_PATH) + "ocean/bottom.jpg"),
 		fs::path(std::string(SKYBOXES_PATH) + "ocean/front.jpg"),
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/back.jpg"));
+		fs::path(std::string(SKYBOXES_PATH) + "ocean/back.jpg")); 
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -72,6 +72,8 @@ void SceneManager::updateScene()
 	DescriptorWriter writer;
 	writer.writeBuffer(0, *mSceneEncapsulation.mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
 	writer.updateSet(mRenderer->mRendererCore.mDevice, *mSceneEncapsulation.mSceneDescriptorSet);
+
+	mSkybox.updateSkybox();
 }
 
 void SceneManager::cleanup()
