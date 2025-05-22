@@ -14,28 +14,42 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
     void* pUserData
 )
 {
-    std::string message;
-    message += vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(messageSeverity)) + ": " +
-        vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)) + ":\n";
-    message += std::string("\t") + "messageIDName   = <" + pCallbackData->pMessageIdName + ">\n";
-    message += std::string("\t") + "messageIdNumber = " + std::to_string(pCallbackData->messageIdNumber) + "\n";
-    message += std::string("\t") + "message         = <" + pCallbackData->pMessage + ">\n";
-
-    message += std::string("\t") + "Queue Labels:\n";
-    for (uint32_t i = 0; i < pCallbackData->queueLabelCount; i++)
-        message += std::string("\t\t") + "labelName = <" + pCallbackData->pQueueLabels[i].pLabelName + ">\n";
-    message += std::string("\t") + "CommandBuffer Labels:\n";
-    for (uint32_t i = 0; i < pCallbackData->cmdBufLabelCount; i++)
-        message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
-    for (uint32_t i = 0; i < pCallbackData->objectCount; i++)
-    {
-        message += std::string("\t") + "Resource " + std::to_string(i);
-        message += std::string("\t\t") + "[ ResourceType   = " + vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)) + ", ";
-        message += std::string("\t\t") + "ResourceHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "] \n";
-        if (pCallbackData->pObjects[i].pObjectName)
-            message += std::string("\t\t") + "ResourceName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
+    std::string severity;
+    switch (messageSeverity) {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        severity = "ERROR";
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        severity = "WARNING";
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        severity = "INFO: ";
+        break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+        severity = "VERBOSE: ";
+        break;
     }
-    
+
+    std::string message;
+    message += fmt::format("{} <{}>\n\n", severity, std::string(pCallbackData->pMessageIdName));
+    message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
+
+    message += fmt::format("Queue Labels:\n");
+    for (int i = 0; i < pCallbackData->queueLabelCount; i++)
+        message += fmt::format("labelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
+    message += fmt::format("CommandBuffer Labels:\n");
+    for (int i = 0; i < pCallbackData->cmdBufLabelCount; i++)
+        message += fmt::format("labelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
+
+    message += fmt::format("\n");
+
+    for (int i = 0; i < pCallbackData->objectCount; i++)
+    {
+        message += fmt::format("Resource {} -> [ ResourceType   = {}, ResourceHandle = {}]\n", std::to_string(i), vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)), std::to_string(pCallbackData->pObjects[i].objectHandle));
+        if (pCallbackData->pObjects[i].pObjectName)
+            message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
+    }
+
     fmt::println("{}", message);
     return false;
 }
@@ -66,14 +80,12 @@ void RendererCore::init()
     mContext = vk::raii::Context();
 
     vkb::InstanceBuilder builder;
-    VkValidationFeatureEnableEXT validationFeaturesEnables[] = { static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf) };
     auto instResult = builder.set_app_name("Vulkan renderer")
         .request_validation_layers(USE_VALIDATION_LAYERS)
         .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
         .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
         .set_debug_callback(debugMessageFunc)
         .require_api_version(1, 3, 0)
-        .add_validation_feature_enable(validationFeaturesEnables[0])
         .build();
     const vkb::Instance vkbInst = instResult.value();
     mInstance = vk::raii::Instance(mContext, vkbInst.instance);

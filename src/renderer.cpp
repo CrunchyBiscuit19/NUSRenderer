@@ -113,6 +113,7 @@ void Renderer::draw()
 
     vk::CommandBuffer cmd = *mRendererInfrastructure.getCurrentFrame().mCommandBuffer;
     cmd.reset();
+
     vk::CommandBufferBeginInfo cmdBeginInfo = vkinit::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
