@@ -58,6 +58,7 @@ public:
     PipelineBundle* getMaterialPipeline(PipelineOptions pipelineOptions);
     void createMaterialPipeline(PipelineOptions pipelineOptions);
     void createComputePipeline(PipelineOptions pipelineOptions);
+    void createSkyboxPipeline();
     void destroyPipelines();
 
     void cleanup();

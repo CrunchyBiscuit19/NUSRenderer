@@ -149,12 +149,24 @@ void GraphicsPipelineBuilder::enableBlendingAdditive()
     mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
 }
 
-void GraphicsPipelineBuilder::enableBlendingAlphablend()
+void GraphicsPipelineBuilder::enableBlendingAlpha()
 {
     mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     mColorBlendAttachment.blendEnable = VK_TRUE;
     mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
     mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
+    mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
+}
+
+void GraphicsPipelineBuilder::enableBlendingSkybox()
+{
+    mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    mColorBlendAttachment.blendEnable = VK_TRUE;
+    mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha;
+    mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
     mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
     mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
     mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;

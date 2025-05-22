@@ -192,16 +192,13 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pipelineBuilder.setShaders(*vertexShader, *fragShader);
     pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
     pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
-    pipelineBuilder.setCullMode(cullMode, vk::FrontFace::eClockwise);
+    pipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
     pipelineBuilder.setMultisamplingNone();
-    pipelineBuilder.disableBlending();
+    transparency ? pipelineBuilder.enableBlendingAdditive() : pipelineBuilder.disableBlending();
+    transparency ? pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual) : pipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);;
     pipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
     pipelineBuilder.setColorAttachmentFormat(mDrawImage.imageFormat);
     pipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
-    if (transparency) {
-        pipelineBuilder.enableBlendingAdditive();
-        pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
-    }
     pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
     PipelineBundle materialPipeline = PipelineBundle {
@@ -230,6 +227,46 @@ void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptio
         std::move(computePipelineLayout) 
     }; 
     mComputePipelines.emplace(pipelineOptions, std::move(computePipeline));
+}
+
+void RendererInfrastructure::createSkyboxPipeline()
+{
+    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv", mRenderer->mRendererCore.mDevice);
+
+    vk::PushConstantRange pushConstantRange{};
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(SkyBoxPushConstants);
+    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
+    std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
+        *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout,
+        *mRenderer->mSceneManager.mSkybox.mSkyboxDescriptorSetLayout,
+    };
+    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
+    pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
+    pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
+    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+
+    vk::raii::PipelineLayout pipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
+
+    GraphicsPipelineBuilder pipelineBuilder;
+    pipelineBuilder.setShaders(*vertexShader, *fragShader);
+    pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
+    pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
+    pipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
+    pipelineBuilder.setMultisamplingNone();
+    pipelineBuilder.enableBlendingSkybox();
+    pipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
+    pipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
+    pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
+    pipelineBuilder.mPipelineLayout = *pipelineLayout;
+
+    mRenderer->mSceneManager.mSkybox.mSkyboxPipeline = PipelineBundle{
+        std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
+        std::move(pipelineLayout)
+    };
 }
 
 void RendererInfrastructure::destroyPipelines()

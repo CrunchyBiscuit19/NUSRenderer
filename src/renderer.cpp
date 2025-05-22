@@ -215,8 +215,8 @@ void Renderer::draw()
 
 void Renderer::drawClearScreen(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, &mResourceManager.mDefaultClearValue, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, mResourceManager.mDefaultColorClearValue, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ClearDepthStencilValue { 0, 0 }, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
@@ -229,8 +229,8 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     // [TODO] Sorting and culling
     
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, std::nullopt, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
@@ -279,8 +279,8 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
 void Renderer::drawSkybox(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, nullptr, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkinit::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, std::nullopt, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
@@ -302,7 +302,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 
 void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::attachmentInfo(targetImageView, nullptr, vk::ImageLayout::eGeneral);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(targetImageView, std::nullopt, vk::ImageLayout::eGeneral);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);

@@ -44,43 +44,7 @@ void Skybox::initSkyboxDescriptor()
 
 void Skybox::initSkyboxPipeline()
 {
-    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv", mRenderer->mRendererCore.mDevice);
-    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv", mRenderer->mRendererCore.mDevice);
-
-    vk::PushConstantRange pushConstantRange{};
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(SkyBoxPushConstants);
-    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-
-    std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-        *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout,
-        *mSkyboxDescriptorSetLayout,
-    };
-    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
-    pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
-    pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-
-    vk::raii::PipelineLayout pipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
-
-    GraphicsPipelineBuilder pipelineBuilder;
-    pipelineBuilder.setShaders(*vertexShader, *fragShader);
-    pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
-    pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
-    pipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise);
-    pipelineBuilder.setMultisamplingNone();
-    pipelineBuilder.disableBlending();
-    pipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
-    pipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
-    //pipelineBuilder.enableBlendingAdditive();
-    pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual); // [TODO] Depth shite
-    pipelineBuilder.mPipelineLayout = *pipelineLayout;
-
-    mSkyboxPipeline = PipelineBundle{
-        std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
-        std::move(pipelineLayout)
-    };
+    mRenderer->mRendererInfrastructure.createSkyboxPipeline();
 }
 
 void Skybox::initSkyboxBuffer()

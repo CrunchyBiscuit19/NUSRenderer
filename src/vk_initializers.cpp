@@ -92,29 +92,31 @@ vk::PresentInfoKHR vkinit::presentInfo()
     return info;
 }
 
-vk::RenderingAttachmentInfo vkinit::attachmentInfo(
-    vk::ImageView view, vk::ClearValue* clear ,vk::ImageLayout layout)
+vk::RenderingAttachmentInfo vkinit::colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear,vk::ImageLayout layout)
 {
     vk::RenderingAttachmentInfo colorAttachment {};
     colorAttachment.pNext = nullptr;
     colorAttachment.imageView = view;
     colorAttachment.imageLayout = layout;
-    colorAttachment.loadOp = clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+    colorAttachment.loadOp = clear.has_value() ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    if (clear) {
-        colorAttachment.clearValue = *clear;
+    if (clear.has_value()) {
+        colorAttachment.clearValue = clear.value();
     }
     return colorAttachment;
 }
 
-vk::RenderingAttachmentInfo vkinit::depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout)
+vk::RenderingAttachmentInfo vkinit::depthAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout)
 {
     vk::RenderingAttachmentInfo depthAttachment {};
     depthAttachment.pNext = nullptr;
     depthAttachment.imageView = view;
     depthAttachment.imageLayout = layout;
-    depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+    depthAttachment.loadOp = clear.has_value() ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
     depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+    if (clear.has_value()) {
+        depthAttachment.clearValue = clear.value();
+    }
     depthAttachment.clearValue.depthStencil.depth = 0.f;
     return depthAttachment;
 }

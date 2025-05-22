@@ -91,7 +91,8 @@ public:
     void setMultisamplingNone();
     void disableBlending();
     void enableBlendingAdditive();
-    void enableBlendingAlphablend();
+    void enableBlendingAlpha();
+    void enableBlendingSkybox();
     void setColorAttachmentFormat(vk::Format format);
     void setDepthFormat(vk::Format format);
     void disableDepthtest();

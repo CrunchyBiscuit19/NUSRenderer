@@ -16,9 +16,9 @@ vk::SemaphoreCreateInfo semaphoreCreateInfo();
 vk::SubmitInfo2 submitInfo(vk::CommandBufferSubmitInfo* cmd, vk::SemaphoreSubmitInfo* signalSemaphoreInfo, vk::SemaphoreSubmitInfo* waitSemaphoreInfo);
 vk::PresentInfoKHR presentInfo();
 
-vk::RenderingAttachmentInfo attachmentInfo(vk::ImageView view, vk::ClearValue* clear, vk::ImageLayout layout);
+vk::RenderingAttachmentInfo colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout);
 
-vk::RenderingAttachmentInfo depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout);
+vk::RenderingAttachmentInfo depthAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout);
 
 vk::RenderingInfo renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment,
     vk::RenderingAttachmentInfo* depthAttachment);
