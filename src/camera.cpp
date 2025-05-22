@@ -72,7 +72,7 @@ glm::vec3 Camera::getDirectionVector() const
     direction.x = std::cos(pitch) * std::sin(yaw);
     direction.y = std::sin(pitch);
     direction.z = -std::cos(pitch) * std::cos(yaw);
-    return glm::normalize(direction);
+    return -glm::normalize(direction);
 }
 
 void Camera::update(float deltaTime, float expectedDeltaTime)

@@ -80,7 +80,8 @@ void RendererCore::init()
     mContext = vk::raii::Context();
 
     vkb::InstanceBuilder builder;
-    auto instResult = builder.set_app_name("Vulkan renderer")
+    auto instResult = builder
+        .set_app_name("Vulkan renderer")
         .request_validation_layers(USE_VALIDATION_LAYERS)
         .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
         .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))

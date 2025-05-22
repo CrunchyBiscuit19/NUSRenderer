@@ -58,7 +58,7 @@ void SceneManager::generateRenderItems()
 
 void SceneManager::updateScene()
 {
-	mSceneResources.mSceneData.sunlightDirection = glm::vec4(mSceneResources.mSceneData.sunlightDirection[0], mRenderer->mCamera.getDirectionVector());
+	mSceneResources.mSceneData.sunlightDirection = glm::vec4(mRenderer->mCamera.getDirectionVector(), mSceneResources.mSceneData.sunlightDirection[3]);
 
 	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mSceneResources.mSceneData.view = mRenderer->mCamera.getViewMatrix();

@@ -241,7 +241,7 @@ void RendererInfrastructure::createSkyboxPipeline()
 
     std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
         *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout,
-        *mRenderer->mSceneManager.mSkybox.mSkyboxDescriptorSetLayout,
+        *mRenderer->mSceneManager.mSkybox.mSkyboxDescriptorSetLayout
     };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();

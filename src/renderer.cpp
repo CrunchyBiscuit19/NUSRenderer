@@ -136,9 +136,7 @@ void Renderer::draw()
         vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
 
     drawClearScreen(cmd);
-
     drawGeometry(cmd);
-
     drawSkybox(cmd);
 
     // Transition the draw image and the swapchain image into their correct transfer layouts
@@ -187,13 +185,13 @@ void Renderer::draw()
     const vk::SubmitInfo2 submit = vkinit::submitInfo(&cmdinfo, &signalInfo, &waitInfo);
 
     // Submit command buffer to the queue and execute it.
-    // _renderFence will block CPU from going to next frame, stays unsignalled until this is done.
-    // _swapchainSemaphore gets waited on until it is signalled when the next image is acquired.
-    // _renderSemaphore will be signalled by this function when this queue's commands are executed.
+    // mRenderFence will block CPU from going to next frame, stays unsignalled until this is done.
+    // mSwapchainSemaphore gets waited on until it is signalled when the next image is acquired.
+    // mRenderSemaphore will be signalled by this function when this queue's commands are executed.
     mRendererCore.mGraphicsQueue.submit2(submit, *mRendererInfrastructure.getCurrentFrame().mRenderFence);
 
     // Prepare present.
-    // Wait on the _renderSemaphore for queue commands to finish before image is presented.
+    // Wait on the mRenderSemaphore for queue commands to finish before image is presented.
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.pNext = nullptr;
     presentInfo.pSwapchains = &(*mRendererInfrastructure.mSwapchain);
@@ -287,8 +285,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
     cmd.beginRendering(renderInfo);
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.pipeline);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, *mSceneManager.mSceneResources.mSceneDescriptorSet, nullptr);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 1, *mSceneManager.mSkybox.mSkyboxDescriptorSet, nullptr);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mSceneManager.mSceneResources.mSceneDescriptorSet, *mSceneManager.mSkybox.mSkyboxDescriptorSet }, nullptr);
     vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
     cmd.setViewport(0, viewport);
     vk::Rect2D scissor = { vk::Offset2D {0, 0}, vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height}, };
