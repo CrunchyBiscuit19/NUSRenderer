@@ -124,7 +124,7 @@ void DescriptorAllocatorGrowable::cleanup()
 	mFullPools.clear();
 }
 
-void DescriptorWriter::writeImage(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type)
+void DescriptorSetBinder::bindImage(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type)
 {
     const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
     vk::WriteDescriptorSet write = {};
@@ -136,7 +136,7 @@ void DescriptorWriter::writeImage(int binding, const vk::ImageView image, const 
     mWrites.push_back(write);
 }
 
-void DescriptorWriter::writeImageArray(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type, uint32_t arrayIndex)
+void DescriptorSetBinder::bindImageArray(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type, uint32_t arrayIndex)
 {
     const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
     vk::WriteDescriptorSet write = {};
@@ -149,7 +149,7 @@ void DescriptorWriter::writeImageArray(int binding, const vk::ImageView image, c
     mWrites.push_back(write);
 }
 
-void DescriptorWriter::writeBuffer(int binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type)
+void DescriptorSetBinder::bindBuffer(int binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type)
 {
     const vk::DescriptorBufferInfo& info = mBufferInfos.emplace_back(buffer, offset, size);
     vk::WriteDescriptorSet write = {};
@@ -161,14 +161,14 @@ void DescriptorWriter::writeBuffer(int binding, const vk::Buffer buffer, size_t 
     mWrites.push_back(write);
 }
 
-void DescriptorWriter::clear()
+void DescriptorSetBinder::clear()
 {
     mImageInfos.clear();
     mBufferInfos.clear();
     mWrites.clear();
 }
 
-void DescriptorWriter::updateSet(const vk::raii::Device& device, const vk::DescriptorSet set)
+void DescriptorSetBinder::updateSetBindings(const vk::raii::Device& device, const vk::DescriptorSet set)
 {
     for (vk::WriteDescriptorSet& write : mWrites)
         write.dstSet = set;

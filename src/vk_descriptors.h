@@ -45,15 +45,15 @@ private:
     uint32_t mSetsPerPool = 0;
 };
 
-struct DescriptorWriter {
+struct DescriptorSetBinder {
     std::deque<vk::DescriptorImageInfo> mImageInfos; // Deques are guaranteed to keep pointers to elements valid
     std::deque<vk::DescriptorBufferInfo> mBufferInfos;
     std::vector<vk::WriteDescriptorSet> mWrites;
 
-    void writeImage(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
-    void writeImageArray(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type, uint32_t arrayIndex);
-    void writeBuffer(int binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
+    void bindImage(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
+    void bindImageArray(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type, uint32_t arrayIndex);
+    void bindBuffer(int binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
 
     void clear();
-    void updateSet(const vk::raii::Device& device, const vk::DescriptorSet set);
+    void updateSetBindings(const vk::raii::Device& device, const vk::DescriptorSet set);
 };

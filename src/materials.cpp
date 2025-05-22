@@ -35,12 +35,12 @@ void PbrMaterial::writeMaterialResources()
     getMaterialPipeline();
     mResourcesDescriptorSet = mDescriptorAllocator->allocate(*mResourcesDescriptorSetLayout);
 
-    DescriptorWriter writer;
-    writer.writeImage(0, *mPbrData.resources.base.image->imageView, mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.writeImage(1, *mPbrData.resources.metallicRoughness.image->imageView, mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.writeImage(2, *mPbrData.resources.normal.image->imageView, mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.writeImage(3, *mPbrData.resources.occlusion.image->imageView, mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.writeImage(4, *mPbrData.resources.emissive.image->imageView, mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.updateSet(mRenderer->mRendererCore.mDevice, *mResourcesDescriptorSet);
+    DescriptorSetBinder writer;
+    writer.bindImage(0, *mPbrData.resources.base.image->imageView, mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.bindImage(1, *mPbrData.resources.metallicRoughness.image->imageView, mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.bindImage(2, *mPbrData.resources.normal.image->imageView, mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.bindImage(3, *mPbrData.resources.occlusion.image->imageView, mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.bindImage(4, *mPbrData.resources.emissive.image->imageView, mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mResourcesDescriptorSet);
 }
  

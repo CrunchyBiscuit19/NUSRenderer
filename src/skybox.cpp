@@ -37,9 +37,9 @@ void Skybox::initSkyboxDescriptor()
     mSkyboxDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eFragment);
     mSkyboxDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mSkyboxDescriptorSetLayout);
 
-    DescriptorWriter writer;
-    writer.writeImage(0, *mSkyboxImage.imageView, *mRenderer->mResourceManager.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.updateSet(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
+    DescriptorSetBinder writer;
+    writer.bindImage(0, *mSkyboxImage.imageView, *mRenderer->mResourceManager.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
 }
 
 void Skybox::initSkyboxPipeline()

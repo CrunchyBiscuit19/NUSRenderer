@@ -98,7 +98,6 @@ void Renderer::draw()
     auto start = std::chrono::system_clock::now();
 
     mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
-    mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence); // Flip to unsignalled
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     uint32_t swapchainImageIndex = 0;
@@ -111,6 +110,7 @@ void Renderer::draw()
         return;
     }
 
+    mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence); // Flip to unsignalled
     vk::CommandBuffer cmd = *mRendererInfrastructure.getCurrentFrame().mCommandBuffer;
     cmd.reset();
 
@@ -300,7 +300,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 
 void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(targetImageView, std::nullopt, vk::ImageLayout::eGeneral);
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(targetImageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);

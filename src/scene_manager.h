@@ -41,7 +41,12 @@ public:
 
     SceneResources(Renderer* renderer);
 
+    void initSceneResourcesData();
+    void initSceneResourcesBuffer();
+    void initSceneResourcesDescriptor();
     void init();
+
+    void updateResources();
 
     void cleanup();
 };
