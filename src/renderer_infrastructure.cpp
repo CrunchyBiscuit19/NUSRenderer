@@ -78,54 +78,23 @@ void RendererInfrastructure::createSwapchain()
     for (auto& imageView : vkbSwapchain.get_image_views().value())
         mSwapchainImageViews.emplace_back(vk::raii::ImageView(mRenderer->mRendererCore.mDevice, imageView));
 
-    VmaAllocationCreateInfo imageAllocateInfo = {};
-    imageAllocateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    imageAllocateInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
+    mDrawImage = mRenderer->mResourceManager.createImage(
+        vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 }, 
+        vk::Format::eR16G16B16A16Sfloat, 
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment, 
+        false, true, false);
 
-    // Draw image
-    mDrawImage.imageFormat = vk::Format::eR16G16B16A16Sfloat;
-    mDrawImage.imageExtent = vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent.width, mRenderer->mRendererCore.mWindowExtent.height, 1 };
-    vk::ImageUsageFlags drawImageUsages = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment;
-    vk::ImageCreateInfo drawImageCreateInfo = vkinit::imageCreateInfo(mDrawImage.imageFormat, drawImageUsages, true, mDrawImage.imageExtent);
-    VkImageCreateInfo drawImageCreateInfo1 = static_cast<VkImageCreateInfo>(drawImageCreateInfo);
-    
-    VkImage drawImage;
-    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &drawImageCreateInfo1, &imageAllocateInfo, &drawImage, &mDrawImage.allocation, nullptr);
-    mDrawImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, drawImage);
-	mDrawImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
+    mIntermediateImage = mRenderer->mResourceManager.createImage(
+        vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
+        vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
+        false, false, false);
 
-    vk::ImageViewCreateInfo drawImageViewCreateInfo = vkinit::imageViewCreateInfo(mDrawImage.imageFormat, *mDrawImage.image, vk::ImageAspectFlagBits::eColor);
-    mDrawImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(drawImageViewCreateInfo);
-
-    // Intermediate Image
-    mIntermediateImage.imageFormat = vk::Format::eR16G16B16A16Sfloat;
-    mIntermediateImage.imageExtent = vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent.width, mRenderer->mRendererCore.mWindowExtent.height, 1 };
-    vk::ImageUsageFlags intermediateImageUsages = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment;
-    vk::ImageCreateInfo intermediateImageCreateInfo = vkinit::imageCreateInfo(mIntermediateImage.imageFormat, intermediateImageUsages, false, mIntermediateImage.imageExtent);
-    VkImageCreateInfo intermediateImageCreateInfo1 = static_cast<VkImageCreateInfo>(intermediateImageCreateInfo);
-
-    VkImage intermediateImage;
-    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &intermediateImageCreateInfo1, &imageAllocateInfo, &intermediateImage, &mIntermediateImage.allocation, nullptr);
-    mIntermediateImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, intermediateImage);
-    mIntermediateImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
-
-    vk::ImageViewCreateInfo intermediateImageViewCreateInfo = vkinit::imageViewCreateInfo(mIntermediateImage.imageFormat, *mIntermediateImage.image, vk::ImageAspectFlagBits::eColor);
-    mIntermediateImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(intermediateImageViewCreateInfo);
-
-    // Depth image
-    mDepthImage.imageFormat = vk::Format::eD32Sfloat;
-    mDepthImage.imageExtent = mDrawImage.imageExtent;
-    vk::ImageUsageFlags depthImageUsages = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-    vk::ImageCreateInfo depthImageCreateInfo = vkinit::imageCreateInfo(mDepthImage.imageFormat, depthImageUsages, true, mDepthImage.imageExtent);
-    VkImageCreateInfo depthImageCreateInfo1 = static_cast<VkImageCreateInfo>(depthImageCreateInfo);
-
-    VkImage swapchainDepthImage;
-    vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &depthImageCreateInfo1, &imageAllocateInfo, &swapchainDepthImage, &mDepthImage.allocation, nullptr);
-    mDepthImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, swapchainDepthImage);
-    mDepthImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
-
-    vk::ImageViewCreateInfo depthImageViewCreateInfo = vkinit::imageViewCreateInfo(mDepthImage.imageFormat, *mDepthImage.image, vk::ImageAspectFlagBits::eDepth);
-    mDepthImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(depthImageViewCreateInfo);
+    mDepthImage = mRenderer->mResourceManager.createImage(
+        mDrawImage.imageExtent,
+        vk::Format::eD32Sfloat,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment,
+        false, true, false);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
         for (int i = 0; i < mSwapchain.getImages().size(); i++) {

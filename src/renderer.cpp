@@ -26,8 +26,8 @@ void Renderer::init()
 {
     mRendererCore.init();
     mImmSubmit.init();
-    mRendererInfrastructure.init();
     mResourceManager.init();
+    mRendererInfrastructure.init();
     mSceneManager.init();
     mGUI.init();
     mCamera.init();
