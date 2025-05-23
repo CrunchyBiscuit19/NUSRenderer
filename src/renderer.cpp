@@ -97,12 +97,12 @@ void Renderer::draw()
 {
     auto start = std::chrono::system_clock::now();
 
-    mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the gpu has finished rendering the frame of this index (become signalled)
+    mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the GPU has finished rendering the frame of this index (become signalled)
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     uint32_t swapchainImageIndex = 0;
     try {
-        auto output = mRendererInfrastructure.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentFrame().mSwapchainSemaphore, nullptr);
+        auto output = mRendererInfrastructure.mSwapchain.acquireNextImage(1e16, *mRendererInfrastructure.getCurrentFrame().mSwapchainSemaphore, nullptr);
         swapchainImageIndex = output.second;
     }
     catch (vk::OutOfDateKHRError e) {

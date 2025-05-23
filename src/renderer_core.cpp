@@ -1,3 +1,4 @@
+#include <renderer.h>
 #include <renderer_core.h>
 #include <vk_initializers.h>
 
@@ -31,21 +32,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
     }
 
     std::string message;
-    message += fmt::format("{} <{}>\n\n", severity, std::string(pCallbackData->pMessageIdName));
+    message += fmt::format("{} <{}> Frame {}\n\n", severity, std::string(pCallbackData->pMessageIdName), static_cast<Renderer*>(pUserData)->mRendererInfrastructure.mFrameNumber);
     message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
     message += fmt::format("Queue Labels:\n");
     for (int i = 0; i < pCallbackData->queueLabelCount; i++)
-        message += fmt::format("labelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
+        message += fmt::format("LabelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
     message += fmt::format("CommandBuffer Labels:\n");
     for (int i = 0; i < pCallbackData->cmdBufLabelCount; i++)
-        message += fmt::format("labelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
+        message += fmt::format("LabelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
 
     message += fmt::format("\n");
 
     for (int i = 0; i < pCallbackData->objectCount; i++)
     {
-        message += fmt::format("Resource {} -> [ ResourceType   = {}, ResourceHandle = {}]\n", std::to_string(i), vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)), std::to_string(pCallbackData->pObjects[i].objectHandle));
+        message += fmt::format("Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n", std::to_string(i), vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)), std::to_string(pCallbackData->pObjects[i].objectHandle));
         if (pCallbackData->pObjects[i].pObjectName)
             message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
     }
@@ -86,6 +87,7 @@ void RendererCore::init()
         .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
         .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
         .set_debug_callback(debugMessageFunc)
+        .set_debug_callback_user_data_pointer(mRenderer)
         .require_api_version(1, 3, 0)
         .build();
     const vkb::Instance vkbInst = instResult.value();

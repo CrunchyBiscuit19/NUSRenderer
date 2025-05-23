@@ -67,6 +67,7 @@ void RendererInfrastructure::createSwapchain()
         .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
         .set_desired_extent(mRenderer->mRendererCore.mWindowExtent.width, mRenderer->mRendererCore.mWindowExtent.height)
         .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
+        .set_desired_min_image_count(vkb::SwapchainBuilder::BufferMode::TRIPLE_BUFFERING)
         .build()
         .value();
 
@@ -116,8 +117,8 @@ void RendererInfrastructure::createSwapchain()
     mDepthImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(depthImageViewCreateInfo);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        for (int frame = 0; frame < FRAME_OVERLAP; frame++) {
-            vkutil::transitionImage(*cmd, mSwapchain.getImages()[frame],
+        for (int i = 0; i < mSwapchain.getImages().size(); i++) {
+            vkutil::transitionImage(*cmd, mSwapchain.getImages()[i],
                 vk::PipelineStageFlagBits2::eNone,
                 vk::AccessFlagBits2::eNone,
                 vk::PipelineStageFlagBits2::eNone,
