@@ -21,7 +21,7 @@ void GUI::init() {
 
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
     pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mSwapchainImageFormat;
+    pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mSwapchainBundle.mFormat;
     pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mRendererInfrastructure.mDepthImage.imageFormat;
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
@@ -163,13 +163,13 @@ void GUI::imguiFrame() {
         ImGui::End();
     }
 
-    /*if (ImGui::Begin("Stats")) {
+    if (ImGui::Begin("Stats")) {
         ImGui::Text("Compile Mode: %s", (USE_VALIDATION_LAYERS ? "DEBUG" : "RELEASE"));
         ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrametime);
         ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
         ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
         ImGui::End();
-    }*/
+    }
     ImGui::Render();
 }

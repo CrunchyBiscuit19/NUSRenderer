@@ -106,7 +106,7 @@ void Renderer::draw()
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     uint32_t swapchainImageIndex = 0;
     try {
-        auto output = mRendererInfrastructure.mSwapchain.acquireNextImage(1e16, *mRendererInfrastructure.getCurrentFrame().mSwapchainSemaphore, nullptr);
+        auto output = mRendererInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentSwapchainImage().availableSemaphore, nullptr);
         swapchainImageIndex = output.second;
     }
     catch (vk::OutOfDateKHRError e) {
@@ -122,8 +122,8 @@ void Renderer::draw()
     cmd.begin(cmdBeginInfo);
 
     // Resizing bigger window, don't make swapchain extent go beyond draw image extent
-    mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
-    mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
+    mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainBundle.mExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
+    mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainBundle.mExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
     // Transition to optimal output layouts for drawing geometry
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
@@ -160,29 +160,29 @@ void Renderer::draw()
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferRead,
         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
-    vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eNone,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferWrite,
         vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
      
-    vkutil::copyImage(cmd, *mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::copyImage(cmd, *mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.getCurrentSwapchainImage().image,
         vk::Extent2D{ mRendererInfrastructure.mIntermediateImage.imageExtent.width, mRendererInfrastructure.mIntermediateImage.imageExtent.height, },
-        mRendererInfrastructure.mSwapchainExtent);
+        mRendererInfrastructure.mSwapchainBundle.mExtent);
 
     // Transition swapchain image to color optimal to draw GUI into final swapchain image
-    vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eNone,
         vk::PipelineStageFlagBits2::eNone,
         vk::AccessFlagBits2::eNone,
         vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
-    drawGui(cmd, *mRendererInfrastructure.mSwapchainImageViews[swapchainImageIndex]);
+    drawGui(cmd, *mRendererInfrastructure.getCurrentSwapchainImage().imageView);
 
     // Set swapchain image layout to presentable layout
-    vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
+    vkutil::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -193,8 +193,8 @@ void Renderer::draw()
 
     // Prepare the submission to the queue. (Reading semaphore states)
     vk::CommandBufferSubmitInfo cmdinfo = vkinit::commandBufferSubmitInfo(cmd);
-    vk::SemaphoreSubmitInfo waitInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentFrame().mSwapchainSemaphore);
-    vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eAllGraphics, *mRendererInfrastructure.getCurrentFrame().mRenderSemaphore);
+    vk::SemaphoreSubmitInfo waitInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentSwapchainImage().availableSemaphore);
+    vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eAllGraphics, *mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
     const vk::SubmitInfo2 submit = vkinit::submitInfo(&cmdinfo, &signalInfo, &waitInfo);
 
     // Submit command buffer to the queue and execute it.
@@ -207,9 +207,9 @@ void Renderer::draw()
     // Wait on the mRenderSemaphore for queue commands to finish before image is presented.
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.pNext = nullptr;
-    presentInfo.pSwapchains = &(*mRendererInfrastructure.mSwapchain);
+    presentInfo.pSwapchains = &(*mRendererInfrastructure.mSwapchainBundle.mSwapchain);
     presentInfo.swapchainCount = 1;
-    presentInfo.pWaitSemaphores = &(*mRendererInfrastructure.getCurrentFrame().mRenderSemaphore);
+    presentInfo.pWaitSemaphores = &(*mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
 
@@ -314,7 +314,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 {
     vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(targetImageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
-    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
@@ -324,7 +324,7 @@ void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 void Renderer::resolveMsaa(vk::CommandBuffer cmd)
 {
     vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal, *mRendererInfrastructure.mIntermediateImage.imageView);
-    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);
     cmd.endRendering();
@@ -361,16 +361,12 @@ void Renderer::drawUpdate()
 Frame::Frame() :
     mCommandPool(nullptr),
     mCommandBuffer(nullptr),
-    mSwapchainSemaphore(nullptr),
-    mRenderSemaphore(nullptr),
     mRenderFence(nullptr)
 {}
 
 void Frame::cleanup()
 {
     mRenderFence.clear();
-    mRenderSemaphore.clear();
-    mSwapchainSemaphore.clear();
     mCommandBuffer.clear();
     mCommandPool.clear();
 }

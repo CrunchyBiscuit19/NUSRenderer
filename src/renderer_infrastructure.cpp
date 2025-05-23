@@ -4,32 +4,22 @@
 #include <vk_images.h>
 
 #include <VkBootstrap.h>
+#include <fmt/core.h>
 
 std::filesystem::path shaderDir = SHADERS_PATH;
 
 RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 	mRenderer(renderer),
-    mSwapchain(nullptr),
+    mSwapchainBundle(nullptr),
     mDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
 {
     mFrames.resize(FRAME_OVERLAP);
 }   
 
 void RendererInfrastructure::init() {
-    createSwapchain();
-    initCommands();
+    initSwapchain();
     initDescriptors();
-	initSyncStructures();   
-}
-
-void RendererInfrastructure::initCommands() 
-{
-    const vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-    for (Frame& frame : mFrames) {
-		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
-        vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
-        frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
-    }
+	initFrames();   
 }
 
 void RendererInfrastructure::initDescriptors()
@@ -43,40 +33,69 @@ void RendererInfrastructure::initDescriptors()
     mDescriptorAllocator.init(1, sizes);
 }
 
-void RendererInfrastructure::initSyncStructures()
+void RendererInfrastructure::initFrames()
 {
-    // mRenderFence to control when the GPU has finished rendering the frame
-    // mSwapchainSemaphore to control when to retreive the next image from the swapchain (when current image is done presenting)
-    // mRenderSemaphore 
-    // Fence to start signalled so we can wait on it on the first frame
+    // mRenderFence to control when the GPU has finished rendering the frame, start signalled so we can wait on it on the first frame
     vk::FenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
+    vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    
     for (Frame& frame : mFrames) {
 		frame.mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
-		frame.mSwapchainSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
-		frame.mRenderSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
+		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
+        vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
+        frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
     }
 }
 
-void RendererInfrastructure::createSwapchain()
+void RendererInfrastructure::initSwapchain()
 {
-    vkb::SwapchainBuilder swapchainBuilder{ *mRenderer->mRendererCore.mChosenGPU, *mRenderer->mRendererCore.mDevice, *mRenderer->mRendererCore.mSurface };
+    mSwapchainBundle.mFormat = vk::Format::eB8G8R8A8Unorm;
 
-    mSwapchainImageFormat = vk::Format::eB8G8R8A8Unorm;
+    vkb::SwapchainBuilder swapchainBuilder{ *mRenderer->mRendererCore.mChosenGPU, *mRenderer->mRendererCore.mDevice, *mRenderer->mRendererCore.mSurface };
     vkb::Swapchain vkbSwapchain = swapchainBuilder
-        .set_desired_format(VkSurfaceFormatKHR{ .format = static_cast<VkFormat>(mSwapchainImageFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear) })
+        .set_desired_format(VkSurfaceFormatKHR{ .format = static_cast<VkFormat>(mSwapchainBundle.mFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear) })
         .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
         .set_desired_extent(mRenderer->mRendererCore.mWindowExtent.width, mRenderer->mRendererCore.mWindowExtent.height)
         .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
-        .set_desired_min_image_count(vkb::SwapchainBuilder::BufferMode::TRIPLE_BUFFERING)
+        .set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
         .build()
         .value();
 
-    mSwapchainExtent = vkbSwapchain.extent;
+    mSwapchainBundle.mExtent = vkbSwapchain.extent;
     vk::raii::SwapchainKHR swapchain(mRenderer->mRendererCore.mDevice, vkbSwapchain.swapchain);
-    mSwapchain = std::move(swapchain);
-    for (auto& imageView : vkbSwapchain.get_image_views().value())
-        mSwapchainImageViews.emplace_back(vk::raii::ImageView(mRenderer->mRendererCore.mDevice, imageView));
+    mSwapchainBundle.mSwapchain = std::move(swapchain);
+
+    mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
+    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
+    for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
+        mSwapchainBundle.mImages.emplace_back(
+            vkbSwapchain.get_images().value()[i],
+            vk::raii::ImageView(mRenderer->mRendererCore.mDevice, vkbSwapchain.get_image_views().value()[i]),
+            mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo),
+            mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo)
+        );
+    }
+
+    for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+        auto availableSemaphoreDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
+            vk::ObjectType::eSemaphore,         
+            reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*mSwapchainBundle.mImages[i].availableSemaphore)),
+            fmt::format("Swapchain Image {} Available Semaphore", i).c_str()
+        };
+        auto renderedSemaphoreDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
+            vk::ObjectType::eSemaphore,
+            reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*mSwapchainBundle.mImages[i].renderedSemaphore)),
+            fmt::format("Swapchain Image {} Rendered Semaphore", i).c_str()
+        };
+        auto imageViewDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
+            vk::ObjectType::eSemaphore,
+            reinterpret_cast<uint64_t>(static_cast<VkImageView>(*mSwapchainBundle.mImages[i].imageView)),
+            fmt::format("Swapchain Image {} Image View", i).c_str()
+        };
+        mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(availableSemaphoreDebugInfo);
+        mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(renderedSemaphoreDebugInfo);
+        mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(imageViewDebugInfo);
+    }
 
     mDrawImage = mRenderer->mResourceManager.createImage(
         vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 }, 
@@ -97,8 +116,8 @@ void RendererInfrastructure::createSwapchain()
         false, true, false);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        for (int i = 0; i < mSwapchain.getImages().size(); i++) {
-            vkutil::transitionImage(*cmd, mSwapchain.getImages()[i],
+        for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+            vkutil::transitionImage(*cmd, mSwapchainBundle.mImages[i].image,
                 vk::PipelineStageFlagBits2::eNone,
                 vk::AccessFlagBits2::eNone,
                 vk::PipelineStageFlagBits2::eNone,
@@ -120,8 +139,12 @@ void RendererInfrastructure::destroySwapchain()
     mIntermediateImage.cleanup();
     mDrawImage.cleanup();
 
-    mSwapchain.clear();
-    mSwapchainImageViews.clear();
+    mSwapchainBundle.mSwapchain.clear();
+    for (auto& image: mSwapchainBundle.mImages) {
+        image.imageView.clear();
+        image.availableSemaphore.clear();
+        image.renderedSemaphore.clear(); // Clear semaphores on every resize?
+    }
 }
 
 void RendererInfrastructure::resizeSwapchain()
@@ -135,7 +158,7 @@ void RendererInfrastructure::resizeSwapchain()
     mRenderer->mRendererCore.mWindowExtent.width = w;
     mRenderer->mRendererCore.mWindowExtent.height = h;
 
-    createSwapchain();
+    initSwapchain();
 
     mResizeRequested = false;
 }
@@ -259,18 +282,13 @@ void RendererInfrastructure::createSkyboxPipeline()
     };
 }
 
-void RendererInfrastructure::destroyPipelines()
-{
-    mMaterialPipelines.clear();
-    mComputePipelines.clear();
-}
-
 void RendererInfrastructure::cleanup() {
     PbrMaterial::mResourcesDescriptorSetLayout.clear();
     for (auto& frame : mFrames) {
         frame.cleanup();
     }
-    destroyPipelines();
+    mMaterialPipelines.clear();
+    mComputePipelines.clear();
     destroySwapchain();
     mDescriptorAllocator.cleanup();
 }
