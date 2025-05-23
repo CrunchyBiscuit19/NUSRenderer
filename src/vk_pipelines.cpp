@@ -117,16 +117,29 @@ void GraphicsPipelineBuilder::setCullMode(vk::CullModeFlags cullMode, vk::FrontF
     mRasterizer.frontFace = frontFace;
 }
 
-void GraphicsPipelineBuilder::setMultisamplingNone()
+void GraphicsPipelineBuilder::disableMultisampling()
 {
-    mMultisampling.sampleShadingEnable = VK_FALSE;
-    // Multisampling defaulted to no multisampling (1 sample per pixel)
     mMultisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-    mMultisampling.minSampleShading = 1.0f;
     mMultisampling.pSampleMask = nullptr;
-    // No alpha to coverage either
     mMultisampling.alphaToCoverageEnable = VK_FALSE;
     mMultisampling.alphaToOneEnable = VK_FALSE;
+}
+
+void GraphicsPipelineBuilder::enableMultisampling()
+{
+    mMultisampling.rasterizationSamples = vk::SampleCountFlagBits::e8;
+}
+
+void GraphicsPipelineBuilder::disableSampleShading()
+{
+    mMultisampling.sampleShadingEnable = VK_FALSE;
+    mMultisampling.minSampleShading = 1.0f;
+}
+
+void GraphicsPipelineBuilder::enableSampleShading()
+{
+    mMultisampling.sampleShadingEnable = VK_TRUE;
+    mMultisampling.minSampleShading = 1.0f;
 }
 
 void GraphicsPipelineBuilder::disableBlending()

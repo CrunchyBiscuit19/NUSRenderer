@@ -38,6 +38,7 @@ public:
     DescriptorAllocatorGrowable mDescriptorAllocator;
 
     AllocatedImage mDrawImage;
+    AllocatedImage mIntermediateImage;
     AllocatedImage mDepthImage;
 
     std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelines;

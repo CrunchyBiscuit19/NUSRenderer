@@ -32,13 +32,13 @@ void ResourceManager::initDefault()
 {
     // Colour data interpreted as little endian
     constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
-    mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
     constexpr uint32_t grey = std::byteswap(0xAAAAAAFF);
-    mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
     constexpr uint32_t black = std::byteswap(0x000000FF);
-    mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
     constexpr uint32_t blue = std::byteswap(0x769DDBFF);
-    mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
     std::array<uint32_t, 16 * 16> pixels;
     for (int x = 0; x < 16; x++) {
         for (int y = 0; y < 16; y++) {
@@ -46,7 +46,7 @@ void ResourceManager::initDefault()
             pixels[static_cast<std::array<uint32_t, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
         }
     }
-    mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
 
     vk::SamplerCreateInfo sampl;
     sampl.magFilter = vk::Filter::eLinear;
@@ -75,9 +75,9 @@ AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageF
     return newBuffer;
 }
 
-AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool cubemap)
+AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap)
 {
-    vk::ImageCreateInfo newImageCreateInfo = vkinit::imageCreateInfo(format, usage, extent);
+    vk::ImageCreateInfo newImageCreateInfo = vkinit::imageCreateInfo(format, usage, multisampling, extent);
     if (mipmapped) { 
         newImageCreateInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1; 
     }
@@ -114,7 +114,7 @@ AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format form
     return newImage;
 }
 
-AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool cubemap)
+AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap)
 {
     int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
 
@@ -123,7 +123,7 @@ AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D exten
     const size_t dataSize = faceSize * numFaces;
     std::memcpy(mImageStagingBuffer.info.pMappedData, data, dataSize);
 
-    AllocatedImage newImage = createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, cubemap);
+    AllocatedImage newImage = createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, multisampling, cubemap);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
         vkutil::transitionImage(*cmd, *newImage.image, 

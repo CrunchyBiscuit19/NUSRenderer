@@ -16,7 +16,7 @@ vk::SemaphoreCreateInfo semaphoreCreateInfo();
 vk::SubmitInfo2 submitInfo(vk::CommandBufferSubmitInfo* cmd, vk::SemaphoreSubmitInfo* signalSemaphoreInfo, vk::SemaphoreSubmitInfo* waitSemaphoreInfo);
 vk::PresentInfoKHR presentInfo();
 
-vk::RenderingAttachmentInfo colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout);
+vk::RenderingAttachmentInfo colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout, std::optional<vk::ImageView> swapchainResolveView = std::nullopt);
 
 vk::RenderingAttachmentInfo depthAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout);
 
@@ -36,7 +36,7 @@ vk::WriteDescriptorSet writeDescriptorBuffer(vk::DescriptorType type, vk::Descri
     vk::DescriptorBufferInfo* bufferInfo, uint32_t binding);
 vk::DescriptorBufferInfo bufferInfo(vk::Buffer buffer, vk::DeviceSize offset, vk::DeviceSize range);
 
-vk::ImageCreateInfo imageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, vk::Extent3D extent);
+vk::ImageCreateInfo imageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, bool multisampling, vk::Extent3D extent);
 vk::ImageViewCreateInfo imageViewCreateInfo(vk::Format format, vk::Image image, vk::ImageAspectFlags aspectFlags);
 vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo();
 vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shaderModule,

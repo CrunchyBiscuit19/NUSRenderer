@@ -55,6 +55,8 @@ public:
     void drawSkybox(vk::CommandBuffer cmd);
     void drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView);
 
+    void resolveMsaa(vk::CommandBuffer cmd);
+
     void drawCleanup();
     void drawUpdate();
 };

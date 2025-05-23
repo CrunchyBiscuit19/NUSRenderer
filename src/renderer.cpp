@@ -35,6 +35,8 @@ void Renderer::init()
 
 void Renderer::run()
 {
+    fmt::println("Rendering started");
+
     SDL_Event e;
     std::optional<uint64_t> programEndFrameNumber = std::nullopt;
 
@@ -81,6 +83,8 @@ void Renderer::run()
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         mStats.mFrametime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
     }
+
+    fmt::println("Rendering ended");
 }
 
 void Renderer::cleanup()
@@ -121,7 +125,7 @@ void Renderer::draw()
     mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
     mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
-    // Transition to color output for drawing geometry
+    // Transition to optimal output layouts for drawing geometry
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
@@ -139,8 +143,18 @@ void Renderer::draw()
     drawGeometry(cmd);
     drawSkybox(cmd);
 
-    // Transition the draw image and the swapchain image into their correct transfer layouts
-    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
+    // Transition intermediate image into resolvable color compatible layout 
+    vkutil::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
+        vk::PipelineStageFlagBits2::eAllGraphics,
+        vk::AccessFlagBits2::eNone,
+        vk::PipelineStageFlagBits2::eAllGraphics,
+        vk::AccessFlagBits2::eNone,
+        vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+    
+    resolveMsaa(cmd); // Resolve multisampled draw image into singly-sampled intermediate image
+
+    // Transition intermediate image and swapchain image to transfer layouts to copy over
+    vkutil::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead,
         vk::PipelineStageFlagBits2::eTransfer,
@@ -152,18 +166,17 @@ void Renderer::draw()
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferWrite,
         vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
-
-    // Copy draw image into the swapchain image
-    vkutil::copyImage(cmd, *mRendererInfrastructure.mDrawImage.image, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
-        vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height, },
+     
+    vkutil::copyImage(cmd, *mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
+        vk::Extent2D{ mRendererInfrastructure.mIntermediateImage.imageExtent.width, mRendererInfrastructure.mIntermediateImage.imageExtent.height, },
         mRendererInfrastructure.mSwapchainExtent);
 
-    // Set swapchain image to be attachment optimal to draw it
+    // Transition swapchain image to color optimal to draw GUI into final swapchain image
     vkutil::transitionImage(cmd, mRendererInfrastructure.mSwapchain.getImages()[swapchainImageIndex],
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::AccessFlagBits2::eNone,
+        vk::PipelineStageFlagBits2::eNone,
+        vk::AccessFlagBits2::eNone,
         vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
     drawGui(cmd, *mRendererInfrastructure.mSwapchainImageViews[swapchainImageIndex]);
@@ -285,7 +298,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
     cmd.beginRendering(renderInfo);
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.pipeline);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mSceneManager.mSceneResources.mSceneDescriptorSet, *mSceneManager.mSkybox.mSkyboxDescriptorSet }, nullptr);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mSceneManager.mSceneResources.mSceneDescriptorSet, * mSceneManager.mSkybox.mSkyboxDescriptorSet }, nullptr);
     vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
     cmd.setViewport(0, viewport);
     vk::Rect2D scissor = { vk::Offset2D {0, 0}, vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height}, };
@@ -305,6 +318,15 @@ void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 
     cmd.beginRendering(renderInfo);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    cmd.endRendering();
+}
+
+void Renderer::resolveMsaa(vk::CommandBuffer cmd)
+{
+    vk::RenderingAttachmentInfo colorAttachment = vkinit::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal, *mRendererInfrastructure.mIntermediateImage.imageView);
+    const vk::RenderingInfo renderInfo = vkinit::renderingInfo(mRendererInfrastructure.mSwapchainExtent, &colorAttachment, nullptr);
+
+    cmd.beginRendering(renderInfo);
     cmd.endRendering();
 }
 

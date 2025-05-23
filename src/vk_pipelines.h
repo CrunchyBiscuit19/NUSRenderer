@@ -88,7 +88,10 @@ public:
     void setInputTopology(vk::PrimitiveTopology topology);
     void setPolygonMode(vk::PolygonMode mode);
     void setCullMode(vk::CullModeFlags cullMode, vk::FrontFace frontFace);
-    void setMultisamplingNone();
+    void disableMultisampling();
+    void enableMultisampling();
+    void disableSampleShading();
+    void enableSampleShading();
     void disableBlending();
     void enableBlendingAdditive();
     void enableBlendingAlpha();

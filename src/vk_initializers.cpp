@@ -92,7 +92,7 @@ vk::PresentInfoKHR vkinit::presentInfo()
     return info;
 }
 
-vk::RenderingAttachmentInfo vkinit::colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear,vk::ImageLayout layout)
+vk::RenderingAttachmentInfo vkinit::colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear,vk::ImageLayout layout, std::optional<vk::ImageView> resolveImageView)
 {
     vk::RenderingAttachmentInfo colorAttachment {};
     colorAttachment.pNext = nullptr;
@@ -100,9 +100,13 @@ vk::RenderingAttachmentInfo vkinit::colorAttachmentInfo(vk::ImageView view, std:
     colorAttachment.imageLayout = layout;
     colorAttachment.loadOp = clear.has_value() ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    if (clear.has_value()) {
-        colorAttachment.clearValue = clear.value();
+    clear.has_value() ? colorAttachment.clearValue = clear.value() : colorAttachment.clearValue = {};
+    if (resolveImageView.has_value()) {
+        colorAttachment.resolveImageView = resolveImageView.value();
+        colorAttachment.resolveMode = vk::ResolveModeFlagBits::eAverage;
+        colorAttachment.resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal;
     }
+    
     return colorAttachment;
 }
 
@@ -205,7 +209,7 @@ vk::DescriptorBufferInfo vkinit::bufferInfo(vk::Buffer buffer, vk::DeviceSize of
     return binfo;
 }
 
-vk::ImageCreateInfo vkinit::imageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, vk::Extent3D extent)
+vk::ImageCreateInfo vkinit::imageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, bool useMultisampling, vk::Extent3D extent)
 {
     vk::ImageCreateInfo info = {};
     info.pNext = nullptr;
@@ -214,7 +218,7 @@ vk::ImageCreateInfo vkinit::imageCreateInfo(vk::Format format, vk::ImageUsageFla
     info.extent = extent;
     info.mipLevels = 1;
     info.arrayLayers = 1;
-    info.samples = vk::SampleCountFlagBits::e1; // Not using MSAA
+    useMultisampling ? (info.samples = vk::SampleCountFlagBits::e8) : (info.samples = vk::SampleCountFlagBits::e1);
     info.tiling = vk::ImageTiling::eOptimal; // Image is stored on the best gpu format
     info.usage = usageFlags;
 

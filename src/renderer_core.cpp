@@ -114,6 +114,7 @@ void RendererCore::init()
     vk::PhysicalDeviceFeatures features{};
     features.multiDrawIndirect = true;
     features.samplerAnisotropy = true;
+    features.sampleRateShading = true;
 
     vkb::PhysicalDeviceSelector selector{ vkbInst };
     vkb::PhysicalDevice physicalDevice = selector

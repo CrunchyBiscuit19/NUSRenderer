@@ -136,7 +136,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
                 imagesize.width = width;
                 imagesize.height = height;
                 imagesize.depth = 1;
-                newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
+                newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
                 stbi_image_free(data);
             }
         },
@@ -148,7 +148,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
                 imagesize.width = width;
                 imagesize.height = height;
                 imagesize.depth = 1;
-                newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
+                newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
                 stbi_image_free(data);
             }
         },
@@ -162,7 +162,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
                             imagesize.width = width;
                             imagesize.height = height;
                             imagesize.depth = 1;
-                            newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
+                            newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
                             stbi_image_free(data);
                         }
                     },
