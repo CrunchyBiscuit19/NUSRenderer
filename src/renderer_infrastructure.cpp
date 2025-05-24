@@ -103,20 +103,20 @@ void RendererInfrastructure::initSwapchain()
                 vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
         }
         vkutil::transitionImage(cmd, *mDrawImage.image,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentRead,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
             vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
         vkutil::transitionImage(*cmd, *mIntermediateImage.image,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferRead,
             vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
         vkutil::transitionImage(cmd, *mDepthImage.image,
-            vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-            vk::AccessFlagBits2::eDepthStencilAttachmentRead,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
             vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
             vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
