@@ -101,7 +101,7 @@ void Renderer::draw()
 {
     auto start = std::chrono::system_clock::now();
 
-    mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);  // Wait until the GPU has finished rendering the frame of this index (become signalled)
+    mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 
     // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     try {
@@ -189,17 +189,13 @@ void Renderer::draw()
         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 
     cmd.end();
-
+    
     // Prepare the submission to the queue. (Reading semaphore states)
     vk::CommandBufferSubmitInfo cmdinfo = vkinit::commandBufferSubmitInfo(cmd);
     vk::SemaphoreSubmitInfo waitInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore);
     vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eAllGraphics, *mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
     const vk::SubmitInfo2 submit = vkinit::submitInfo(&cmdinfo, &signalInfo, &waitInfo);
 
-    // Submit command buffer to the queue and execute it.
-    // mRenderFence will block CPU from going to next frame, stays unsignalled until this is done.
-    // mSwapchainSemaphore gets waited on until it is signalled when the next image is acquired.
-    // mRenderSemaphore will be signalled by this function when this queue's commands are executed.
     mRendererCore.mGraphicsQueue.submit2(submit, *mRendererInfrastructure.getCurrentFrame().mRenderFence);
 
     // Prepare present.

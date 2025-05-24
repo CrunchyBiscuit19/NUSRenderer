@@ -46,7 +46,7 @@ public:
     Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
     SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
 
-    bool mResizeRequested;
+    bool mResizeRequested{ false };
     SwapchainBundle mSwapchainBundle;
     uint32_t mSwapchainIndex;
 

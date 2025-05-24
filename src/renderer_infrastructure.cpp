@@ -72,31 +72,10 @@ void RendererInfrastructure::initSwapchain()
     for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
         mSwapchainBundle.mImages.emplace_back(
             vkbSwapchain.get_images().value()[i],
-            vk::raii::ImageView(mRenderer->mRendererCore.mDevice, vkbSwapchain.get_image_views().value()[i]),
+            mRenderer->mRendererCore.mDevice.createImageView(vkinit::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
             mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo)
         );
     }
-
-    /*for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
-        auto availableSemaphoreDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
-            vk::ObjectType::eSemaphore,         
-            reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*mSwapchainBundle.mImages[i].availableSemaphore)),
-            fmt::format("Swapchain Image {} Available Semaphore", i).c_str()
-        };
-        auto renderedSemaphoreDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
-            vk::ObjectType::eSemaphore,
-            reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*mSwapchainBundle.mImages[i].renderedSemaphore)),
-            fmt::format("Swapchain Image {} Rendered Semaphore", i).c_str()
-        };
-        auto imageViewDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
-            vk::ObjectType::eSemaphore,
-            reinterpret_cast<uint64_t>(static_cast<VkImageView>(*mSwapchainBundle.mImages[i].imageView)),
-            fmt::format("Swapchain Image {} Image View", i).c_str()
-        };
-        mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(availableSemaphoreDebugInfo);
-        mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(renderedSemaphoreDebugInfo);
-        mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(imageViewDebugInfo);
-    }*/
 
     mDrawImage = mRenderer->mResourceManager.createImage(
         vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 }, 
