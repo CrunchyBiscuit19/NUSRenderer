@@ -23,7 +23,7 @@ public:
     std::string mName;
     int mLatestId { 0 };
     std::optional<uint64_t> mDeleteSignal { std::nullopt };
-
+    bool mReloadInstancesBuffer{ true };
 
     fastgltf::Asset mAsset;
     std::vector<std::shared_ptr<Node>> mTopNodes;

@@ -103,7 +103,6 @@ void Renderer::draw()
 
     mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 
-    // Request image from the swapchain, mSwapchainSemaphore signalled only when next image is acquired.
     try {
         auto output = mRendererInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr);
         mRendererInfrastructure.mSwapchainIndex = output.second;
@@ -113,7 +112,7 @@ void Renderer::draw()
         return;
     }
 
-    mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence); // Flip to unsignalled
+    mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence);
     vk::CommandBuffer cmd = *mRendererInfrastructure.getCurrentFrame().mCommandBuffer;
     cmd.reset();
 
@@ -337,14 +336,14 @@ void Renderer::drawUpdate()
     mSceneManager.deleteInstances();
     mSceneManager.deleteModels();
 
-    // Only when add / remove models, then need to regen render items
     if (mRegenRenderItems) { 
         mSceneManager.mRenderItems.clear();
         mSceneManager.generateRenderItems(); 
         mRegenRenderItems = false; 
     }
     for (auto& model : mSceneManager.mModels | std::views::values) {
-        model.updateInstances();
+        if (model.mReloadInstancesBuffer) { model.updateInstances(); }
+        model.mReloadInstancesBuffer = false;
     }
     mSceneManager.updateScene();
      

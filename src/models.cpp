@@ -511,6 +511,8 @@ void GLTFModel::createInstance()
 
 void GLTFModel::updateInstances()
 {
+    if (mInstances.size() == 0) { return; }
+
     std::vector<InstanceData> instanceDataVector;
     instanceDataVector.reserve(mInstances.size());
     for (auto& instance : mInstances) {
