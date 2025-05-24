@@ -49,6 +49,8 @@ public:
     void run();
     void cleanup();
 
+    void drawUpdate();
+
     void draw();
     void drawClearScreen(vk::CommandBuffer cmd);
     void drawGeometry(vk::CommandBuffer cmd);
@@ -56,7 +58,4 @@ public:
     void drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView);
 
     void resolveMsaa(vk::CommandBuffer cmd);
-
-    void drawCleanup();
-    void drawUpdate();
 };

@@ -74,7 +74,6 @@ void Renderer::run()
         mGUI.imguiFrame();
 
         drawUpdate();
-        drawCleanup();
         draw();
 
         mRendererInfrastructure.mFrameNumber++;
@@ -324,11 +323,6 @@ void Renderer::resolveMsaa(vk::CommandBuffer cmd)
     cmd.endRendering();
 }
 
-void Renderer::drawCleanup()
-{
-    mRegenRenderItems = false;
-}
-
 void Renderer::drawUpdate()
 {
     const auto start = std::chrono::system_clock::now();
@@ -346,6 +340,8 @@ void Renderer::drawUpdate()
         model.mReloadInstancesBuffer = false;
     }
     mSceneManager.updateScene();
+
+    mRegenRenderItems = false;
      
     const auto end = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
