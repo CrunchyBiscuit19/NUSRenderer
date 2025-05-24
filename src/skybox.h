@@ -5,8 +5,6 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-constexpr int NUMBER_OF_SKYBOX_VERTICES = 36;
-
 class Renderer;
 
 struct SkyBoxPushConstants {

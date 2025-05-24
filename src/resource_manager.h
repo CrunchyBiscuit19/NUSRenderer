@@ -12,8 +12,6 @@ struct GLTFModel;
 struct Mesh;
 struct Vertex;
 
-constexpr int NUMBER_OF_CUBEMAP_FACES = 6;
-
 enum class DefaultImage {
 	White,
 	Grey,

@@ -7,12 +7,6 @@
 
 #include <vulkan/vulkan.hpp>
 
-#ifdef RELEASE
-constexpr bool USE_VALIDATION_LAYERS = false;
-#else
-constexpr bool USE_VALIDATION_LAYERS = true;
-#endif
-
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
     VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
