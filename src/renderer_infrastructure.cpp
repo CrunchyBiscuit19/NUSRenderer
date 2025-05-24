@@ -82,13 +82,11 @@ void RendererInfrastructure::initSwapchain()
         vk::Format::eR16G16B16A16Sfloat, 
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment, 
         false, true, false);
-
     mIntermediateImage = mRenderer->mResourceManager.createImage(
         vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
         vk::Format::eR16G16B16A16Sfloat,
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
         false, false, false);
-
     mDepthImage = mRenderer->mResourceManager.createImage(
         mDrawImage.imageExtent,
         vk::Format::eD32Sfloat,
@@ -104,12 +102,24 @@ void RendererInfrastructure::initSwapchain()
                 vk::AccessFlagBits2::eNone,
                 vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
         }
+        vkutil::transitionImage(cmd, *mDrawImage.image,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::AccessFlagBits2::eColorAttachmentRead,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
+            vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
         vkutil::transitionImage(*cmd, *mIntermediateImage.image,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
             vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+        vkutil::transitionImage(cmd, *mDepthImage.image,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentRead,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+            vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
     });
 }
 

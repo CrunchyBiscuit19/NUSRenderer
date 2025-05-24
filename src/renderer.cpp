@@ -122,20 +122,6 @@ void Renderer::draw()
     mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainBundle.mExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
     mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainBundle.mExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
 
-    // Transition to optimal output layouts for drawing geometry
-    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDrawImage.image,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-    vkutil::transitionImage(cmd, *mRendererInfrastructure.mDepthImage.image,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
-
     drawClearScreen(cmd);
     drawGeometry(cmd);
     drawSkybox(cmd);
