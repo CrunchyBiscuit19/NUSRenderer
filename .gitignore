@@ -3,4 +3,5 @@ bin/
 build/
 /.vs
 .idea/
+shaders/**/*.spv
 CMakeSettings.json
