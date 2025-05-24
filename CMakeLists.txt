@@ -94,14 +94,12 @@ add_library(imgui-filebrowser INTERFACE)
 target_include_directories(imgui-filebrowser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui-filebrowser)
 add_library(vma INTERFACE)
 target_include_directories(vma INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vma)
-add_library(stduuid INTERFACE)
-target_include_directories(stduuid INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/stduuid)
 
 # Source include directory
 target_include_directories(NUSRenderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/")
 
 # Link libraries
-target_link_libraries(NUSRenderer PUBLIC vkbootstrap imgui glm magic_enum stb_image imgui-filebrowser vma stduuid fmt Vulkan::Vulkan SDL2::SDL2 fastgltf::fastgltf)
+target_link_libraries(NUSRenderer PUBLIC vkbootstrap imgui glm magic_enum stb_image imgui-filebrowser vma fmt Vulkan::Vulkan SDL2::SDL2 fastgltf::fastgltf)
 
 # Compilation
 target_precompile_headers(NUSRenderer PUBLIC <optional> <vector> <memory> <string> <vector> <unordered_map> <glm/mat4x4.hpp>  <glm/vec4.hpp> <vulkan/vulkan.hpp> <vulkan/vulkan_raii.hpp>)

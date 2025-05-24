@@ -8,7 +8,6 @@
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/parser.hpp>
 #include <fastgltf/tools.hpp>
-#include <uuid.h>
 
 #include <filesystem>
 #include <unordered_map>
