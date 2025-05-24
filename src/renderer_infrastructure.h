@@ -6,6 +6,7 @@
 
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int NUMBER_OF_SWAPCHAIN_IMAGES = 3;
+constexpr vk::SampleCountFlagBits MSAA_LEVEL = vk::SampleCountFlagBits::e2;
 
 class Renderer;
 

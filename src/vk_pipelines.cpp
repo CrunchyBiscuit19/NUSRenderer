@@ -1,5 +1,6 @@
 ﻿#include <vk_pipelines.h>
 #include <vk_initializers.h>
+#include <renderer_infrastructure.h>
 
 #include <fmt/core.h>
 #include <vulkan/vulkan.hpp>
@@ -127,7 +128,7 @@ void GraphicsPipelineBuilder::disableMultisampling()
 
 void GraphicsPipelineBuilder::enableMultisampling()
 {
-    mMultisampling.rasterizationSamples = vk::SampleCountFlagBits::e8;
+    mMultisampling.rasterizationSamples = MSAA_LEVEL;
 }
 
 void GraphicsPipelineBuilder::disableSampleShading()

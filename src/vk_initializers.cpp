@@ -1,4 +1,5 @@
 ﻿#include <vk_initializers.h>
+#include <renderer_infrastructure.h>
 
 vk::CommandPoolCreateInfo vkinit::commandPoolCreateInfo(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flags)
 {
@@ -218,7 +219,7 @@ vk::ImageCreateInfo vkinit::imageCreateInfo(vk::Format format, vk::ImageUsageFla
     info.extent = extent;
     info.mipLevels = 1;
     info.arrayLayers = 1;
-    useMultisampling ? (info.samples = vk::SampleCountFlagBits::e8) : (info.samples = vk::SampleCountFlagBits::e1);
+    useMultisampling ? (info.samples = MSAA_LEVEL) : (info.samples = vk::SampleCountFlagBits::e1);
     info.tiling = vk::ImageTiling::eOptimal; // Image is stored on the best gpu format
     info.usage = usageFlags;
 
