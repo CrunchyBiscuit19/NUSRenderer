@@ -128,7 +128,7 @@ AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D exten
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
         vkutil::transitionImage(*cmd, *newImage.image, 
         vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, 
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentRead, 
+        vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, 
         vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
         std::vector<vk::BufferImageCopy> copyRegions;
@@ -152,8 +152,8 @@ AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D exten
             vkutil::generateMipmaps(*cmd, *newImage.image, vk::Extent2D{ newImage.imageExtent.width, newImage.imageExtent.height }, cubemap);
         else
             vkutil::transitionImage(*cmd, *newImage.image,
-                vk::PipelineStageFlagBits2KHR::eAllGraphics, vk::AccessFlagBits2::eMemoryRead,
-                vk::PipelineStageFlagBits2KHR::eAllGraphics, vk::AccessFlagBits2::eMemoryRead,
+                vk::PipelineStageFlagBits2KHR::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead,
                 vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     });
 

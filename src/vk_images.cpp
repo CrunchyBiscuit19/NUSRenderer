@@ -74,10 +74,10 @@ namespace vkutil {
             halfSize.height /= 2;
             vk::ImageMemoryBarrier2 imageBarrier{};
             imageBarrier.pNext = nullptr;
-            imageBarrier.srcStageMask = vk::PipelineStageFlagBits2::eAllCommands;
-            imageBarrier.srcAccessMask = vk::AccessFlagBits2::eMemoryWrite;
-            imageBarrier.dstStageMask = vk::PipelineStageFlagBits2::eAllCommands;
-            imageBarrier.dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead;
+            imageBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTransfer;
+            imageBarrier.srcAccessMask = vk::AccessFlagBits2::eTransferWrite;
+            imageBarrier.dstStageMask = vk::PipelineStageFlagBits2::eTransfer;
+            imageBarrier.dstAccessMask = vk::AccessFlagBits2::eTransferRead;
             imageBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
             imageBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
             constexpr vk::ImageAspectFlagBits aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -129,10 +129,10 @@ namespace vkutil {
 
         // Transition all mip levels into the final read_only layout
         transitionImage(cmd, image,
-            vk::PipelineStageFlagBits2::eAllGraphics,
-            vk::AccessFlagBits2::eMemoryRead,
-            vk::PipelineStageFlagBits2::eAllGraphics,
-            vk::AccessFlagBits2::eMemoryRead,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferRead,
+            vk::PipelineStageFlagBits2::eFragmentShader,
+            vk::AccessFlagBits2::eShaderRead,
             vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     }
 
