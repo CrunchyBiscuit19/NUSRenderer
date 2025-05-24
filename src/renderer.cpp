@@ -128,10 +128,10 @@ void Renderer::draw()
 
     // Transition intermediate image into resolvable color compatible layout 
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
-        vk::PipelineStageFlagBits2::eAllGraphics,
-        vk::AccessFlagBits2::eNone,
-        vk::PipelineStageFlagBits2::eAllGraphics,
-        vk::AccessFlagBits2::eNone,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferRead,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
         vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eColorAttachmentOptimal);
     
     resolveMsaa(cmd); // Resolve multisampled draw image into singly-sampled intermediate image
@@ -139,7 +139,7 @@ void Renderer::draw()
     // Transition intermediate image and swapchain image to transfer layouts to copy over
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferRead,
         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
@@ -156,10 +156,10 @@ void Renderer::draw()
 
     // Transition swapchain image to color optimal to draw GUI into final swapchain image
     vkutil::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferWrite,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::PipelineStageFlagBits2::eNone,
-        vk::AccessFlagBits2::eNone,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
         vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 
     drawGui(cmd, *mRendererInfrastructure.getCurrentSwapchainImage().imageView);
@@ -167,9 +167,9 @@ void Renderer::draw()
     // Set swapchain image layout to presentable layout
     vkutil::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead,
+        vk::AccessFlagBits2::eNone,
         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
 
     cmd.end();
@@ -177,7 +177,7 @@ void Renderer::draw()
     // Prepare the submission to the queue. (Reading semaphore states)
     vk::CommandBufferSubmitInfo cmdinfo = vkinit::commandBufferSubmitInfo(cmd);
     vk::SemaphoreSubmitInfo waitInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore);
-    vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eAllGraphics, *mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
+    vk::SemaphoreSubmitInfo signalInfo = vkinit::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
     const vk::SubmitInfo2 submit = vkinit::submitInfo(&cmdinfo, &signalInfo, &waitInfo);
 
     mRendererCore.mGraphicsQueue.submit2(submit, *mRendererInfrastructure.getCurrentFrame().mRenderFence);
