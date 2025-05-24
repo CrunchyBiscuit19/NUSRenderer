@@ -38,17 +38,20 @@ void RendererInfrastructure::initFrames()
     // mRenderFence to control when the GPU has finished rendering the frame, start signalled so we can wait on it on the first frame
     vk::FenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
     vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
     
     for (Frame& frame : mFrames) {
 		frame.mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
 		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
         vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
         frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
+        frame.mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
     }
 }
 
 void RendererInfrastructure::initSwapchain()
 {
+    mSwapchainIndex = 0;
     mSwapchainBundle.mFormat = vk::Format::eB8G8R8A8Unorm;
 
     vkb::SwapchainBuilder swapchainBuilder{ *mRenderer->mRendererCore.mChosenGPU, *mRenderer->mRendererCore.mDevice, *mRenderer->mRendererCore.mSurface };
@@ -62,8 +65,7 @@ void RendererInfrastructure::initSwapchain()
         .value();
 
     mSwapchainBundle.mExtent = vkbSwapchain.extent;
-    vk::raii::SwapchainKHR swapchain(mRenderer->mRendererCore.mDevice, vkbSwapchain.swapchain);
-    mSwapchainBundle.mSwapchain = std::move(swapchain);
+    mSwapchainBundle.mSwapchain = vk::raii::SwapchainKHR(mRenderer->mRendererCore.mDevice, vkbSwapchain.swapchain);
 
     mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
@@ -71,12 +73,11 @@ void RendererInfrastructure::initSwapchain()
         mSwapchainBundle.mImages.emplace_back(
             vkbSwapchain.get_images().value()[i],
             vk::raii::ImageView(mRenderer->mRendererCore.mDevice, vkbSwapchain.get_image_views().value()[i]),
-            mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo),
             mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo)
         );
     }
 
-    for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+    /*for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
         auto availableSemaphoreDebugInfo = vk::DebugUtilsObjectNameInfoEXT{
             vk::ObjectType::eSemaphore,         
             reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*mSwapchainBundle.mImages[i].availableSemaphore)),
@@ -95,7 +96,7 @@ void RendererInfrastructure::initSwapchain()
         mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(availableSemaphoreDebugInfo);
         mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(renderedSemaphoreDebugInfo);
         mRenderer->mRendererCore.mDevice.setDebugUtilsObjectNameEXT(imageViewDebugInfo);
-    }
+    }*/
 
     mDrawImage = mRenderer->mResourceManager.createImage(
         vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 }, 
@@ -140,11 +141,7 @@ void RendererInfrastructure::destroySwapchain()
     mDrawImage.cleanup();
 
     mSwapchainBundle.mSwapchain.clear();
-    for (auto& image: mSwapchainBundle.mImages) {
-        image.imageView.clear();
-        image.availableSemaphore.clear();
-        image.renderedSemaphore.clear(); // Clear semaphores on every resize?
-    }
+    mSwapchainBundle.mImages.clear();
 }
 
 void RendererInfrastructure::resizeSwapchain()

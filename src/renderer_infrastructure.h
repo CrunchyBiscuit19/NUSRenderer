@@ -13,6 +13,7 @@ struct Frame {
     vk::raii::CommandPool mCommandPool;
     vk::raii::CommandBuffer mCommandBuffer;
     vk::raii::Fence mRenderFence;
+    vk::raii::Semaphore mAvailableSemaphore;
 
     Frame();
 
@@ -24,7 +25,6 @@ public:
     struct SwapchainImage {
         vk::Image image;
         vk::raii::ImageView imageView;
-        vk::raii::Semaphore availableSemaphore;
         vk::raii::Semaphore renderedSemaphore;
     };
 
@@ -44,10 +44,11 @@ public:
     std::vector<Frame> mFrames;
     Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
     Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
-    SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mFrameNumber % NUMBER_OF_SWAPCHAIN_IMAGES]; }
+    SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
 
     bool mResizeRequested;
     SwapchainBundle mSwapchainBundle;
+    uint32_t mSwapchainIndex;
 
     DescriptorAllocatorGrowable mDescriptorAllocator;
 
