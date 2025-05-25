@@ -10,12 +10,12 @@ Skybox::Skybox(Renderer* renderer) :
     mSkyboxDescriptorSetLayout(nullptr)
 {}
 
-void Skybox::loadSkyboxImage(fs::path right, fs::path left, fs::path top, fs::path bottom, fs::path front, fs::path back)
+void Skybox::loadSkyboxImage(std::filesystem::path skyboxImageDir)
 {
-    std::vector<fs::path> skyboxImagePaths = {right, left, top, bottom, front, back};
+    std::vector<std::filesystem::path> skyboxImagePaths = { skyboxImageDir / "px.png", skyboxImageDir / "nx.png", skyboxImageDir / "py.png", skyboxImageDir / "ny.png", skyboxImageDir / "pz.png", skyboxImageDir / "nz.png" };
     std::vector<std::byte> skyboxImageData(MAX_IMAGE_SIZE);
 
-    int width, height, nrChannels;
+    int width = 0, height = 0, nrChannels = 0;
     int offset = 0;
 
     for (auto& path : skyboxImagePaths) {
@@ -27,7 +27,12 @@ void Skybox::loadSkyboxImage(fs::path right, fs::path left, fs::path top, fs::pa
         }
     }
 
-    mSkyboxImage = mRenderer->mResourceManager.createImage(skyboxImageData.data(), vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, true);
+    mSkyboxImage = mRenderer->mResourceManager.createImage(
+        skyboxImageData.data(), 
+        vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 
+        vk::Format::eR8G8B8A8Unorm, 
+        vk::ImageUsageFlagBits::eSampled, 
+        true, false, true);
 }
 
 void Skybox::initSkyboxDescriptor()
@@ -37,9 +42,7 @@ void Skybox::initSkyboxDescriptor()
     mSkyboxDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eFragment);
     mSkyboxDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mSkyboxDescriptorSetLayout);
 
-    DescriptorSetBinder writer;
-    writer.bindImage(0, *mSkyboxImage.imageView, *mRenderer->mResourceManager.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-    writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
+    setSkyboxBindings();
 }
 
 void Skybox::initSkyboxPipeline()
@@ -113,9 +116,24 @@ void Skybox::initSkyboxBuffer()
     mSkyboxPushConstants.vertexBuffer = mRenderer->mRendererCore.mDevice.getBufferAddress(skyboxVertexBufferDeviceAddressInfo);
 }
 
-void Skybox::init(fs::path right, fs::path left, fs::path top, fs::path bottom, fs::path front, fs::path back)
+void Skybox::setSkyboxBindings()
 {
-    loadSkyboxImage(right, left, top, bottom, front, back);
+    DescriptorSetBinder writer;
+    writer.bindImage(0, *mSkyboxImage.imageView, *mRenderer->mResourceManager.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
+}
+
+void Skybox::updateSkyboxImage(std::filesystem::path skyboxDir)
+{
+    AllocatedImage oldSkyboxImage = std::move(mSkyboxImage);
+    loadSkyboxImage(skyboxDir);
+    setSkyboxBindings();
+    oldSkyboxImage.cleanup();
+}
+
+void Skybox::init(std::filesystem::path skyboxDir)
+{
+    loadSkyboxImage(skyboxDir);
     initSkyboxDescriptor();
     initSkyboxPipeline(); 
     initSkyboxBuffer();

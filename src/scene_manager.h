@@ -63,6 +63,7 @@ public:
     PushConstants mPushConstants;
     SceneResources mSceneResources;
     Skybox mSkybox;
+    bool mSkyboxActive{ true };
 
     SceneManager(Renderer* renderer);
 

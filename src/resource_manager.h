@@ -79,6 +79,9 @@ struct AllocatedImage {
         return *this;
     }
 
+    AllocatedImage(const AllocatedImage&) = delete;
+    AllocatedImage& operator=(const AllocatedImage&) = delete;
+
 	void cleanup() {
         if (allocator == nullptr) { return; } // If destroying a moved AllocatedImage
 		image.clear();
@@ -142,6 +145,9 @@ struct AllocatedBuffer {
         }
         return *this;
     }
+
+    AllocatedBuffer(const AllocatedBuffer&) = delete;
+    AllocatedBuffer& operator=(const AllocatedBuffer&) = delete;
 
     void cleanup() {
         if (allocator == nullptr) { return; } // If destroying a moved AllocatedBuffer

@@ -3,7 +3,6 @@
 #include <resource_manager.h>
 
 #include <filesystem>
-namespace fs = std::filesystem;
 
 class Renderer;
 
@@ -30,12 +29,15 @@ public:
 
 	Skybox(Renderer* renderer);
 
-	void loadSkyboxImage(fs::path right, fs::path left, fs::path top, fs::path bottom, fs::path front, fs::path back);
+	void loadSkyboxImage(std::filesystem::path skyboxImageDir);
 	void initSkyboxDescriptor();
 	void initSkyboxPipeline();
 	void initSkyboxBuffer();
 
-	void init(fs::path right, fs::path left, fs::path top, fs::path bottom, fs::path front, fs::path back);
+	void setSkyboxBindings();
+	void updateSkyboxImage(std::filesystem::path skyboxImageDir);
+
+	void init(std::filesystem::path skyboxImageDir);
 
 	void cleanup();
 };

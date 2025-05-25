@@ -124,7 +124,7 @@ void Renderer::draw()
 
     drawClearScreen(cmd);
     drawGeometry(cmd);
-    drawSkybox(cmd);
+    if (mSceneManager.mSkyboxActive) { drawSkybox(cmd); }
 
     // Transition intermediate image into resolvable color compatible layout 
     vkutil::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,

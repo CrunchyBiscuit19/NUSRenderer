@@ -15,13 +15,7 @@ SceneManager::SceneManager(Renderer* renderer):
 void SceneManager::init()
 {
 	mSceneResources.init();
-	mSkybox.init(
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/right.jpg"),
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/left.jpg"),
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/top.jpg"),
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/bottom.jpg"),
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/front.jpg"),
-		fs::path(std::string(SKYBOXES_PATH) + "ocean/back.jpg")); 
+	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/")); 
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)

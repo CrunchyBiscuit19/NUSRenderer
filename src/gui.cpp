@@ -43,8 +43,11 @@ void GUI::init() {
 	ImGui_ImplVulkan_DestroyFontsTexture();
 
 	mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
-	mSelectModelFileDialog.SetTitle("Select GLTF / GLB file");
+	mSelectModelFileDialog.SetTitle("Select GLTF / GLB File");
 	mSelectModelFileDialog.SetTypeFilters({ ".glb", ".gltf" });
+
+	mSelectSkyboxFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_SelectDirectory, SKYBOXES_PATH);
+	mSelectSkyboxFileDialog.SetTitle("Select Directory of Skybox Image");
 }
 
 void GUI::cleanup() {
@@ -117,7 +120,7 @@ void GUI::imguiFrame() {
 					model.createInstance();
 				}
 				ImGui::SameLine();
-				ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
+				ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 				if (ImGui::Button("Delete Model")) {
 					for (auto& instance : model.mInstances) {
 						instance.mDeleteSignal = true;
@@ -136,7 +139,7 @@ void GUI::imguiFrame() {
 					if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { model.mReloadInstancesBuffer = true; }
 					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { model.mReloadInstancesBuffer = true; }
 					
-					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.66f, 0.16f, 0.16f)));
+					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 					if (ImGui::Button("Delete Instance")) { 
 						instance.mDeleteSignal = true; 
 						model.mReloadInstancesBuffer = true; 
@@ -166,7 +169,20 @@ void GUI::imguiFrame() {
 		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightColor));
 		ImGui::InputFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightDirection));
 		ImGui::InputFloat("Sunlight Power", &mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightDirection[3]);
+		if (ImGui::Button("Change Skybox")) {
+			mSelectSkyboxFileDialog.Open();
+		}
+		if (ImGui::Button("Toggle Skybox")) {
+			mRenderer->mSceneManager.mSkyboxActive = !mRenderer->mSceneManager.mSkyboxActive;
+		}
 		ImGui::End();
+
+		mSelectSkyboxFileDialog.Display();
+		if (mSelectSkyboxFileDialog.HasSelected()) {
+			std::filesystem::path selectedSkyboxDir = mSelectSkyboxFileDialog.GetSelected();
+			mRenderer->mSceneManager.mSkybox.updateSkyboxImage(selectedSkyboxDir);	
+			mSelectSkyboxFileDialog.ClearSelected();
+		}
 	}
 
 	if (ImGui::Begin("Stats")) {

@@ -11,6 +11,7 @@ private:
 	Renderer* mRenderer;
 
 	ImGui::FileBrowser mSelectModelFileDialog;
+	ImGui::FileBrowser mSelectSkyboxFileDialog;
 
 public:
 	GUI(Renderer* renderer);
