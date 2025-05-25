@@ -1,8 +1,7 @@
 #pragma once
 
-//#include <resource_manager.h>
-#include <meshes.h>
-#include <skybox.h>
+#include <Mesh.h>
+#include <Skybox.h>
 
 #include <glm/fwd.hpp>
 

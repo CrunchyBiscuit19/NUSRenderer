@@ -1,5 +1,5 @@
-#include <renderer.h>
-#include <vk_descriptors.h>
+#include <Renderer.h>
+#include <Descriptor.h>
 
 void DescriptorLayoutBuilder::addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count)
 {

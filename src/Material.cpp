@@ -1,7 +1,7 @@
-#include <renderer.h>
-#include <vk_initializers.h>
-#include <vk_pipelines.h>
-#include <materials.h>
+#include <Renderer.h>
+#include <Helper.h>
+#include <Pipeline.h>
+#include <Material.h>
 
 vk::raii::DescriptorSetLayout PbrMaterial::mResourcesDescriptorSetLayout = nullptr;
 

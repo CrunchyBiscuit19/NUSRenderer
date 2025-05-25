@@ -1,9 +1,9 @@
 #pragma once
 
-#include <constexprs.h>
-#include <models.h>
-#include <vk_descriptors.h>
-#include <vk_pipelines.h>
+#include <Constexprs.h>
+#include <Model.h>
+#include <Descriptor.h>
+#include <Pipeline.h>
 
 class Renderer;
 

@@ -1,5 +1,5 @@
-#include <scene_manager.h>
-#include <renderer.h>
+#include <SceneManager.h>
+#include <Renderer.h>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>

@@ -1,7 +1,6 @@
-#include <renderer.h>
-#include <renderer_infrastructure.h>
-#include <vk_initializers.h>
-#include <vk_images.h>
+#include <Renderer.h>
+#include <RendererInfrastructure.h>
+#include <Helper.h>
 
 #include <VkBootstrap.h>
 #include <fmt/core.h>
@@ -36,14 +35,14 @@ void RendererInfrastructure::initDescriptors()
 void RendererInfrastructure::initFrames()
 {
     // mRenderFence to control when the GPU has finished rendering the frame, start signalled so we can wait on it on the first frame
-    vk::FenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-    vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
+    vk::FenceCreateInfo fenceCreateInfo = vkhelper::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
+    vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
     
     for (Frame& frame : mFrames) {
 		frame.mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
 		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
-        vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*frame.mCommandPool, 1);
+        vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*frame.mCommandPool, 1);
         frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
         frame.mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
     }
@@ -68,11 +67,11 @@ void RendererInfrastructure::initSwapchain()
     mSwapchainBundle.mSwapchain = vk::raii::SwapchainKHR(mRenderer->mRendererCore.mDevice, vkbSwapchain.swapchain);
 
     mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
-    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphoreCreateInfo();
+    vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
     for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
         mSwapchainBundle.mImages.emplace_back(
             vkbSwapchain.get_images().value()[i],
-            mRenderer->mRendererCore.mDevice.createImageView(vkinit::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
+            mRenderer->mRendererCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
             mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo)
         );
     }
@@ -95,26 +94,26 @@ void RendererInfrastructure::initSwapchain()
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
         for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
-            vkutil::transitionImage(*cmd, mSwapchainBundle.mImages[i].image,
+            vkhelper::transitionImage(*cmd, mSwapchainBundle.mImages[i].image,
                 vk::PipelineStageFlagBits2::eNone,
                 vk::AccessFlagBits2::eNone,
                 vk::PipelineStageFlagBits2::eNone,
                 vk::AccessFlagBits2::eNone,
                 vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
         }
-        vkutil::transitionImage(cmd, *mDrawImage.image,
+        vkhelper::transitionImage(cmd, *mDrawImage.image,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
             vk::AccessFlagBits2::eColorAttachmentWrite,
             vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-        vkutil::transitionImage(*cmd, *mIntermediateImage.image,
+        vkhelper::transitionImage(*cmd, *mIntermediateImage.image,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferRead,
             vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-        vkutil::transitionImage(cmd, *mDepthImage.image,
+        vkhelper::transitionImage(cmd, *mDepthImage.image,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
@@ -160,8 +159,8 @@ PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipe
 
 void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOptions)
 {
-    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv", mRenderer->mRendererCore.mDevice); 
-    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule fragShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv", mRenderer->mRendererCore.mDevice); 
+    vk::raii::ShaderModule vertexShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv", mRenderer->mRendererCore.mDevice);
 
     vk::PushConstantRange pushConstantRange{};
     pushConstantRange.offset = 0;
@@ -172,7 +171,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
         *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout, 
         *PbrMaterial::mResourcesDescriptorSetLayout 
     };
-    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
+    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
     pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
@@ -208,7 +207,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 
 void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptions)
 {
-    vk::raii::ShaderModule computeShaderModule = vkutil::loadShaderModule("Placeholder path", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule("Placeholder path", mRenderer->mRendererCore.mDevice);
 
     vk::PipelineLayoutCreateInfo computeLayoutInfo{};
     computeLayoutInfo.setLayoutCount = 0;
@@ -229,8 +228,8 @@ void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptio
 
 void RendererInfrastructure::createSkyboxPipeline()
 {
-    vk::raii::ShaderModule fragShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv", mRenderer->mRendererCore.mDevice);
-    vk::raii::ShaderModule vertexShader = vkutil::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule fragShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv", mRenderer->mRendererCore.mDevice);
+    vk::raii::ShaderModule vertexShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv", mRenderer->mRendererCore.mDevice);
 
     vk::PushConstantRange pushConstantRange{};
     pushConstantRange.offset = 0;
@@ -241,7 +240,7 @@ void RendererInfrastructure::createSkyboxPipeline()
         *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout,
         *mRenderer->mSceneManager.mSkybox.mSkyboxDescriptorSetLayout
     };
-    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkinit::pipelineLayoutCreateInfo();
+    vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
     pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <meshes.h>
-#include <scene_manager.h>
-#include <instances.h>
-#include <vk_descriptors.h>
+#include <Mesh.h>
+#include <SceneManager.h>
+#include <Instance.h>
+#include <Descriptor.h>
 
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/parser.hpp>

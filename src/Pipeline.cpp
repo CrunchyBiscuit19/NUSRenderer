@@ -1,31 +1,26 @@
-﻿#include <vk_pipelines.h>
-#include <vk_initializers.h>
-#include <renderer_infrastructure.h>
+﻿#include <Pipeline.h>
+#include <Helper.h>
+#include <RendererInfrastructure.h>
 
 #include <fmt/core.h>
 #include <vulkan/vulkan.hpp>
 
 #include <fstream>
 
-vk::raii::ShaderModule vkutil::loadShaderModule(std::filesystem::path filePath, vk::raii::Device& device)
+vk::raii::ShaderModule PipelineBuilder::loadShaderModule(std::filesystem::path filePath, vk::raii::Device& device)
 {
-    // Open the file. With cursor at the end
     std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-
-    // Find size of the file by looking at the location of the cursor
     const size_t fileSize = file.tellg();
 
-    // SPIRV expects the buffer to be on uint32
-    // Reserve vector big enough for the entire file
+    // Reserve vector for SPIRV
     std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
-    file.seekg(0); // File cursor at start
+    file.seekg(0); 
     file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(fileSize)); // Load whole file into buffer
     file.close();
 
-    // Create a new shader module, using the buffer we loaded
     vk::ShaderModuleCreateInfo createInfo = {};
     createInfo.pNext = nullptr;
-    createInfo.codeSize = buffer.size() * sizeof(uint32_t); // codeSize has to be in bytes
+    createInfo.codeSize = buffer.size() * sizeof(uint32_t);
     createInfo.pCode = buffer.data();
 
 	return vk::raii::ShaderModule(device, createInfo);    
@@ -49,7 +44,7 @@ void GraphicsPipelineBuilder::clear()
     mShaderStages.clear();
 }
 
-vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& device) const
+vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& device)
 {
     // Make viewport state from our stored viewport and scissor.
     vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -95,9 +90,9 @@ void GraphicsPipelineBuilder::setShaders(vk::ShaderModule vertexShader, vk::Shad
 {
     mShaderStages.clear();
     mShaderStages.push_back(
-        vkinit::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertexShader, "main"));
+        vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eVertex, vertexShader, "main"));
     mShaderStages.push_back(
-        vkinit::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragmentShader, "main"));
+        vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eFragment, fragmentShader, "main"));
 }
 
 void GraphicsPipelineBuilder::setInputTopology(vk::PrimitiveTopology topology)
@@ -231,10 +226,10 @@ ComputePipelineBuilder::ComputePipelineBuilder()
 
 void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 {
-    mComputeShaderStageCreateInfo = vkinit::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
+    mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
 }
 
-vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device) const
+vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device)
 {
     vk::ComputePipelineCreateInfo computePipelineInfo = {};
     computePipelineInfo.layout = mPipelineLayout; 

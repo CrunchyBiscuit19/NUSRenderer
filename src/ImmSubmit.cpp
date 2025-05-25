@@ -1,6 +1,6 @@
-#include <renderer.h>
-#include <imm_submit.h>
-#include <vk_initializers.h>
+#include <Renderer.h>
+#include <ImmSubmit.h>
+#include <Helper.h>
 
 ImmSubmit::ImmSubmit(Renderer* renderer):
     mRenderer(renderer),
@@ -12,13 +12,13 @@ ImmSubmit::ImmSubmit(Renderer* renderer):
 
 void ImmSubmit::init()
 {
-    vk::CommandPoolCreateInfo commandPoolInfo = vkinit::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
     mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
 
-    vk::CommandBufferAllocateInfo cmdAllocInfo = vkinit::commandBufferAllocateInfo(*mCommandPool, 1);
+    vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*mCommandPool, 1);
     mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
 
-    vk::FenceCreateInfo fenceCreateInfo = vkinit::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
+    vk::FenceCreateInfo fenceCreateInfo = vkhelper::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
     mFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
 
     std::vector<vk::DescriptorPoolSize> poolSizes = {
@@ -47,13 +47,13 @@ void ImmSubmit::submit(std::function<void(vk::raii::CommandBuffer& cmd) >&& func
     mRenderer->mRendererCore.mDevice.resetFences(*mFence);
     mCommandBuffer.reset();
 
-    vk::CommandBufferBeginInfo cmdBeginInfo = vkinit::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+    vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     mCommandBuffer.begin(cmdBeginInfo);
     function(mCommandBuffer);
     mCommandBuffer.end();
 
-    vk::CommandBufferSubmitInfo cmdSubmitInfo = vkinit::commandBufferSubmitInfo(*mCommandBuffer);
-    vk::SubmitInfo2 submitInfo = vkinit::submitInfo(&cmdSubmitInfo, nullptr, nullptr);
+    vk::CommandBufferSubmitInfo cmdSubmitInfo = vkhelper::commandBufferSubmitInfo(*mCommandBuffer);
+    vk::SubmitInfo2 submitInfo = vkhelper::submitInfo(&cmdSubmitInfo, nullptr, nullptr);
 
     mRenderer->mRendererCore.mGraphicsQueue.submit2(submitInfo, *mFence);
     mRenderer->mRendererCore.mDevice.waitForFences(*mFence, true, 1e9);

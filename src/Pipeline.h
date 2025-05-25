@@ -4,9 +4,7 @@
 
 #include <fastgltf/types.hpp>
 
-namespace vkutil {
-vk::raii::ShaderModule loadShaderModule(std::filesystem::path filePath, vk::raii::Device& device);
-};
+namespace vkhelper {};
 
 struct PipelineBundle {
     vk::raii::Pipeline pipeline;
@@ -68,7 +66,16 @@ struct std::hash<PipelineOptions> {
     }
 };
 
-class GraphicsPipelineBuilder {
+class PipelineBuilder {
+public:
+    vk::PipelineLayout mPipelineLayout;
+
+    virtual vk::raii::Pipeline buildPipeline(vk::raii::Device& device) = 0;
+
+    static vk::raii::ShaderModule loadShaderModule(std::filesystem::path filePath, vk::raii::Device& device);
+};
+
+class GraphicsPipelineBuilder : PipelineBuilder {
 public:
     std::vector<vk::PipelineShaderStageCreateInfo> mShaderStages;
     vk::PipelineInputAssemblyStateCreateInfo mInputAssembly;
@@ -83,7 +90,7 @@ public:
     GraphicsPipelineBuilder();
 
     void clear();
-    vk::raii::Pipeline buildPipeline(vk::raii::Device& device) const;
+    vk::raii::Pipeline buildPipeline(vk::raii::Device& device) override;
     void setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader);
     void setInputTopology(vk::PrimitiveTopology topology);
     void setPolygonMode(vk::PolygonMode mode);
@@ -102,13 +109,13 @@ public:
     void enableDepthtest(bool depthWriteEnable, vk::CompareOp op);
 };
 
-class ComputePipelineBuilder {
+class ComputePipelineBuilder : PipelineBuilder {
 public:
     vk::PipelineShaderStageCreateInfo mComputeShaderStageCreateInfo;
     vk::PipelineLayout mPipelineLayout;
 
     ComputePipelineBuilder();
 
+    vk::raii::Pipeline buildPipeline(vk::raii::Device& device) override;
     void setShader(vk::ShaderModule computeShader);
-    vk::raii::Pipeline buildPipeline(vk::raii::Device& device) const;
 };

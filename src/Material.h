@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vk_pipelines.h>
-#include <vk_descriptors.h>
+#include <Pipeline.h>
+#include <Descriptor.h>
 
 #include <fastgltf/types.hpp>
 

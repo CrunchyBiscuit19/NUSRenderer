@@ -1,6 +1,6 @@
-#include <renderer.h>
-#include <skybox.h>
-#include <vk_initializers.h>
+#include <Renderer.h>
+#include <Skybox.h>
+#include <Helper.h>
 
 #include <stb_image.h>
 

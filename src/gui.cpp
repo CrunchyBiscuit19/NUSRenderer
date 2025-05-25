@@ -1,5 +1,5 @@
-#include <gui.h>
-#include <renderer.h>
+#include <Gui.h>
+#include <Renderer.h>
 
 #include <magic_enum.hpp>
 #include <imgui_internal.h>

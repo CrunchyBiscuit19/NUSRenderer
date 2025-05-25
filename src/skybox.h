@@ -1,6 +1,6 @@
 #pragma once
 
-#include <resource_manager.h>
+#include <ResourceManager.h>
 
 #include <filesystem>
 
