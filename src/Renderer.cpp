@@ -15,7 +15,7 @@ Renderer::Renderer():
     mRendererResources(RendererResources(this)),
     mRendererScene(RendererScene(this)),
     mImmSubmit(ImmSubmit(this)),
-    mGUI(GUI(this))
+    mGUI(Gui(this))
 {
     
     mCamera = Camera();

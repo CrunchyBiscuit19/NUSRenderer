@@ -28,7 +28,7 @@ public:
     RendererResources mRendererResources;
     RendererScene mRendererScene;
     ImmSubmit mImmSubmit;
-    GUI mGUI;
+    Gui mGUI;
     Camera mCamera;
 
     Renderer();
