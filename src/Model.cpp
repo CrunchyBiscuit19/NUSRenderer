@@ -136,7 +136,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
                 imagesize.width = width;
                 imagesize.height = height;
                 imagesize.depth = 1;
-                newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+                newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
                 stbi_image_free(data);
             }
         },
@@ -148,7 +148,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
                 imagesize.width = width;
                 imagesize.height = height;
                 imagesize.depth = 1;
-                newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+                newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
                 stbi_image_free(data);
             }
         },
@@ -162,7 +162,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
                             imagesize.width = width;
                             imagesize.height = height;
                             imagesize.depth = 1;
-                            newImage = mRenderer->mResourceManager.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+                            newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
                             stbi_image_free(data);
                         }
                     },
@@ -191,10 +191,10 @@ void GLTFModel::initBuffers()
 {
     fmt::println("{} Model [Create Buffers]", mName);
 
-    mMaterialConstantsBuffer = mRenderer->mResourceManager.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
+    mMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
-    mInstancesBuffer = mRenderer->mResourceManager.createBuffer(MAX_INSTANCES * sizeof(TransformData),
+    mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
 }
@@ -251,11 +251,11 @@ void GLTFModel::loadMaterials()
         newMat->mPbrData.alphaMode = mat.alphaMode;
         newMat->mPbrData.doubleSided = mat.doubleSided;
 
-        newMat->mPbrData.resources.base = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
-        newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
-        newMat->mPbrData.resources.normal = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
-        newMat->mPbrData.resources.occlusion = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], * mRenderer->mResourceManager.mDefaultSampler };
-        newMat->mPbrData.resources.emissive = { &mRenderer->mResourceManager.mDefaultImages[DefaultImage::White], *mRenderer->mResourceManager.mDefaultSampler };
+        newMat->mPbrData.resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], * mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
 
         if (mat.pbrData.baseColorTexture.has_value()) {
             size_t img = mAsset.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();
@@ -450,7 +450,7 @@ void GLTFModel::loadNodes()
 
 void GLTFModel::loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& materialConstantsVector)
 {
-    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
+    std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
 
     vk::BufferCopy materialConstantsCopy{};
     materialConstantsCopy.dstOffset = 0;
@@ -458,13 +458,13 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& mat
     materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        cmd.copyBuffer(*mRenderer->mResourceManager.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+        cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
     });
 }
 
 void GLTFModel::loadInstancesBuffer(std::vector<InstanceData>& instanceDataVector)
 {
-    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
+    std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
 
     vk::BufferCopy instancesCopy{};
     instancesCopy.dstOffset = 0;
@@ -472,7 +472,7 @@ void GLTFModel::loadInstancesBuffer(std::vector<InstanceData>& instanceDataVecto
     instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        cmd.copyBuffer(*mRenderer->mResourceManager.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+        cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
     });
 }
 
@@ -481,11 +481,11 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
     const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
     const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-    mesh->mVertexBuffer = mRenderer->mResourceManager.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-    mesh->mIndexBuffer = mRenderer->mResourceManager.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 
-    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
-    std::memcpy(static_cast<char*>(mRenderer->mResourceManager.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
+    std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
+    std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
 
     vk::BufferCopy vertexCopy{};
     vertexCopy.dstOffset = 0;
@@ -497,8 +497,8 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
     indexCopy.size = srcIndexVectorSize;
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
-        cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
+        cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
+        cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
     });
 }
 

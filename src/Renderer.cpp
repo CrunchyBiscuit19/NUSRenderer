@@ -12,8 +12,8 @@
 Renderer::Renderer():
     mRendererCore(RendererCore(this)),
     mRendererInfrastructure(RendererInfrastructure(this)),
-    mResourceManager(ResourceManager(this)),
-    mSceneManager(SceneManager(this)),
+    mRendererResources(RendererResources(this)),
+    mRendererScene(RendererScene(this)),
     mImmSubmit(ImmSubmit(this)),
     mGUI(GUI(this))
 {
@@ -25,9 +25,9 @@ void Renderer::init()
 {
     mRendererCore.init();
     mImmSubmit.init();
-    mResourceManager.init();
+    mRendererResources.init();
     mRendererInfrastructure.init();
-    mSceneManager.init();
+    mRendererScene.init();
     mGUI.init();
     mCamera.init();
 }
@@ -49,7 +49,7 @@ void Renderer::run()
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
-                for (auto& model : mSceneManager.mModels | std::views::values) { model.markDelete(); }
+                for (auto& model : mRendererScene.mModels | std::views::values) { model.markDelete(); }
                 programEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
             }
             if (e.type == SDL_WINDOWEVENT) {
@@ -88,9 +88,9 @@ void Renderer::run()
 void Renderer::cleanup()
 {
     mGUI.cleanup();
-    mSceneManager.cleanup();
+    mRendererScene.cleanup();
     mImmSubmit.cleanup();
-    mResourceManager.cleanup();
+    mRendererResources.cleanup();
     mRendererInfrastructure.cleanup();
     mRendererCore.cleanup();
 }
@@ -123,7 +123,7 @@ void Renderer::draw()
 
     drawClearScreen(cmd);
     drawGeometry(cmd);
-    if (mSceneManager.mSkyboxActive) { drawSkybox(cmd); }
+    if (mRendererScene.mSkyboxActive) { drawSkybox(cmd); }
 
     // Transition intermediate image into resolvable color compatible layout 
     vkhelper::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
@@ -205,7 +205,7 @@ void Renderer::draw()
 
 void Renderer::drawClearScreen(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, mResourceManager.mDefaultColorClearValue, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, mRendererResources.mDefaultColorClearValue, vk::ImageLayout::eColorAttachmentOptimal);
     vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ClearDepthStencilValue { 0, 0 }, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
@@ -229,12 +229,12 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
     vk::Buffer lastIndexBuffer = nullptr;
 
-    for (auto& renderItem : mSceneManager.mRenderItems) {
+    for (auto& renderItem : mRendererScene.mRenderItems) {
         if (*renderItem.primitive->material->mPipeline->pipeline != lastPipeline) {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->pipeline);
             lastPipeline = *renderItem.primitive->material->mPipeline->pipeline;
 
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mSceneManager.mSceneResources.mSceneDescriptorSet, nullptr);
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mRendererScene.mSceneResources.mSceneDescriptorSet, nullptr);
 
             vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
             cmd.setViewport(0, viewport);
@@ -252,12 +252,12 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
             lastIndexBuffer = *renderItem.mesh->mIndexBuffer.buffer;
         }
 
-        mSceneManager.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
-        mSceneManager.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
-        mSceneManager.mPushConstants.materialBuffer = renderItem.materialConstantsBufferAddress;
-        mSceneManager.mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
-        mSceneManager.mPushConstants.worldMatrix = renderItem.transform;
-        cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mSceneManager.mPushConstants);
+        mRendererScene.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
+        mRendererScene.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
+        mRendererScene.mPushConstants.materialBuffer = renderItem.materialConstantsBufferAddress;
+        mRendererScene.mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
+        mRendererScene.mPushConstants.worldMatrix = renderItem.transform;
+        cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPushConstants);
 
         cmd.drawIndexed(renderItem.primitive->indexCount, renderItem.model->mInstances.size(), renderItem.primitive->indexStart, 0, 0);
 
@@ -275,13 +275,13 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 
     cmd.beginRendering(renderInfo);
 
-    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.pipeline);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mSceneManager.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mSceneManager.mSceneResources.mSceneDescriptorSet, * mSceneManager.mSkybox.mSkyboxDescriptorSet }, nullptr);
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.pipeline);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mRendererScene.mSceneResources.mSceneDescriptorSet, * mRendererScene.mSkybox.mSkyboxDescriptorSet }, nullptr);
     vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
     cmd.setViewport(0, viewport);
     vk::Rect2D scissor = { vk::Offset2D {0, 0}, vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height}, };
     cmd.setScissor(0, scissor);
-    cmd.pushConstants<SkyBoxPushConstants>(*mSceneManager.mSkybox.mSkyboxPipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, mSceneManager.mSkybox.mSkyboxPushConstants);
+    cmd.pushConstants<SkyBoxPushConstants>(*mRendererScene.mSkybox.mSkyboxPipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSkybox.mSkyboxPushConstants);
 
     cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
     mStats.mDrawCallCount++;
@@ -312,19 +312,19 @@ void Renderer::drawUpdate()
 {
     const auto start = std::chrono::system_clock::now();
 
-    mSceneManager.deleteInstances();
-    mSceneManager.deleteModels();
+    mRendererScene.deleteInstances();
+    mRendererScene.deleteModels();
 
     if (mRegenRenderItems) { 
-        mSceneManager.mRenderItems.clear();
-        mSceneManager.generateRenderItems(); 
+        mRendererScene.mRenderItems.clear();
+        mRendererScene.generateRenderItems(); 
         mRegenRenderItems = false; 
     }
-    for (auto& model : mSceneManager.mModels | std::views::values) {
+    for (auto& model : mRendererScene.mModels | std::views::values) {
         if (model.mReloadInstancesBuffer) { model.updateInstances(); }
         model.mReloadInstancesBuffer = false;
     }
-    mSceneManager.updateScene();
+    mRendererScene.updateScene();
 
     mRegenRenderItems = false;
      

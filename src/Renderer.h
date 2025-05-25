@@ -2,8 +2,8 @@
 
 #include <RendererCore.h>
 #include <RendererInfrastructure.h>
-#include <ResourceManager.h>
-#include <SceneManager.h>
+#include <RendererResources.h>
+#include <RendererScene.h>
 #include <ImmSubmit.h>
 #include <Gui.h>
 #include <Camera.h>
@@ -25,8 +25,8 @@ public:
 
     RendererCore mRendererCore;
     RendererInfrastructure mRendererInfrastructure;
-    ResourceManager mResourceManager;
-    SceneManager mSceneManager;
+    RendererResources mRendererResources;
+    RendererScene mRendererScene;
     ImmSubmit mImmSubmit;
     GUI mGUI;
     Camera mCamera;

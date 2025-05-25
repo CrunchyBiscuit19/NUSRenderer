@@ -113,7 +113,7 @@ void GUI::imguiFrame() {
 		if (ImGui::Button("Add Model")) {
 			mSelectModelFileDialog.Open();
 		}
-		for (auto& model : mRenderer->mSceneManager.mModels | std::views::values) {
+		for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
 			const auto name = model.mName;
 			if (ImGui::TreeNode(name.c_str())) {
 				if (ImGui::Button("Add Instance")) {
@@ -158,29 +158,29 @@ void GUI::imguiFrame() {
 		mSelectModelFileDialog.Display();
 		if (mSelectModelFileDialog.HasSelected()) {
 			auto selectedFiles = mSelectModelFileDialog.GetMultiSelected();
-			mRenderer->mSceneManager.loadModels(selectedFiles);
+			mRenderer->mRendererScene.loadModels(selectedFiles);
 			mSelectModelFileDialog.ClearSelected();
 			mRenderer->mRegenRenderItems = true;
 		}
 	}
 
 	if (ImGui::Begin("Scene")) {
-		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.ambientColor));
-		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightColor));
-		ImGui::InputFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightDirection));
-		ImGui::InputFloat("Sunlight Power", &mRenderer->mSceneManager.mSceneResources.mSceneData.sunlightDirection[3]);
+		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.ambientColor));
+		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightColor));
+		ImGui::InputFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection));
+		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection[3]);
 		if (ImGui::Button("Change Skybox")) {
 			mSelectSkyboxFileDialog.Open();
 		}
 		if (ImGui::Button("Toggle Skybox")) {
-			mRenderer->mSceneManager.mSkyboxActive = !mRenderer->mSceneManager.mSkyboxActive;
+			mRenderer->mRendererScene.mSkyboxActive = !mRenderer->mRendererScene.mSkyboxActive;
 		}
 		ImGui::End();
 
 		mSelectSkyboxFileDialog.Display();
 		if (mSelectSkyboxFileDialog.HasSelected()) {
 			std::filesystem::path selectedSkyboxDir = mSelectSkyboxFileDialog.GetSelected();
-			mRenderer->mSceneManager.mSkybox.updateSkyboxImage(selectedSkyboxDir);	
+			mRenderer->mRendererScene.mSkybox.updateSkyboxImage(selectedSkyboxDir);	
 			mSelectSkyboxFileDialog.ClearSelected();
 		}
 	}

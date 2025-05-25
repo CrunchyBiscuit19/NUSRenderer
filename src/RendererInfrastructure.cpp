@@ -76,17 +76,17 @@ void RendererInfrastructure::initSwapchain()
         );
     }
 
-    mDrawImage = mRenderer->mResourceManager.createImage(
+    mDrawImage = mRenderer->mRendererResources.createImage(
         vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 }, 
         vk::Format::eR16G16B16A16Sfloat, 
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment, 
         false, true, false);
-    mIntermediateImage = mRenderer->mResourceManager.createImage(
+    mIntermediateImage = mRenderer->mRendererResources.createImage(
         vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
         vk::Format::eR16G16B16A16Sfloat,
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
         false, false, false);
-    mDepthImage = mRenderer->mResourceManager.createImage(
+    mDepthImage = mRenderer->mRendererResources.createImage(
         mDrawImage.imageExtent,
         vk::Format::eD32Sfloat,
         vk::ImageUsageFlagBits::eDepthStencilAttachment,
@@ -168,7 +168,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
     std::vector<vk::DescriptorSetLayout> descriptorLayouts = { 
-        *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout, 
+        *mRenderer->mRendererScene.mSceneResources.mSceneDescriptorSetLayout, 
         *PbrMaterial::mResourcesDescriptorSetLayout 
     };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
@@ -237,8 +237,8 @@ void RendererInfrastructure::createSkyboxPipeline()
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
     std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-        *mRenderer->mSceneManager.mSceneResources.mSceneDescriptorSetLayout,
-        *mRenderer->mSceneManager.mSkybox.mSkyboxDescriptorSetLayout
+        *mRenderer->mRendererScene.mSceneResources.mSceneDescriptorSetLayout,
+        *mRenderer->mRendererScene.mSkybox.mSkyboxDescriptorSetLayout
     };
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
     pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
@@ -261,7 +261,7 @@ void RendererInfrastructure::createSkyboxPipeline()
     pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
     pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
-    mRenderer->mSceneManager.mSkybox.mSkyboxPipeline = PipelineBundle{
+    mRenderer->mRendererScene.mSkybox.mSkyboxPipeline = PipelineBundle{
         std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
         std::move(pipelineLayout)
     };

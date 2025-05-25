@@ -165,7 +165,7 @@ struct AllocatedBuffer {
     }	
 };
 
-class ResourceManager {
+class RendererResources {
 private:
     Renderer* mRenderer;
     AllocatedBuffer mImageStagingBuffer;
@@ -179,7 +179,7 @@ public:
     vk::raii::Sampler mDefaultSampler;
     std::optional<vk::ClearValue> mDefaultColorClearValue;
 
-    ResourceManager(Renderer* renderer);
+    RendererResources(Renderer* renderer);
 
     void init();
 
@@ -194,10 +194,10 @@ public:
 
 	void cleanup();
 
-    ResourceManager(ResourceManager&& other) noexcept;
-    ResourceManager& operator=(ResourceManager&& other) noexcept;
+    RendererResources(RendererResources&& other) noexcept;
+    RendererResources& operator=(RendererResources&& other) noexcept;
 
-    ResourceManager(const ResourceManager&) = delete;
-    ResourceManager& operator=(const ResourceManager&) = delete;
+    RendererResources(const RendererResources&) = delete;
+    RendererResources& operator=(const RendererResources&) = delete;
 };
 

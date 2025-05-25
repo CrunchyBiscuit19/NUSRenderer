@@ -1,4 +1,4 @@
-#include <ResourceManager.h>
+#include <RendererResources.h>
 #include <Renderer.h>
 #include <Descriptor.h>
 #include <Helper.h>
@@ -7,19 +7,19 @@
 
 #include <bit>
 
-ResourceManager::ResourceManager(Renderer* renderer):
+RendererResources::RendererResources(Renderer* renderer):
     mRenderer(renderer),
     mDefaultSampler(nullptr),
     mDefaultColorClearValue(CLEAR_COLOR)
 {}   
 
-void ResourceManager::init()
+void RendererResources::init()
 {
     initStaging();
     initDefault();
 }
 
-void ResourceManager::initStaging()
+void RendererResources::initStaging()
 {
     mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
     mMeshStagingBuffer = std::move(createStagingBuffer(DEFAULT_VERTEX_BUFFER_SIZE + DEFAULT_INDEX_BUFFER_SIZE));
@@ -27,7 +27,7 @@ void ResourceManager::initStaging()
     mInstancesStagingBuffer = std::move(createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData)));
 }
 
-void ResourceManager::initDefault()
+void RendererResources::initDefault()
 {
     // Colour data interpreted as little endian
     constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
@@ -53,7 +53,7 @@ void ResourceManager::initDefault()
     mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
 }
 
-AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
     vk::BufferCreateInfo bufferInfo = {};
     bufferInfo.pNext = nullptr;
@@ -74,7 +74,7 @@ AllocatedBuffer ResourceManager::createBuffer(size_t allocSize, vk::BufferUsageF
     return newBuffer;
 }
 
-AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap)
+AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap)
 {
     vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);
     if (mipmapped) { 
@@ -113,7 +113,7 @@ AllocatedImage ResourceManager::createImage(vk::Extent3D extent, vk::Format form
     return newImage;
 }
 
-AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap)
+AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap)
 {
     int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
 
@@ -159,12 +159,12 @@ AllocatedImage ResourceManager::createImage(const void* data, vk::Extent3D exten
     return newImage;
 }
 
-AllocatedBuffer ResourceManager::createStagingBuffer(size_t allocSize)
+AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize)
 {
     return createBuffer(allocSize,  vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
-void ResourceManager::cleanup()
+void RendererResources::cleanup()
 {
     mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
@@ -174,7 +174,7 @@ void ResourceManager::cleanup()
 	mDefaultSampler.clear();
 }
 
-ResourceManager::ResourceManager(ResourceManager&& other) noexcept : 
+RendererResources::RendererResources(RendererResources&& other) noexcept : 
     mRenderer(std::exchange(other.mRenderer, nullptr)),
     mImageStagingBuffer(std::move(other.mImageStagingBuffer)),
     mMeshStagingBuffer(std::move(other.mMeshStagingBuffer)),
@@ -182,7 +182,7 @@ ResourceManager::ResourceManager(ResourceManager&& other) noexcept :
     mDefaultSampler(std::move(other.mDefaultSampler))
 {}
 
-ResourceManager& ResourceManager::operator=(ResourceManager && other) noexcept {
+RendererResources& RendererResources::operator=(RendererResources && other) noexcept {
     if (this != &other) {
         mRenderer = std::exchange(other.mRenderer, nullptr);
         mImageStagingBuffer = std::move(other.mImageStagingBuffer);

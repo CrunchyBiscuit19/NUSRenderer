@@ -1,4 +1,4 @@
-#include <SceneManager.h>
+#include <RendererScene.h>
 #include <Renderer.h>
 
 #include <glm/ext/matrix_transform.hpp>
@@ -6,19 +6,19 @@
 
 #include <ranges>
 
-SceneManager::SceneManager(Renderer* renderer):
+RendererScene::RendererScene(Renderer* renderer):
 	mRenderer(renderer),
 	mSceneResources(SceneResources(renderer)),
 	mSkybox(Skybox(renderer))
 {}
 
-void SceneManager::init()
+void RendererScene::init()
 {
 	mSceneResources.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/")); 
 }
 
-void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
+void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
 {
 	for (const auto& modelPath : paths) {
 		if (mModels.contains(modelPath.stem().string())) {
@@ -29,33 +29,33 @@ void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 	}
 }
 
-void SceneManager::deleteModels()
+void RendererScene::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
 		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
 	});
 }
 
-void SceneManager::deleteInstances()
+void RendererScene::deleteInstances()
 {
 	for (auto& model : mModels | std::views::values) {
 		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
 	}
 }
 
-void SceneManager::generateRenderItems()
+void RendererScene::generateRenderItems()
 {
 	for (auto& model : mModels | std::views::values) {
 		model.generateRenderItems();
 	}
 }
 
-void SceneManager::updateScene()
+void RendererScene::updateScene()
 {
 	mSceneResources.updateResources();
 }
 
-void SceneManager::cleanup()
+void RendererScene::cleanup()
 {
 	mSceneResources.cleanup();
 	mModels.clear();
@@ -78,7 +78,7 @@ void SceneResources::initSceneResourcesData()
 
 void SceneResources::initSceneResourcesBuffer()
 {
-	mSceneBuffer = mRenderer->mResourceManager.createBuffer(sizeof(SceneData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	mSceneBuffer = mRenderer->mRendererResources.createBuffer(sizeof(SceneData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
 void SceneResources::initSceneResourcesDescriptor()

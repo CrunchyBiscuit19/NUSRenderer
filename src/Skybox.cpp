@@ -27,7 +27,7 @@ void Skybox::loadSkyboxImage(std::filesystem::path skyboxImageDir)
         }
     }
 
-    mSkyboxImage = mRenderer->mResourceManager.createImage(
+    mSkyboxImage = mRenderer->mRendererResources.createImage(
         skyboxImageData.data(), 
         vk::Extent3D {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1}, 
         vk::Format::eR8G8B8A8Unorm, 
@@ -98,9 +98,9 @@ void Skybox::initSkyboxBuffer()
 
     int skyboxVertexSize = mSkyboxVertices.size() * sizeof(float);
 
-    mSkyboxVertexBuffer = mRenderer->mResourceManager.createBuffer(skyboxVertexSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mSkyboxVertexBuffer = mRenderer->mRendererResources.createBuffer(skyboxVertexSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 
-    std::memcpy(mRenderer->mResourceManager.mMeshStagingBuffer.info.pMappedData, mSkyboxVertices.data(), skyboxVertexSize);
+    std::memcpy(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData, mSkyboxVertices.data(), skyboxVertexSize);
 
     vk::BufferCopy skyboxVertexCopy{};
     skyboxVertexCopy.dstOffset = 0;
@@ -108,7 +108,7 @@ void Skybox::initSkyboxBuffer()
     skyboxVertexCopy.size = skyboxVertexSize;
 
     mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-        cmd.copyBuffer(*mRenderer->mResourceManager.mMeshStagingBuffer.buffer, *mSkyboxVertexBuffer.buffer, skyboxVertexCopy);
+        cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mSkyboxVertexBuffer.buffer, skyboxVertexCopy);
     });
 
     vk::BufferDeviceAddressInfo skyboxVertexBufferDeviceAddressInfo;
@@ -119,7 +119,7 @@ void Skybox::initSkyboxBuffer()
 void Skybox::setSkyboxBindings()
 {
     DescriptorSetBinder writer;
-    writer.bindImage(0, *mSkyboxImage.imageView, *mRenderer->mResourceManager.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+    writer.bindImage(0, *mSkyboxImage.imageView, *mRenderer->mRendererResources.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
     writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
 }
 

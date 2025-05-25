@@ -50,7 +50,7 @@ public:
     void cleanup();
 };
 
-class SceneManager {
+class RendererScene {
 private:
     Renderer* mRenderer;
 
@@ -64,7 +64,7 @@ public:
     Skybox mSkybox;
     bool mSkyboxActive{ true };
 
-    SceneManager(Renderer* renderer);
+    RendererScene(Renderer* renderer);
 
     void init();
 
