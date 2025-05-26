@@ -43,7 +43,7 @@ public:
     void drawClearScreen(vk::CommandBuffer cmd);
     void drawGeometry(vk::CommandBuffer cmd);
     void drawSkybox(vk::CommandBuffer cmd);
+    void resolveMsaa(vk::CommandBuffer cmd);
     void drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView);
 
-    void resolveMsaa(vk::CommandBuffer cmd);
 };

@@ -15,8 +15,8 @@ namespace vkhelper {
     vk::SubmitInfo2 submitInfo(vk::CommandBufferSubmitInfo* cmd, vk::SemaphoreSubmitInfo* signalSemaphoreInfo, vk::SemaphoreSubmitInfo* waitSemaphoreInfo);
     vk::PresentInfoKHR presentInfo();
 
-    vk::RenderingAttachmentInfo colorAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, bool load = true, bool store = true, std::optional<vk::ImageView> swapchainResolveView = std::nullopt);
-    vk::RenderingAttachmentInfo depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, bool load = true, bool store = true);
+    vk::RenderingAttachmentInfo colorAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp load = vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp store = vk::AttachmentStoreOp::eStore, std::optional<vk::ImageView> swapchainResolveView = std::nullopt);
+    vk::RenderingAttachmentInfo depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp load = vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp store = vk::AttachmentStoreOp::eStore);
     vk::RenderingInfo renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment,
         vk::RenderingAttachmentInfo* depthAttachment);
 

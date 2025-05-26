@@ -60,12 +60,12 @@ void Gui::ModelsGuiComponent::elements()
 	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
 		const auto name = model.mName;
 		if (ImGui::CollapsingHeader(name.c_str())) {
-			if (ImGui::Button("Add Instance")) {
+			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
 				model.createInstance();
 			}
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-			if (ImGui::Button("Delete Model")) {
+			if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
 				for (auto& instance : model.mInstances) {
 					instance.mDeleteSignal = true;
 				}

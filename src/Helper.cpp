@@ -93,15 +93,15 @@ vk::PresentInfoKHR vkhelper::presentInfo()
     return info;
 }
 
-vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, bool load, bool store, std::optional<vk::ImageView> resolveImageView)
+vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, std::optional<vk::ImageView> resolveImageView)
 {
     vk::RenderingAttachmentInfo colorAttachment {};
     colorAttachment.pNext = nullptr;
     colorAttachment.imageView = view;
     colorAttachment.imageLayout = layout;
-    colorAttachment.loadOp = load ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
-    colorAttachment.storeOp = store ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.clearValue = load ? vk::ClearColorValue{} : CLEAR_COLOR;
+    colorAttachment.loadOp = loadOp;
+    colorAttachment.storeOp = storeOp;
+    colorAttachment.clearValue = CLEAR_COLOR;
     if (resolveImageView.has_value()) {
         colorAttachment.resolveImageView = resolveImageView.value();
         colorAttachment.resolveMode = vk::ResolveModeFlagBits::eAverage;
@@ -111,14 +111,14 @@ vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk
     return colorAttachment;
 }
 
-vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, bool load, bool store)
+vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp)
 {
     vk::RenderingAttachmentInfo depthAttachment {};
     depthAttachment.pNext = nullptr;
     depthAttachment.imageView = view;
     depthAttachment.imageLayout = layout;
-    depthAttachment.loadOp = load ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
-    depthAttachment.storeOp = store ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
+    depthAttachment.loadOp = loadOp;
+    depthAttachment.storeOp = storeOp;
     depthAttachment.clearValue.depthStencil.depth = 0.f;
     return depthAttachment;
 }
