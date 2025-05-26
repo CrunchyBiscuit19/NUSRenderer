@@ -93,15 +93,15 @@ vk::PresentInfoKHR vkhelper::presentInfo()
     return info;
 }
 
-vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear,vk::ImageLayout layout, std::optional<vk::ImageView> resolveImageView)
+vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, bool load, bool store, std::optional<vk::ImageView> resolveImageView)
 {
     vk::RenderingAttachmentInfo colorAttachment {};
     colorAttachment.pNext = nullptr;
     colorAttachment.imageView = view;
     colorAttachment.imageLayout = layout;
-    colorAttachment.loadOp = clear.has_value() ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
-    colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    clear.has_value() ? colorAttachment.clearValue = clear.value() : colorAttachment.clearValue = {};
+    colorAttachment.loadOp = load ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
+    colorAttachment.storeOp = store ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
+    colorAttachment.clearValue = load ? vk::ClearColorValue{} : CLEAR_COLOR;
     if (resolveImageView.has_value()) {
         colorAttachment.resolveImageView = resolveImageView.value();
         colorAttachment.resolveMode = vk::ResolveModeFlagBits::eAverage;
@@ -111,17 +111,14 @@ vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, st
     return colorAttachment;
 }
 
-vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, std::optional<vk::ClearValue> clear, vk::ImageLayout layout)
+vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, bool load, bool store)
 {
     vk::RenderingAttachmentInfo depthAttachment {};
     depthAttachment.pNext = nullptr;
     depthAttachment.imageView = view;
     depthAttachment.imageLayout = layout;
-    depthAttachment.loadOp = clear.has_value() ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
-    depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    if (clear.has_value()) {
-        depthAttachment.clearValue = clear.value();
-    }
+    depthAttachment.loadOp = load ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear;
+    depthAttachment.storeOp = store ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
     depthAttachment.clearValue.depthStencil.depth = 0.f;
     return depthAttachment;
 }

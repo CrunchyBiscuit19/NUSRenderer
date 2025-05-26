@@ -206,8 +206,8 @@ void Renderer::draw()
 
 void Renderer::drawClearScreen(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, mRendererResources.mDefaultColorClearValue, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ClearDepthStencilValue { 0, 0 }, vk::ImageLayout::eDepthAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, false, true);
+    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, false, true);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
@@ -220,8 +220,8 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     // [TODO] Sorting and culling
     
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, std::nullopt, vk::ImageLayout::eDepthAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
@@ -270,8 +270,8 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
 void Renderer::drawSkybox(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
-    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, std::nullopt, vk::ImageLayout::eDepthAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, true, false);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
@@ -290,9 +290,9 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
     cmd.endRendering();
 }
 
-void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
+void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(targetImageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(swapchainImageView, vk::ImageLayout::eColorAttachmentOptimal, false, true);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);
@@ -302,7 +302,7 @@ void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView targetImageView)
 
 void Renderer::resolveMsaa(vk::CommandBuffer cmd)
 {
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, std::nullopt, vk::ImageLayout::eColorAttachmentOptimal, *mRendererInfrastructure.mIntermediateImage.imageView);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, true, false, *mRendererInfrastructure.mIntermediateImage.imageView);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
     cmd.beginRendering(renderInfo);
