@@ -103,8 +103,7 @@ void Renderer::draw()
     mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 
     try {
-        auto output = mRendererInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr);
-        mRendererInfrastructure.mSwapchainIndex = output.second;
+        mRendererInfrastructure.mSwapchainIndex = mRendererInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
     }
     catch (vk::OutOfDateKHRError e) {
         mRendererInfrastructure.mResizeRequested = true;

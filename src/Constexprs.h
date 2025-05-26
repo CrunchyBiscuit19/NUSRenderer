@@ -12,7 +12,7 @@ constexpr bool USE_VALIDATION_LAYERS = true;
 constexpr unsigned int EXPECTED_FRAME_RATE = 60;
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int NUMBER_OF_SWAPCHAIN_IMAGES = 3;
-constexpr vk::SampleCountFlagBits MSAA_LEVEL = vk::SampleCountFlagBits::e2;
+constexpr vk::SampleCountFlagBits MSAA_LEVEL = vk::SampleCountFlagBits::e8;
 
 constexpr unsigned int ONE_MEBIBYTE_IN_BYTES = 1048576;
 constexpr unsigned int ONE_SECOND_IN_MS = 1000;
