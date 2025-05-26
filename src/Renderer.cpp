@@ -59,6 +59,7 @@ void Renderer::run()
                     mStopRendering = false;
             }
             mCamera.processSDLEvent(e);
+            mRendererCore.processSDLEvent(e);
             ImGui_ImplSDL2_ProcessEvent(&e);
         }
 
@@ -67,7 +68,7 @@ void Renderer::run()
             continue;
         }
 
-        SDL_SetRelativeMouseMode(mCamera.relativeMode);
+        SDL_SetRelativeMouseMode(mCamera.mRelativeMode);
         if (mRendererInfrastructure.mResizeRequested) { mRendererInfrastructure.resizeSwapchain(); }
 
         mGUI.imguiFrame();

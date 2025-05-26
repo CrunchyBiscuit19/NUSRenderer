@@ -505,7 +505,7 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 void GLTFModel::createInstance()
 {
     mInstances.emplace_back(this);
-    mInstances.back().mTransformComponents.translation = mRenderer->mCamera.position + mRenderer->mCamera.getDirectionVector();
+    mInstances.back().mTransformComponents.translation = mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector();
     mLatestId++;
 }
 

@@ -151,6 +151,18 @@ void RendererCore::init()
     vmaCreateAllocator(&allocatorInfo, &mVmaAllocator);
 }
 
+void RendererCore::processSDLEvent(const SDL_Event& e)
+{
+    const SDL_Keymod modState = SDL_GetModState();
+    const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+
+    if (keyState[SDL_SCANCODE_F10] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+        mWindowFullScreen = !mWindowFullScreen;
+        SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+        SDL_SetWindowBordered(mWindow, mWindowFullScreen ? SDL_FALSE : SDL_TRUE);
+    }
+}
+
 void RendererCore::cleanup()
 {
     mGraphicsQueue.clear();

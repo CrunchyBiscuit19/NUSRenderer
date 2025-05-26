@@ -20,18 +20,23 @@ class RendererCore {
 private:
     Renderer* mRenderer;
 
-public:
     vk::raii::Context mContext;
-    vk::raii::Instance mInstance;
     vk::raii::DebugUtilsMessengerEXT mDebugMessenger;
 
-    vk::raii::PhysicalDevice mChosenGPU;
-    vk::raii::Device mDevice;
     vk::PhysicalDeviceProperties mChosenGPUProperties;
 
+
+public:
+    vk::raii::Instance mInstance;
+
+    vk::raii::Device mDevice;
+    vk::raii::PhysicalDevice mChosenGPU;
+
     vk::raii::SurfaceKHR mSurface;
+    
     SDL_Window* mWindow{ nullptr };
     vk::Extent2D mWindowExtent{ 1700, 900 };
+    bool mWindowFullScreen{ false };
 
     vk::raii::Queue mComputeQueue;
     uint32_t mComputeQueueFamily;
@@ -43,5 +48,8 @@ public:
     RendererCore(Renderer* renderer);
 
     void init();
+
+    void processSDLEvent(const SDL_Event& e);
+
     void cleanup();
 };

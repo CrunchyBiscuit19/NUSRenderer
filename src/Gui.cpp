@@ -19,11 +19,11 @@ GuiComponent::GuiComponent(Renderer* renderer, Gui* gui, std::string name) :
 
 void Gui::CameraGuiComponent::elements()
 {
-	ImGui::Text("Camera Mode: %s", magic_enum::enum_name(mRenderer->mCamera.movementMode).data());
-	ImGui::Text("Mouse Mode: %s", (mRenderer->mCamera.relativeMode ? "RELATIVE" : "NORMAL"));
-	ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.position.x, mRenderer->mCamera.position.y, mRenderer->mCamera.position.z);
-	ImGui::Text("Pitch / Yaw: [%.1f, %.1f]", mRenderer->mCamera.pitch, mRenderer->mCamera.yaw);
-	ImGui::SliderFloat("Speed", &mRenderer->mCamera.speed, 0.f, 100.f, "%.2f");
+	ImGui::Text("Camera Mode: %s", magic_enum::enum_name(mRenderer->mCamera.mMovementMode).data());
+	ImGui::Text("Mouse Mode: %s", (mRenderer->mCamera.mRelativeMode ? "RELATIVE" : "NORMAL"));
+	ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.mPosition.x, mRenderer->mCamera.mPosition.y, mRenderer->mCamera.mPosition.z);
+	ImGui::Text("Pitch / Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
+	ImGui::SliderFloat("Speed", &mRenderer->mCamera.mSpeed, 0.f, 100.f, "%.2f");
 }
 
 void Gui::SceneGuiComponent::elements()
@@ -114,9 +114,10 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
 		ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
 	}
-	if (ImGui::CollapsingHeader("Controls")) {
-		ImGui::Text("[F1] Change Camera Mode");
-		ImGui::Text("[F2] Change Mouse Mode");
+	if (ImGui::CollapsingHeader("Hotkeys")) {
+		ImGui::Text("[F12] Change Camera Mode");
+		ImGui::Text("[F11] Change Mouse Mode");
+		ImGui::Text("[F10] Toggle Borderless Fullscreen");
 	}
 }
 

@@ -13,16 +13,16 @@ enum MovementMode
 
 class Camera {
 public:
-    glm::vec3 velocity;
-    glm::vec3 position;
-    float pitch{ 0.f };
-    float yaw{ 0.f };
-    float speed{ 10.f };
+    glm::vec3 mVelocity;
+    glm::vec3 mPosition;
+    float mPitch{ 0.f };
+    float mYaw{ 0.f };
+    float mSpeed{ 10.f };
 
     const Uint8* keyState;
-    SDL_bool relativeMode{ SDL_FALSE };
-    MovementMode movementMode;
-    std::unordered_map<MovementMode, std::function<void()>> movementFuns;
+    SDL_bool mRelativeMode{ SDL_FALSE };
+    MovementMode mMovementMode;
+    std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
 
     void init();
 

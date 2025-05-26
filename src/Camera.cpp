@@ -2,61 +2,64 @@
 
 void Camera::init()
 {
-    velocity = glm::vec3(0.f);
-    position = glm::vec3(0, 0, 5);
-    pitch = 0;
-    yaw = 0;
-    keyState = SDL_GetKeyboardState(nullptr);
-    movementMode = FREEFLY;
-    movementFuns[FREEFLY] = [this]() -> void {
+    mVelocity = glm::vec3(0.f);
+    mPosition = glm::vec3(0, 0, 5);
+    mPitch = 0;
+    mYaw = 0;
+    mMovementMode = FREEFLY;
+
+    mMovementFunctions[FREEFLY] = [this]() -> void {
         const SDL_Keymod modState = SDL_GetModState();
+        const Uint8* keyState = SDL_GetKeyboardState(nullptr);
         if (keyState[SDL_SCANCODE_W]) {
             if (modState & KMOD_LSHIFT)
-                velocity.y = 1;
+                mVelocity.y = 1;
             else
-                velocity.z = -1;
+                mVelocity.z = -1;
         }
         if (keyState[SDL_SCANCODE_S]) {
             if (modState & KMOD_LSHIFT)
-                velocity.y = -1;
+                mVelocity.y = -1;
             else
-                velocity.z = 1;
+                mVelocity.z = 1;
         }
         if (keyState[SDL_SCANCODE_A])
-            velocity.x = -1;
+            mVelocity.x = -1;
         if (keyState[SDL_SCANCODE_D])
-            velocity.x = 1;
-        velocity *= 0.1f;
+            mVelocity.x = 1;
+        mVelocity *= 0.1f;
     };
-    movementFuns[DRONE] = [this]() -> void {
+
+    mMovementFunctions[DRONE] = [this]() -> void {
         const SDL_Keymod modState = SDL_GetModState();
+        const Uint8* keyState = SDL_GetKeyboardState(nullptr);
         if (keyState[SDL_SCANCODE_W])
-            velocity.z = -1;
+            mVelocity.z = -1;
         if (keyState[SDL_SCANCODE_S])
-            velocity.z = 1;
+            mVelocity.z = 1;
         if (keyState[SDL_SCANCODE_A])
-            velocity.x = -1;
+            mVelocity.x = -1;
         if (keyState[SDL_SCANCODE_D])
-            velocity.x = 1;
-        velocity *= 0.1f;
+            mVelocity.x = 1;
+        mVelocity *= 0.1f;
     };
 }
 
 glm::mat4 Camera::getViewMatrix() const
 {
-    const glm::mat4 cameraTranslation = glm::translate(glm::mat4(1.f), position);
+    const glm::mat4 cameraTranslation = glm::translate(glm::mat4(1.f), mPosition);
     const glm::mat4 cameraRotation = getRotationMatrix();
     return glm::inverse(cameraTranslation * cameraRotation);
 }
 
 glm::quat Camera::getPitchMatrix() const
 {
-    return glm::angleAxis(pitch, glm::vec3{ 1.f, 0.f, 0.f });
+    return glm::angleAxis(mPitch, glm::vec3{ 1.f, 0.f, 0.f });
 }
 
 glm::quat Camera::getYawMatrix() const
 {
-    return glm::angleAxis(yaw, glm::vec3{ 0.f, -1.f, 0.f }); // Negative Y to flip OpenGL rotation?;
+    return glm::angleAxis(mYaw, glm::vec3{ 0.f, -1.f, 0.f }); // Negative Y to flip OpenGL rotation?;
 }
 
 glm::mat4 Camera::getRotationMatrix() const
@@ -69,20 +72,20 @@ glm::mat4 Camera::getRotationMatrix() const
 glm::vec3 Camera::getDirectionVector() const
 {
     glm::vec3 direction;
-    direction.x = std::cos(pitch) * std::sin(yaw);
-    direction.y = std::sin(pitch);
-    direction.z = -std::cos(pitch) * std::cos(yaw);
+    direction.x = std::cos(mPitch) * std::sin(mYaw);
+    direction.y = std::sin(mPitch);
+    direction.z = -std::cos(mPitch) * std::cos(mYaw);
     return -glm::normalize(direction);
 }
 
 void Camera::update(float deltaTime, float expectedDeltaTime)
 {
-    switch (movementMode) {
+    switch (mMovementMode) {
     case FREEFLY:
-        position += glm::vec3(getYawMatrix() * glm::vec4(velocity * speed * (deltaTime / expectedDeltaTime), 0.f));
+        mPosition += glm::vec3(getYawMatrix() * glm::vec4(mVelocity * mSpeed * (deltaTime / expectedDeltaTime), 0.f));
         break;
     case DRONE:
-        position += glm::vec3(getRotationMatrix() * glm::vec4(velocity * speed * (deltaTime / expectedDeltaTime), 0.f));
+        mPosition += glm::vec3(getRotationMatrix() * glm::vec4(mVelocity * mSpeed * (deltaTime / expectedDeltaTime), 0.f));
         break;
     }
 }
@@ -90,26 +93,30 @@ void Camera::update(float deltaTime, float expectedDeltaTime)
 void Camera::processSDLEvent(const SDL_Event& e)
 {
     const SDL_Keymod modState = SDL_GetModState();
-    velocity = glm::vec3(0.f);
+    const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-    movementFuns[movementMode]();
+    mVelocity = glm::vec3(0.f);
 
-    if (keyState[SDL_SCANCODE_F1]) {
-        switch (movementMode) {
+    mMovementFunctions[mMovementMode]();
+
+    // F12 is a reserved, kernel-based key for the debugger, so it will crash while using VS debugger. https://stackoverflow.com/questions/18997754/how-to-disable-f12-to-debug-application-in-visual-studio-2012
+    // If we have to test it, build and launch from output folder (ie. click on the actual exe).
+    if (keyState[SDL_SCANCODE_F12] && e.type == SDL_KEYDOWN && !e.key.repeat) { 
+        switch (mMovementMode) {
         case FREEFLY:
-            movementMode = DRONE;
+            mMovementMode = DRONE;
             break;
         case DRONE:
-            movementMode = FREEFLY;
+            mMovementMode = FREEFLY;
             break;
         }
     }
 
-    if (keyState[SDL_SCANCODE_F2])
-        relativeMode = static_cast<SDL_bool>(!relativeMode);
+    if (keyState[SDL_SCANCODE_F11] && e.type == SDL_KEYDOWN && !e.key.repeat)
+        mRelativeMode = static_cast<SDL_bool>(!mRelativeMode);
 
-    if (e.type == SDL_MOUSEMOTION && relativeMode) {
-        yaw += static_cast<float>(e.motion.xrel) / 200.f;
-        pitch -= static_cast<float>(e.motion.yrel) / 200.f;
+    if (e.type == SDL_MOUSEMOTION && mRelativeMode) {
+        mYaw += static_cast<float>(e.motion.xrel) / 200.f;
+        mPitch -= static_cast<float>(e.motion.yrel) / 200.f;
     }
 }
