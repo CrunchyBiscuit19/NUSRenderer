@@ -33,8 +33,8 @@ private:
 		ModelsGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 		void elements() override;
 	};
-	struct StatsGuiComponent : GuiComponent {
-		StatsGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
+	struct MiscGuiComponent : GuiComponent {
+		MiscGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 		void elements() override;
 	};
 
