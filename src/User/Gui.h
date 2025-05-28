@@ -39,6 +39,8 @@ private:
 	};
 
 	Renderer* mRenderer;
+	vk::raii::DescriptorPool mDescriptorPool;
+
 
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 

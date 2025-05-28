@@ -14,7 +14,6 @@ public:
 	vk::raii::CommandPool mCommandPool;
 	vk::raii::CommandBuffer mCommandBuffer;
 	vk::raii::Fence mFence;
-	vk::raii::DescriptorPool mDescriptorPool;
 
 public:
 	ImmSubmit(Renderer* renderer);
@@ -23,8 +22,7 @@ public:
 		mRenderer(other.mRenderer),
 		mCommandPool(std::move(other.mCommandPool)),
 		mCommandBuffer(std::move(other.mCommandBuffer)),
-		mFence(std::move(other.mFence)),
-		mDescriptorPool(std::move(other.mDescriptorPool))
+		mFence(std::move(other.mFence))
 	{
 		other.mRenderer = nullptr;
 	}
@@ -35,8 +33,6 @@ public:
 			mCommandPool = std::move(other.mCommandPool);
 			mCommandBuffer = std::move(other.mCommandBuffer);
 			mFence = std::move(other.mFence);
-			mDescriptorPool = std::move(other.mDescriptorPool);
-
 			other.mRenderer = nullptr;
 		}
 		return *this;

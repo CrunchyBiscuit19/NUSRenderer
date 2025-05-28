@@ -6,8 +6,7 @@ ImmSubmit::ImmSubmit(Renderer* renderer) :
 	mRenderer(renderer),
 	mCommandPool(nullptr),
 	mCommandBuffer(nullptr),
-	mFence(nullptr),
-	mDescriptorPool(nullptr)
+	mFence(nullptr)
 {
 }
 
@@ -21,26 +20,6 @@ void ImmSubmit::init()
 
 	vk::FenceCreateInfo fenceCreateInfo = vkhelper::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
 	mFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
-
-	std::vector<vk::DescriptorPoolSize> poolSizes = {
-		{ vk::DescriptorType::eSampler, 1000 },
-		{ vk::DescriptorType::eCombinedImageSampler, 1000 },
-		{ vk::DescriptorType::eSampledImage, 1000 },
-		{ vk::DescriptorType::eStorageImage, 1000 },
-		{ vk::DescriptorType::eUniformTexelBuffer, 1000 },
-		{ vk::DescriptorType::eStorageTexelBuffer, 1000 },
-		{ vk::DescriptorType::eUniformBuffer, 1000 },
-		{ vk::DescriptorType::eUniformBufferDynamic, 1000 },
-		{ vk::DescriptorType::eStorageBuffer, 1000 },
-		{ vk::DescriptorType::eStorageBufferDynamic, 1000 },
-		{ vk::DescriptorType::eInputAttachment, 1000 },
-	};
-	vk::DescriptorPoolCreateInfo poolInfo = {};
-	poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
-	poolInfo.maxSets = 1000;
-	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-	poolInfo.pPoolSizes = poolSizes.data();
-	mDescriptorPool = mRenderer->mRendererCore.mDevice.createDescriptorPool(poolInfo);
 }
 
 void ImmSubmit::submit(std::function<void(vk::raii::CommandBuffer& cmd) >&& function)
@@ -62,7 +41,6 @@ void ImmSubmit::submit(std::function<void(vk::raii::CommandBuffer& cmd) >&& func
 
 void ImmSubmit::cleanup()
 {
-	mDescriptorPool.clear();
 	mFence.clear();
 	mCommandBuffer.clear();
 	mCommandPool.clear();

@@ -123,11 +123,32 @@ void Gui::MiscGuiComponent::elements()
 }
 
 Gui::Gui(Renderer* renderer) :
-	mRenderer(renderer)
+	mRenderer(renderer),
+	mDescriptorPool(nullptr)
 {
 }
 
 void Gui::init() {
+	std::vector<vk::DescriptorPoolSize> poolSizes = {
+		{ vk::DescriptorType::eSampler, 100 },
+		{ vk::DescriptorType::eCombinedImageSampler, 100 },
+		{ vk::DescriptorType::eSampledImage, 100 },
+		{ vk::DescriptorType::eStorageImage, 100 },
+		{ vk::DescriptorType::eUniformTexelBuffer, 100 },
+		{ vk::DescriptorType::eStorageTexelBuffer, 100 },
+		{ vk::DescriptorType::eUniformBuffer, 100 },
+		{ vk::DescriptorType::eUniformBufferDynamic, 100 },
+		{ vk::DescriptorType::eStorageBuffer, 100 },
+		{ vk::DescriptorType::eStorageBufferDynamic, 100 },
+		{ vk::DescriptorType::eInputAttachment, 100 },
+	};
+	vk::DescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+	poolInfo.maxSets = 100;
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolInfo.pPoolSizes = poolSizes.data();
+	mDescriptorPool = mRenderer->mRendererCore.mDevice.createDescriptorPool(poolInfo);
+
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
 
@@ -141,9 +162,9 @@ void Gui::init() {
 	initInfo.PhysicalDevice = *mRenderer->mRendererCore.mChosenGPU;
 	initInfo.Device = *mRenderer->mRendererCore.mDevice;
 	initInfo.Queue = *mRenderer->mRendererCore.mGraphicsQueue;
-	initInfo.DescriptorPool = *mRenderer->mImmSubmit.mDescriptorPool;
-	initInfo.MinImageCount = 3;
-	initInfo.ImageCount = 3;
+	initInfo.DescriptorPool = *mDescriptorPool;
+	initInfo.MinImageCount = NUMBER_OF_SWAPCHAIN_IMAGES;
+	initInfo.ImageCount = NUMBER_OF_SWAPCHAIN_IMAGES;
 	initInfo.UseDynamicRendering = true;
 	initInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(vk::SampleCountFlagBits::e1);
 	initInfo.UseDynamicRendering = true;
@@ -176,6 +197,7 @@ void Gui::init() {
 void Gui::cleanup() {
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
+	mDescriptorPool.clear();
 }
 
 void Gui::imguiFrame() {
