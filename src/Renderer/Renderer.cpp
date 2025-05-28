@@ -1,5 +1,5 @@
-#include <Renderer.h>
-#include <Helper.h>
+#include <Renderer/Renderer.h>
+#include <Utils/Helper.h>
 
 #include <fmt/core.h>
 #include <imgui_impl_sdl2.h>

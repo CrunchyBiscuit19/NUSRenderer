@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Material.h>
-#include <Instance.h>
+#include <Data/Material.h>
+#include <Data/Instance.h>
 
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>

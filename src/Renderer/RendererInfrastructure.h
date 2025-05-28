@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Constexprs.h>
-#include <Model.h>
-#include <Descriptor.h>
-#include <Pipeline.h>
+#include <Utils/Constexprs.h>
+#include <Data/Model.h>
+#include <Utils/Descriptor.h>
+#include <Utils/Pipeline.h>
 
 class Renderer;
 

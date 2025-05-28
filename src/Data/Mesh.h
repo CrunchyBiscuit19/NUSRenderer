@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Material.h>
-#include <RendererResources.h>
+#include <Data/Material.h>
+#include <Renderer/RendererResources.h>
 
 struct Vertex {
     glm::vec3 position;

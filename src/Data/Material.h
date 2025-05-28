@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Pipeline.h>
-#include <Descriptor.h>
+#include <Utils/Pipeline.h>
+#include <Utils/Descriptor.h>
 
 #include <fastgltf/types.hpp>
 

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <RendererCore.h>
-#include <RendererInfrastructure.h>
-#include <RendererResources.h>
-#include <RendererScene.h>
-#include <ImmSubmit.h>
-#include <Gui.h>
-#include <Camera.h>
+#include <Renderer/RendererCore.h>
+#include <Renderer/RendererInfrastructure.h>
+#include <Renderer/RendererResources.h>
+#include <Renderer/RendererScene.h>
+#include <Utils/ImmSubmit.h>
+#include <User/Gui.h>
+#include <Data/Camera.h>
 
 struct RendererStats {
     float mFrametime;

@@ -1,5 +1,5 @@
-#include <Renderer.h>
-#include <Model.h>
+#include <Renderer/Renderer.h>
+#include <Data/Model.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

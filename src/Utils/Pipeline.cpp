@@ -1,6 +1,6 @@
-﻿#include <Pipeline.h>
-#include <Helper.h>
-#include <RendererInfrastructure.h>
+﻿#include <Utils/Pipeline.h>
+#include <Utils/Helper.h>
+#include <Renderer/RendererInfrastructure.h>
 
 #include <fmt/core.h>
 #include <vulkan/vulkan.hpp>

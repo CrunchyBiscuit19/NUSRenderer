@@ -1,6 +1,6 @@
-#include <Renderer.h>
-#include <RendererInfrastructure.h>
-#include <Helper.h>
+#include <Renderer/Renderer.h>
+#include <Renderer/RendererInfrastructure.h>
+#include <Utils/Helper.h>
 
 #include <VkBootstrap.h>
 #include <fmt/core.h>

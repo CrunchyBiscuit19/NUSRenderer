@@ -1,7 +1,7 @@
-#include <RendererResources.h>
-#include <Renderer.h>
-#include <Descriptor.h>
-#include <Helper.h>
+#include <Renderer/RendererResources.h>
+#include <Renderer/Renderer.h>
+#include <Utils/Descriptor.h>
+#include <Utils/Helper.h>
 
 #include <fmt/core.h>
 

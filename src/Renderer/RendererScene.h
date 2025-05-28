@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Mesh.h>
-#include <Skybox.h>
+#include <Data/Mesh.h>
+#include <Data/Skybox.h>
 
 #include <glm/fwd.hpp>
 

@@ -1,5 +1,5 @@
-﻿#include <Helper.h>
-#include <RendererInfrastructure.h>
+﻿#include <Utils/Helper.h>
+#include <Renderer/RendererInfrastructure.h>
 
 vk::CommandPoolCreateInfo vkhelper::commandPoolCreateInfo(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flags)
 {

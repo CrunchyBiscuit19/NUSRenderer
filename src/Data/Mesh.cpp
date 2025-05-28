@@ -1,5 +1,5 @@
-#include <Renderer.h>
-#include <Mesh.h>
+#include <Renderer/Renderer.h>
+#include <Data/Mesh.h>
 
 void Node::refreshTransform(const glm::mat4& parentTransform)
 {

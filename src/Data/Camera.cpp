@@ -1,4 +1,4 @@
-#include <Camera.h>
+#include <Data/Camera.h>
 
 void Camera::init()
 {

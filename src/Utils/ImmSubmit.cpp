@@ -1,6 +1,6 @@
-#include <Renderer.h>
-#include <ImmSubmit.h>
-#include <Helper.h>
+#include <Renderer/Renderer.h>
+#include <Utils/ImmSubmit.h>
+#include <Utils/Helper.h>
 
 ImmSubmit::ImmSubmit(Renderer* renderer):
     mRenderer(renderer),

@@ -1,6 +1,6 @@
-#include <Renderer.h>
-#include <Skybox.h>
-#include <Helper.h>
+#include <Renderer/Renderer.h>
+#include <Data/Skybox.h>
+#include <Utils/Helper.h>
 
 #include <stb_image.h>
 

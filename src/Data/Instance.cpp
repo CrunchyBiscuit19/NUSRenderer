@@ -1,5 +1,5 @@
-#include <Instance.h>
-#include <Model.h>
+#include <Data/Instance.h>
+#include <Data/Model.h>
 
 GLTFInstance::GLTFInstance(GLTFModel* model) :
     mModel(model),
