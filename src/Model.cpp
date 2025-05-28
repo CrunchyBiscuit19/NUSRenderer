@@ -8,7 +8,7 @@
 
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath):
 	mRenderer(renderer),
-    mDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
+    mModelDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
 {
     mName = modelPath.stem().string();
     fmt::println("{} Model [Open File]", mName);
@@ -54,7 +54,7 @@ GLTFModel::GLTFModel(GLTFModel&& other) noexcept:
     mMeshes(std::move(other.mMeshes)),
     mSamplers(std::move(other.mSamplers)),
     mImages(std::move(other.mImages)),
-    mDescriptorAllocator(std::move(other.mDescriptorAllocator)),
+    mModelDescriptorAllocator(std::move(other.mModelDescriptorAllocator)),
     mMaterials(std::move(other.mMaterials)),
     mMaterialConstantsBuffer(std::move(other.mMaterialConstantsBuffer)),
     mInstances(std::move(other.mInstances)),
@@ -78,7 +78,7 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
         mMeshes = std::move(other.mMeshes);
         mSamplers = std::move(other.mSamplers);
         mImages = std::move(other.mImages);
-        mDescriptorAllocator = std::move(other.mDescriptorAllocator);
+        mModelDescriptorAllocator = std::move(other.mModelDescriptorAllocator);
         mMaterials = std::move(other.mMaterials);
         mMaterialConstantsBuffer = std::move(other.mMaterialConstantsBuffer);
         mInstances = std::move(other.mInstances);
@@ -184,7 +184,7 @@ void GLTFModel::initDescriptors()
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = { 
         { vk::DescriptorType::eCombinedImageSampler, 5 },
     };
-    mDescriptorAllocator.init(mAsset.materials.size(), sizes);
+    mModelDescriptorAllocator.init(mAsset.materials.size(), sizes);
 }
 
 void GLTFModel::initBuffers()
@@ -234,7 +234,7 @@ void GLTFModel::loadMaterials()
     mMaterials.reserve(mAsset.materials.size());
     int materialIndex = 0;
     for (fastgltf::Material& mat : mAsset.materials) {
-        auto newMat = std::make_shared<PbrMaterial>(mRenderer, &mDescriptorAllocator);
+        auto newMat = std::make_shared<PbrMaterial>(mRenderer, &mModelDescriptorAllocator);
         auto matName = std::string(mat.name);
         if (matName.empty()) {
             matName = fmt::format("{}", materialIndex);
@@ -251,11 +251,11 @@ void GLTFModel::loadMaterials()
         newMat->mPbrData.alphaMode = mat.alphaMode;
         newMat->mPbrData.doubleSided = mat.doubleSided;
 
-        newMat->mPbrData.resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-        newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-        newMat->mPbrData.resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-        newMat->mPbrData.resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], * mRenderer->mRendererResources.mDefaultSampler };
-        newMat->mPbrData.resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], * mRenderer->mRendererResources.mDefaultSampler };
+        newMat->mPbrData.resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
 
         if (mat.pbrData.baseColorTexture.has_value()) {
             size_t img = mAsset.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();

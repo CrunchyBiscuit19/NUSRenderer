@@ -40,7 +40,7 @@ void Skybox::initSkyboxDescriptor()
     DescriptorLayoutBuilder builder;
     builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler);
     mSkyboxDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eFragment);
-    mSkyboxDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mSkyboxDescriptorSetLayout);
+    mSkyboxDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mSkyboxDescriptorSetLayout);
 
     setSkyboxBindings();
 }

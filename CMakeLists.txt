@@ -94,6 +94,8 @@ add_library(imgui-filebrowser INTERFACE)
 target_include_directories(imgui-filebrowser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui-filebrowser)
 add_library(vma INTERFACE)
 target_include_directories(vma INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vma)
+add_library(quill INTERFACE)
+target_include_directories(quill INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/quill)
 
 # Source include directory
 target_include_directories(NUSRenderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/")

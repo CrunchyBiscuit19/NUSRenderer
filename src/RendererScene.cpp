@@ -64,7 +64,6 @@ void RendererScene::cleanup()
 
 SceneResources::SceneResources(Renderer* renderer) :
 	mRenderer(renderer),
-	mDescriptorAllocator(nullptr),
 	mSceneDescriptorSet(nullptr),
 	mSceneDescriptorSetLayout(nullptr)
 {}
@@ -86,7 +85,7 @@ void SceneResources::initSceneResourcesDescriptor()
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
 	mSceneDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-	mSceneDescriptorSet = mRenderer->mRendererInfrastructure.mDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
+	mSceneDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
 
 	DescriptorSetBinder writer;
 	writer.bindBuffer(0, *mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);

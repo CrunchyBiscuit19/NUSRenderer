@@ -10,7 +10,7 @@ std::filesystem::path shaderDir = SHADERS_PATH;
 RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 	mRenderer(renderer),
     mSwapchainBundle(nullptr),
-    mDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
+    mMainDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
 {
     mFrames.resize(FRAME_OVERLAP);
 }   
@@ -29,7 +29,7 @@ void RendererInfrastructure::initDescriptors()
         { vk::DescriptorType::eUniformBuffer, 1 },          // Scene UBO
         { vk::DescriptorType::eCombinedImageSampler, 1 },   // Skybox Cubemap
     };
-    mDescriptorAllocator.init(1, sizes);
+    mMainDescriptorAllocator.init(1, sizes);
 }
 
 void RendererInfrastructure::initFrames()
@@ -190,8 +190,8 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
     pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
     pipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
     pipelineBuilder.enableMultisampling();
-    pipelineBuilder.enableSampleShading(); // [TODO] Enable both
-    transparency ? pipelineBuilder.enableBlendingAdditive() : pipelineBuilder.disableBlending();
+    pipelineBuilder.enableSampleShading(); 
+    transparency ? pipelineBuilder.enableBlendingAlpha() : pipelineBuilder.disableBlending();
     transparency ? pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual) : pipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);;
     pipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
     pipelineBuilder.setColorAttachmentFormat(mDrawImage.imageFormat);
@@ -254,7 +254,7 @@ void RendererInfrastructure::createSkyboxPipeline()
     pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
     pipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
     pipelineBuilder.enableMultisampling();
-    pipelineBuilder.enableSampleShading(); // [TODO] Enable both
+    pipelineBuilder.enableSampleShading();
     pipelineBuilder.enableBlendingSkybox();
     pipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
     pipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
@@ -275,5 +275,5 @@ void RendererInfrastructure::cleanup() {
     mMaterialPipelines.clear();
     mComputePipelines.clear();
     destroySwapchain();
-    mDescriptorAllocator.cleanup();
+    mMainDescriptorAllocator.cleanup();
 }

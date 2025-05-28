@@ -48,7 +48,7 @@ public:
     SwapchainBundle mSwapchainBundle;
     uint32_t mSwapchainIndex;
 
-    DescriptorAllocatorGrowable mDescriptorAllocator;
+    DescriptorAllocatorGrowable mMainDescriptorAllocator;
 
     AllocatedImage mDrawImage;
     AllocatedImage mIntermediateImage;

@@ -31,7 +31,7 @@ public:
     std::vector<vk::raii::Sampler> mSamplers;
 	std::vector<AllocatedImage> mImages;
 
-    DescriptorAllocatorGrowable mDescriptorAllocator;
+    DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
     std::vector<std::shared_ptr<PbrMaterial>> mMaterials;
     AllocatedBuffer mMaterialConstantsBuffer;

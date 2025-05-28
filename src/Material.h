@@ -46,7 +46,7 @@ struct PbrData {
 
 class PbrMaterial {
     Renderer* mRenderer;
-    DescriptorAllocatorGrowable* mDescriptorAllocator;
+    DescriptorAllocatorGrowable* mModelDescriptorAllocator;
 
 public:
     std::string mName;

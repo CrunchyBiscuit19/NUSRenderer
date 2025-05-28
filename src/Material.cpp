@@ -7,7 +7,7 @@ vk::raii::DescriptorSetLayout PbrMaterial::mResourcesDescriptorSetLayout = nullp
 
 PbrMaterial::PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descriptorAllocator) :
     mRenderer(renderer),
-    mDescriptorAllocator(descriptorAllocator),
+    mModelDescriptorAllocator(descriptorAllocator),
     mPipeline(nullptr),
     mResourcesDescriptorSet(nullptr)
 {
@@ -33,7 +33,7 @@ void PbrMaterial::getMaterialPipeline()
 void PbrMaterial::writeMaterialResources()
 {
     getMaterialPipeline();
-    mResourcesDescriptorSet = mDescriptorAllocator->allocate(*mResourcesDescriptorSetLayout);
+    mResourcesDescriptorSet = mModelDescriptorAllocator->allocate(*mResourcesDescriptorSetLayout);
 
     DescriptorSetBinder writer;
     writer.bindImage(0, *mPbrData.resources.base.image->imageView, mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);

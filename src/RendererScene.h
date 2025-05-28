@@ -30,7 +30,6 @@ struct SceneData {
 
 class SceneResources {
     Renderer* mRenderer;
-    DescriptorAllocatorGrowable* mDescriptorAllocator;
 
 public:
     SceneData mSceneData;
