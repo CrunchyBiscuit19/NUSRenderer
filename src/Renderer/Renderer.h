@@ -9,41 +9,41 @@
 #include <Data/Camera.h>
 
 struct RendererStats {
-    float mFrametime;
-    float mDrawTime;
-    int mDrawCallCount;
-    float mSceneUpdateTime;
+	float mFrametime;
+	float mDrawTime;
+	int mDrawCallCount;
+	float mSceneUpdateTime;
 };
 
 class Renderer {
 public:
-    bool mIsInitialized { false };
-    bool mStopRendering { false };
+	bool mIsInitialized{ false };
+	bool mStopRendering{ false };
 
-    RendererStats mStats;
-    bool mRegenRenderItems { false };
+	RendererStats mStats;
+	bool mRegenRenderItems{ false };
 
-    RendererCore mRendererCore;
-    RendererInfrastructure mRendererInfrastructure;
-    RendererResources mRendererResources;
-    RendererScene mRendererScene;
-    ImmSubmit mImmSubmit;
-    Gui mGUI;
-    Camera mCamera;
+	RendererCore mRendererCore;
+	RendererInfrastructure mRendererInfrastructure;
+	RendererResources mRendererResources;
+	RendererScene mRendererScene;
+	ImmSubmit mImmSubmit;
+	Gui mGUI;
+	Camera mCamera;
 
-    Renderer();
+	Renderer();
 
-    void init();
-    void run();
-    void cleanup();
+	void init();
+	void run();
+	void cleanup();
 
-    void drawUpdate();
+	void drawUpdate();
 
-    void draw();
-    void drawClearScreen(vk::CommandBuffer cmd);
-    void drawGeometry(vk::CommandBuffer cmd);
-    void drawSkybox(vk::CommandBuffer cmd);
-    void resolveMsaa(vk::CommandBuffer cmd);
-    void drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView);
+	void draw();
+	void drawClearScreen(vk::CommandBuffer cmd);
+	void drawGeometry(vk::CommandBuffer cmd);
+	void drawSkybox(vk::CommandBuffer cmd);
+	void resolveMsaa(vk::CommandBuffer cmd);
+	void drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView);
 
 };

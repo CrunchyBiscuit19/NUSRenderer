@@ -5,21 +5,21 @@
 class GLTFModel;
 
 struct TransformData {
-    glm::vec3 translation;
-    glm::vec3 rotation;
-    glm::f32 scale;
+	glm::vec3 translation;
+	glm::vec3 rotation;
+	glm::f32 scale;
 };
 
 struct InstanceData {
-    glm::mat4 transformMatrix;
+	glm::mat4 transformMatrix;
 };
 
 class GLTFInstance {
 public:
-    GLTFModel* mModel;
-    int mId;
-    bool mDeleteSignal;
-    TransformData mTransformComponents;
+	GLTFModel* mModel;
+	int mId;
+	bool mDeleteSignal;
+	TransformData mTransformComponents;
 
-    GLTFInstance(GLTFModel* model);
+	GLTFInstance(GLTFModel* model);
 };

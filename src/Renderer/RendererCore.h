@@ -8,48 +8,48 @@
 #include <vulkan/vulkan.hpp>
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
-    VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
-    VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
-    void* pUserData
+	VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
+	VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
+	void* pUserData
 );
 
 class Renderer;
 
 class RendererCore {
 private:
-    Renderer* mRenderer;
+	Renderer* mRenderer;
 
-    vk::raii::Context mContext;
-    vk::raii::DebugUtilsMessengerEXT mDebugMessenger;
+	vk::raii::Context mContext;
+	vk::raii::DebugUtilsMessengerEXT mDebugMessenger;
 
-    vk::PhysicalDeviceProperties mChosenGPUProperties;
+	vk::PhysicalDeviceProperties mChosenGPUProperties;
 
 
 public:
-    vk::raii::Instance mInstance;
+	vk::raii::Instance mInstance;
 
-    vk::raii::Device mDevice;
-    vk::raii::PhysicalDevice mChosenGPU;
+	vk::raii::Device mDevice;
+	vk::raii::PhysicalDevice mChosenGPU;
 
-    vk::raii::SurfaceKHR mSurface;
-    
-    SDL_Window* mWindow{ nullptr };
-    vk::Extent2D mWindowExtent{ 1700, 900 };
-    bool mWindowFullScreen{ false };
+	vk::raii::SurfaceKHR mSurface;
 
-    vk::raii::Queue mComputeQueue;
-    uint32_t mComputeQueueFamily;
-    vk::raii::Queue mGraphicsQueue;
-    uint32_t mGraphicsQueueFamily;
+	SDL_Window* mWindow{ nullptr };
+	vk::Extent2D mWindowExtent{ 1700, 900 };
+	bool mWindowFullScreen{ false };
 
-    VmaAllocator mVmaAllocator;
+	vk::raii::Queue mComputeQueue;
+	uint32_t mComputeQueueFamily;
+	vk::raii::Queue mGraphicsQueue;
+	uint32_t mGraphicsQueueFamily;
 
-    RendererCore(Renderer* renderer);
+	VmaAllocator mVmaAllocator;
 
-    void init();
+	RendererCore(Renderer* renderer);
 
-    void processSDLEvent(const SDL_Event& e);
+	void init();
 
-    void cleanup();
+	void processSDLEvent(const SDL_Event& e);
+
+	void cleanup();
 };

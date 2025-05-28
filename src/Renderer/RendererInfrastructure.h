@@ -8,69 +8,69 @@
 class Renderer;
 
 struct Frame {
-    vk::raii::CommandPool mCommandPool;
-    vk::raii::CommandBuffer mCommandBuffer;
-    vk::raii::Fence mRenderFence;
-    vk::raii::Semaphore mAvailableSemaphore;
+	vk::raii::CommandPool mCommandPool;
+	vk::raii::CommandBuffer mCommandBuffer;
+	vk::raii::Fence mRenderFence;
+	vk::raii::Semaphore mAvailableSemaphore;
 
-    Frame();
+	Frame();
 
-    void cleanup();
+	void cleanup();
 };
 
 class SwapchainBundle {
 public:
-    struct SwapchainImage {
-        vk::Image image;
-        vk::raii::ImageView imageView;
-        vk::raii::Semaphore renderedSemaphore;
-    };
+	struct SwapchainImage {
+		vk::Image image;
+		vk::raii::ImageView imageView;
+		vk::raii::Semaphore renderedSemaphore;
+	};
 
-    vk::raii::SwapchainKHR mSwapchain;
-    vk::Extent2D mExtent;
-    vk::Format mFormat;
-    std::vector<SwapchainImage> mImages;
+	vk::raii::SwapchainKHR mSwapchain;
+	vk::Extent2D mExtent;
+	vk::Format mFormat;
+	std::vector<SwapchainImage> mImages;
 
 };
 
 class RendererInfrastructure {
 private:
-    Renderer* mRenderer;
+	Renderer* mRenderer;
 
 public:
-    uint64_t mFrameNumber{ 0 }; // Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
-    std::vector<Frame> mFrames;
-    Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
-    Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
-    SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
+	uint64_t mFrameNumber{ 0 }; // Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
+	std::vector<Frame> mFrames;
+	Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
+	Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
+	SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
 
-    bool mResizeRequested{ false };
-    SwapchainBundle mSwapchainBundle;
-    uint32_t mSwapchainIndex;
+	bool mResizeRequested{ false };
+	SwapchainBundle mSwapchainBundle;
+	uint32_t mSwapchainIndex;
 
-    DescriptorAllocatorGrowable mMainDescriptorAllocator;
+	DescriptorAllocatorGrowable mMainDescriptorAllocator;
 
-    AllocatedImage mDrawImage;
-    AllocatedImage mIntermediateImage;
-    AllocatedImage mDepthImage;
+	AllocatedImage mDrawImage;
+	AllocatedImage mIntermediateImage;
+	AllocatedImage mDepthImage;
 
-    std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelines;
-    std::unordered_map<PipelineOptions, PipelineBundle> mComputePipelines;
+	std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelines;
+	std::unordered_map<PipelineOptions, PipelineBundle> mComputePipelines;
 
-    RendererInfrastructure(Renderer* renderer);
+	RendererInfrastructure(Renderer* renderer);
 
-    void init();
+	void init();
 
-    void initDescriptors();
-    void initFrames();
-    void initSwapchain();
-    void destroySwapchain();
-    void resizeSwapchain();
-    
-    PipelineBundle* getMaterialPipeline(PipelineOptions pipelineOptions);
-    void createMaterialPipeline(PipelineOptions pipelineOptions);
-    void createComputePipeline(PipelineOptions pipelineOptions);
-    void createSkyboxPipeline();
+	void initDescriptors();
+	void initFrames();
+	void initSwapchain();
+	void destroySwapchain();
+	void resizeSwapchain();
 
-    void cleanup();
+	PipelineBundle* getMaterialPipeline(PipelineOptions pipelineOptions);
+	void createMaterialPipeline(PipelineOptions pipelineOptions);
+	void createComputePipeline(PipelineOptions pipelineOptions);
+	void createSkyboxPipeline();
+
+	void cleanup();
 };

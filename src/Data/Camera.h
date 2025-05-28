@@ -7,32 +7,32 @@
 
 enum MovementMode
 {
-    FREEFLY,
-    DRONE,
+	FREEFLY,
+	DRONE,
 };
 
 class Camera {
 public:
-    glm::vec3 mVelocity;
-    glm::vec3 mPosition;
-    float mPitch{ 0.f };
-    float mYaw{ 0.f };
-    float mSpeed{ 10.f };
+	glm::vec3 mVelocity;
+	glm::vec3 mPosition;
+	float mPitch{ 0.f };
+	float mYaw{ 0.f };
+	float mSpeed{ 10.f };
 
-    const Uint8* keyState;
-    SDL_bool mRelativeMode{ SDL_FALSE };
-    MovementMode mMovementMode;
-    std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
+	const Uint8* keyState;
+	SDL_bool mRelativeMode{ SDL_FALSE };
+	MovementMode mMovementMode;
+	std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
 
-    void init();
+	void init();
 
-    glm::mat4 getViewMatrix() const;
-    glm::quat getPitchMatrix() const;
-    glm::quat getYawMatrix() const;
-    glm::mat4 getRotationMatrix() const;
-    glm::vec3 getDirectionVector() const;
+	glm::mat4 getViewMatrix() const;
+	glm::quat getPitchMatrix() const;
+	glm::quat getYawMatrix() const;
+	glm::mat4 getRotationMatrix() const;
+	glm::vec3 getDirectionVector() const;
 
-    void processSDLEvent(const SDL_Event& e);
+	void processSDLEvent(const SDL_Event& e);
 
-    void update(float deltaTime, float expectedDeltaTime);
+	void update(float deltaTime, float expectedDeltaTime);
 };

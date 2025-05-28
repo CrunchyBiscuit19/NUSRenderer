@@ -6,16 +6,17 @@
 
 #include <ranges>
 
-RendererScene::RendererScene(Renderer* renderer):
+RendererScene::RendererScene(Renderer* renderer) :
 	mRenderer(renderer),
 	mSceneResources(SceneResources(renderer)),
 	mSkybox(Skybox(renderer))
-{}
+{
+}
 
 void RendererScene::init()
 {
 	mSceneResources.init();
-	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/")); 
+	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -33,7 +34,7 @@ void RendererScene::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
 		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
-	});
+		});
 }
 
 void RendererScene::deleteInstances()
@@ -66,7 +67,8 @@ SceneResources::SceneResources(Renderer* renderer) :
 	mRenderer(renderer),
 	mSceneDescriptorSet(nullptr),
 	mSceneDescriptorSetLayout(nullptr)
-{}
+{
+}
 
 void SceneResources::initSceneResourcesData()
 {

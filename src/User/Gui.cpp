@@ -15,7 +15,8 @@ GuiComponent::GuiComponent(Renderer* renderer, Gui* gui, std::string name) :
 	mRenderer(renderer),
 	mGui(gui),
 	mName(name)
-{}
+{
+}
 
 void Gui::CameraGuiComponent::elements()
 {
@@ -123,7 +124,8 @@ void Gui::MiscGuiComponent::elements()
 
 Gui::Gui(Renderer* renderer) :
 	mRenderer(renderer)
-{}
+{
+}
 
 void Gui::init() {
 	ImGui::CreateContext();
@@ -187,7 +189,7 @@ void Gui::imguiFrame() {
 	if (ImGui::Begin("Renderer Options"), nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar) {
 		if (ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown))
 		{
-			for (auto& component: mGuiComponents) {
+			for (auto& component : mGuiComponents) {
 				if (ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton))
 				{
 					component->elements();
