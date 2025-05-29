@@ -101,6 +101,7 @@ void Renderer::draw()
 	auto start = std::chrono::system_clock::now();
 
 	mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
+	mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence);
 
 	try {
 		mRendererInfrastructure.mSwapchainIndex = mRendererInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
@@ -110,7 +111,6 @@ void Renderer::draw()
 		return;
 	}
 
-	mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence);
 	vk::CommandBuffer cmd = *mRendererInfrastructure.getCurrentFrame().mCommandBuffer;
 	cmd.reset();
 
@@ -312,6 +312,8 @@ void Renderer::drawUpdate()
 {
 	const auto start = std::chrono::system_clock::now();
 
+	mRendererScene.updateScene();
+
 	mRendererScene.deleteInstances();
 	mRendererScene.deleteModels();
 
@@ -324,7 +326,6 @@ void Renderer::drawUpdate()
 		if (model.mReloadInstancesBuffer) { model.updateInstances(); }
 		model.mReloadInstancesBuffer = false;
 	}
-	mRendererScene.updateScene();
 
 	mRegenRenderItems = false;
 

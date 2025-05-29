@@ -98,6 +98,7 @@ void RendererCore::init()
 
 	VkSurfaceKHR tempSurface = nullptr;
 	SDL_Vulkan_CreateSurface(mWindow, *mInstance, &tempSurface);
+	mSurface = vk::raii::SurfaceKHR(mInstance, tempSurface);
 
 	vk::PhysicalDeviceVulkan13Features features13{};
 	features13.dynamicRendering = true;
@@ -124,7 +125,7 @@ void RendererCore::init()
 		.set_required_features_12(features12)
 		.set_required_features_11(features11)
 		.set_required_features(features)
-		.set_surface(tempSurface)
+		.set_surface(*mSurface)
 		.select()
 		.value();
 	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
@@ -134,8 +135,6 @@ void RendererCore::init()
 	mChosenGPU = std::move(chosenGPU);
 	mDevice = std::move(device);
 	mChosenGPUProperties = mChosenGPU.getProperties();
-
-	mSurface = vk::raii::SurfaceKHR(mInstance, tempSurface);
 
 	vk::raii::Queue computeQueue(mDevice, vkbDevice.get_queue(vkb::QueueType::compute).value());
 	vk::raii::Queue graphicsQueue(mDevice, vkbDevice.get_queue(vkb::QueueType::graphics).value());

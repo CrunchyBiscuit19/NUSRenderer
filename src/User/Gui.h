@@ -29,10 +29,6 @@ private:
 		SceneGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 		void elements() override;
 	};
-	struct ModelsGuiComponent : GuiComponent {
-		ModelsGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
-		void elements() override;
-	};
 	struct MiscGuiComponent : GuiComponent {
 		MiscGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 		void elements() override;

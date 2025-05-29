@@ -40,8 +40,6 @@ GLTFModel::~GLTFModel()
 	for (auto& material : mMaterials) {
 		material->mResourcesDescriptorSet.clear();
 	}
-
-	fmt::println("{} Model [Deletion]", mName);
 }
 
 GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
@@ -180,6 +178,39 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 	return newImage;
 }
 
+void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo)
+{
+	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
+	if (textureInfo.has_value()) {
+		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
+		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
+		if (img.has_value()) materialImage.image = &mImages[img.value()];
+		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
+	}
+}
+
+void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo)
+{
+	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	if (textureInfo.has_value()) {
+		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
+		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
+		if (img.has_value()) materialImage.image = &mImages[img.value()];
+		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
+	}
+}
+
+void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo)
+{
+	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	if (textureInfo.has_value()) {
+		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
+		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
+		if (img.has_value()) materialImage.image = &mImages[img.value()];
+		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
+	}
+}
+
 void GLTFModel::initDescriptors()
 {
 	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
@@ -242,47 +273,19 @@ void GLTFModel::loadMaterials()
 		}
 		newMat->mName = fmt::format("{}_mat{}", mName, matName);
 
-		newMat->mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
-		newMat->mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
-		newMat->mPbrData.constants.metallicRoughnessFactor.x = mat.pbrData.metallicFactor;
-		newMat->mPbrData.constants.metallicRoughnessFactor.y = mat.pbrData.roughnessFactor;
-
-		materialConstants.push_back(newMat->mPbrData.constants);
-
 		newMat->mPbrData.alphaMode = mat.alphaMode;
 		newMat->mPbrData.doubleSided = mat.doubleSided;
+		
+		newMat->mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
+		assignTexture(newMat->mPbrData.resources.base, mat.pbrData.baseColorTexture);
+		newMat->mPbrData.constants.metallicRoughnessFactor = glm::vec4(mat.pbrData.metallicFactor, mat.pbrData.roughnessFactor, 0.f, 0.f);
+		assignTexture(newMat->mPbrData.resources.metallicRoughness, mat.pbrData.metallicRoughnessTexture);
+		newMat->mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
+		assignTexture(newMat->mPbrData.resources.emissive, mat.emissiveTexture);
+		assignTexture(newMat->mPbrData.resources.normal, mat.normalTexture);
+		assignTexture(newMat->mPbrData.resources.occlusion, mat.occlusionTexture);
 
-		newMat->mPbrData.resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
-		newMat->mPbrData.resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
-		newMat->mPbrData.resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
-		newMat->mPbrData.resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
-		newMat->mPbrData.resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
-
-		if (mat.pbrData.baseColorTexture.has_value()) {
-			size_t img = mAsset.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();
-			size_t sampler = mAsset.textures[mat.pbrData.baseColorTexture.value().textureIndex].samplerIndex.value();
-			newMat->mPbrData.resources.base = { &mImages[img], *mSamplers[sampler] };
-		}
-		if (mat.pbrData.metallicRoughnessTexture.has_value()) {
-			size_t img = mAsset.textures[mat.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex.value();
-			size_t sampler = mAsset.textures[mat.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex.value();
-			newMat->mPbrData.resources.metallicRoughness = { &mImages[img], *mSamplers[sampler] };
-		}
-		if (mat.normalTexture.has_value()) {
-			size_t img = mAsset.textures[mat.normalTexture.value().textureIndex].imageIndex.value();
-			size_t sampler = mAsset.textures[mat.normalTexture.value().textureIndex].samplerIndex.value();
-			newMat->mPbrData.resources.normal = { &mImages[img], *mSamplers[sampler] };
-		}
-		if (mat.occlusionTexture.has_value()) {
-			size_t img = mAsset.textures[mat.occlusionTexture.value().textureIndex].imageIndex.value();
-			size_t sampler = mAsset.textures[mat.occlusionTexture.value().textureIndex].samplerIndex.value();
-			newMat->mPbrData.resources.occlusion = { &mImages[img], *mSamplers[sampler] };
-		}
-		if (mat.emissiveTexture.has_value()) {
-			size_t img = mAsset.textures[mat.emissiveTexture.value().textureIndex].imageIndex.value();
-			size_t sampler = mAsset.textures[mat.emissiveTexture.value().textureIndex].samplerIndex.value();
-			newMat->mPbrData.resources.emissive = { &mImages[img], *mSamplers[sampler] };
-		}
+		materialConstants.push_back(newMat->mPbrData.constants);
 
 		newMat->mMaterialIndex = materialIndex;
 		newMat->mConstantsBuffer = *mMaterialConstantsBuffer.buffer;

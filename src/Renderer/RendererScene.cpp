@@ -103,8 +103,6 @@ void SceneResources::init()
 
 void SceneResources::updateResources()
 {
-	mSceneData.sunlightDirection = glm::vec4(mRenderer->mCamera.getDirectionVector(), mSceneData.sunlightDirection[3]);
-
 	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mSceneData.view = mRenderer->mCamera.getViewMatrix();
 	mSceneData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);

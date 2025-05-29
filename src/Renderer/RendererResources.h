@@ -181,7 +181,7 @@ public:
 
 	std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
 	vk::raii::Sampler mDefaultSampler;
-	std::optional<vk::ClearValue> mDefaultColorClearValue;
+	std::optional<vk::ClearValue> mColorClearValue;
 
 	RendererResources(Renderer* renderer);
 

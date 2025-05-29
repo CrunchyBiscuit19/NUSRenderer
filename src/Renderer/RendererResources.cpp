@@ -10,7 +10,7 @@
 RendererResources::RendererResources(Renderer* renderer) :
 	mRenderer(renderer),
 	mDefaultSampler(nullptr),
-	mDefaultColorClearValue(CLEAR_COLOR)
+	mColorClearValue(CLEAR_COLOR)
 {
 }
 
@@ -51,6 +51,10 @@ void RendererResources::initDefault()
 	vk::SamplerCreateInfo sampl;
 	sampl.magFilter = vk::Filter::eLinear;
 	sampl.minFilter = vk::Filter::eLinear;
+	sampl.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	sampl.addressModeU = vk::SamplerAddressMode::eRepeat;
+	sampl.addressModeV = vk::SamplerAddressMode::eRepeat;
+	sampl.addressModeW = vk::SamplerAddressMode::eRepeat;
 	mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
 }
 

@@ -29,10 +29,55 @@ void Gui::CameraGuiComponent::elements()
 
 void Gui::SceneGuiComponent::elements()
 {
+	if (ImGui::CollapsingHeader("Models")) {
+		if (ImGui::Button("Add Model")) {
+			mGui->mSelectModelFileDialog.Open();
+		}
+		for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
+			const auto name = model.mName;
+			ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
+			if (ImGui::CollapsingHeader(name.c_str())) {
+				if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
+					model.createInstance();
+				}
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
+				if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
+					for (auto& instance : model.mInstances) {
+						instance.mDeleteSignal = true;
+					}
+					model.markDelete();
+					mRenderer->mRegenRenderItems = true;
+				}
+				ImGui::PopStyleColor();
+
+				for (auto& instance : model.mInstances) {
+					if (ImGui::TreeNode(fmt::format("{}-{}", model.mName, instance.mId).c_str())) {
+						ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
+
+						if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation))) { model.mReloadInstancesBuffer = true; };
+						if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { model.mReloadInstancesBuffer = true; }
+						if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { model.mReloadInstancesBuffer = true; }
+
+						ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
+						if (ImGui::Button("Delete Instance")) {
+							instance.mDeleteSignal = true;
+							model.mReloadInstancesBuffer = true;
+						}
+						ImGui::PopStyleColor();
+
+						ImGui::PopID();
+						ImGui::TreePop();
+					}
+				}
+			}
+			ImGui::PopStyleColor();
+		}
+	}
 	if (ImGui::CollapsingHeader("Sunlight")) {
 		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.ambientColor));
 		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightColor));
-		ImGui::InputFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection));
+		ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection), 0.f, 1.f);
 		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection[3]);
 	}
 	if (ImGui::CollapsingHeader("Skybox")) {
@@ -50,51 +95,6 @@ void Gui::SceneGuiComponent::elements()
 		std::filesystem::path selectedSkyboxDir = mGui->mSelectSkyboxFileDialog.GetSelected();
 		mRenderer->mRendererScene.mSkybox.updateSkyboxImage(selectedSkyboxDir);
 		mGui->mSelectSkyboxFileDialog.ClearSelected();
-	}
-}
-
-void Gui::ModelsGuiComponent::elements()
-{
-	if (ImGui::Button("Add Model")) {
-		mGui->mSelectModelFileDialog.Open();
-	}
-	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
-		const auto name = model.mName;
-		if (ImGui::CollapsingHeader(name.c_str())) {
-			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
-				model.createInstance();
-			}
-			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-			if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
-				for (auto& instance : model.mInstances) {
-					instance.mDeleteSignal = true;
-				}
-				model.markDelete();
-				mRenderer->mRegenRenderItems = true;
-			}
-			ImGui::PopStyleColor();
-
-			for (auto& instance : model.mInstances) {
-				if (ImGui::TreeNode(fmt::format("{}-{}", model.mName, instance.mId).c_str())) {
-					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
-
-					if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation))) { model.mReloadInstancesBuffer = true; };
-					if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { model.mReloadInstancesBuffer = true; }
-					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { model.mReloadInstancesBuffer = true; }
-
-					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-					if (ImGui::Button("Delete Instance")) {
-						instance.mDeleteSignal = true;
-						model.mReloadInstancesBuffer = true;
-					}
-					ImGui::PopStyleColor();
-
-					ImGui::PopID();
-					ImGui::TreePop();
-				}
-			}
-		}
 	}
 
 	mGui->mSelectModelFileDialog.Display();
@@ -175,7 +175,7 @@ void Gui::init() {
 	ImGui_ImplVulkan_DestroyFontsTexture();
 
 	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
 
 	mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
 	mSelectModelFileDialog.SetTitle("Select GLTF / GLB File");
@@ -188,10 +188,9 @@ void Gui::init() {
 
 	ImGui::SetNextWindowSize(ImVec2(0.2 * ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y));
 
-	mGuiComponents.push_back(std::make_unique<CameraGuiComponent>(mRenderer, this, "CAMERA")); // Avoid slicing down to base class
-	mGuiComponents.push_back(std::make_unique<SceneGuiComponent>(mRenderer, this, "SCENE"));
-	mGuiComponents.push_back(std::make_unique<ModelsGuiComponent>(mRenderer, this, "MODELS"));
-	mGuiComponents.push_back(std::make_unique<MiscGuiComponent>(mRenderer, this, "MISC"));
+	mGuiComponents.push_back(std::make_unique<CameraGuiComponent>(mRenderer, this, "Camera")); // Avoid slicing down to base class
+	mGuiComponents.push_back(std::make_unique<SceneGuiComponent>(mRenderer, this, "Scene"));
+	mGuiComponents.push_back(std::make_unique<MiscGuiComponent>(mRenderer, this, "Misc"));
 }
 
 void Gui::cleanup() {

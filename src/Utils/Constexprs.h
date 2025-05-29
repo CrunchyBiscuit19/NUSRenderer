@@ -27,5 +27,6 @@ constexpr unsigned int MAX_MATERIALS = 1000;
 constexpr int NUMBER_OF_SKYBOX_VERTICES = 36;
 constexpr int NUMBER_OF_CUBEMAP_FACES = 6;
 
+constexpr ImColor IMGUI_HEADER_GREEN = ImColor::ImColor(0.22f, 0.69f, 0.502f);
 constexpr ImColor IMGUI_BUTTON_RED = ImColor::ImColor(0.66f, 0.16f, 0.16f);
 constexpr vk::ClearColorValue CLEAR_COLOR = vk::ClearColorValue(.463f, .616f, .859f, 0.f);
