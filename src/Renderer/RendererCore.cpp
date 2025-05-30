@@ -149,18 +149,17 @@ void RendererCore::init()
 	allocatorInfo.instance = *mInstance;
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	vmaCreateAllocator(&allocatorInfo, &mVmaAllocator);
-}
 
-void RendererCore::processSDLEvent(const SDL_Event& e)
-{
-	const SDL_Keymod modState = SDL_GetModState();
-	const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
+		const SDL_Keymod modState = SDL_GetModState();
+		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-	if (keyState[SDL_SCANCODE_F10] && e.type == SDL_KEYDOWN && !e.key.repeat) {
-		mWindowFullScreen = !mWindowFullScreen;
-		SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-		SDL_SetWindowBordered(mWindow, mWindowFullScreen ? SDL_FALSE : SDL_TRUE);
-	}
+		if (keyState[SDL_SCANCODE_F10] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mWindowFullScreen = !mWindowFullScreen;
+			SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+			SDL_SetWindowBordered(mWindow, mWindowFullScreen ? SDL_FALSE : SDL_TRUE);
+		}
+	});
 }
 
 void RendererCore::cleanup()

@@ -5,6 +5,8 @@
 
 #include <functional>
 
+class Renderer;
+
 enum MovementMode
 {
 	FREEFLY,
@@ -12,6 +14,9 @@ enum MovementMode
 };
 
 class Camera {
+private:
+	Renderer* mRenderer;
+
 public:
 	glm::vec3 mVelocity;
 	glm::vec3 mPosition;
@@ -24,6 +29,8 @@ public:
 	MovementMode mMovementMode;
 	std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
 
+	Camera(Renderer* renderer);
+
 	void init();
 
 	glm::mat4 getViewMatrix() const;
@@ -31,8 +38,6 @@ public:
 	glm::quat getYawMatrix() const;
 	glm::mat4 getRotationMatrix() const;
 	glm::vec3 getDirectionVector() const;
-
-	void processSDLEvent(const SDL_Event& e);
 
 	void update(float deltaTime, float expectedDeltaTime);
 };

@@ -4,6 +4,7 @@
 #include <Renderer/RendererInfrastructure.h>
 #include <Renderer/RendererResources.h>
 #include <Renderer/RendererScene.h>
+#include <Renderer/RendererEvent.h>
 #include <Utils/ImmSubmit.h>
 #include <User/Gui.h>
 #include <Data/Camera.h>
@@ -30,6 +31,7 @@ public:
 	ImmSubmit mImmSubmit;
 	Gui mGUI;
 	Camera mCamera;
+	RendererEvent mRendererEvent;
 
 	Renderer();
 

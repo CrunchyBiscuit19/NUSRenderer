@@ -15,10 +15,10 @@ Renderer::Renderer() :
 	mRendererResources(RendererResources(this)),
 	mRendererScene(RendererScene(this)),
 	mImmSubmit(ImmSubmit(this)),
-	mGUI(Gui(this))
+	mGUI(Gui(this)),
+	mCamera(Camera(this)),
+	mRendererEvent(RendererEvent(this))
 {
-
-	mCamera = Camera();
 }
 
 void Renderer::init()
@@ -30,6 +30,20 @@ void Renderer::init()
 	mRendererScene.init();
 	mGUI.init();
 	mCamera.init();
+
+	mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
+		if (e.type == SDL_QUIT) {
+			for (auto& model : mRendererScene.mModels | std::views::values) { model.markDelete(); }
+			mRendererInfrastructure.mProgramEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
+		}
+		if (e.type == SDL_WINDOWEVENT) {
+			if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
+				mStopRendering = true;
+			if (e.window.event == SDL_WINDOWEVENT_RESTORED)
+				mStopRendering = false;
+		}
+		ImGui_ImplSDL2_ProcessEvent(&e);
+	});
 }
 
 void Renderer::run()
@@ -37,30 +51,17 @@ void Renderer::run()
 	fmt::println("Rendering started");
 
 	SDL_Event e;
-	std::optional<uint64_t> programEndFrameNumber = std::nullopt;
 
 	while (true) {
 		auto start = std::chrono::system_clock::now();
 
-		if (programEndFrameNumber.has_value() && (mRendererInfrastructure.mFrameNumber < programEndFrameNumber.value())) {
+		if (mRendererInfrastructure.mProgramEndFrameNumber.has_value() && (mRendererInfrastructure.mFrameNumber < mRendererInfrastructure.mProgramEndFrameNumber.value())) {
 			mRendererCore.mDevice.waitIdle();
 			break;
 		}
 
 		while (SDL_PollEvent(&e) != 0) {
-			if (e.type == SDL_QUIT) {
-				for (auto& model : mRendererScene.mModels | std::views::values) { model.markDelete(); }
-				programEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
-			}
-			if (e.type == SDL_WINDOWEVENT) {
-				if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
-					mStopRendering = true;
-				if (e.window.event == SDL_WINDOWEVENT_RESTORED)
-					mStopRendering = false;
-			}
-			mCamera.processSDLEvent(e);
-			mRendererCore.processSDLEvent(e);
-			ImGui_ImplSDL2_ProcessEvent(&e);
+			mRendererEvent.executeEventCallbacks(e);
 		}
 
 		if (mStopRendering) { // Do not draw if minimized

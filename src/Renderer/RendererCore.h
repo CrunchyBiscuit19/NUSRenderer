@@ -49,7 +49,5 @@ public:
 
 	void init();
 
-	void processSDLEvent(const SDL_Event& e);
-
 	void cleanup();
 };

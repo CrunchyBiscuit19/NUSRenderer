@@ -39,6 +39,7 @@ private:
 
 public:
 	uint64_t mFrameNumber{ 0 }; // Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
+	std::optional<uint64_t> mProgramEndFrameNumber{ std::nullopt };
 	std::vector<Frame> mFrames;
 	Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
 	Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
