@@ -81,16 +81,16 @@ void RendererInfrastructure::initSwapchain()
 		vk::Format::eR16G16B16A16Sfloat,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
 		false, true, false);
-	mIntermediateImage = mRenderer->mRendererResources.createImage(
-		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
-		vk::Format::eR16G16B16A16Sfloat,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
-		false, false, false);
 	mDepthImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
 		vk::Format::eD32Sfloat,
 		vk::ImageUsageFlagBits::eDepthStencilAttachment,
 		false, true, false);
+	mIntermediateImage = mRenderer->mRendererResources.createImage(
+		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
+		vk::Format::eR16G16B16A16Sfloat,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
+		false, false, false);
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
@@ -107,19 +107,19 @@ void RendererInfrastructure::initSwapchain()
 			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
 			vk::AccessFlagBits2::eColorAttachmentWrite,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-		vkhelper::transitionImage(*cmd, *mIntermediateImage.image,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eTransfer,
-			vk::AccessFlagBits2::eTransferRead,
-			vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
 		vkhelper::transitionImage(cmd, *mDepthImage.image,
 			vk::PipelineStageFlagBits2::eNone,
 			vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eEarlyFragmentTests,
 			vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
-		});
+		vkhelper::transitionImage(*cmd, *mIntermediateImage.image,
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead,
+			vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+	});
 }
 
 void RendererInfrastructure::destroySwapchain()

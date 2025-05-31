@@ -20,7 +20,7 @@ struct Bounds {
 struct Primitive {
 	uint32_t indexStart;
 	uint32_t indexCount;
-	std::shared_ptr<PbrMaterial> material;
+	PbrMaterial* material;
 	Bounds bounds;
 };
 

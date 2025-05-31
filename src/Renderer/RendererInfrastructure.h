@@ -52,8 +52,8 @@ public:
 	DescriptorAllocatorGrowable mMainDescriptorAllocator;
 
 	AllocatedImage mDrawImage;
-	AllocatedImage mIntermediateImage;
 	AllocatedImage mDepthImage;
+	AllocatedImage mIntermediateImage;
 
 	std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelines;
 	std::unordered_map<PipelineOptions, PipelineBundle> mComputePipelines;

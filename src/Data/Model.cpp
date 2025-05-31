@@ -37,9 +37,9 @@ GLTFModel::~GLTFModel()
 {
 	// Jank solution to cleanup per-material resource description sets.
 	// Somehow with it being a shared_ptr it does not get cleaned up when the model is deleted.
-	for (auto& material : mMaterials) {
-		material->mResourcesDescriptorSet.clear();
-	}
+	/*for (auto& material : mMaterials) {
+		material.mResourcesDescriptorSet.clear();
+	}*/
 }
 
 GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
@@ -266,33 +266,33 @@ void GLTFModel::loadMaterials()
 	mMaterials.reserve(mAsset.materials.size());
 	int materialIndex = 0;
 	for (fastgltf::Material& mat : mAsset.materials) {
-		auto newMat = std::make_shared<PbrMaterial>(mRenderer, &mModelDescriptorAllocator);
+		auto newMat = PbrMaterial(mRenderer, &mModelDescriptorAllocator);
 		auto matName = std::string(mat.name);
 		if (matName.empty()) {
 			matName = fmt::format("{}", materialIndex);
 		}
-		newMat->mName = fmt::format("{}_mat{}", mName, matName);
+		newMat.mName = fmt::format("{}_mat{}", mName, matName);
 
-		newMat->mPbrData.alphaMode = mat.alphaMode;
-		newMat->mPbrData.doubleSided = mat.doubleSided;
+		newMat.mPbrData.alphaMode = mat.alphaMode;
+		newMat.mPbrData.doubleSided = mat.doubleSided;
 		
-		newMat->mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
-		assignTexture(newMat->mPbrData.resources.base, mat.pbrData.baseColorTexture);
-		newMat->mPbrData.constants.metallicRoughnessFactor = glm::vec4(mat.pbrData.metallicFactor, mat.pbrData.roughnessFactor, 0.f, 0.f);
-		assignTexture(newMat->mPbrData.resources.metallicRoughness, mat.pbrData.metallicRoughnessTexture);
-		newMat->mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
-		assignTexture(newMat->mPbrData.resources.emissive, mat.emissiveTexture);
-		assignTexture(newMat->mPbrData.resources.normal, mat.normalTexture);
-		assignTexture(newMat->mPbrData.resources.occlusion, mat.occlusionTexture);
+		newMat.mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
+		assignTexture(newMat.mPbrData.resources.base, mat.pbrData.baseColorTexture);
+		newMat.mPbrData.constants.metallicRoughnessFactor = glm::vec4(mat.pbrData.metallicFactor, mat.pbrData.roughnessFactor, 0.f, 0.f);
+		assignTexture(newMat.mPbrData.resources.metallicRoughness, mat.pbrData.metallicRoughnessTexture);
+		newMat.mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
+		assignTexture(newMat.mPbrData.resources.emissive, mat.emissiveTexture);
+		assignTexture(newMat.mPbrData.resources.normal, mat.normalTexture);
+		assignTexture(newMat.mPbrData.resources.occlusion, mat.occlusionTexture);
 
-		materialConstants.push_back(newMat->mPbrData.constants);
+		materialConstants.push_back(newMat.mPbrData.constants);
 
-		newMat->mMaterialIndex = materialIndex;
-		newMat->mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
-		newMat->mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
-		newMat->writeMaterialResources();
+		newMat.mMaterialIndex = materialIndex;
+		newMat.mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
+		newMat.mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
+		newMat.writeMaterialResources();
 
-		mMaterials.push_back(newMat);
+		mMaterials.push_back(std::move(newMat));
 		materialIndex++;
 	}
 
@@ -372,9 +372,9 @@ void GLTFModel::loadMeshes()
 			}
 
 			if (p.materialIndex.has_value())
-				newPrimitive.material = mMaterials[p.materialIndex.value()];
+				newPrimitive.material = &mMaterials[p.materialIndex.value()];
 			else
-				newPrimitive.material = mMaterials[0];
+				newPrimitive.material = &mMaterials[0];
 
 			// Find min/max bounds
 			glm::vec3 minpos = vertices[initialVerticesSize].position;

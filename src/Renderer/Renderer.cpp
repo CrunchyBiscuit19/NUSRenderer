@@ -227,7 +227,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 	cmd.beginRendering(renderInfo);
 
 	vk::Pipeline lastPipeline = nullptr;
-	std::shared_ptr<PbrMaterial> lastMaterial = nullptr;
+	PbrMaterial* lastMaterial = nullptr;
 	vk::Buffer lastIndexBuffer = nullptr;
 
 	for (auto& renderItem : mRendererScene.mRenderItems) {

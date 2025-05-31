@@ -33,7 +33,7 @@ public:
 
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
-	std::vector<std::shared_ptr<PbrMaterial>> mMaterials;
+	std::vector<PbrMaterial> mMaterials;
 	AllocatedBuffer mMaterialConstantsBuffer;
 
 	std::vector<GLTFInstance> mInstances;
