@@ -7,6 +7,41 @@
 
 #include <vulkan/vulkan.hpp>
 
+template<typename T>
+struct VulkanResourceInfo;
+
+#define DEFINE_VULKAN_RESOURCE_INFO(HppType, VkType, resourceTypeEnum)              \
+template<> struct VulkanResourceInfo<HppType> {                                   \
+	static constexpr vk::ObjectType resourceType = resourceTypeEnum; \
+	static uint64_t getHandle(const HppType& resource) {                             \
+		return reinterpret_cast<uint64_t>(static_cast<VkType>(resource));         \
+	}                                                                        \
+};
+
+#define DEFINE_VULKAN_RAII_RESOURCE_INFO(RaiiType, VkType, resourceTypeEnum)          \
+template<> struct VulkanResourceInfo<RaiiType> {                          \
+	static constexpr vk::ObjectType resourceType = resourceTypeEnum; \
+	static uint64_t getHandle(const RaiiType& resource) {                   \
+		return reinterpret_cast<uint64_t>(static_cast<VkType>(*resource));        \
+	}                                                                        \
+};
+
+DEFINE_VULKAN_RESOURCE_INFO(vk::Buffer, VkBuffer, vk::ObjectType::eBuffer)
+DEFINE_VULKAN_RESOURCE_INFO(vk::Image, VkImage, vk::ObjectType::eImage)
+DEFINE_VULKAN_RESOURCE_INFO(vk::ShaderModule, VkShaderModule, vk::ObjectType::eShaderModule)
+DEFINE_VULKAN_RESOURCE_INFO(vk::Pipeline, VkPipeline, vk::ObjectType::ePipeline)
+DEFINE_VULKAN_RESOURCE_INFO(vk::PipelineLayout, VkPipelineLayout, vk::ObjectType::ePipelineLayout)
+DEFINE_VULKAN_RESOURCE_INFO(vk::DescriptorSetLayout, VkDescriptorSetLayout, vk::ObjectType::eDescriptorSetLayout)
+DEFINE_VULKAN_RESOURCE_INFO(vk::DescriptorSet, VkDescriptorSet, vk::ObjectType::eDescriptorSet)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Buffer, VkBuffer, vk::ObjectType::eBuffer)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Image, VkImage, vk::ObjectType::eImage)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::ShaderModule, VkShaderModule, vk::ObjectType::eShaderModule)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Pipeline, VkPipeline, vk::ObjectType::ePipeline)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::PipelineLayout, VkPipelineLayout, vk::ObjectType::ePipelineLayout)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::DescriptorSetLayout, VkDescriptorSetLayout, vk::ObjectType::eDescriptorSetLayout)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::DescriptorSet, VkDescriptorSet, vk::ObjectType::eDescriptorSet)
+
+
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 	VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
@@ -48,6 +83,16 @@ public:
 	RendererCore(Renderer* renderer);
 
 	void init();
+
+	template<typename T>
+	void labelResourceDebug(T& resource, const char* name) {
+		vk::DebugUtilsObjectNameInfoEXT nameInfo {
+			VulkanResourceInfo<T>::resourceType,
+			VulkanResourceInfo<T>::getHandle(resource),
+			name
+		};
+		mDevice.setDebugUtilsObjectNameEXT(nameInfo);
+	};
 
 	void cleanup();
 };

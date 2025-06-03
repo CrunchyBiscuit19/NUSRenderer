@@ -318,17 +318,21 @@ void Renderer::drawUpdate()
 	mRendererScene.deleteInstances();
 	mRendererScene.deleteModels();
 
-	if (mRegenRenderItems) {
+	if (mReloadGeometryData) {
 		mRendererScene.mRenderItems.clear();
 		mRendererScene.generateRenderItems();
-		mRegenRenderItems = false;
+
+		mRendererScene.reloadGlobalVertexBuffer();
+
+		mReloadGeometryData = false;
 	}
+
 	for (auto& model : mRendererScene.mModels | std::views::values) {
 		if (model.mReloadInstancesBuffer) { model.updateInstances(); }
 		model.mReloadInstancesBuffer = false;
 	}
 
-	mRegenRenderItems = false;
+	mReloadGeometryData = false;
 
 	const auto end = std::chrono::system_clock::now();
 	const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

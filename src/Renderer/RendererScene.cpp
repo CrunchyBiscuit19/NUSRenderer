@@ -17,6 +17,9 @@ void RendererScene::init()
 {
 	mSceneResources.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
+
+	mGlobalVertexBuffer = mRenderer->mRendererResources.createBuffer(GLOBAL_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mGlobalVertexBuffer.buffer, "GlobalVertexBuffer");
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -44,6 +47,27 @@ void RendererScene::deleteInstances()
 	}
 }
 
+void RendererScene::reloadGlobalVertexBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		for (auto& mesh : model.mMeshes) {
+			vk::BufferCopy meshVertexCopy{};
+			meshVertexCopy.dstOffset = dstOffset;
+			meshVertexCopy.srcOffset = 0;
+			meshVertexCopy.size = mesh->mVertexBuffer.info.size;
+
+			dstOffset += mesh->mVertexBuffer.info.size;
+
+			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+				cmd.copyBuffer(*mesh->mVertexBuffer.buffer, *mGlobalVertexBuffer.buffer, meshVertexCopy);
+			});
+
+		}
+	}
+}
+
 void RendererScene::generateRenderItems()
 {
 	for (auto& model : mModels | std::views::values) {
@@ -61,6 +85,7 @@ void RendererScene::cleanup()
 	mSceneResources.cleanup();
 	mModels.clear();
 	mSkybox.cleanup();
+	mGlobalVertexBuffer.cleanup();
 }
 
 SceneResources::SceneResources(Renderer* renderer) :

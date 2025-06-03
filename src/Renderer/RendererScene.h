@@ -58,10 +58,13 @@ public:
 
 	std::unordered_map<std::string, GLTFModel> mModels;
 
-	PushConstants mPushConstants;
-	SceneResources mSceneResources;
 	Skybox mSkybox;
 	bool mSkyboxActive{ true };
+
+	PushConstants mPushConstants;
+	SceneResources mSceneResources;
+
+	AllocatedBuffer mGlobalVertexBuffer;
 
 	RendererScene(Renderer* renderer);
 
@@ -70,6 +73,8 @@ public:
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();
 	void deleteInstances();
+
+	void reloadGlobalVertexBuffer();
 
 	void generateRenderItems();
 	void updateScene();

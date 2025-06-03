@@ -22,7 +22,7 @@ public:
 	bool mStopRendering{ false };
 
 	RendererStats mStats;
-	bool mRegenRenderItems{ false };
+	bool mReloadGeometryData{ false };
 
 	RendererCore mRendererCore;
 	RendererInfrastructure mRendererInfrastructure;

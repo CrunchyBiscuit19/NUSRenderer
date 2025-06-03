@@ -17,8 +17,11 @@ constexpr vk::SampleCountFlagBits MSAA_LEVEL = vk::SampleCountFlagBits::e8;
 constexpr unsigned int ONE_MEBIBYTE_IN_BYTES = 1048576;
 constexpr unsigned int ONE_SECOND_IN_MS = 1000;
 
-constexpr unsigned int DEFAULT_VERTEX_BUFFER_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
-constexpr unsigned int DEFAULT_INDEX_BUFFER_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
+constexpr unsigned int MESH_VERTEX_BUFFER_SIZE = 10 * ONE_MEBIBYTE_IN_BYTES;
+constexpr unsigned int MESH_INDEX_BUFFER_SIZE = 10 * ONE_MEBIBYTE_IN_BYTES;
+
+constexpr unsigned int GLOBAL_VERTEX_BUFFER_SIZE = 10* MESH_VERTEX_BUFFER_SIZE;
+constexpr unsigned int GLOBAL_INDEX_BUFFER_SIZE = 10 * MESH_INDEX_BUFFER_SIZE;
 
 constexpr unsigned int MAX_IMAGE_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
 constexpr unsigned int MAX_INSTANCES = 1000;

@@ -35,11 +35,6 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 
 GLTFModel::~GLTFModel()
 {
-	// Jank solution to cleanup per-material resource description sets.
-	// Somehow with it being a shared_ptr it does not get cleaned up when the model is deleted.
-	/*for (auto& material : mMaterials) {
-		material.mResourcesDescriptorSet.clear();
-	}*/
 }
 
 GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
@@ -485,7 +480,7 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 	const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
