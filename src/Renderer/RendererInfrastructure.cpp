@@ -87,7 +87,7 @@ void RendererInfrastructure::initSwapchain()
 		vk::ImageUsageFlagBits::eDepthStencilAttachment,
 		false, true, false);
 	mIntermediateImage = mRenderer->mRendererResources.createImage(
-		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
+		mDrawImage.imageExtent,
 		vk::Format::eR16G16B16A16Sfloat,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
 		false, false, false);
@@ -101,13 +101,13 @@ void RendererInfrastructure::initSwapchain()
 				vk::AccessFlagBits2::eNone,
 				vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 		}
-		vkhelper::transitionImage(cmd, *mDrawImage.image,
+		vkhelper::transitionImage(*cmd, *mDrawImage.image,
 			vk::PipelineStageFlagBits2::eNone,
 			vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
 			vk::AccessFlagBits2::eColorAttachmentWrite,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-		vkhelper::transitionImage(cmd, *mDepthImage.image,
+		vkhelper::transitionImage(*cmd, *mDepthImage.image,
 			vk::PipelineStageFlagBits2::eNone,
 			vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eEarlyFragmentTests,
