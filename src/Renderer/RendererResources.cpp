@@ -48,6 +48,17 @@ void RendererResources::initDefault()
 	}
 	mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
 
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::White].image, "DefaultWhiteImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::White].imageView, "DefaultWhiteImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Grey].image, "DefaultGreyImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Grey].imageView, "DefaultGreyImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Black].image, "DefaultBlackImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Black].imageView, "DefaultBlackImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Blue].image, "DefaultBlueImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Blue].imageView, "DefaultBlueImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].image, "DefaultCheckboardImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].imageView, "DefaultCheckboardImageView");
+
 	vk::SamplerCreateInfo sampl;
 	sampl.magFilter = vk::Filter::eLinear;
 	sampl.minFilter = vk::Filter::eLinear;

@@ -100,6 +100,7 @@ void Skybox::initSkyboxBuffer()
 	int skyboxVertexSize = mSkyboxVertices.size() * sizeof(float);
 
 	mSkyboxVertexBuffer = mRenderer->mRendererResources.createBuffer(skyboxVertexSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mSkyboxVertexBuffer.buffer, "SkyboxVertexBuffer");
 
 	std::memcpy(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData, mSkyboxVertices.data(), skyboxVertexSize);
 

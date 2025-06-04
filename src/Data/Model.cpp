@@ -224,6 +224,9 @@ void GLTFModel::initBuffers()
 	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
+	
+	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
 }
 
 void GLTFModel::loadSamplers()
@@ -246,8 +249,13 @@ void GLTFModel::loadSamplers()
 void GLTFModel::loadImages()
 {
 	mImages.reserve(mAsset.images.size());
+	int id = 0;
 	for (fastgltf::Image& image : mAsset.images) {
-		mImages.emplace_back(loadImage(image));
+		AllocatedImage newImage = loadImage(image);
+		mRenderer->mRendererCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(newImage.imageView, fmt::format("{}ImageView{}", mName, id).c_str());
+		mImages.emplace_back(std::move(newImage));
+		id++;
 	}
 }
 
@@ -303,7 +311,7 @@ void GLTFModel::loadMeshes()
 
 	for (fastgltf::Mesh& mesh : mAsset.meshes) {
 		std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>();
-		newMesh->mName = fmt::format("{}_mesh{}", mName, mesh.name);
+		newMesh->mName = fmt::format("{}{}", mName, mesh.name);
 
 		indices.clear();
 		vertices.clear();
@@ -472,7 +480,7 @@ void GLTFModel::loadInstancesBuffer(std::vector<InstanceData>& instanceDataVecto
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
-		});
+	});
 }
 
 void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector)
@@ -482,6 +490,9 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 
 	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+
+	mRenderer->mRendererCore.labelResourceDebug(mesh->mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh->mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mesh->mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh->mName).c_str());
 
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);

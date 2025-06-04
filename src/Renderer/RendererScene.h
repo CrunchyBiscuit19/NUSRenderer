@@ -64,7 +64,7 @@ public:
 	PushConstants mPushConstants;
 	SceneResources mSceneResources;
 
-	AllocatedBuffer mGlobalVertexBuffer;
+	AllocatedBuffer mVertexBuffer;
 
 	RendererScene(Renderer* renderer);
 
