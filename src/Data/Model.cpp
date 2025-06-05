@@ -270,7 +270,6 @@ void GLTFModel::loadMeshes()
 
 		newMesh.mName = fmt::format("{}{}", mName, mesh.name);
 		newMesh.mId = mRenderer->mRendererScene.mLatestMeshId;
-		mRenderer->mRendererScene.mLatestMeshId++;
 
 		indices.clear();
 		vertices.clear();
@@ -339,17 +338,6 @@ void GLTFModel::loadMeshes()
 			else
 				newPrimitive.mMaterial = &mMaterials[0];
 
-			// Find min/max bounds
-			glm::vec3 minpos = vertices[vertices.size()].position;
-			glm::vec3 maxpos = vertices[vertices.size()].position;
-			for (int i = vertices.size(); i < vertices.size(); i++) {
-				minpos = glm::min(minpos, vertices[i].position);
-				maxpos = glm::max(maxpos, vertices[i].position);
-			}
-			newPrimitive.mBounds.origin = (maxpos + minpos) / 2.f;
-			newPrimitive.mBounds.extents = (maxpos - minpos) / 2.f;
-			newPrimitive.mBounds.sphereRadius = glm::length(newPrimitive.mBounds.extents);
-
 			newMesh.mPrimitives.push_back(newPrimitive);
 		}
 
@@ -358,7 +346,15 @@ void GLTFModel::loadMeshes()
 		newMesh.mNumVertices = vertices.size();
 		newMesh.mNumIndices = indices.size();
 
+		newMesh.mBounds.min = glm::vec4(vertices[0].position, 0.f);
+		newMesh.mBounds.max = glm::vec4(vertices[0].position, 0.f);
+		for (auto& vertex: vertices) {
+			newMesh.mBounds.min = glm::min(newMesh.mBounds.min, glm::vec4(vertex.position, 0.f));
+			newMesh.mBounds.max = glm::max(newMesh.mBounds.max, glm::vec4(vertex.position, 0.f));
+		}
+
 		mMeshes.push_back(std::move(newMesh));
+		mRenderer->mRendererScene.mLatestMeshId++;
 	}
 }
 

@@ -11,10 +11,9 @@ struct Vertex {
 	glm::vec4 color;
 };
 
-struct Bounds {
-	glm::vec3 origin;
-	float sphereRadius;
-	glm::vec3 extents;
+struct AABB {
+	glm::vec4 min;
+	glm::vec4 max;
 };
 
 struct Primitive {
@@ -22,13 +21,14 @@ struct Primitive {
 	uint32_t mIndexCount;
 	uint32_t mRelativeVertexOffset;
 	PbrMaterial* mMaterial;
-	Bounds mBounds;
 };
 
 struct Mesh {
 	std::string mName;
 	int mId;
 	std::vector<Primitive> mPrimitives;
+
+	AABB mBounds;
 
 	AllocatedBuffer mVertexBuffer;
 	uint32_t mNumVertices;
