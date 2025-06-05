@@ -72,10 +72,13 @@ public:
 	AllocatedBuffer mMainMaterialConstantsBuffer;
 	AllocatedBuffer mMainNodeTransformsBuffer;
 	AllocatedBuffer mMainInstancesBuffer;
+	AllocatedBuffer mDrawCommandsBuffer;
+	AllocatedBuffer mCountBuffer;
 
 	RendererScene(Renderer* renderer);
 
 	void init();
+	void initBuffers();
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();

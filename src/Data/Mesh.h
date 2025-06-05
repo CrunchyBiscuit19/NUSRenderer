@@ -64,13 +64,19 @@ struct RenderItem {
 	Mesh* mesh;
 	GLTFModel* model;
 
-	/*uint32_t mFirstIndex;
-	uint32_t mIndexCount;
-	uint32_t mVertexOffset;*/
-
 	glm::mat4 transform;
 
 	vk::DeviceAddress vertexBufferAddress;
 	vk::DeviceAddress instancesBufferAddress;
 	vk::DeviceAddress materialConstantsBufferAddress;
+};
+
+struct IndirectRenderItem {
+	uint32_t firstIndex;
+	uint32_t vertexOffset;
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstInstance;
+	uint32_t materialIndex;
+	uint32_t nodeTransformIndex;
 };

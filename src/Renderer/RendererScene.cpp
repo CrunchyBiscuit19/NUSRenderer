@@ -17,7 +17,11 @@ void RendererScene::init()
 {
 	mSceneResources.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
+	initBuffers();
+}
 
+void RendererScene::initBuffers()
+{
 	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
 
@@ -32,6 +36,12 @@ void RendererScene::init()
 
 	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
+
+	mDrawCommandsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mDrawCommandsBuffer.buffer, "DrawCommandsBuffer");
+
+	mCountBuffer = mRenderer->mRendererResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mCountBuffer.buffer, "CountBufferr");
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -194,6 +204,8 @@ void RendererScene::cleanup()
 	mSceneResources.cleanup();
 	mModels.clear();
 	mSkybox.cleanup();
+	mCountBuffer.cleanup();
+	mDrawCommandsBuffer.cleanup();
 	mMainInstancesBuffer.cleanup();
 	mMainNodeTransformsBuffer.cleanup();
 	mMainMaterialConstantsBuffer.cleanup();
