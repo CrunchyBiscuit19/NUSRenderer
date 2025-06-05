@@ -48,7 +48,7 @@ struct Node {
 	glm::mat4 mWorldTransform;
 
 	void refreshTransform(const glm::mat4& parentTransform);
-	virtual void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix);
+	virtual void generateRenderItems(Renderer* renderer, GLTFModel* model);
 
 	virtual ~Node() = default;
 };
@@ -56,7 +56,7 @@ struct Node {
 struct MeshNode : Node {
 	Mesh* mMesh;
 
-	void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix) override;
+	void generateRenderItems(Renderer* renderer, GLTFModel* model) override;
 };
 
 struct RenderItem {

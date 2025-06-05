@@ -8,16 +8,14 @@ void Node::refreshTransform(const glm::mat4& parentTransform)
 		child->refreshTransform(mWorldTransform);
 }
 
-void Node::generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix)
+void Node::generateRenderItems(Renderer* renderer, GLTFModel* model)
 {
 	for (const auto& child : mChildren)
-		child->generateRenderItems(renderer, model, topMatrix);
+		child->generateRenderItems(renderer, model);
 }
 
-void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix)
+void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 {
-	const glm::mat4 nodeMatrix = topMatrix * mWorldTransform;
-
 	for (Primitive& primitive : mMesh->mPrimitives) {
 		// Getting device address is relatively expensive, so do it here instead of at every draw loop
 		vk::BufferDeviceAddressInfo vertexBufferDeviceAddressInfo;
@@ -31,12 +29,12 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
 			&primitive,
 			mMesh,
 			model,
-			nodeMatrix,
+			mWorldTransform,
 			renderer->mRendererCore.mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
 			renderer->mRendererCore.mDevice.getBufferAddress(instancesBufferDeviceAddressInfo),
 			renderer->mRendererCore.mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo)
 		);
 	}
 
-	Node::generateRenderItems(renderer, model, topMatrix);
+	Node::generateRenderItems(renderer, model);
 }

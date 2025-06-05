@@ -543,7 +543,7 @@ void GLTFModel::generateRenderItems()
 {
 	if (!mDeleteSignal.has_value()) {
 		for (auto& n : mTopNodes) {
-			n->generateRenderItems(mRenderer, this, glm::mat4{ 1.f });
+			n->generateRenderItems(mRenderer, this);
 		}
 	}
 }
