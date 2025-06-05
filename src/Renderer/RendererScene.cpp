@@ -68,12 +68,12 @@ void RendererScene::reloadMainVertexBuffer()
 			vk::BufferCopy meshVertexCopy{};
 			meshVertexCopy.dstOffset = dstOffset;
 			meshVertexCopy.srcOffset = 0;
-			meshVertexCopy.size = mesh->mNumVertices * sizeof(Vertex);
+			meshVertexCopy.size = mesh.mNumVertices * sizeof(Vertex);
 
 			dstOffset += meshVertexCopy.size;
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-				cmd.copyBuffer(*mesh->mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
+				cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
 			});
 
 		}
@@ -89,12 +89,12 @@ void RendererScene::reloadMainIndexBuffer()
 			vk::BufferCopy meshIndexCopy{};
 			meshIndexCopy.dstOffset = dstOffset;
 			meshIndexCopy.srcOffset = 0;
-			meshIndexCopy.size = mesh->mNumIndices * sizeof(uint32_t);
+			meshIndexCopy.size = mesh.mNumIndices * sizeof(uint32_t);
 
 			dstOffset += meshIndexCopy.size;
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-				cmd.copyBuffer(*mesh->mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
+				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
 			});
 
 		}
@@ -164,10 +164,10 @@ void RendererScene::alignOffsets()
 
 	for (auto& model : mModels | std::views::values) {
 		for (auto& mesh : model.mMeshes) {
-			mesh->mMainVertexOffset = vertexCumulative;
-			mesh->mMainFirstIndex = indexCumulative;
-			vertexCumulative += mesh->mNumVertices;
-			indexCumulative += mesh->mNumIndices;
+			mesh.mMainVertexOffset = vertexCumulative;
+			mesh.mMainFirstIndex = indexCumulative;
+			vertexCumulative += mesh.mNumVertices;
+			indexCumulative += mesh.mNumIndices;
 		}
 
 		model.mMainFirstMaterial = materialCumulative;

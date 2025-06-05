@@ -27,7 +27,7 @@ public:
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
 	fastgltf::Asset mAsset;
-	std::vector<std::shared_ptr<Mesh>> mMeshes;
+	std::vector<Mesh> mMeshes;
 	std::vector<vk::raii::Sampler> mSamplers;
 	std::vector<AllocatedImage> mImages;
 

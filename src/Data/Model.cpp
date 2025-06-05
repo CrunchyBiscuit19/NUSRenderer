@@ -266,10 +266,10 @@ void GLTFModel::loadMeshes()
 	std::vector<Vertex> vertices;
 
 	for (fastgltf::Mesh& mesh : mAsset.meshes) {
-		std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>();
-		newMesh->mName = fmt::format("{}{}", mName, mesh.name);
+		Mesh newMesh;
 
-		newMesh->mId = mRenderer->mRendererScene.mLatestMeshId;
+		newMesh.mName = fmt::format("{}{}", mName, mesh.name);
+		newMesh.mId = mRenderer->mRendererScene.mLatestMeshId;
 		mRenderer->mRendererScene.mLatestMeshId++;
 
 		indices.clear();
@@ -350,15 +350,15 @@ void GLTFModel::loadMeshes()
 			newPrimitive.mBounds.extents = (maxpos - minpos) / 2.f;
 			newPrimitive.mBounds.sphereRadius = glm::length(newPrimitive.mBounds.extents);
 
-			newMesh->mPrimitives.push_back(newPrimitive);
+			newMesh.mPrimitives.push_back(newPrimitive);
 		}
 
-		loadMeshBuffers(newMesh.get(), indices, vertices);
+		loadMeshBuffers(&newMesh, indices, vertices);
 
-		newMesh->mNumVertices = vertices.size();
-		newMesh->mNumIndices = indices.size();
+		newMesh.mNumVertices = vertices.size();
+		newMesh.mNumIndices = indices.size();
 
-		mMeshes.push_back(newMesh);
+		mMeshes.push_back(std::move(newMesh));
 	}
 }
 
@@ -372,7 +372,7 @@ void GLTFModel::loadNodes()
 
 		if (node.meshIndex.has_value()) {
 			newNode = std::make_shared<MeshNode>();
-			dynamic_cast<MeshNode*>(newNode.get())->mMesh = mMeshes[*node.meshIndex];
+			dynamic_cast<MeshNode*>(newNode.get())->mMesh = &mMeshes[*node.meshIndex];
 		}
 		else {
 			newNode = std::make_shared<Node>();

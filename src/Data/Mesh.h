@@ -37,8 +37,6 @@ struct Mesh {
 	AllocatedBuffer mIndexBuffer;
 	uint32_t mNumIndices;
 	uint32_t mMainFirstIndex;
-
-	void loadMeshBuffers();
 };
 
 struct Node {
@@ -56,7 +54,7 @@ struct Node {
 };
 
 struct MeshNode : Node {
-	std::shared_ptr<Mesh> mMesh;
+	Mesh* mMesh;
 
 	void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix) override;
 };

@@ -29,7 +29,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
 
 		renderer->mRendererScene.mRenderItems.emplace_back(
 			&primitive,
-			mMesh.get(),
+			mMesh,
 			model,
 			nodeMatrix,
 			renderer->mRendererCore.mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
