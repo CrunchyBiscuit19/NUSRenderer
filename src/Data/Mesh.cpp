@@ -23,7 +23,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model, const g
 		vk::BufferDeviceAddressInfo vertexBufferDeviceAddressInfo;
 		vertexBufferDeviceAddressInfo.buffer = *mMesh->mVertexBuffer.buffer;
 		vk::BufferDeviceAddressInfo materialConstantBufferDeviceAddressInfo;
-		materialConstantBufferDeviceAddressInfo.buffer = primitive.material->mConstantsBuffer;
+		materialConstantBufferDeviceAddressInfo.buffer = primitive.mMaterial->mConstantsBuffer;
 		vk::BufferDeviceAddressInfo instancesBufferDeviceAddressInfo;
 		instancesBufferDeviceAddressInfo.buffer = *model->mInstancesBuffer.buffer;
 

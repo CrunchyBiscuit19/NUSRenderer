@@ -13,6 +13,9 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	mName = modelPath.stem().string();
 	fmt::println("{} Model [Open File]", mName);
 
+	mId = mRenderer->mRendererScene.mLatestModelId;
+	mRenderer->mRendererScene.mLatestModelId++;
+
 	fastgltf::Parser parser{};
 	fastgltf::Asset gltf;
 	fastgltf::GltfDataBuffer data;
@@ -40,7 +43,6 @@ GLTFModel::~GLTFModel()
 GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
 	mRenderer(other.mRenderer),
 	mName(std::move(other.mName)),
-	mLatestId(other.mLatestId),
 	mDeleteSignal(std::move(other.mDeleteSignal)),
 	mAsset(std::move(other.mAsset)),
 	mTopNodes(std::move(other.mTopNodes)),
@@ -55,7 +57,6 @@ GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
 	mInstancesBuffer(std::move(other.mInstancesBuffer))
 {
 	other.mRenderer = nullptr;
-	other.mLatestId = 0;
 }
 
 GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
@@ -64,7 +65,6 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
 	{
 		mRenderer = other.mRenderer;
 		mName = std::move(other.mName);
-		mLatestId = other.mLatestId;
 		mDeleteSignal = std::move(other.mDeleteSignal),
 			mAsset = std::move(other.mAsset);
 		mTopNodes = std::move(other.mTopNodes);
@@ -79,7 +79,6 @@ GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
 		mInstancesBuffer = std::move(other.mInstancesBuffer);
 
 		other.mRenderer = nullptr;
-		other.mLatestId = 0;
 	}
 	return *this;
 }
@@ -130,7 +129,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 				imagesize.width = width;
 				imagesize.height = height;
 				imagesize.depth = 1;
-				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 				stbi_image_free(data);
 			}
 		},
@@ -142,7 +141,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 				imagesize.width = width;
 				imagesize.height = height;
 				imagesize.depth = 1;
-				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 				stbi_image_free(data);
 			}
 		},
@@ -156,7 +155,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 							imagesize.width = width;
 							imagesize.height = height;
 							imagesize.depth = 1;
-							newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+							newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 							stbi_image_free(data);
 						}
 					},
@@ -219,10 +218,10 @@ void GLTFModel::initBuffers()
 	fmt::println("{} Model [Create Buffers]", mName);
 
 	mMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	
 	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
@@ -313,13 +312,17 @@ void GLTFModel::loadMeshes()
 		std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>();
 		newMesh->mName = fmt::format("{}{}", mName, mesh.name);
 
+		newMesh->mId = mRenderer->mRendererScene.mLatestMeshId;
+		mRenderer->mRendererScene.mLatestMeshId++;
+
 		indices.clear();
 		vertices.clear();
 
 		for (auto&& p : mesh.primitives) {
 			Primitive newPrimitive;
-			newPrimitive.indexStart = static_cast<uint32_t>(indices.size());
-			newPrimitive.indexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
+			newPrimitive.mRelativeIndexStart = static_cast<uint32_t>(indices.size());
+			newPrimitive.mIndexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
+			newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
 
 			size_t initialVerticesSize = vertices.size();
 
@@ -375,25 +378,28 @@ void GLTFModel::loadMeshes()
 			}
 
 			if (p.materialIndex.has_value())
-				newPrimitive.material = &mMaterials[p.materialIndex.value()];
+				newPrimitive.mMaterial = &mMaterials[p.materialIndex.value()];
 			else
-				newPrimitive.material = &mMaterials[0];
+				newPrimitive.mMaterial = &mMaterials[0];
 
 			// Find min/max bounds
-			glm::vec3 minpos = vertices[initialVerticesSize].position;
-			glm::vec3 maxpos = vertices[initialVerticesSize].position;
-			for (int i = initialVerticesSize; i < vertices.size(); i++) {
+			glm::vec3 minpos = vertices[vertices.size()].position;
+			glm::vec3 maxpos = vertices[vertices.size()].position;
+			for (int i = vertices.size(); i < vertices.size(); i++) {
 				minpos = glm::min(minpos, vertices[i].position);
 				maxpos = glm::max(maxpos, vertices[i].position);
 			}
-			newPrimitive.bounds.origin = (maxpos + minpos) / 2.f;
-			newPrimitive.bounds.extents = (maxpos - minpos) / 2.f;
-			newPrimitive.bounds.sphereRadius = glm::length(newPrimitive.bounds.extents);
+			newPrimitive.mBounds.origin = (maxpos + minpos) / 2.f;
+			newPrimitive.mBounds.extents = (maxpos - minpos) / 2.f;
+			newPrimitive.mBounds.sphereRadius = glm::length(newPrimitive.mBounds.extents);
 
 			newMesh->mPrimitives.push_back(newPrimitive);
 		}
 
 		loadMeshBuffers(newMesh.get(), indices, vertices);
+
+		newMesh->mNumVertices = vertices.size();
+		newMesh->mNumIndices = indices.size();
 
 		mMeshes.push_back(newMesh);
 	}
@@ -489,7 +495,7 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
 	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 
 	mRenderer->mRendererCore.labelResourceDebug(mesh->mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh->mName).c_str());
 	mRenderer->mRendererCore.labelResourceDebug(mesh->mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh->mName).c_str());
@@ -514,9 +520,9 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 
 void GLTFModel::createInstance()
 {
-	mInstances.emplace_back(this);
+	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId);
 	mInstances.back().mTransformComponents.translation = mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector();
-	mLatestId++;
+	mRenderer->mRendererScene.mLatestInstanceId++;
 }
 
 void GLTFModel::updateInstances()

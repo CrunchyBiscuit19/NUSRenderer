@@ -46,7 +46,7 @@ void Gui::SceneGuiComponent::elements()
 					instance.mDeleteSignal = true;
 				}
 				model.markDelete();
-				mRenderer->mReloadGeometryData = true;
+				mRenderer->mModelAddedDeleted = true;
 			}
 			ImGui::PopStyleColor();
 
@@ -101,7 +101,7 @@ void Gui::SceneGuiComponent::elements()
 		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
 		mRenderer->mRendererScene.loadModels(selectedFiles);
 		mGui->mSelectModelFileDialog.ClearSelected();
-		mRenderer->mReloadGeometryData = true;
+		mRenderer->mModelAddedDeleted = true;
 	}
 }
 
@@ -114,10 +114,10 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
 		ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
 	}
-	if (ImGui::CollapsingHeader("Hotkeys")) {
-		ImGui::Text("[F12] Change Camera Mode");
-		ImGui::Text("[F11] Change Mouse Mode");
+	if (ImGui::CollapsingHeader("Controls")) {
+		ImGui::Text("[F11] Change Camera Mode");
 		ImGui::Text("[F10] Toggle Borderless Fullscreen");
+		ImGui::Text("[Right Click] Change Mouse Mode");
 	}
 }
 

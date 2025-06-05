@@ -91,17 +91,16 @@ void RendererInfrastructure::initSwapchain()
 		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
 		vk::Format::eR16G16B16A16Sfloat,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
-		false, true, false);
+		false, true);
 	mDepthImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
 		vk::Format::eD32Sfloat,
 		vk::ImageUsageFlagBits::eDepthStencilAttachment,
-		false, true, false);
+		false, true);
 	mIntermediateImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
 		vk::Format::eR16G16B16A16Sfloat,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
-		false, false, false);
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment);
 
 	mRenderer->mRendererCore.labelResourceDebug(mDrawImage.image, "DrawImage");
 	mRenderer->mRendererCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");

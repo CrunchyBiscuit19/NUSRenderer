@@ -218,8 +218,6 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 {
 	mStats.mDrawCallCount = 0;
 
-	// [TODO] Sorting and culling
-
 	vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 	vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
 	const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D{ mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);
@@ -231,11 +229,11 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 	vk::Buffer lastIndexBuffer = nullptr;
 
 	for (auto& renderItem : mRendererScene.mRenderItems) {
-		if (*renderItem.primitive->material->mPipeline->pipeline != lastPipeline) {
-			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->pipeline);
-			lastPipeline = *renderItem.primitive->material->mPipeline->pipeline;
+		if (*renderItem.primitive->mMaterial->mPipeline->pipeline != lastPipeline) {
+			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->pipeline);
+			lastPipeline = *renderItem.primitive->mMaterial->mPipeline->pipeline;
 
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 0, *mRendererScene.mSceneResources.mSceneDescriptorSet, nullptr);
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 0, *mRendererScene.mSceneResources.mSceneDescriptorSet, nullptr);
 
 			vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
 			cmd.setViewport(0, viewport);
@@ -243,9 +241,9 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 			cmd.setScissor(0, scissor);
 		}
 
-		if (renderItem.primitive->material != lastMaterial) {
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->material->mPipeline->layout, 1, *renderItem.primitive->material->mResourcesDescriptorSet, nullptr);
-			lastMaterial = renderItem.primitive->material;
+		if (renderItem.primitive->mMaterial != lastMaterial) {
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 1, *renderItem.primitive->mMaterial->mResourcesDescriptorSet, nullptr);
+			lastMaterial = renderItem.primitive->mMaterial;
 		}
 
 		if (*renderItem.mesh->mIndexBuffer.buffer != lastIndexBuffer) {
@@ -256,11 +254,11 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 		mRendererScene.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
 		mRendererScene.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
 		mRendererScene.mPushConstants.materialBuffer = renderItem.materialConstantsBufferAddress;
-		mRendererScene.mPushConstants.materialIndex = renderItem.primitive->material->mMaterialIndex;
+		mRendererScene.mPushConstants.materialIndex = renderItem.primitive->mMaterial->mMaterialIndex;
 		mRendererScene.mPushConstants.worldMatrix = renderItem.transform;
-		cmd.pushConstants<PushConstants>(*renderItem.primitive->material->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPushConstants);
+		cmd.pushConstants<PushConstants>(*renderItem.primitive->mMaterial->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPushConstants);
 
-		cmd.drawIndexed(renderItem.primitive->indexCount, renderItem.model->mInstances.size(), renderItem.primitive->indexStart, 0, 0);
+		cmd.drawIndexed(renderItem.primitive->mIndexCount, renderItem.model->mInstances.size(), renderItem.primitive->mRelativeIndexStart, 0, 0);
 
 		mStats.mDrawCallCount++;
 	};
@@ -318,21 +316,24 @@ void Renderer::drawUpdate()
 	mRendererScene.deleteInstances();
 	mRendererScene.deleteModels();
 
-	if (mReloadGeometryData) {
+	for (auto& model : mRendererScene.mModels | std::views::values) {
+		if (model.mReloadInstancesBuffer) { 
+			model.updateInstances(); 
+			model.mReloadInstancesBuffer = false;
+		}
+	}
+
+	if (mModelAddedDeleted) {
+		mRendererScene.alignMeshOffsets();
 		mRendererScene.mRenderItems.clear();
 		mRendererScene.generateRenderItems();
 
-		mRendererScene.reloadGlobalVertexBuffer();
-
-		mReloadGeometryData = false;
+		mRendererScene.reloadMainVertexBuffer();
+		mRendererScene.reloadMainIndexBuffer();
+		mRendererScene.reloadMainMaterialConstantsBuffer();
+		mRendererScene.reloadMainInstancesBuffer();
+		mModelAddedDeleted = false;
 	}
-
-	for (auto& model : mRendererScene.mModels | std::views::values) {
-		if (model.mReloadInstancesBuffer) { model.updateInstances(); }
-		model.mReloadInstancesBuffer = false;
-	}
-
-	mReloadGeometryData = false;
 
 	const auto end = std::chrono::system_clock::now();
 	const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

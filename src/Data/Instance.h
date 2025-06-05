@@ -21,5 +21,5 @@ public:
 	bool mDeleteSignal;
 	TransformData mTransformComponents;
 
-	GLTFInstance(GLTFModel* model);
+	GLTFInstance(GLTFModel* model, int id);
 };

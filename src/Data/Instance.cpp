@@ -1,9 +1,9 @@
 #include <Data/Instance.h>
 #include <Data/Model.h>
 
-GLTFInstance::GLTFInstance(GLTFModel* model) :
+GLTFInstance::GLTFInstance(GLTFModel* model, int id) :
 	mModel(model),
-	mId(model->mLatestId),
+	mId(id),
 	mDeleteSignal(false)
 {
 	mTransformComponents.translation = glm::vec3();

@@ -18,8 +18,20 @@ void RendererScene::init()
 	mSceneResources.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 
-	mVertexBuffer = mRenderer->mRendererResources.createBuffer(GLOBAL_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mVertexBuffer.buffer, "VertexBuffer");
+	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
+
+	mMainIndexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
+
+	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
+
+	/*mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");*/
+
+	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -47,7 +59,7 @@ void RendererScene::deleteInstances()
 	}
 }
 
-void RendererScene::reloadGlobalVertexBuffer()
+void RendererScene::reloadMainVertexBuffer()
 {
 	int dstOffset = 0;
 
@@ -61,9 +73,85 @@ void RendererScene::reloadGlobalVertexBuffer()
 			dstOffset += mesh->mVertexBuffer.info.size;
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-				cmd.copyBuffer(*mesh->mVertexBuffer.buffer, *mVertexBuffer.buffer, meshVertexCopy);
+				cmd.copyBuffer(*mesh->mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
 			});
 
+		}
+	}
+}
+
+void RendererScene::reloadMainIndexBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		for (auto& mesh : model.mMeshes) {
+			vk::BufferCopy meshIndexCopy{};
+			meshIndexCopy.dstOffset = dstOffset;
+			meshIndexCopy.srcOffset = 0;
+			meshIndexCopy.size = mesh->mIndexBuffer.info.size;
+
+			dstOffset += mesh->mIndexBuffer.info.size;
+
+			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+				cmd.copyBuffer(*mesh->mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
+			});
+
+		}
+	}
+}
+
+void RendererScene::reloadMainMaterialConstantsBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		vk::BufferCopy materialConstantCopy{};
+		materialConstantCopy.dstOffset = dstOffset;
+		materialConstantCopy.srcOffset = 0;
+		materialConstantCopy.size = model.mMaterials.size() * sizeof(MaterialConstants);
+
+		dstOffset += model.mMaterials.size() * sizeof(MaterialConstants);
+
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
+		});
+	}
+}
+
+void RendererScene::reloadMainNodeTransformsBuffer()
+{
+}
+
+void RendererScene::reloadMainInstancesBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		vk::BufferCopy instancesCopy{};
+		instancesCopy.dstOffset = dstOffset;
+		instancesCopy.srcOffset = 0;
+		instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
+
+		dstOffset += model.mInstances.size() * sizeof(InstanceData);
+
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
+		});
+	}
+}
+
+void RendererScene::alignMeshOffsets()
+{
+	int vertexCumulative = 0;
+	int indexCumulative = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		for (auto& mesh : model.mMeshes) {
+			mesh->mMainVertexOffset = vertexCumulative;
+			mesh->mMainIndexStart = indexCumulative;
+			vertexCumulative += mesh->mNumVertices;
+			indexCumulative += mesh->mNumIndices;
 		}
 	}
 }
@@ -85,7 +173,11 @@ void RendererScene::cleanup()
 	mSceneResources.cleanup();
 	mModels.clear();
 	mSkybox.cleanup();
-	mVertexBuffer.cleanup();
+	mMainInstancesBuffer.cleanup();
+	mMainNodeTransformsBuffer.cleanup();
+	mMainMaterialConstantsBuffer.cleanup();
+	mMainIndexBuffer.cleanup();
+	mMainVertexBuffer.cleanup();
 }
 
 SceneResources::SceneResources(Renderer* renderer) :

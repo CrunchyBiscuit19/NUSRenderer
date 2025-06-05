@@ -20,8 +20,8 @@ constexpr unsigned int ONE_SECOND_IN_MS = 1000;
 constexpr unsigned int MESH_VERTEX_BUFFER_SIZE = 10 * ONE_MEBIBYTE_IN_BYTES;
 constexpr unsigned int MESH_INDEX_BUFFER_SIZE = 10 * ONE_MEBIBYTE_IN_BYTES;
 
-constexpr unsigned int GLOBAL_VERTEX_BUFFER_SIZE = 10* MESH_VERTEX_BUFFER_SIZE;
-constexpr unsigned int GLOBAL_INDEX_BUFFER_SIZE = 10 * MESH_INDEX_BUFFER_SIZE;
+constexpr unsigned int MAIN_VERTEX_BUFFER_SIZE = 10* MESH_VERTEX_BUFFER_SIZE;
+constexpr unsigned int MAIN_INDEX_BUFFER_SIZE = 10 * MESH_INDEX_BUFFER_SIZE;
 
 constexpr unsigned int MAX_IMAGE_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
 constexpr unsigned int MAX_INSTANCES = 1000;

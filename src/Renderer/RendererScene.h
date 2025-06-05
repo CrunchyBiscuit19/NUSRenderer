@@ -56,6 +56,9 @@ private:
 public:
 	std::vector<RenderItem> mRenderItems;
 
+	int mLatestInstanceId{ 0 };
+	int mLatestMeshId{ 0 };
+	int mLatestModelId{ 0 };
 	std::unordered_map<std::string, GLTFModel> mModels;
 
 	Skybox mSkybox;
@@ -64,7 +67,11 @@ public:
 	PushConstants mPushConstants;
 	SceneResources mSceneResources;
 
-	AllocatedBuffer mVertexBuffer;
+	AllocatedBuffer mMainVertexBuffer;
+	AllocatedBuffer mMainIndexBuffer;
+	AllocatedBuffer mMainMaterialConstantsBuffer;
+	AllocatedBuffer mMainNodeTransformsBuffer;
+	AllocatedBuffer mMainInstancesBuffer;
 
 	RendererScene(Renderer* renderer);
 
@@ -74,8 +81,13 @@ public:
 	void deleteModels();
 	void deleteInstances();
 
-	void reloadGlobalVertexBuffer();
+	void reloadMainVertexBuffer();
+	void reloadMainIndexBuffer();
+	void reloadMainMaterialConstantsBuffer();
+	void reloadMainNodeTransformsBuffer();
+	void reloadMainInstancesBuffer();
 
+	void alignMeshOffsets();
 	void generateRenderItems();
 	void updateScene();
 

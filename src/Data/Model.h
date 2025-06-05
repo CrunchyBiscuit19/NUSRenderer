@@ -20,7 +20,7 @@ private:
 
 public:
 	std::string mName;
-	int mLatestId{ 0 };
+	int mId{ 0 };
 	std::optional<uint64_t> mDeleteSignal{ std::nullopt };
 	bool mReloadInstancesBuffer{ true };
 

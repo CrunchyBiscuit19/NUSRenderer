@@ -18,17 +18,25 @@ struct Bounds {
 };
 
 struct Primitive {
-	uint32_t indexStart;
-	uint32_t indexCount;
-	PbrMaterial* material;
-	Bounds bounds;
+	uint32_t mRelativeIndexStart;
+	uint32_t mIndexCount;
+	uint32_t mRelativeVertexOffset;
+	PbrMaterial* mMaterial;
+	Bounds mBounds;
 };
 
 struct Mesh {
 	std::string mName;
+	int mId;
 	std::vector<Primitive> mPrimitives;
+
 	AllocatedBuffer mVertexBuffer;
+	uint32_t mNumVertices;
+	uint32_t mMainVertexOffset;
+	
 	AllocatedBuffer mIndexBuffer;
+	uint32_t mNumIndices;
+	uint32_t mMainIndexStart;
 };
 
 struct Node {
@@ -54,6 +62,10 @@ struct RenderItem {
 	Primitive* primitive;
 	Mesh* mesh;
 	GLTFModel* model;
+
+	/*uint32_t mFirstIndex;
+	uint32_t mIndexCount;
+	uint32_t mVertexOffset;*/
 
 	glm::mat4 transform;
 
