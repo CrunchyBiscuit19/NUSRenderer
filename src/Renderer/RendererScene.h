@@ -87,7 +87,7 @@ public:
 	void reloadMainNodeTransformsBuffer();
 	void reloadMainInstancesBuffer();
 
-	void alignMeshOffsets();
+	void alignOffsets();
 	void generateRenderItems();
 	void updateScene();
 

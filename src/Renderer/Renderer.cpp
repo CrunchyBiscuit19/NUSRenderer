@@ -254,11 +254,11 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 		mRendererScene.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
 		mRendererScene.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
 		mRendererScene.mPushConstants.materialBuffer = renderItem.materialConstantsBufferAddress;
-		mRendererScene.mPushConstants.materialIndex = renderItem.primitive->mMaterial->mMaterialIndex;
+		mRendererScene.mPushConstants.materialIndex = renderItem.primitive->mMaterial->mRelativeMaterialIndex;
 		mRendererScene.mPushConstants.worldMatrix = renderItem.transform;
 		cmd.pushConstants<PushConstants>(*renderItem.primitive->mMaterial->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPushConstants);
 
-		cmd.drawIndexed(renderItem.primitive->mIndexCount, renderItem.model->mInstances.size(), renderItem.primitive->mRelativeIndexStart, 0, 0);
+		cmd.drawIndexed(renderItem.primitive->mIndexCount, renderItem.model->mInstances.size(), renderItem.primitive->mRelativeFirstIndex, 0, 0);
 
 		mStats.mDrawCallCount++;
 	};
@@ -324,7 +324,7 @@ void Renderer::drawUpdate()
 	}
 
 	if (mModelAddedDeleted) {
-		mRendererScene.alignMeshOffsets();
+		mRendererScene.alignOffsets();
 		mRendererScene.mRenderItems.clear();
 		mRendererScene.generateRenderItems();
 
@@ -332,6 +332,7 @@ void Renderer::drawUpdate()
 		mRendererScene.reloadMainIndexBuffer();
 		mRendererScene.reloadMainMaterialConstantsBuffer();
 		mRendererScene.reloadMainInstancesBuffer();
+		mRendererScene.reloadMainNodeTransformsBuffer();
 		mModelAddedDeleted = false;
 	}
 

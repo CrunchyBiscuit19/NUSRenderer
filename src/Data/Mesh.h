@@ -18,7 +18,7 @@ struct Bounds {
 };
 
 struct Primitive {
-	uint32_t mRelativeIndexStart;
+	uint32_t mRelativeFirstIndex;
 	uint32_t mIndexCount;
 	uint32_t mRelativeVertexOffset;
 	PbrMaterial* mMaterial;
@@ -36,11 +36,14 @@ struct Mesh {
 	
 	AllocatedBuffer mIndexBuffer;
 	uint32_t mNumIndices;
-	uint32_t mMainIndexStart;
+	uint32_t mMainFirstIndex;
+
+	void loadMeshBuffers();
 };
 
 struct Node {
 	std::string mName;
+	int mRelativeNodeIndex;
 	std::weak_ptr<Node> mParent;
 	std::vector<std::shared_ptr<Node>> mChildren;
 	glm::mat4 mLocalTransform;

@@ -27,8 +27,8 @@ void RendererScene::init()
 	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
 
-	/*mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");*/
+	mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
 
 	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
@@ -68,9 +68,9 @@ void RendererScene::reloadMainVertexBuffer()
 			vk::BufferCopy meshVertexCopy{};
 			meshVertexCopy.dstOffset = dstOffset;
 			meshVertexCopy.srcOffset = 0;
-			meshVertexCopy.size = mesh->mVertexBuffer.info.size;
+			meshVertexCopy.size = mesh->mNumVertices * sizeof(Vertex);
 
-			dstOffset += mesh->mVertexBuffer.info.size;
+			dstOffset += meshVertexCopy.size;
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 				cmd.copyBuffer(*mesh->mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
@@ -89,9 +89,9 @@ void RendererScene::reloadMainIndexBuffer()
 			vk::BufferCopy meshIndexCopy{};
 			meshIndexCopy.dstOffset = dstOffset;
 			meshIndexCopy.srcOffset = 0;
-			meshIndexCopy.size = mesh->mIndexBuffer.info.size;
+			meshIndexCopy.size = mesh->mNumIndices * sizeof(uint32_t);
 
-			dstOffset += mesh->mIndexBuffer.info.size;
+			dstOffset += meshIndexCopy.size;
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 				cmd.copyBuffer(*mesh->mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
@@ -111,7 +111,7 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 		materialConstantCopy.srcOffset = 0;
 		materialConstantCopy.size = model.mMaterials.size() * sizeof(MaterialConstants);
 
-		dstOffset += model.mMaterials.size() * sizeof(MaterialConstants);
+		dstOffset += materialConstantCopy.size;
 
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
@@ -121,6 +121,20 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 
 void RendererScene::reloadMainNodeTransformsBuffer()
 {
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		vk::BufferCopy nodeTransformsCopy{};
+		nodeTransformsCopy.dstOffset = dstOffset;
+		nodeTransformsCopy.srcOffset = 0;
+		nodeTransformsCopy.size = model.mNodes.size() * sizeof(glm::mat4);
+
+		dstOffset += nodeTransformsCopy.size;
+
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
+		});
+	}
 }
 
 void RendererScene::reloadMainInstancesBuffer()
@@ -133,7 +147,7 @@ void RendererScene::reloadMainInstancesBuffer()
 		instancesCopy.srcOffset = 0;
 		instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
 
-		dstOffset += model.mInstances.size() * sizeof(InstanceData);
+		dstOffset += instancesCopy.size;
 
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
@@ -141,18 +155,25 @@ void RendererScene::reloadMainInstancesBuffer()
 	}
 }
 
-void RendererScene::alignMeshOffsets()
+void RendererScene::alignOffsets()
 {
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
+	int materialCumulative = 0;
+	int nodeTransformCumulative = 0;
 
 	for (auto& model : mModels | std::views::values) {
 		for (auto& mesh : model.mMeshes) {
 			mesh->mMainVertexOffset = vertexCumulative;
-			mesh->mMainIndexStart = indexCumulative;
+			mesh->mMainFirstIndex = indexCumulative;
 			vertexCumulative += mesh->mNumVertices;
 			indexCumulative += mesh->mNumIndices;
 		}
+
+		model.mMainFirstMaterial = materialCumulative;
+		model.mMainFirstNodeTransform = nodeTransformCumulative;
+		materialCumulative += model.mMaterials.size();
+		nodeTransformCumulative += model.mNodes.size();
 	}
 }
 

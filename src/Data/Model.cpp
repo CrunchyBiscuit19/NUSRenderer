@@ -36,53 +36,6 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	createInstance();
 }
 
-GLTFModel::~GLTFModel()
-{
-}
-
-GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
-	mRenderer(other.mRenderer),
-	mName(std::move(other.mName)),
-	mDeleteSignal(std::move(other.mDeleteSignal)),
-	mAsset(std::move(other.mAsset)),
-	mTopNodes(std::move(other.mTopNodes)),
-	mNodes(std::move(other.mNodes)),
-	mMeshes(std::move(other.mMeshes)),
-	mSamplers(std::move(other.mSamplers)),
-	mImages(std::move(other.mImages)),
-	mModelDescriptorAllocator(std::move(other.mModelDescriptorAllocator)),
-	mMaterials(std::move(other.mMaterials)),
-	mMaterialConstantsBuffer(std::move(other.mMaterialConstantsBuffer)),
-	mInstances(std::move(other.mInstances)),
-	mInstancesBuffer(std::move(other.mInstancesBuffer))
-{
-	other.mRenderer = nullptr;
-}
-
-GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
-{
-	if (this != &other)
-	{
-		mRenderer = other.mRenderer;
-		mName = std::move(other.mName);
-		mDeleteSignal = std::move(other.mDeleteSignal),
-			mAsset = std::move(other.mAsset);
-		mTopNodes = std::move(other.mTopNodes);
-		mNodes = std::move(other.mNodes);
-		mMeshes = std::move(other.mMeshes);
-		mSamplers = std::move(other.mSamplers);
-		mImages = std::move(other.mImages);
-		mModelDescriptorAllocator = std::move(other.mModelDescriptorAllocator);
-		mMaterials = std::move(other.mMaterials);
-		mMaterialConstantsBuffer = std::move(other.mMaterialConstantsBuffer);
-		mInstances = std::move(other.mInstances);
-		mInstancesBuffer = std::move(other.mInstancesBuffer);
-
-		other.mRenderer = nullptr;
-	}
-	return *this;
-}
-
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
 {
 	switch (filter) {
@@ -220,11 +173,15 @@ void GLTFModel::initBuffers()
 	mMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
+	mNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4),
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
 	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	
 	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
 	mRenderer->mRendererCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
 }
 
@@ -289,7 +246,7 @@ void GLTFModel::loadMaterials()
 
 		materialConstants.push_back(newMat.mPbrData.constants);
 
-		newMat.mMaterialIndex = materialIndex;
+		newMat.mRelativeMaterialIndex = materialIndex;
 		newMat.mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
 		newMat.mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
 		newMat.writeMaterialResources();
@@ -320,7 +277,7 @@ void GLTFModel::loadMeshes()
 
 		for (auto&& p : mesh.primitives) {
 			Primitive newPrimitive;
-			newPrimitive.mRelativeIndexStart = static_cast<uint32_t>(indices.size());
+			newPrimitive.mRelativeFirstIndex = static_cast<uint32_t>(indices.size());
 			newPrimitive.mIndexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
 			newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
 
@@ -409,8 +366,10 @@ void GLTFModel::loadNodes()
 {
 	fmt::println("{} Model [Load Nodes]", mName);
 
+	int nodeIndex = 0;
 	for (fastgltf::Node& node : mAsset.nodes) {
 		std::shared_ptr<Node> newNode;
+
 		if (node.meshIndex.has_value()) {
 			newNode = std::make_shared<MeshNode>();
 			dynamic_cast<MeshNode*>(newNode.get())->mMesh = mMeshes[*node.meshIndex];
@@ -419,6 +378,7 @@ void GLTFModel::loadNodes()
 			newNode = std::make_shared<Node>();
 		}
 		newNode->mName = fmt::format("{}_node{}", mName, node.name);
+		newNode->mRelativeNodeIndex = nodeIndex;
 
 		// First function if it's a mat4 transform, second function if it's separate transform / rotate / scale quaternion or vec3
 		std::visit(fastgltf::visitor{
@@ -440,9 +400,11 @@ void GLTFModel::loadNodes()
 			node.transform);
 
 		mNodes.push_back(newNode);
+
+		nodeIndex++;
 	}
 
-	// Setup transform hierarchy
+	// Setup hierarchy
 	for (int i = 0; i < mAsset.nodes.size(); i++) {
 		fastgltf::Node& assetNode = mAsset.nodes[i];
 		std::shared_ptr<Node> localNode = mNodes[i];
@@ -459,37 +421,11 @@ void GLTFModel::loadNodes()
 			node->refreshTransform(glm::mat4{ 1.f });
 		}
 	}
+
+	loadNodeTransformsBuffer(mNodes);
 }
 
-void GLTFModel::loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& materialConstantsVector)
-{
-	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
-
-	vk::BufferCopy materialConstantsCopy{};
-	materialConstantsCopy.dstOffset = 0;
-	materialConstantsCopy.srcOffset = 0;
-	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
-
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
-		});
-}
-
-void GLTFModel::loadInstancesBuffer(std::vector<InstanceData>& instanceDataVector)
-{
-	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
-
-	vk::BufferCopy instancesCopy{};
-	instancesCopy.dstOffset = 0;
-	instancesCopy.srcOffset = 0;
-	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
-
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
-	});
-}
-
-void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector)
+void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector)
 {
 	const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
@@ -515,7 +451,51 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
+	});
+}
+
+void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector)
+{
+	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
+
+	vk::BufferCopy materialConstantsCopy{};
+	materialConstantsCopy.dstOffset = 0;
+	materialConstantsCopy.srcOffset = 0;
+	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
+
+	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 		});
+}
+
+void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector)
+{
+	for (int i = 0; i < nodesVector.size(); i++) {
+		std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof(glm::mat4), &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
+	}
+
+	vk::BufferCopy nodeTransformsCopy{};
+	nodeTransformsCopy.dstOffset = 0;
+	nodeTransformsCopy.srcOffset = 0;
+	nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
+
+	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		cmd.copyBuffer(*mRenderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
+	});
+}
+
+void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
+{
+	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
+
+	vk::BufferCopy instancesCopy{};
+	instancesCopy.dstOffset = 0;
+	instancesCopy.srcOffset = 0;
+	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
+
+	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+	});
 }
 
 void GLTFModel::createInstance()

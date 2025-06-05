@@ -26,6 +26,7 @@ constexpr unsigned int MAIN_INDEX_BUFFER_SIZE = 10 * MESH_INDEX_BUFFER_SIZE;
 constexpr unsigned int MAX_IMAGE_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
 constexpr unsigned int MAX_INSTANCES = 1000;
 constexpr unsigned int MAX_MATERIALS = 1000;
+constexpr unsigned int MAX_NODES = 1000;
 
 constexpr int NUMBER_OF_SKYBOX_VERTICES = 36;
 constexpr int NUMBER_OF_CUBEMAP_FACES = 6;

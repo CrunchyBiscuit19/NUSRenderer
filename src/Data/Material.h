@@ -52,7 +52,7 @@ class PbrMaterial {
 
 public:
 	std::string mName;
-	uint32_t mMaterialIndex;
+	uint32_t mRelativeMaterialIndex;
 	PipelineBundle* mPipeline;
 	PbrData mPbrData;
 	vk::Buffer mConstantsBuffer;

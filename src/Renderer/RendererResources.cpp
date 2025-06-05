@@ -22,10 +22,11 @@ void RendererResources::init()
 
 void RendererResources::initStaging()
 {
-	mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
-	mMeshStagingBuffer = std::move(createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE));
-	mMaterialConstantsStagingBuffer = std::move(createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants)));
-	mInstancesStagingBuffer = std::move(createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData)));
+	mImageStagingBuffer = createStagingBuffer(MAX_IMAGE_SIZE);
+	mMeshStagingBuffer = createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE);
+	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
+	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
+	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
 }
 
 void RendererResources::initDefault()
@@ -182,9 +183,10 @@ AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize)
 
 void RendererResources::cleanup()
 {
+	mNodeTransformsStagingBuffer.cleanup();
 	mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
-	mMaterialConstantsStagingBuffer.cleanup();
+	mMaterialConstantsStagingBuffer.cleanup( );
 	mInstancesStagingBuffer.cleanup();
 	mDefaultImages.clear();
 	mDefaultSampler.clear();
