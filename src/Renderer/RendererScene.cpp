@@ -166,10 +166,11 @@ void RendererScene::reloadMainInstancesBuffer()
 	int dstOffset = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mInstances.size() == 0) { continue; }
+
 		vk::BufferCopy instancesCopy{};
 		instancesCopy.dstOffset = dstOffset;
 		instancesCopy.srcOffset = 0;
-		if (model.mInstances.size() == 0) { return; }
 		instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
 
 		dstOffset += instancesCopy.size;

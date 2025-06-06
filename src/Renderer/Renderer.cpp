@@ -313,8 +313,8 @@ void Renderer::drawUpdate()
 
 	mRendererScene.updateScene();
 
-	mRendererScene.deleteInstances();
 	mRendererScene.deleteModels();
+	mRendererScene.deleteInstances();
 
 	for (auto& model : mRendererScene.mModels | std::views::values) {
 		if (model.mReloadInstancesBuffer) { 
