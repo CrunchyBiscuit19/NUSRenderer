@@ -51,7 +51,6 @@ private:
 	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo);
 	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo);
 
-	void initDescriptors();
 	void initBuffers();
 	void loadSamplers();
 	void loadImages();

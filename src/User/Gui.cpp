@@ -85,7 +85,7 @@ void Gui::SceneGuiComponent::elements()
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Skybox")) {
-			mRenderer->mRendererScene.mSkyboxActive = !mRenderer->mRendererScene.mSkyboxActive;
+			mRenderer->mRendererScene.mSkybox.mActive = !mRenderer->mRendererScene.mSkybox.mActive;
 		}
 	}
 

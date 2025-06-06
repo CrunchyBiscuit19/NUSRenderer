@@ -48,7 +48,6 @@ struct PbrData {
 
 class PbrMaterial {
 	Renderer* mRenderer;
-	DescriptorAllocatorGrowable* mModelDescriptorAllocator;
 
 public:
 	std::string mName;
@@ -57,13 +56,8 @@ public:
 	PbrData mPbrData;
 	vk::Buffer mConstantsBuffer;
 	uint32_t mConstantsBufferOffset;
-	vk::raii::DescriptorSet mResourcesDescriptorSet;
-	static vk::raii::DescriptorSetLayout mResourcesDescriptorSetLayout;
 
-	PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descriptorAllocator);
-
-	static void createResourcesDescriptorSetLayout(Renderer* renderer);
+	PbrMaterial(Renderer* renderer);
 
 	void getMaterialPipeline();
-	void writeMaterialResources();
 };

@@ -18,7 +18,7 @@ void main()
     vec3 lightDir = normalize(scene.sunlightDirection.xyz);
     float sunlightPower = scene.sunlightDirection.w;
 
-    vec3 color = inColor * texture(baseTex, inUV).rgb;
+    vec3 color = inColor * texture(materialResources[pushConstants.materialIndex * 5 + 0], inUV).rgb;
     float diffuse = max(dot(normal, lightDir), 0.0);
     vec3 sunlight = scene.sunlightColor.rgb * sunlightPower;
 

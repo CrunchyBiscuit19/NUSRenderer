@@ -127,7 +127,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 
 void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
+	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
 	if (textureInfo.has_value()) {
 		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
 		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
@@ -156,14 +156,6 @@ void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<f
 		if (img.has_value()) materialImage.image = &mImages[img.value()];
 		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
 	}
-}
-
-void GLTFModel::initDescriptors()
-{
-	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
-		{ vk::DescriptorType::eCombinedImageSampler, 5 },
-	};
-	mModelDescriptorAllocator.init(mAsset.materials.size(), sizes);
 }
 
 void GLTFModel::initBuffers()
@@ -225,7 +217,8 @@ void GLTFModel::loadMaterials()
 	mMaterials.reserve(mAsset.materials.size());
 	int materialIndex = 0;
 	for (fastgltf::Material& mat : mAsset.materials) {
-		auto newMat = PbrMaterial(mRenderer, &mModelDescriptorAllocator);
+		auto newMat = PbrMaterial(mRenderer);
+
 		auto matName = std::string(mat.name);
 		if (matName.empty()) {
 			matName = fmt::format("{}", materialIndex);
@@ -249,7 +242,8 @@ void GLTFModel::loadMaterials()
 		newMat.mRelativeMaterialIndex = materialIndex;
 		newMat.mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
 		newMat.mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
-		newMat.writeMaterialResources();
+
+		newMat.getMaterialPipeline();
 
 		mMaterials.push_back(std::move(newMat));
 		materialIndex++;
@@ -396,7 +390,6 @@ void GLTFModel::loadNodes()
 			node.transform);
 
 		mNodes.push_back(newNode);
-
 		nodeIndex++;
 	}
 
@@ -524,7 +517,6 @@ void GLTFModel::markDelete()
 
 void GLTFModel::load()
 {
-	initDescriptors();
 	initBuffers();
 	loadSamplers();
 	loadImages();

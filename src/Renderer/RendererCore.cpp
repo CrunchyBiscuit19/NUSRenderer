@@ -107,10 +107,10 @@ void RendererCore::init()
 	features12.bufferDeviceAddress = true;
 	features12.descriptorIndexing = true;
 	features12.drawIndirectCount = true;
-	features12.descriptorBindingPartiallyBound = true;
 	features12.runtimeDescriptorArray = true;
-	features12.descriptorBindingSampledImageUpdateAfterBind = true;
 	features12.descriptorBindingVariableDescriptorCount = true;
+	features12.descriptorBindingPartiallyBound = true;
+	features12.descriptorBindingSampledImageUpdateAfterBind = true;
 	vk::PhysicalDeviceVulkan11Features features11{};
 	features11.shaderDrawParameters = true;
 	vk::PhysicalDeviceFeatures features{};

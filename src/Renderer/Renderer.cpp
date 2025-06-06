@@ -124,7 +124,7 @@ void Renderer::draw()
 
 	drawClearScreen(cmd);
 	drawGeometry(cmd);
-	if (mRendererScene.mSkyboxActive) { drawSkybox(cmd); }
+	if (mRendererScene.mSkybox.mActive) { drawSkybox(cmd); }
 
 	// Transition intermediate image into resolvable color compatible layout 
 	vkhelper::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
@@ -242,7 +242,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 		}
 
 		if (renderItem.primitive->mMaterial != lastMaterial) {
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 1, *renderItem.primitive->mMaterial->mResourcesDescriptorSet, nullptr);
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 1, *mRendererScene.mMainMaterialResourcesDescriptorSet, nullptr);
 			lastMaterial = renderItem.primitive->mMaterial;
 		}
 
@@ -253,10 +253,10 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
 		mRendererScene.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
 		mRendererScene.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
-		mRendererScene.mPushConstants.materialBuffer = renderItem.materialConstantsBufferAddress;
-		mRendererScene.mPushConstants.materialIndex = renderItem.primitive->mMaterial->mRelativeMaterialIndex;
+		mRendererScene.mPushConstants.materialBuffer = mRendererScene.mMainMaterialConstantsBufferAddress;
+		mRendererScene.mPushConstants.materialIndex = renderItem.model->mMainFirstMaterial + renderItem.primitive->mMaterial->mRelativeMaterialIndex;
 		mRendererScene.mPushConstants.worldMatrix = renderItem.transform;
-		cmd.pushConstants<PushConstants>(*renderItem.primitive->mMaterial->mPipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPushConstants);
+		cmd.pushConstants<PushConstants>(*renderItem.primitive->mMaterial->mPipeline->layout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, mRendererScene.mPushConstants);
 
 		cmd.drawIndexed(renderItem.primitive->mIndexCount, renderItem.model->mInstances.size(), renderItem.primitive->mRelativeFirstIndex, 0, 0);
 
@@ -333,6 +333,7 @@ void Renderer::drawUpdate()
 		mRendererScene.reloadMainMaterialConstantsBuffer();
 		mRendererScene.reloadMainInstancesBuffer();
 		mRendererScene.reloadMainNodeTransformsBuffer();
+		mRendererScene.reloadMainMaterialResourcesArray();
 		mModelAddedDeleted = false;
 	}
 

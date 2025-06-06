@@ -24,7 +24,6 @@ public:
 	float mYaw{ 0.f };
 	float mSpeed{ 10.f };
 
-	const Uint8* keyState;
 	SDL_bool mRelativeMode{ SDL_FALSE };
 	MovementMode mMovementMode;
 	std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;

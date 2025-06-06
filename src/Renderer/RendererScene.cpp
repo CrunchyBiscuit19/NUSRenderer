@@ -9,7 +9,9 @@
 RendererScene::RendererScene(Renderer* renderer) :
 	mRenderer(renderer),
 	mSceneResources(SceneResources(renderer)),
-	mSkybox(Skybox(renderer))
+	mSkybox(Skybox(renderer)),
+	mMainMaterialResourcesDescriptorSet(nullptr),
+	mMainMaterialResourcesDescriptorSetLayout(nullptr)
 {
 }
 
@@ -18,6 +20,7 @@ void RendererScene::init()
 	mSceneResources.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 	initBuffers();
+	initMainMaterialResourcesDescriptorSet();
 }
 
 void RendererScene::initBuffers()
@@ -30,6 +33,7 @@ void RendererScene::initBuffers()
 
 	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
+	mMainMaterialConstantsBufferAddress = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
 
 	mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
@@ -42,6 +46,16 @@ void RendererScene::initBuffers()
 
 	mCountBuffer = mRenderer->mRendererResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mCountBuffer.buffer, "CountBufferr");
+}
+
+void RendererScene::initMainMaterialResourcesDescriptorSet()
+{
+	DescriptorLayoutBuilder builder;
+	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
+	mMainMaterialResourcesDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, true);
+	mMainMaterialResourcesDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(mMainMaterialResourcesDescriptorSetLayout, true);
+	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout, "MainMaterialResourcesDescriptorSetLayout");
+	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet, "MainMaterialResourcesDescriptorSet");
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -155,6 +169,7 @@ void RendererScene::reloadMainInstancesBuffer()
 		vk::BufferCopy instancesCopy{};
 		instancesCopy.dstOffset = dstOffset;
 		instancesCopy.srcOffset = 0;
+		if (model.mInstances.size() == 0) { return; }
 		instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
 
 		dstOffset += instancesCopy.size;
@@ -162,6 +177,23 @@ void RendererScene::reloadMainInstancesBuffer()
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
 		});
+	}
+}
+
+void RendererScene::reloadMainMaterialResourcesArray()
+{
+	for (auto& model : mModels | std::views::values) {
+		for (auto& material : model.mMaterials) {
+			int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
+
+			DescriptorSetBinder writer;
+			writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView, material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 1, *material.mPbrData.resources.metallicRoughness.image->imageView, material.mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 2, *material.mPbrData.resources.emissive.image->imageView, material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 3, *material.mPbrData.resources.normal.image->imageView, material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 4, *material.mPbrData.resources.occlusion.image->imageView, material.mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mMainMaterialResourcesDescriptorSet);
+		}
 	}
 }
 
@@ -204,6 +236,8 @@ void RendererScene::cleanup()
 	mSceneResources.cleanup();
 	mModels.clear();
 	mSkybox.cleanup();
+	mMainMaterialResourcesDescriptorSet.clear();
+	mMainMaterialResourcesDescriptorSetLayout.clear();
 	mCountBuffer.cleanup();
 	mDrawCommandsBuffer.cleanup();
 	mMainInstancesBuffer.cleanup();

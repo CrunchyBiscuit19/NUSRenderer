@@ -8,11 +8,7 @@ layout (set = 0, binding = 0) uniform SceneData {
 	vec4 sunlightDirection; //w for sun power
 	vec4 sunlightColor;
 } scene;
-layout (set = 1, binding = 0) uniform sampler2D baseTex;
-layout (set = 1, binding = 1) uniform sampler2D metalRoughTex;
-layout (set = 1, binding = 2) uniform sampler2D normalTex;
-layout (set = 1, binding = 3) uniform sampler2D occlusiveTex;
-layout (set = 1, binding = 4) uniform sampler2D emissiveTex;
+layout (set = 1, binding = 0) uniform sampler2D materialResources[];
 
 // SSBO addresses and buffer definitions
 struct Vertex {
@@ -32,9 +28,9 @@ layout (buffer_reference, std430) readonly buffer InstanceBuffer {
 	InstanceData instances[];
 } instanceBuffer;
 struct MaterialConstant {
-    vec4 baseFactor;
-    vec4 emissiveFactor;
-    vec4 metallicRoughnessFactor;
+	vec4 baseFactor;
+	vec4 emissiveFactor;
+	vec4 metallicRoughnessFactor;
 };
 layout (buffer_reference, std430) readonly buffer MaterialConstantBuffer {
 	MaterialConstant materialConstants[];

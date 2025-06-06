@@ -62,7 +62,6 @@ public:
 	std::unordered_map<std::string, GLTFModel> mModels;
 
 	Skybox mSkybox;
-	bool mSkyboxActive{ true };
 
 	PushConstants mPushConstants;
 	SceneResources mSceneResources;
@@ -70,15 +69,20 @@ public:
 	AllocatedBuffer mMainVertexBuffer;
 	AllocatedBuffer mMainIndexBuffer;
 	AllocatedBuffer mMainMaterialConstantsBuffer;
+	vk::DeviceAddress mMainMaterialConstantsBufferAddress;
 	AllocatedBuffer mMainNodeTransformsBuffer;
 	AllocatedBuffer mMainInstancesBuffer;
 	AllocatedBuffer mDrawCommandsBuffer;
 	AllocatedBuffer mCountBuffer;
 
+	vk::raii::DescriptorSet mMainMaterialResourcesDescriptorSet;
+	vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
+
 	RendererScene(Renderer* renderer);
 
 	void init();
 	void initBuffers();
+	void initMainMaterialResourcesDescriptorSet();
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();
@@ -89,6 +93,7 @@ public:
 	void reloadMainMaterialConstantsBuffer();
 	void reloadMainNodeTransformsBuffer();
 	void reloadMainInstancesBuffer();
+	void reloadMainMaterialResourcesArray();
 
 	void alignOffsets();
 	void generateRenderItems();
