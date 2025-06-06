@@ -47,9 +47,9 @@ private:
 	vk::Filter extractFilter(fastgltf::Filter filter);
 	vk::SamplerMipmapMode extractMipmapMode(fastgltf::Filter filter);
 	AllocatedImage loadImage(fastgltf::Image& image);
-	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo);
-	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo);
-	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo);
+	void assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo);
+	void assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo);
+	void assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo);
 
 	void initBuffers();
 	void loadSamplers();

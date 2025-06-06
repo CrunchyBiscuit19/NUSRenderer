@@ -8,17 +8,17 @@
 class Renderer;
 class AllocatedImage;
 
-struct MaterialImage { // One AllocatedImage images can be shared across multiple MaterialImage images
+struct MaterialTexture { // One AllocatedImage images can be shared across multiple MaterialImage images
 	AllocatedImage* image;
 	vk::Sampler sampler;
 
-	MaterialImage() :
+	MaterialTexture() :
 		image(nullptr),
 		sampler(nullptr)
 	{
 	}
 
-	MaterialImage(AllocatedImage* image, vk::Sampler sampler) :
+	MaterialTexture(AllocatedImage* image, vk::Sampler sampler) :
 		image(image),
 		sampler(sampler)
 	{
@@ -32,11 +32,11 @@ struct MaterialConstants {
 };
 
 struct MaterialResources {
-	MaterialImage base;
-	MaterialImage metallicRoughness;
-	MaterialImage normal;
-	MaterialImage occlusion;
-	MaterialImage emissive;
+	MaterialTexture base;
+	MaterialTexture metallicRoughness;
+	MaterialTexture normal;
+	MaterialTexture occlusion;
+	MaterialTexture emissive;
 };
 
 struct PbrData {

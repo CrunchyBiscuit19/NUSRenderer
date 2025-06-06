@@ -25,7 +25,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 		vk::BufferDeviceAddressInfo instancesBufferDeviceAddressInfo;
 		instancesBufferDeviceAddressInfo.buffer = *model->mInstancesBuffer.buffer;
 
-		renderer->mRendererScene.mRenderItems.emplace_back(
+		renderer->mRendererScene.mSceneManager.mRenderItems.emplace_back(
 			&primitive,
 			mMesh,
 			model,

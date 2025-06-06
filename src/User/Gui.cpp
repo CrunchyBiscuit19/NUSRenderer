@@ -32,7 +32,7 @@ void Gui::SceneGuiComponent::elements()
 	if (ImGui::Button("Add Model")) {
 		mGui->mSelectModelFileDialog.Open();
 	}
-	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
+	for (auto& model : mRenderer->mRendererScene.mSceneManager.mModels | std::views::values) {
 		const auto name = model.mName;
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
 		if (ImGui::CollapsingHeader(name.c_str())) {
@@ -71,10 +71,10 @@ void Gui::SceneGuiComponent::elements()
 	}
 	
 	if (ImGui::CollapsingHeader("Sunlight")) {
-		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.ambientColor));
-		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightColor));
-		ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection), 0.f, 1.f);
-		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection[3]);
+		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mPerspectiveData.ambientColor));
+		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mPerspectiveData.sunlightColor));
+		ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mPerspectiveData.sunlightDirection), 0.f, 1.f);
+		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mPerspective.mPerspectiveData.sunlightDirection[3]);
 	}
 	if (ImGui::CollapsingHeader("Skybox")) {
 		if (ImGui::Button("Change Skybox")) {
@@ -96,7 +96,7 @@ void Gui::SceneGuiComponent::elements()
 	mGui->mSelectModelFileDialog.Display();
 	if (mGui->mSelectModelFileDialog.HasSelected()) {
 		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
-		mRenderer->mRendererScene.loadModels(selectedFiles);
+		mRenderer->mRendererScene.mSceneManager.loadModels(selectedFiles);
 		mGui->mSelectModelFileDialog.ClearSelected();
 		mRenderer->mModelAddedDeleted = true;
 	}

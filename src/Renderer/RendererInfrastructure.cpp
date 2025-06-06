@@ -180,12 +180,12 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(PushConstants);
+	pushConstantRange.size = sizeof(ScenePushConstants);
 	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
 
 	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-		*mRenderer->mRendererScene.mSceneResources.mSceneDescriptorSetLayout,
-		*mRenderer->mRendererScene.mMainMaterialResourcesDescriptorSetLayout
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
+		*mRenderer->mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSetLayout
 	};
 	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
 	pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
@@ -253,7 +253,7 @@ void RendererInfrastructure::createSkyboxPipeline()
 	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-		*mRenderer->mRendererScene.mSceneResources.mSceneDescriptorSetLayout,
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
 		*mRenderer->mRendererScene.mSkybox.mSkyboxDescriptorSetLayout
 	};
 	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();

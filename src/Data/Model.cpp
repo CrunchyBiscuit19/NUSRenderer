@@ -125,7 +125,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 	return newImage;
 }
 
-void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo)
+void GLTFModel::assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo)
 {
 	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
 	if (textureInfo.has_value()) {
@@ -136,7 +136,7 @@ void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<f
 	}
 }
 
-void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo)
+void GLTFModel::assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo)
 {
 	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
 	if (textureInfo.has_value()) {
@@ -147,7 +147,7 @@ void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<f
 	}
 }
 
-void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo)
+void GLTFModel::assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo)
 {
 	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
 	if (textureInfo.has_value()) {

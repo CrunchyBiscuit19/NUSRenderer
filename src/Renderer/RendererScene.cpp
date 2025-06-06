@@ -6,49 +6,108 @@
 
 #include <ranges>
 
-RendererScene::RendererScene(Renderer* renderer) :
+Perspective::Perspective(Renderer* renderer) :
 	mRenderer(renderer),
-	mSceneResources(SceneResources(renderer)),
-	mSkybox(Skybox(renderer)),
+	mPerspectiveDescriptorSet(nullptr),
+	mPerspectiveDescriptorSetLayout(nullptr)
+{
+}
+
+void Perspective::init()
+{
+	initData();
+	initBuffer();
+	initDescriptor();
+}
+
+void Perspective::initData()
+{
+	mPerspectiveData.ambientColor = glm::vec4(.1f);
+	mPerspectiveData.sunlightColor = glm::vec4(1.f);
+	mPerspectiveData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
+}
+
+void Perspective::initBuffer()
+{
+	mPerspectiveBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PerspectiveData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	mRenderer->mRendererCore.labelResourceDebug(mPerspectiveBuffer.buffer, "SceneBuffer");
+}
+
+void Perspective::initDescriptor()
+{
+	DescriptorLayoutBuilder builder;
+	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
+	mPerspectiveDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+	mPerspectiveDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mPerspectiveDescriptorSetLayout);
+
+	DescriptorSetBinder writer;
+	writer.bindBuffer(0, *mPerspectiveBuffer.buffer, sizeof(PerspectiveData), 0, vk::DescriptorType::eUniformBuffer);
+	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mPerspectiveDescriptorSet);
+}
+
+void Perspective::update()
+{
+	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
+	mPerspectiveData.view = mRenderer->mCamera.getViewMatrix();
+	mPerspectiveData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
+	mPerspectiveData.proj[1][1] *= -1;
+
+	auto* sceneBufferPtr = static_cast<PerspectiveData*>(mPerspectiveBuffer.info.pMappedData);
+	std::memcpy(sceneBufferPtr, &mPerspectiveData, 1 * sizeof(PerspectiveData));
+}
+
+void Perspective::cleanup()
+{
+	mPerspectiveDescriptorSet.clear();
+	mPerspectiveDescriptorSetLayout.clear();
+	mPerspectiveBuffer.cleanup();
+}
+
+SceneManager::SceneManager(Renderer* renderer) :
+	mRenderer(renderer),
 	mMainMaterialResourcesDescriptorSet(nullptr),
 	mMainMaterialResourcesDescriptorSetLayout(nullptr)
 {
 }
 
-void RendererScene::init()
+void SceneManager::init()
 {
-	mSceneResources.init();
-	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 	initBuffers();
-	initMainMaterialResourcesDescriptorSet();
+	initDescriptor();
 }
 
-void RendererScene::initBuffers()
+void SceneManager::initBuffers()
 {
 	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
+	mMainVertexBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainVertexBuffer.buffer));
 
 	mMainIndexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
 
 	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
-	mMainMaterialConstantsBufferAddress = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
+	mMainMaterialConstantsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
 
 	mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
+	mMainNodeTransformsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainNodeTransformsBuffer.buffer));
 
 	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
+	mMainInstancesBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
 
 	mDrawCommandsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mDrawCommandsBuffer.buffer, "DrawCommandsBuffer");
+	mDrawCommandsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mDrawCommandsBuffer.buffer));
 
 	mCountBuffer = mRenderer->mRendererResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mCountBuffer.buffer, "CountBufferr");
+	mRenderer->mRendererCore.labelResourceDebug(mCountBuffer.buffer, "CountBuffer");
+	mCountBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mCountBuffer.buffer));
+
 }
 
-void RendererScene::initMainMaterialResourcesDescriptorSet()
+void SceneManager::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
@@ -58,7 +117,7 @@ void RendererScene::initMainMaterialResourcesDescriptorSet()
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet, "MainMaterialResourcesDescriptorSet");
 }
 
-void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
+void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 {
 	for (const auto& modelPath : paths) {
 		if (mModels.contains(modelPath.stem().string())) {
@@ -69,136 +128,21 @@ void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
 	}
 }
 
-void RendererScene::deleteModels()
+void SceneManager::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
 		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
 		});
 }
 
-void RendererScene::deleteInstances()
+void SceneManager::deleteInstances()
 {
 	for (auto& model : mModels | std::views::values) {
 		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
 	}
 }
 
-void RendererScene::reloadMainVertexBuffer()
-{
-	int dstOffset = 0;
-
-	for (auto& model : mModels | std::views::values) {
-		for (auto& mesh : model.mMeshes) {
-			vk::BufferCopy meshVertexCopy{};
-			meshVertexCopy.dstOffset = dstOffset;
-			meshVertexCopy.srcOffset = 0;
-			meshVertexCopy.size = mesh.mNumVertices * sizeof(Vertex);
-
-			dstOffset += meshVertexCopy.size;
-
-			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-				cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
-			});
-
-		}
-	}
-}
-
-void RendererScene::reloadMainIndexBuffer()
-{
-	int dstOffset = 0;
-
-	for (auto& model : mModels | std::views::values) {
-		for (auto& mesh : model.mMeshes) {
-			vk::BufferCopy meshIndexCopy{};
-			meshIndexCopy.dstOffset = dstOffset;
-			meshIndexCopy.srcOffset = 0;
-			meshIndexCopy.size = mesh.mNumIndices * sizeof(uint32_t);
-
-			dstOffset += meshIndexCopy.size;
-
-			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
-			});
-
-		}
-	}
-}
-
-void RendererScene::reloadMainMaterialConstantsBuffer()
-{
-	int dstOffset = 0;
-
-	for (auto& model : mModels | std::views::values) {
-		vk::BufferCopy materialConstantCopy{};
-		materialConstantCopy.dstOffset = dstOffset;
-		materialConstantCopy.srcOffset = 0;
-		materialConstantCopy.size = model.mMaterials.size() * sizeof(MaterialConstants);
-
-		dstOffset += materialConstantCopy.size;
-
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
-		});
-	}
-}
-
-void RendererScene::reloadMainNodeTransformsBuffer()
-{
-	int dstOffset = 0;
-
-	for (auto& model : mModels | std::views::values) {
-		vk::BufferCopy nodeTransformsCopy{};
-		nodeTransformsCopy.dstOffset = dstOffset;
-		nodeTransformsCopy.srcOffset = 0;
-		nodeTransformsCopy.size = model.mNodes.size() * sizeof(glm::mat4);
-
-		dstOffset += nodeTransformsCopy.size;
-
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
-		});
-	}
-}
-
-void RendererScene::reloadMainInstancesBuffer()
-{
-	int dstOffset = 0;
-
-	for (auto& model : mModels | std::views::values) {
-		if (model.mInstances.size() == 0) { continue; }
-
-		vk::BufferCopy instancesCopy{};
-		instancesCopy.dstOffset = dstOffset;
-		instancesCopy.srcOffset = 0;
-		instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
-
-		dstOffset += instancesCopy.size;
-
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
-		});
-	}
-}
-
-void RendererScene::reloadMainMaterialResourcesArray()
-{
-	for (auto& model : mModels | std::views::values) {
-		for (auto& material : model.mMaterials) {
-			int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
-
-			DescriptorSetBinder writer;
-			writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView, material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 1, *material.mPbrData.resources.metallicRoughness.image->imageView, material.mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 2, *material.mPbrData.resources.emissive.image->imageView, material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 3, *material.mPbrData.resources.normal.image->imageView, material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 4, *material.mPbrData.resources.occlusion.image->imageView, material.mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mMainMaterialResourcesDescriptorSet);
-		}
-	}
-}
-
-void RendererScene::alignOffsets()
+void SceneManager::alignOffsets()
 {
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
@@ -220,23 +164,131 @@ void RendererScene::alignOffsets()
 	}
 }
 
-void RendererScene::generateRenderItems()
+void SceneManager::generateRenderItems()
 {
 	for (auto& model : mModels | std::views::values) {
 		model.generateRenderItems();
 	}
 }
 
-void RendererScene::updateScene()
+void SceneManager::reloadMainVertexBuffer()
 {
-	mSceneResources.updateResources();
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		for (auto& mesh : model.mMeshes) {
+			vk::BufferCopy meshVertexCopy{};
+			meshVertexCopy.dstOffset = dstOffset;
+			meshVertexCopy.srcOffset = 0;
+			meshVertexCopy.size = mesh.mNumVertices * sizeof(Vertex);
+
+			dstOffset += meshVertexCopy.size;
+
+			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+				cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
+				});
+
+		}
+	}
 }
 
-void RendererScene::cleanup()
+void SceneManager::reloadMainIndexBuffer()
 {
-	mSceneResources.cleanup();
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		for (auto& mesh : model.mMeshes) {
+			vk::BufferCopy meshIndexCopy{};
+			meshIndexCopy.dstOffset = dstOffset;
+			meshIndexCopy.srcOffset = 0;
+			meshIndexCopy.size = mesh.mNumIndices * sizeof(uint32_t);
+
+			dstOffset += meshIndexCopy.size;
+
+			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
+				});
+
+		}
+	}
+}
+
+void SceneManager::reloadMainMaterialConstantsBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		vk::BufferCopy materialConstantCopy{};
+		materialConstantCopy.dstOffset = dstOffset;
+		materialConstantCopy.srcOffset = 0;
+		materialConstantCopy.size = model.mMaterials.size() * sizeof(MaterialConstants);
+
+		dstOffset += materialConstantCopy.size;
+
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
+			});
+	}
+}
+
+void SceneManager::reloadMainNodeTransformsBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		vk::BufferCopy nodeTransformsCopy{};
+		nodeTransformsCopy.dstOffset = dstOffset;
+		nodeTransformsCopy.srcOffset = 0;
+		nodeTransformsCopy.size = model.mNodes.size() * sizeof(glm::mat4);
+
+		dstOffset += nodeTransformsCopy.size;
+
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
+			});
+	}
+}
+
+void SceneManager::reloadMainInstancesBuffer()
+{
+	int dstOffset = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		if (model.mInstances.size() == 0) { continue; }
+
+		vk::BufferCopy instancesCopy{};
+		instancesCopy.dstOffset = dstOffset;
+		instancesCopy.srcOffset = 0;
+		instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
+
+		dstOffset += instancesCopy.size;
+
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
+			});
+	}
+}
+
+void SceneManager::reloadMainMaterialResourcesArray()
+{
+	for (auto& model : mModels | std::views::values) {
+		for (auto& material : model.mMaterials) {
+			int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
+
+			DescriptorSetBinder writer;
+			writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView, material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 1, *material.mPbrData.resources.metallicRoughness.image->imageView, material.mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 2, *material.mPbrData.resources.emissive.image->imageView, material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 3, *material.mPbrData.resources.normal.image->imageView, material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 4, *material.mPbrData.resources.occlusion.image->imageView, material.mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mMainMaterialResourcesDescriptorSet);
+		}
+	}
+}
+
+void SceneManager::cleanup()
+{
 	mModels.clear();
-	mSkybox.cleanup();
 	mMainMaterialResourcesDescriptorSet.clear();
 	mMainMaterialResourcesDescriptorSetLayout.clear();
 	mCountBuffer.cleanup();
@@ -248,59 +300,30 @@ void RendererScene::cleanup()
 	mMainVertexBuffer.cleanup();
 }
 
-SceneResources::SceneResources(Renderer* renderer) :
+RendererScene::RendererScene(Renderer* renderer) :
 	mRenderer(renderer),
-	mSceneDescriptorSet(nullptr),
-	mSceneDescriptorSetLayout(nullptr)
+	mPerspective(Perspective(renderer)),
+	mSkybox(Skybox(renderer)),
+	mSceneManager(SceneManager(renderer))
 {
 }
 
-void SceneResources::initSceneResourcesData()
+void RendererScene::init()
 {
-	mSceneData.ambientColor = glm::vec4(.1f);
-	mSceneData.sunlightColor = glm::vec4(1.f);
-	mSceneData.sunlightDirection = glm::vec4(0.f, 1.f, 0.5, 1.f);
+	mPerspective.init();
+	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
+	mSceneManager.init();
 }
 
-void SceneResources::initSceneResourcesBuffer()
+void RendererScene::updateScene()
 {
-	mSceneBuffer = mRenderer->mRendererResources.createBuffer(sizeof(SceneData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
-	mRenderer->mRendererCore.labelResourceDebug(mSceneBuffer.buffer, "SceneBuffer");
+	mPerspective.update();
 }
 
-void SceneResources::initSceneResourcesDescriptor()
+void RendererScene::cleanup()
 {
-	DescriptorLayoutBuilder builder;
-	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-	mSceneDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-	mSceneDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mSceneDescriptorSetLayout);
+	mPerspective.cleanup();
+	mSkybox.cleanup();
+	mSceneManager.cleanup();
 
-	DescriptorSetBinder writer;
-	writer.bindBuffer(0, *mSceneBuffer.buffer, sizeof(SceneData), 0, vk::DescriptorType::eUniformBuffer);
-	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSceneDescriptorSet);
-}
-
-void SceneResources::init()
-{
-	initSceneResourcesData();
-	initSceneResourcesBuffer();
-	initSceneResourcesDescriptor();
-}
-
-void SceneResources::updateResources()
-{
-	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
-	mSceneData.view = mRenderer->mCamera.getViewMatrix();
-	mSceneData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
-	mSceneData.proj[1][1] *= -1;
-
-	auto* sceneBufferPtr = static_cast<SceneData*>(mSceneBuffer.info.pMappedData);
-	std::memcpy(sceneBufferPtr, &mSceneData, 1 * sizeof(SceneData));
-}
-
-void SceneResources::cleanup()
-{
-	mSceneDescriptorSet.clear();
-	mSceneDescriptorSetLayout.clear();
-	mSceneBuffer.cleanup();
 }

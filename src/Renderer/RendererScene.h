@@ -11,7 +11,7 @@
 
 class Renderer;
 
-struct PushConstants {
+struct ScenePushConstants {
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress instanceBuffer;
 	vk::DeviceAddress materialBuffer;
@@ -20,7 +20,7 @@ struct PushConstants {
 	glm::mat4 worldMatrix;
 };
 
-struct SceneData {
+struct PerspectiveData { // Will move global lights away in the future
 	glm::mat4 view;
 	glm::mat4 proj;
 	glm::vec4 ambientColor;
@@ -28,23 +28,85 @@ struct SceneData {
 	glm::vec4 sunlightColor;
 };
 
-class SceneResources {
+class Perspective {
 	Renderer* mRenderer;
 
 public:
-	SceneData mSceneData;
-	AllocatedBuffer mSceneBuffer;
-	vk::raii::DescriptorSet mSceneDescriptorSet;
-	vk::raii::DescriptorSetLayout mSceneDescriptorSetLayout;
+	PerspectiveData mPerspectiveData;
+	AllocatedBuffer mPerspectiveBuffer;
+	vk::raii::DescriptorSet mPerspectiveDescriptorSet;
+	vk::raii::DescriptorSetLayout mPerspectiveDescriptorSetLayout;
 
-	SceneResources(Renderer* renderer);
+	Perspective(Renderer* renderer);
 
-	void initSceneResourcesData();
-	void initSceneResourcesBuffer();
-	void initSceneResourcesDescriptor();
 	void init();
+	void initData();
+	void initBuffer();
+	void initDescriptor();
 
-	void updateResources();
+	void update();
+
+	void cleanup();
+};
+
+struct MainBuffer : AllocatedBuffer {
+	vk::DeviceAddress address{};
+
+	MainBuffer() = default;
+
+	MainBuffer(AllocatedBuffer&& other) noexcept
+		: AllocatedBuffer(std::move(other)) 
+	{}
+	MainBuffer& operator=(AllocatedBuffer&& other) noexcept {
+		static_cast<AllocatedBuffer&>(*this) = std::move(other);
+		return *this;
+	}
+
+	MainBuffer(const MainBuffer&) = delete;
+	MainBuffer& operator=(const MainBuffer&) = delete;
+};
+
+class SceneManager {
+	Renderer* mRenderer;
+
+public:
+	std::unordered_map<std::string, GLTFModel> mModels;
+
+	std::vector<RenderItem> mRenderItems;
+	ScenePushConstants mScenePushConstants;
+
+	MainBuffer mMainVertexBuffer;
+	AllocatedBuffer mMainIndexBuffer;
+
+	MainBuffer mMainMaterialConstantsBuffer;
+	vk::raii::DescriptorSet mMainMaterialResourcesDescriptorSet;
+	vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
+
+	MainBuffer mMainNodeTransformsBuffer;
+	MainBuffer mMainInstancesBuffer;
+	
+	MainBuffer mDrawCommandsBuffer;
+	MainBuffer mCountBuffer;
+
+	SceneManager(Renderer* renderer);
+
+	void init();
+	void initBuffers();
+	void initDescriptor();
+
+	void loadModels(const std::vector<std::filesystem::path>& files);
+	void deleteModels();
+	void deleteInstances();
+
+	void alignOffsets();
+	void generateRenderItems();
+
+	void reloadMainVertexBuffer();
+	void reloadMainIndexBuffer();
+	void reloadMainMaterialConstantsBuffer();
+	void reloadMainNodeTransformsBuffer();
+	void reloadMainInstancesBuffer();
+	void reloadMainMaterialResourcesArray();
 
 	void cleanup();
 };
@@ -54,49 +116,18 @@ private:
 	Renderer* mRenderer;
 
 public:
-	std::vector<RenderItem> mRenderItems;
-
 	int mLatestInstanceId{ 0 };
 	int mLatestMeshId{ 0 };
 	int mLatestModelId{ 0 };
-	std::unordered_map<std::string, GLTFModel> mModels;
 
+	Perspective mPerspective;
 	Skybox mSkybox;
-
-	PushConstants mPushConstants;
-	SceneResources mSceneResources;
-
-	AllocatedBuffer mMainVertexBuffer;
-	AllocatedBuffer mMainIndexBuffer;
-	AllocatedBuffer mMainMaterialConstantsBuffer;
-	vk::DeviceAddress mMainMaterialConstantsBufferAddress;
-	AllocatedBuffer mMainNodeTransformsBuffer;
-	AllocatedBuffer mMainInstancesBuffer;
-	AllocatedBuffer mDrawCommandsBuffer;
-	AllocatedBuffer mCountBuffer;
-
-	vk::raii::DescriptorSet mMainMaterialResourcesDescriptorSet;
-	vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
+	SceneManager mSceneManager;
 
 	RendererScene(Renderer* renderer);
 
 	void init();
-	void initBuffers();
-	void initMainMaterialResourcesDescriptorSet();
 
-	void loadModels(const std::vector<std::filesystem::path>& files);
-	void deleteModels();
-	void deleteInstances();
-
-	void reloadMainVertexBuffer();
-	void reloadMainIndexBuffer();
-	void reloadMainMaterialConstantsBuffer();
-	void reloadMainNodeTransformsBuffer();
-	void reloadMainInstancesBuffer();
-	void reloadMainMaterialResourcesArray();
-
-	void alignOffsets();
-	void generateRenderItems();
 	void updateScene();
 
 	void cleanup();

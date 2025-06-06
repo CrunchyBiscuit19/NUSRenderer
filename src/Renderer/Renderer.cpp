@@ -33,7 +33,7 @@ void Renderer::init()
 
 	mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
 		if (e.type == SDL_QUIT) {
-			for (auto& model : mRendererScene.mModels | std::views::values) { model.markDelete(); }
+			for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) { model.markDelete(); }
 			mRendererInfrastructure.mProgramEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
 		}
 		if (e.type == SDL_WINDOWEVENT) {
@@ -228,12 +228,12 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 	PbrMaterial* lastMaterial = nullptr;
 	vk::Buffer lastIndexBuffer = nullptr;
 
-	for (auto& renderItem : mRendererScene.mRenderItems) {
+	for (auto& renderItem : mRendererScene.mSceneManager.mRenderItems) {
 		if (*renderItem.primitive->mMaterial->mPipeline->pipeline != lastPipeline) {
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->pipeline);
 			lastPipeline = *renderItem.primitive->mMaterial->mPipeline->pipeline;
 
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 0, *mRendererScene.mSceneResources.mSceneDescriptorSet, nullptr);
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
 
 			vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
 			cmd.setViewport(0, viewport);
@@ -242,7 +242,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 		}
 
 		if (renderItem.primitive->mMaterial != lastMaterial) {
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 1, *mRendererScene.mMainMaterialResourcesDescriptorSet, nullptr);
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *renderItem.primitive->mMaterial->mPipeline->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
 			lastMaterial = renderItem.primitive->mMaterial;
 		}
 
@@ -251,12 +251,12 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 			lastIndexBuffer = *renderItem.mesh->mIndexBuffer.buffer;
 		}
 
-		mRendererScene.mPushConstants.vertexBuffer = renderItem.vertexBufferAddress;
-		mRendererScene.mPushConstants.instanceBuffer = renderItem.instancesBufferAddress;
-		mRendererScene.mPushConstants.materialBuffer = mRendererScene.mMainMaterialConstantsBufferAddress;
-		mRendererScene.mPushConstants.materialIndex = renderItem.model->mMainFirstMaterial + renderItem.primitive->mMaterial->mRelativeMaterialIndex;
-		mRendererScene.mPushConstants.worldMatrix = renderItem.transform;
-		cmd.pushConstants<PushConstants>(*renderItem.primitive->mMaterial->mPipeline->layout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, mRendererScene.mPushConstants);
+		mRendererScene.mSceneManager.mScenePushConstants.vertexBuffer = renderItem.vertexBufferAddress;
+		mRendererScene.mSceneManager.mScenePushConstants.instanceBuffer = renderItem.instancesBufferAddress;
+		mRendererScene.mSceneManager.mScenePushConstants.materialBuffer = mRendererScene.mSceneManager.mMainMaterialConstantsBuffer.address;
+		mRendererScene.mSceneManager.mScenePushConstants.materialIndex = renderItem.model->mMainFirstMaterial + renderItem.primitive->mMaterial->mRelativeMaterialIndex;
+		mRendererScene.mSceneManager.mScenePushConstants.worldMatrix = renderItem.transform;
+		cmd.pushConstants<ScenePushConstants>(*renderItem.primitive->mMaterial->mPipeline->layout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, mRendererScene.mSceneManager.mScenePushConstants);
 
 		cmd.drawIndexed(renderItem.primitive->mIndexCount, renderItem.model->mInstances.size(), renderItem.primitive->mRelativeFirstIndex, 0, 0);
 
@@ -275,7 +275,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 	cmd.beginRendering(renderInfo);
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.pipeline);
-	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mRendererScene.mSceneResources.mSceneDescriptorSet, * mRendererScene.mSkybox.mSkyboxDescriptorSet }, nullptr);
+	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mRendererScene.mPerspective.mPerspectiveDescriptorSet, * mRendererScene.mSkybox.mSkyboxDescriptorSet }, nullptr);
 	vk::Viewport viewport = { 0, 0, static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width), static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height), 0.f, 1.f, };
 	cmd.setViewport(0, viewport);
 	vk::Rect2D scissor = { vk::Offset2D {0, 0}, vk::Extent2D {mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height}, };
@@ -313,10 +313,10 @@ void Renderer::drawUpdate()
 
 	mRendererScene.updateScene();
 
-	mRendererScene.deleteModels();
-	mRendererScene.deleteInstances();
+	mRendererScene.mSceneManager.deleteModels();
+	mRendererScene.mSceneManager.deleteInstances();
 
-	for (auto& model : mRendererScene.mModels | std::views::values) {
+	for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) {
 		if (model.mReloadInstancesBuffer) { 
 			model.updateInstances(); 
 			model.mReloadInstancesBuffer = false;
@@ -324,16 +324,16 @@ void Renderer::drawUpdate()
 	}
 
 	if (mModelAddedDeleted) {
-		mRendererScene.alignOffsets();
-		mRendererScene.mRenderItems.clear();
-		mRendererScene.generateRenderItems();
+		mRendererScene.mSceneManager.alignOffsets();
+		mRendererScene.mSceneManager.mRenderItems.clear();
+		mRendererScene.mSceneManager.generateRenderItems();
 
-		mRendererScene.reloadMainVertexBuffer();
-		mRendererScene.reloadMainIndexBuffer();
-		mRendererScene.reloadMainMaterialConstantsBuffer();
-		mRendererScene.reloadMainInstancesBuffer();
-		mRendererScene.reloadMainNodeTransformsBuffer();
-		mRendererScene.reloadMainMaterialResourcesArray();
+		mRendererScene.mSceneManager.reloadMainVertexBuffer();
+		mRendererScene.mSceneManager.reloadMainIndexBuffer();
+		mRendererScene.mSceneManager.reloadMainMaterialConstantsBuffer();
+		mRendererScene.mSceneManager.reloadMainInstancesBuffer();
+		mRendererScene.mSceneManager.reloadMainNodeTransformsBuffer();
+		mRendererScene.mSceneManager.reloadMainMaterialResourcesArray();
 		mModelAddedDeleted = false;
 	}
 
