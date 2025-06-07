@@ -97,14 +97,16 @@ void SceneManager::initBuffers()
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
 	mMainInstancesBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
 
-	mDrawCommandsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mDrawCommandsBuffer.buffer, "DrawCommandsBuffer");
-	mDrawCommandsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mDrawCommandsBuffer.buffer));
+	mRenderItemsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mRenderItemsBuffer.buffer, "RenderItemsBuffer");
+	mRenderItemsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mRenderItemsBuffer.buffer));
 
-	mCountBuffer = mRenderer->mRendererResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mVisibleRenderItemsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mVisibleRenderItemsBuffer.buffer, "VisibleRenderItemsBuffer");
+	mVisibleRenderItemsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mVisibleRenderItemsBuffer.buffer));
+
+	mCountBuffer = mRenderer->mRendererResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mCountBuffer.buffer, "CountBuffer");
-	mCountBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mCountBuffer.buffer));
-
 }
 
 void SceneManager::initDescriptor()
@@ -164,8 +166,9 @@ void SceneManager::alignOffsets()
 	}
 }
 
-void SceneManager::generateRenderItems()
+void SceneManager::regenerateRenderItems()
 {
+	mRenderItems.clear();
 	for (auto& model : mModels | std::views::values) {
 		model.generateRenderItems();
 	}
@@ -286,13 +289,23 @@ void SceneManager::reloadMainMaterialResourcesArray()
 	}
 }
 
+void SceneManager::reloadScene()
+{
+	reloadMainVertexBuffer();
+	reloadMainIndexBuffer();
+	reloadMainMaterialConstantsBuffer();
+	reloadMainInstancesBuffer();
+	reloadMainNodeTransformsBuffer();
+	reloadMainMaterialResourcesArray();
+}
+
 void SceneManager::cleanup()
 {
 	mModels.clear();
 	mMainMaterialResourcesDescriptorSet.clear();
 	mMainMaterialResourcesDescriptorSetLayout.clear();
 	mCountBuffer.cleanup();
-	mDrawCommandsBuffer.cleanup();
+	mRenderItemsBuffer.cleanup();
 	mMainInstancesBuffer.cleanup();
 	mMainNodeTransformsBuffer.cleanup();
 	mMainMaterialConstantsBuffer.cleanup();
@@ -313,11 +326,6 @@ void RendererScene::init()
 	mPerspective.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 	mSceneManager.init();
-}
-
-void RendererScene::updateScene()
-{
-	mPerspective.update();
 }
 
 void RendererScene::cleanup()

@@ -311,29 +311,27 @@ void Renderer::drawUpdate()
 {
 	const auto start = std::chrono::system_clock::now();
 
-	mRendererScene.updateScene();
+	mRendererScene.mPerspective.update();
 
 	mRendererScene.mSceneManager.deleteModels();
 	mRendererScene.mSceneManager.deleteInstances();
 
+	bool reloadMainInstancesBuffer = false;
 	for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) {
-		if (model.mReloadInstancesBuffer) { 
+		if (model.mReloadInstancesBuffer) {
+			reloadMainInstancesBuffer = true;
 			model.updateInstances(); 
 			model.mReloadInstancesBuffer = false;
 		}
 	}
+	if (!mModelAddedDeleted && reloadMainInstancesBuffer) { 
+		mRendererScene.mSceneManager.reloadMainInstancesBuffer(); 
+	}
 
 	if (mModelAddedDeleted) {
 		mRendererScene.mSceneManager.alignOffsets();
-		mRendererScene.mSceneManager.mRenderItems.clear();
-		mRendererScene.mSceneManager.generateRenderItems();
-
-		mRendererScene.mSceneManager.reloadMainVertexBuffer();
-		mRendererScene.mSceneManager.reloadMainIndexBuffer();
-		mRendererScene.mSceneManager.reloadMainMaterialConstantsBuffer();
-		mRendererScene.mSceneManager.reloadMainInstancesBuffer();
-		mRendererScene.mSceneManager.reloadMainNodeTransformsBuffer();
-		mRendererScene.mSceneManager.reloadMainMaterialResourcesArray();
+		mRendererScene.mSceneManager.regenerateRenderItems();
+		mRendererScene.mSceneManager.reloadScene();
 		mModelAddedDeleted = false;
 	}
 

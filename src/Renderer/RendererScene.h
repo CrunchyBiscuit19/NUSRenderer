@@ -85,7 +85,8 @@ public:
 	MainBuffer mMainNodeTransformsBuffer;
 	MainBuffer mMainInstancesBuffer;
 	
-	MainBuffer mDrawCommandsBuffer;
+	MainBuffer mRenderItemsBuffer;
+	MainBuffer mVisibleRenderItemsBuffer;
 	MainBuffer mCountBuffer;
 
 	SceneManager(Renderer* renderer);
@@ -99,7 +100,7 @@ public:
 	void deleteInstances();
 
 	void alignOffsets();
-	void generateRenderItems();
+	void regenerateRenderItems();
 
 	void reloadMainVertexBuffer();
 	void reloadMainIndexBuffer();
@@ -107,6 +108,8 @@ public:
 	void reloadMainNodeTransformsBuffer();
 	void reloadMainInstancesBuffer();
 	void reloadMainMaterialResourcesArray();
+
+	void reloadScene();
 
 	void cleanup();
 };
@@ -127,8 +130,6 @@ public:
 	RendererScene(Renderer* renderer);
 
 	void init();
-
-	void updateScene();
 
 	void cleanup();
 };

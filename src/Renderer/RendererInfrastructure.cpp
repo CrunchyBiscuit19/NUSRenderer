@@ -17,6 +17,7 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 
 void RendererInfrastructure::init() {
 	initSwapchain();
+	initCullPipeline();
 	initDescriptors();
 	initFrames();
 }
@@ -50,6 +51,11 @@ void RendererInfrastructure::initFrames()
 		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandBuffer, fmt::format("FrameCommandBuffer{}", i).c_str());
 		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mAvailableSemaphore, fmt::format("FrameAvailableSemaphore{}", i).c_str());
 	}
+}
+
+void RendererInfrastructure::initCullPipeline()
+{
+	createCullPipeline();
 }
 
 void RendererInfrastructure::initSwapchain()
@@ -215,15 +221,16 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 	pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
 	PipelineBundle materialPipeline = PipelineBundle{
+		mLatestPipelineId++,
 		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(pipelineLayout)
 	};
 	mMaterialPipelines.emplace(pipelineOptions, std::move(materialPipeline));
 }
 
-void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptions)
+void RendererInfrastructure::createCullPipeline()
 {
-	vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule("Placeholder path", mRenderer->mRendererCore.mDevice);
+	vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv", mRenderer->mRendererCore.mDevice);
 
 	vk::PipelineLayoutCreateInfo computeLayoutInfo{};
 	computeLayoutInfo.setLayoutCount = 0;
@@ -236,10 +243,11 @@ void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptio
 	computePipelineBuilder.mPipelineLayout = *computePipelineLayout;
 
 	PipelineBundle computePipeline = PipelineBundle{
+		mLatestPipelineId++,
 		std::move(computePipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(computePipelineLayout)
 	};
-	mComputePipelines.emplace(pipelineOptions, std::move(computePipeline));
+	mCullPipeline = std::move(computePipeline);
 }
 
 void RendererInfrastructure::createSkyboxPipeline()
@@ -278,6 +286,7 @@ void RendererInfrastructure::createSkyboxPipeline()
 	pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
 	mRenderer->mRendererScene.mSkybox.mSkyboxPipeline = PipelineBundle{
+		mLatestPipelineId++,
 		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(pipelineLayout)
 	};
@@ -288,7 +297,7 @@ void RendererInfrastructure::cleanup() {
 		frame.cleanup();
 	}
 	mMaterialPipelines.clear();
-	mComputePipelines.clear();
+	mCullPipeline.cleanup();
 	destroySwapchain();
 	mMainDescriptorAllocator.cleanup();
 }
