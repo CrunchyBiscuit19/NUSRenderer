@@ -22,7 +22,6 @@ public:
 	bool mStopRendering{ false };
 
 	RendererStats mStats;
-	bool mModelAddedDeleted{ false };
 
 	RendererCore mRendererCore;
 	RendererInfrastructure mRendererInfrastructure;
@@ -39,13 +38,20 @@ public:
 	void run();
 	void cleanup();
 
+	void setViewportScissors(vk::CommandBuffer cmd);
+
 	void drawUpdate();
 
 	void draw();
+	
+	void cullRenderItems(vk::CommandBuffer cmd);
+
 	void drawClearScreen(vk::CommandBuffer cmd);
 	void drawGeometry(vk::CommandBuffer cmd);
 	void drawSkybox(vk::CommandBuffer cmd);
+	
 	void resolveMsaa(vk::CommandBuffer cmd);
+	
 	void drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView);
 
 };

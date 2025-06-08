@@ -7,19 +7,29 @@
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 outColor;
+layout (location = 3) out uint outMaterialIndex;
 
 void main() 
 {
-	Vertex v = pushConstants.vertexBuffer.vertices[gl_VertexIndex];
+	uint mainVertexIndex = gl_BaseVertex + gl_VertexIndex;
+	Vertex v = scenePushConstants.vertexBuffer.vertices[mainVertexIndex];
 	vec4 position = vec4(v.position, 1.0f);
-	InstanceData instance = pushConstants.instancesBuffer.instances[gl_InstanceIndex];
 
-	gl_Position = scene.proj * scene.view * (instance.transformMatrix * pushConstants.worldMatrix * position); 
+	uint mainInstanceIndex = gl_BaseInstance + gl_InstanceIndex;
+	InstanceData instance = scenePushConstants.instancesBuffer.instances[mainInstanceIndex];
+	mat4 instanceTransformMatrix = instance.transformMatrix;
 
-	MaterialConstant materialConstant = pushConstants.materialConstantsBuffer.materialConstants[pushConstants.materialIndex];
+	uint mainNodeTransformIndex = scenePushConstants.visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].nodeTransformIndex;
+	mat4 nodeTransformMatrix = scenePushConstants.nodeTransformsBuffer.nodeTransforms[mainNodeTransformIndex];
 
-	outNormal = mat3(transpose(inverse(pushConstants.worldMatrix))) * v.normal;
+	gl_Position = scene.proj * scene.view * (instanceTransformMatrix * nodeTransformMatrix * position); 
+
+	uint mainMaterialIndex = scenePushConstants.visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].materialIndex;
+	MaterialConstant materialConstant = scenePushConstants.materialConstantsBuffer.materialConstants[mainMaterialIndex];
+
+	outNormal = mat3(transpose(inverse(nodeTransformMatrix))) * v.normal;
 	outUV.x = v.uv_x;
 	outUV.y = v.uv_y;
 	outColor = v.color.xyz * materialConstant.baseFactor.xyz;
+	outMaterialIndex = mainMaterialIndex;
 }

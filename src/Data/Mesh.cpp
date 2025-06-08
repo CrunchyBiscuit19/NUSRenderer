@@ -1,40 +1,67 @@
-#include <Renderer/Renderer.h>
 #include <Data/Mesh.h>
+#include <Renderer/Renderer.h>
+#include <fmt/core.h>
 
 void Node::refreshTransform(const glm::mat4& parentTransform)
 {
-	mWorldTransform = parentTransform * mLocalTransform;
-	for (const auto& child : mChildren)
-		child->refreshTransform(mWorldTransform);
+    mWorldTransform = parentTransform * mLocalTransform;
+    for (const auto& child : mChildren)
+        child->refreshTransform(mWorldTransform);
 }
 
 void Node::generateRenderItems(Renderer* renderer, GLTFModel* model)
 {
-	for (const auto& child : mChildren)
-		child->generateRenderItems(renderer, model);
+    for (const auto& child : mChildren)
+        child->generateRenderItems(renderer, model);
 }
 
 void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 {
-	for (Primitive& primitive : mMesh->mPrimitives) {
-		// Getting device address is relatively expensive, so do it here instead of at every draw loop
-		vk::BufferDeviceAddressInfo vertexBufferDeviceAddressInfo;
-		vertexBufferDeviceAddressInfo.buffer = *mMesh->mVertexBuffer.buffer;
-		vk::BufferDeviceAddressInfo materialConstantBufferDeviceAddressInfo;
-		materialConstantBufferDeviceAddressInfo.buffer = primitive.mMaterial->mConstantsBuffer;
-		vk::BufferDeviceAddressInfo instancesBufferDeviceAddressInfo;
-		instancesBufferDeviceAddressInfo.buffer = *model->mInstancesBuffer.buffer;
+    for (Primitive& primitive : mMesh->mPrimitives) {
+        int pipelineId = primitive.mMaterial->mPipeline->id;
 
-		renderer->mRendererScene.mSceneManager.mRenderItems.emplace_back(
-			&primitive,
-			mMesh,
-			model,
-			mWorldTransform,
-			renderer->mRendererCore.mDevice.getBufferAddress(vertexBufferDeviceAddressInfo),
-			renderer->mRendererCore.mDevice.getBufferAddress(instancesBufferDeviceAddressInfo),
-			renderer->mRendererCore.mDevice.getBufferAddress(materialConstantBufferDeviceAddressInfo)
-		);
-	}
+        if (!renderer->mRendererScene.mSceneManager.mBatches.contains(pipelineId)) {
+            Batch& currentBatch = renderer->mRendererScene.mSceneManager.mBatches[pipelineId];
 
-	Node::generateRenderItems(renderer, model);
+            currentBatch.pipeline = primitive.mMaterial->mPipeline;
+            currentBatch.renderItemsBuffer = renderer->mRendererResources.createBuffer(
+                MAX_INDIRECT_COMMANDS * sizeof(RenderItem),
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                VMA_MEMORY_USAGE_GPU_ONLY);
+            renderer->mRendererCore.labelResourceDebug(
+                currentBatch.renderItemsBuffer.buffer,
+                fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
+            currentBatch.renderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
+                vk::BufferDeviceAddressInfo(
+                    *currentBatch.renderItemsBuffer.buffer));
+
+            currentBatch.visibleRenderItemsBuffer = renderer->mRendererResources.createBuffer(
+                MAX_INDIRECT_COMMANDS * sizeof(RenderItem),
+                vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                VMA_MEMORY_USAGE_GPU_ONLY);
+            renderer->mRendererCore.labelResourceDebug(
+                currentBatch.visibleRenderItemsBuffer.buffer, fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
+            currentBatch.visibleRenderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
+                vk::BufferDeviceAddressInfo(*currentBatch.visibleRenderItemsBuffer.buffer));
+
+            currentBatch.countBuffer = renderer->mRendererResources.createBuffer(
+                sizeof(uint32_t),
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                VMA_MEMORY_USAGE_GPU_ONLY);
+            renderer->mRendererCore.labelResourceDebug(currentBatch.countBuffer.buffer,
+                fmt::format("CountBuffer{}", pipelineId).c_str());
+        }
+
+        renderer->mRendererScene.mSceneManager.mBatches[pipelineId].renderItems.emplace_back(
+            primitive.mIndexCount, 
+            model->mInstances.size(),
+            mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
+            mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
+            model->mMainFirstInstance,
+            model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
+            model->mMainFirstNodeTransform + this->mRelativeNodeIndex
+        );
+    }
+
+    Node::generateRenderItems(renderer, model);
 }

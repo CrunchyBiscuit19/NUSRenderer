@@ -60,23 +60,12 @@ struct MeshNode : Node {
 };
 
 struct RenderItem {
-	Primitive* primitive;
-	Mesh* mesh;
-	GLTFModel* model;
-
-	glm::mat4 transform;
-
-	vk::DeviceAddress vertexBufferAddress;
-	vk::DeviceAddress instancesBufferAddress;
-	vk::DeviceAddress materialConstantsBufferAddress;
-};
-
-struct IndirectRenderItem {
-	uint32_t firstIndex;
-	uint32_t vertexOffset;
 	uint32_t indexCount;
 	uint32_t instanceCount;
+	uint32_t firstIndex;
+	uint32_t vertexOffset;
 	uint32_t firstInstance;
 	uint32_t materialIndex;
 	uint32_t nodeTransformIndex;
+	// uint32_t boundsIndex;
 };

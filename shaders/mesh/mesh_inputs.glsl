@@ -1,6 +1,5 @@
 #extension GL_EXT_buffer_reference : require
 
-// Sets of UBOs and Images
 layout (set = 0, binding = 0) uniform SceneData {   
 	mat4 view;
 	mat4 proj;
@@ -10,7 +9,6 @@ layout (set = 0, binding = 0) uniform SceneData {
 } scene;
 layout (set = 1, binding = 0) uniform sampler2D materialResources[];
 
-// SSBO addresses and buffer definitions
 struct Vertex {
 	vec3 position;
 	float uv_x;
@@ -21,27 +19,45 @@ struct Vertex {
 layout (buffer_reference, std430) readonly buffer VertexBuffer { 
 	Vertex vertices[];
 };
-struct InstanceData {
-	mat4 transformMatrix;
-};
-layout (buffer_reference, std430) readonly buffer InstanceBuffer {   
-	InstanceData instances[];
-} instanceBuffer;
+
 struct MaterialConstant {
 	vec4 baseFactor;
 	vec4 emissiveFactor;
 	vec4 metallicRoughnessFactor;
 };
-layout (buffer_reference, std430) readonly buffer MaterialConstantBuffer {
+layout (buffer_reference, std430) readonly buffer MaterialConstantsBuffer {
 	MaterialConstant materialConstants[];
 };
 
-layout( push_constant ) uniform PushConstants
+layout (buffer_reference, std430) readonly buffer NodeTransformsBuffer {
+	mat4 nodeTransforms[];
+};
+
+struct InstanceData {
+	mat4 transformMatrix;
+};
+layout (buffer_reference, std430) readonly buffer InstanceBuffer {   
+	InstanceData instances[];
+};
+
+struct VisibleRenderItem {
+	int indexCount;
+	int instanceCount;
+	int firstIndex;
+	int vertexOffset;
+	int firstInstance;
+	int materialIndex;
+	int nodeTransformIndex;
+};
+layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer { 
+	VisibleRenderItem visibleRenderItems[];
+};
+
+layout( push_constant ) uniform ScenePushConstants
 {
 	VertexBuffer vertexBuffer;
+	MaterialConstantsBuffer materialConstantsBuffer;
+	NodeTransformsBuffer nodeTransformsBuffer;
 	InstanceBuffer instancesBuffer;
-	MaterialConstantBuffer materialConstantsBuffer;
-	int materialIndex;
-	int _pad;
-	mat4 worldMatrix;
-} pushConstants;
+	VisibleRenderItemsBuffer visibleRenderItemsBuffer;
+} scenePushConstants;

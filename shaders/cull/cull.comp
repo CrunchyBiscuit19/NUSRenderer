@@ -1,0 +1,19 @@
+#version 460
+
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_buffer_reference2 : require
+
+#include "cull_inputs.glsl"
+
+const int MAX_CULL_LOCAL_SIZE = 256;
+
+layout(local_size_x = MAX_CULL_LOCAL_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+void main()
+{
+	uint renderItemsBufferIndex = gl_GlobalInvocationID.x;
+	if (true) { // TODO frustum / occulsion cull
+		uint visibleRenderItemsBufferIndex = atomicAdd(cullPushConstants.countBuffer.count, 1);
+		cullPushConstants.visibleRenderItemsBuffer.renderItems[visibleRenderItemsBufferIndex] = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex];
+	}
+}

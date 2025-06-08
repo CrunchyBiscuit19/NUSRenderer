@@ -11,15 +11,6 @@
 
 class Renderer;
 
-struct ScenePushConstants {
-	vk::DeviceAddress vertexBuffer;
-	vk::DeviceAddress instanceBuffer;
-	vk::DeviceAddress materialBuffer;
-	uint32_t materialIndex;
-	uint32_t _pad;
-	glm::mat4 worldMatrix;
-};
-
 struct PerspectiveData { // Will move global lights away in the future
 	glm::mat4 view;
 	glm::mat4 proj;
@@ -49,6 +40,22 @@ public:
 	void cleanup();
 };
 
+struct ScenePushConstants {
+	vk::DeviceAddress vertexBuffer;
+	vk::DeviceAddress materialConstantsBuffer;
+	vk::DeviceAddress nodeTransformsBuffer;
+	vk::DeviceAddress instancesBuffer;
+	vk::DeviceAddress visibleRenderItemsBuffer;
+};
+
+struct CullPushConstants {
+	vk::DeviceAddress renderItemsBuffer;
+	vk::DeviceAddress visibleRenderItemsBuffer;
+	// vk::DeviceAddress boundsBuffer;
+	// Frustum as a GPU_ONLY uniform buffer, passed as DS? (vec4 planes[6]; vec4 corners[8];) -> 224 bytes
+	vk::DeviceAddress countBuffer;
+};
+
 struct MainBuffer : AllocatedBuffer {
 	vk::DeviceAddress address{};
 
@@ -66,14 +73,40 @@ struct MainBuffer : AllocatedBuffer {
 	MainBuffer& operator=(const MainBuffer&) = delete;
 };
 
+struct Batch {
+	PipelineBundle* pipeline;
+	std::vector<RenderItem> renderItems;
+	MainBuffer renderItemsBuffer;
+	MainBuffer visibleRenderItemsBuffer;
+	MainBuffer countBuffer;
+
+	~Batch() {
+		countBuffer.cleanup();
+		visibleRenderItemsBuffer.cleanup();
+		renderItemsBuffer.cleanup();
+		renderItems.clear();
+	}
+};
+
+struct Flags {
+	bool mModelAddedFlag;
+	bool mModelDestroyedFlag;
+	bool mInstanceAddedFlag;
+	bool mInstanceDestroyedFlag;
+	bool mInstanceUpdatedFlag;
+};
+
 class SceneManager {
 	Renderer* mRenderer;
 
 public:
+	Flags mFlags;
+
 	std::unordered_map<std::string, GLTFModel> mModels;
 
-	std::vector<RenderItem> mRenderItems;
+	std::unordered_map<int, Batch> mBatches;
 	ScenePushConstants mScenePushConstants;
+	CullPushConstants mCullPushConstants;
 
 	MainBuffer mMainVertexBuffer;
 	AllocatedBuffer mMainIndexBuffer;
@@ -84,23 +117,26 @@ public:
 
 	MainBuffer mMainNodeTransformsBuffer;
 	MainBuffer mMainInstancesBuffer;
-	
-	MainBuffer mRenderItemsBuffer;
-	MainBuffer mVisibleRenderItemsBuffer;
-	MainBuffer mCountBuffer;
 
 	SceneManager(Renderer* renderer);
 
 	void init();
 	void initBuffers();
 	void initDescriptor();
+	void initPushConstants();
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();
 	void deleteInstances();
 
-	void alignOffsets();
 	void regenerateRenderItems();
+
+	void realignVertexIndexOffset();
+	void realignMaterialOffset();
+	void realignNodeTransformsOffset();
+	void realignInstancesOffset();
+
+	void realignOffsets();
 
 	void reloadMainVertexBuffer();
 	void reloadMainIndexBuffer();
@@ -109,7 +145,9 @@ public:
 	void reloadMainInstancesBuffer();
 	void reloadMainMaterialResourcesArray();
 
-	void reloadScene();
+	void reloadMainBuffers();
+
+	void resetFlags();
 
 	void cleanup();
 };

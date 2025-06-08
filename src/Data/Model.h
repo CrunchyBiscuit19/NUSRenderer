@@ -22,7 +22,7 @@ public:
 	std::string mName;
 	int mId{ 0 };
 	std::optional<uint64_t> mDeleteSignal{ std::nullopt };
-	bool mReloadInstancesBuffer{ true };
+	bool mUpdateInstancesFlag{ true };
 
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
@@ -42,6 +42,7 @@ public:
 
 	std::vector<GLTFInstance> mInstances;
 	AllocatedBuffer mInstancesBuffer;
+	uint32_t mMainFirstInstance;
 
 private:
 	vk::Filter extractFilter(fastgltf::Filter filter);

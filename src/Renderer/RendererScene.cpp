@@ -96,17 +96,6 @@ void SceneManager::initBuffers()
 	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
 	mMainInstancesBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
-
-	mRenderItemsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mRenderItemsBuffer.buffer, "RenderItemsBuffer");
-	mRenderItemsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mRenderItemsBuffer.buffer));
-
-	mVisibleRenderItemsBuffer = mRenderer->mRendererResources.createBuffer(MAX_INDIRECT_COMMANDS * sizeof(IndirectRenderItem), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mVisibleRenderItemsBuffer.buffer, "VisibleRenderItemsBuffer");
-	mVisibleRenderItemsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mVisibleRenderItemsBuffer.buffer));
-
-	mCountBuffer = mRenderer->mRendererResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mCountBuffer.buffer, "CountBuffer");
 }
 
 void SceneManager::initDescriptor()
@@ -117,6 +106,14 @@ void SceneManager::initDescriptor()
 	mMainMaterialResourcesDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(mMainMaterialResourcesDescriptorSetLayout, true);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout, "MainMaterialResourcesDescriptorSetLayout");
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet, "MainMaterialResourcesDescriptorSet");
+}
+
+void SceneManager::initPushConstants()
+{
+	mScenePushConstants.vertexBuffer = mMainVertexBuffer.address;
+	mScenePushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
+	mScenePushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
+	mScenePushConstants.instancesBuffer = mMainInstancesBuffer.address;
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -144,12 +141,20 @@ void SceneManager::deleteInstances()
 	}
 }
 
-void SceneManager::alignOffsets()
+void SceneManager::regenerateRenderItems()
+{
+	for (auto& batch : mBatches | std::views::values) {
+		batch.renderItems.clear();
+	}
+	for (auto& model : mModels | std::views::values) {
+		model.generateRenderItems();
+	}
+}
+
+void SceneManager::realignVertexIndexOffset()
 {
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
-	int materialCumulative = 0;
-	int nodeTransformCumulative = 0;
 
 	for (auto& model : mModels | std::views::values) {
 		for (auto& mesh : model.mMeshes) {
@@ -158,20 +163,45 @@ void SceneManager::alignOffsets()
 			vertexCumulative += mesh.mNumVertices;
 			indexCumulative += mesh.mNumIndices;
 		}
+	}
+}
 
+void SceneManager::realignMaterialOffset()
+{
+	int materialCumulative = 0;
+
+	for (auto& model : mModels | std::views::values) {
 		model.mMainFirstMaterial = materialCumulative;
-		model.mMainFirstNodeTransform = nodeTransformCumulative;
 		materialCumulative += model.mMaterials.size();
+	}
+}
+
+void SceneManager::realignNodeTransformsOffset()
+{
+	int nodeTransformCumulative = 0;
+
+	for (auto& model : mModels | std::views::values) {
+		model.mMainFirstNodeTransform = nodeTransformCumulative;
 		nodeTransformCumulative += model.mNodes.size();
 	}
 }
 
-void SceneManager::regenerateRenderItems()
+void SceneManager::realignInstancesOffset()
 {
-	mRenderItems.clear();
+	int instanceCumulative = 0;
+
 	for (auto& model : mModels | std::views::values) {
-		model.generateRenderItems();
+		model.mMainFirstInstance = instanceCumulative;
+		instanceCumulative += model.mInstances.size();
 	}
+}
+
+void SceneManager::realignOffsets()
+{
+	realignVertexIndexOffset();
+	realignMaterialOffset();
+	realignNodeTransformsOffset();
+	realignInstancesOffset();
 }
 
 void SceneManager::reloadMainVertexBuffer()
@@ -289,7 +319,7 @@ void SceneManager::reloadMainMaterialResourcesArray()
 	}
 }
 
-void SceneManager::reloadScene()
+void SceneManager::reloadMainBuffers()
 {
 	reloadMainVertexBuffer();
 	reloadMainIndexBuffer();
@@ -299,13 +329,21 @@ void SceneManager::reloadScene()
 	reloadMainMaterialResourcesArray();
 }
 
+void SceneManager::resetFlags()
+{
+	mFlags.mModelAddedFlag = false;
+	mFlags.mModelDestroyedFlag = false;
+	mFlags.mInstanceAddedFlag = false;
+	mFlags.mInstanceDestroyedFlag = false;
+	mFlags.mInstanceUpdatedFlag = false;
+}
+
 void SceneManager::cleanup()
 {
 	mModels.clear();
+	mBatches.clear();
 	mMainMaterialResourcesDescriptorSet.clear();
 	mMainMaterialResourcesDescriptorSetLayout.clear();
-	mCountBuffer.cleanup();
-	mRenderItemsBuffer.cleanup();
 	mMainInstancesBuffer.cleanup();
 	mMainNodeTransformsBuffer.cleanup();
 	mMainMaterialConstantsBuffer.cleanup();

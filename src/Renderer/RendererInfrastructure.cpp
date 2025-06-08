@@ -232,9 +232,16 @@ void RendererInfrastructure::createCullPipeline()
 {
 	vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv", mRenderer->mRendererCore.mDevice);
 
+	vk::PushConstantRange pushConstantRange{};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(CullPushConstants);
+	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
 	vk::PipelineLayoutCreateInfo computeLayoutInfo{};
 	computeLayoutInfo.setLayoutCount = 0;
 	computeLayoutInfo.pSetLayouts = nullptr;
+	computeLayoutInfo.pPushConstantRanges = &pushConstantRange;
+	computeLayoutInfo.pushConstantRangeCount = 1;
 
 	vk::raii::PipelineLayout computePipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(computeLayoutInfo);
 

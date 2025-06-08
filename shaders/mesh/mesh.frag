@@ -8,6 +8,7 @@
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inColor;
+layout (location = 3) flat in uint inMaterialIndex;
 
 layout (location = 0) out vec4 outFragColor;
 
@@ -18,7 +19,9 @@ void main()
     vec3 lightDir = normalize(scene.sunlightDirection.xyz);
     float sunlightPower = scene.sunlightDirection.w;
 
-    vec3 color = inColor * texture(materialResources[pushConstants.materialIndex * 5 + 0], inUV).rgb;
+    uint mainMaterialIndex = inMaterialIndex;
+
+    vec3 color = inColor * texture(materialResources[mainMaterialIndex * 5 + 0], inUV).rgb;
     float diffuse = max(dot(normal, lightDir), 0.0);
     vec3 sunlight = scene.sunlightColor.rgb * sunlightPower;
 
