@@ -33,16 +33,16 @@ public:
 
 	std::vector<PbrMaterial> mMaterials;
 	AllocatedBuffer mMaterialConstantsBuffer;
-	uint32_t mMainFirstMaterial;
+    uint32_t mMainFirstMaterial { 0 };
 
 	std::vector<std::shared_ptr<Node>> mTopNodes;
 	std::vector<std::shared_ptr<Node>> mNodes;
 	AllocatedBuffer mNodeTransformsBuffer;
-	uint32_t mMainFirstNodeTransform;
+    uint32_t mMainFirstNodeTransform { 0 };
 
 	std::vector<GLTFInstance> mInstances;
 	AllocatedBuffer mInstancesBuffer;
-	uint32_t mMainFirstInstance;
+    uint32_t mMainFirstInstance { 0 };
 
 private:
 	vk::Filter extractFilter(fastgltf::Filter filter);

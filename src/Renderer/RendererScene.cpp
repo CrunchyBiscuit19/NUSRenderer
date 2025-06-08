@@ -143,12 +143,24 @@ void SceneManager::deleteInstances()
 
 void SceneManager::regenerateRenderItems()
 {
-	for (auto& batch : mBatches | std::views::values) {
-		batch.renderItems.clear();
-	}
-	for (auto& model : mModels | std::views::values) {
-		model.generateRenderItems();
-	}
+    for (auto& batch : mBatches | std::views::values) {
+        batch.renderItems.clear();
+    }
+    for (auto& model : mModels | std::views::values) {
+        model.generateRenderItems();
+    }
+    for (auto& batch : mBatches | std::views::values) {
+        std::memcpy(mRenderer->mRendererResources.mRenderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
+
+        vk::BufferCopy renderItemsCopy {};
+        renderItemsCopy.dstOffset = 0;
+        renderItemsCopy.srcOffset = 0;
+        renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
+
+        mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+            cmd.copyBuffer(*mRenderer->mRendererResources.mRenderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
+        });
+    }
 }
 
 void SceneManager::realignVertexIndexOffset()

@@ -239,7 +239,7 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererInfrastructure.mCullPipeline.pipeline);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {    
-
+        cmd.fillBuffer(*batch.countBuffer.buffer, 0, vk::WholeSize, 0);
 
         vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be reset to zero
             cmd,
@@ -253,7 +253,7 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
         mRendererScene.mSceneManager.mCullPushConstants.countBuffer = batch.countBuffer.address;
         cmd.pushConstants<CullPushConstants>(*mRendererInfrastructure.mCullPipeline.layout, vk::ShaderStageFlagBits::eCompute, 0, mRendererScene.mSceneManager.mCullPushConstants);
 
-        cmd.dispatch(std::ceil(batch.renderItems.size() / MAX_CULL_LOCAL_SIZE), 1, 1);
+        cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
         vkhelper::createBufferPipelineBarrier( // Wait for culling to write finish all visible render items
             cmd,
@@ -374,8 +374,8 @@ void Renderer::drawUpdate()
     }
 
     if (mRendererScene.mSceneManager.mFlags.mModelAddedFlag || mRendererScene.mSceneManager.mFlags.mModelDestroyedFlag) {
-        mRendererScene.mSceneManager.reloadMainBuffers();
         mRendererScene.mSceneManager.realignOffsets();
+        mRendererScene.mSceneManager.reloadMainBuffers();
         mRendererScene.mSceneManager.regenerateRenderItems();
     } else if (mRendererScene.mSceneManager.mFlags.mInstanceAddedFlag || mRendererScene.mSceneManager.mFlags.mInstanceDestroyedFlag) {
         mRendererScene.mSceneManager.reloadMainInstancesBuffer();

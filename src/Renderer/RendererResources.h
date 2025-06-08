@@ -179,6 +179,7 @@ public:
 	AllocatedBuffer mMaterialConstantsStagingBuffer;
 	AllocatedBuffer mInstancesStagingBuffer;
 	AllocatedBuffer mNodeTransformsStagingBuffer;
+    AllocatedBuffer mRenderItemsStagingBuffer;
 
 	std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
 	vk::raii::Sampler mDefaultSampler;

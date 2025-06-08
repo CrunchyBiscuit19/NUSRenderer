@@ -31,7 +31,6 @@ void Gui::SceneGuiComponent::elements()
 {
 	if (ImGui::Button("Add Model")) {
 		mGui->mSelectModelFileDialog.Open();
-		mRenderer->mRendererScene.mSceneManager.mFlags.mModelAddedFlag = true;
 	}
 	for (auto& model : mRenderer->mRendererScene.mSceneManager.mModels | std::views::values) {
 		const auto name = model.mName;
@@ -107,6 +106,7 @@ void Gui::SceneGuiComponent::elements()
 		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
 		mRenderer->mRendererScene.mSceneManager.loadModels(selectedFiles);
 		mGui->mSelectModelFileDialog.ClearSelected();
+		mRenderer->mRendererScene.mSceneManager.mFlags.mModelAddedFlag = true;
 	}
 }
 

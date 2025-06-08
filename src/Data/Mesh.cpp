@@ -50,6 +50,8 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
                 VMA_MEMORY_USAGE_GPU_ONLY);
             renderer->mRendererCore.labelResourceDebug(currentBatch.countBuffer.buffer,
                 fmt::format("CountBuffer{}", pipelineId).c_str());
+            currentBatch.countBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
+                vk::BufferDeviceAddressInfo(*currentBatch.countBuffer.buffer));
         }
 
         renderer->mRendererScene.mSceneManager.mBatches[pipelineId].renderItems.emplace_back(

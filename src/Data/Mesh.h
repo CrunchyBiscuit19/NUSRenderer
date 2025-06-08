@@ -31,12 +31,12 @@ struct Mesh {
 	AABB mBounds;
 
 	AllocatedBuffer mVertexBuffer;
-	uint32_t mNumVertices;
-	uint32_t mMainVertexOffset;
+    uint32_t mNumVertices { 0 };
+    uint32_t mMainVertexOffset { 0 };
 	
 	AllocatedBuffer mIndexBuffer;
-	uint32_t mNumIndices;
-	uint32_t mMainFirstIndex;
+    uint32_t mNumIndices { 0 };
+    uint32_t mMainFirstIndex { 0 };
 };
 
 struct Node {
