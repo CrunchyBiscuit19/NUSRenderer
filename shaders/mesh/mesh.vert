@@ -11,11 +11,11 @@ layout (location = 3) out uint outMaterialIndex;
 
 void main() 
 {
-	uint mainVertexIndex = gl_BaseVertex + gl_VertexIndex;
+	uint mainVertexIndex = gl_VertexIndex;
 	Vertex v = scenePushConstants.vertexBuffer.vertices[mainVertexIndex];
 	vec4 position = vec4(v.position, 1.0f);
 
-	uint mainInstanceIndex = gl_BaseInstance + gl_InstanceIndex;
+	uint mainInstanceIndex = gl_InstanceIndex;
 	InstanceData instance = scenePushConstants.instancesBuffer.instances[mainInstanceIndex];
 	mat4 instanceTransformMatrix = instance.transformMatrix;
 

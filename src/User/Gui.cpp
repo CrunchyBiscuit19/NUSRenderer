@@ -38,6 +38,7 @@ void Gui::SceneGuiComponent::elements()
 		if (ImGui::CollapsingHeader(name.c_str())) {
 			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
 				model.createInstance();
+				model.mReloadLocalInstancesBuffer = true;
 				mRenderer->mRendererScene.mSceneManager.mFlags.mInstanceAddedFlag = true;
 			}
 			ImGui::SameLine();
@@ -53,19 +54,22 @@ void Gui::SceneGuiComponent::elements()
 					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
 					if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation))) { 
-						model.mUpdateInstancesFlag = true; 
+						model.mReloadLocalInstancesBuffer = true; 
+						mRenderer->mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer = true;
 					};
 					if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { 
-						model.mUpdateInstancesFlag = true; 
+						model.mReloadLocalInstancesBuffer = true; 
+						mRenderer->mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer = true;
 					}
 					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { 
-						model.mUpdateInstancesFlag = true; 
+						model.mReloadLocalInstancesBuffer = true; 
+						mRenderer->mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer = true;
 					}
 
 					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 					if (ImGui::Button("Delete Instance")) {
 						instance.mDeleteSignal = true;
-						model.mUpdateInstancesFlag = true;
+						model.mReloadLocalInstancesBuffer = true;
 						mRenderer->mRendererScene.mSceneManager.mFlags.mInstanceDestroyedFlag = true;
 					}
 					ImGui::PopStyleColor();

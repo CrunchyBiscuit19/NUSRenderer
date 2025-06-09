@@ -22,7 +22,7 @@ public:
 	std::string mName;
 	int mId{ 0 };
 	std::optional<uint64_t> mDeleteSignal{ std::nullopt };
-	bool mUpdateInstancesFlag{ true };
+	bool mReloadLocalInstancesBuffer{ true };
 
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 

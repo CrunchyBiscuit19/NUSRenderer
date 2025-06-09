@@ -93,7 +93,7 @@ struct Flags {
 	bool mModelDestroyedFlag;
 	bool mInstanceAddedFlag;
 	bool mInstanceDestroyedFlag;
-	bool mInstanceUpdatedFlag;
+	bool mReloadMainInstancesBuffer;
 };
 
 class SceneManager {

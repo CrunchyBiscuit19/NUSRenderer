@@ -366,10 +366,9 @@ void Renderer::drawUpdate()
     mRendererScene.mSceneManager.deleteInstances();
 
     for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) {
-        if (model.mUpdateInstancesFlag) {
+        if (model.mReloadLocalInstancesBuffer) {
             model.updateInstances();
-            model.mUpdateInstancesFlag = false;
-            mRendererScene.mSceneManager.mFlags.mInstanceUpdatedFlag = true;
+            model.mReloadLocalInstancesBuffer = false;
         }
     }
 
@@ -381,7 +380,7 @@ void Renderer::drawUpdate()
         mRendererScene.mSceneManager.realignInstancesOffset();
         mRendererScene.mSceneManager.reloadMainInstancesBuffer();
         mRendererScene.mSceneManager.regenerateRenderItems();
-    } else if (mRendererScene.mSceneManager.mFlags.mInstanceUpdatedFlag) {
+    } else if (mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer) {
         mRendererScene.mSceneManager.reloadMainInstancesBuffer();
     }
 

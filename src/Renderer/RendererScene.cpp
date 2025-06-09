@@ -151,6 +151,8 @@ void SceneManager::regenerateRenderItems()
         model.generateRenderItems();
     }
     for (auto& batch : mBatches | std::views::values) {
+		if (batch.renderItems.size() == 0) { continue; }
+
         std::memcpy(mRenderer->mRendererResources.mRenderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
 
         vk::BufferCopy renderItemsCopy {};
@@ -158,6 +160,7 @@ void SceneManager::regenerateRenderItems()
         renderItemsCopy.srcOffset = 0;
         renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
 
+		// TODO this is unsafe. The staging buffer could be overwritten by the next iteration of memcpy before this copyBuffer is done.
         mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
             cmd.copyBuffer(*mRenderer->mRendererResources.mRenderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
         });
@@ -311,7 +314,7 @@ void SceneManager::reloadMainInstancesBuffer()
 
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
-			});
+		});
 	}
 }
 
@@ -348,7 +351,7 @@ void SceneManager::resetFlags()
 	mFlags.mModelDestroyedFlag = false;
 	mFlags.mInstanceAddedFlag = false;
 	mFlags.mInstanceDestroyedFlag = false;
-	mFlags.mInstanceUpdatedFlag = false;
+	mFlags.mReloadMainInstancesBuffer = false;
 }
 
 void SceneManager::cleanup()
