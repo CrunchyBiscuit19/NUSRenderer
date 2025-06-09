@@ -28,7 +28,9 @@ struct MaterialTexture { // One AllocatedImage images can be shared across multi
 struct MaterialConstants {
 	glm::vec4 baseFactor;
 	glm::vec4 emissiveFactor;
-	glm::vec4 metallicRoughnessFactor; // Combine for alignment
+	glm::vec2 metallicRoughnessFactor;
+    float normalScale;
+    float occlusionStrength;
 };
 
 struct MaterialResources {

@@ -125,37 +125,79 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 	return newImage;
 }
 
-void GLTFModel::assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo)
+void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-	if (textureInfo.has_value()) {
-		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
-		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
-		if (img.has_value()) materialImage.image = &mImages[img.value()];
-		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
-	}
+    constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
+
+    resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.pbrData.baseColorTexture.has_value()) {
+        auto img = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.base.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.base.sampler = *mSamplers[sampler.value()];
+    }
 }
 
-void GLTFModel::assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo)
+void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-	if (textureInfo.has_value()) {
-		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
-		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
-		if (img.has_value()) materialImage.image = &mImages[img.value()];
-		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
-	}
+    constants.metallicRoughnessFactor = glm::vec2(material.pbrData.metallicFactor, material.pbrData.roughnessFactor);
+
+    resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.pbrData.metallicRoughnessTexture.has_value()) {
+        auto img = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.metallicRoughness.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.metallicRoughness.sampler = *mSamplers[sampler.value()];
+    }
 }
 
-void GLTFModel::assignTexture(MaterialTexture& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo)
+void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-	if (textureInfo.has_value()) {
-		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
-		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
-		if (img.has_value()) materialImage.image = &mImages[img.value()];
-		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
-	}
+    constants.emissiveFactor = glm::vec4(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2], 0);
+
+    resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.emissiveTexture.has_value()) {
+        auto img = mAsset.textures[material.emissiveTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.emissiveTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.emissive.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.emissive.sampler = *mSamplers[sampler.value()];
+    }
+}
+
+void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
+{
+    resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.normalTexture.has_value()) {
+        auto img = mAsset.textures[material.normalTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.normalTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.normal.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.normal.sampler = *mSamplers[sampler.value()];
+
+		constants.normalScale = material.normalTexture.value().scale;
+    }
+}
+
+void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
+{
+    resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.occlusionTexture.has_value()) {
+        auto img = mAsset.textures[material.occlusionTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.occlusionTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.occlusion.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.occlusion.sampler = *mSamplers[sampler.value()];
+
+		constants.occlusionStrength = material.occlusionTexture.value().strength;
+    }
 }
 
 void GLTFModel::initBuffers()
@@ -228,14 +270,11 @@ void GLTFModel::loadMaterials()
 		newMat.mPbrData.alphaMode = mat.alphaMode;
 		newMat.mPbrData.doubleSided = mat.doubleSided;
 		
-		newMat.mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
-		assignTexture(newMat.mPbrData.resources.base, mat.pbrData.baseColorTexture);
-		newMat.mPbrData.constants.metallicRoughnessFactor = glm::vec4(mat.pbrData.metallicFactor, mat.pbrData.roughnessFactor, 0.f, 0.f);
-		assignTexture(newMat.mPbrData.resources.metallicRoughness, mat.pbrData.metallicRoughnessTexture);
-		newMat.mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
-		assignTexture(newMat.mPbrData.resources.emissive, mat.emissiveTexture);
-		assignTexture(newMat.mPbrData.resources.normal, mat.normalTexture);
-		assignTexture(newMat.mPbrData.resources.occlusion, mat.occlusionTexture);
+		assignBase(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignMetallicRoughness(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignEmissive(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignNormal(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignOcclusion(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
 
 		materialConstants.push_back(newMat.mPbrData.constants);
 
@@ -271,8 +310,8 @@ void GLTFModel::loadMeshes()
 		for (auto&& p : mesh.primitives) {
 			Primitive newPrimitive;
 			newPrimitive.mRelativeFirstIndex = static_cast<uint32_t>(indices.size());
-			newPrimitive.mIndexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
 			newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
+			newPrimitive.mIndexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
 
 			size_t initialVerticesSize = vertices.size();
 
@@ -284,27 +323,26 @@ void GLTFModel::loadMeshes()
 					indices.push_back(initialVerticesSize + index); // Add the vertices vector size so indices would reference vertices of current primitive instead of first set of vertices added
 				});
 
-
 			// Load vertex positions           
 			fastgltf::Accessor& posAccessor = mAsset.accessors[p.findAttribute("POSITION")->second];
 			vertices.resize(vertices.size() + posAccessor.count);
 			fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, posAccessor, // Default all the params
 				[&](glm::vec3 v, size_t index) {
-					Vertex newvtx;
-					newvtx.position = v;
-					newvtx.normal = { 1, 0, 0 };
-					newvtx.color = glm::vec4{ 1.f };
-					newvtx.uv_x = 0;
-					newvtx.uv_y = 0;
-					vertices[initialVerticesSize + index] = newvtx;
+					Vertex newVertex;
+					newVertex.position = v;
+					newVertex.normal = { 1, 0, 0 };
+					newVertex.color = glm::vec4{ 1.f };
+					newVertex.uv_x = 0;
+					newVertex.uv_y = 0;
+					vertices[initialVerticesSize + index] = newVertex;
 				});
 
 			// Load vertex normals
 			auto normals = p.findAttribute("NORMAL");
 			if (normals != p.attributes.end()) {
 				fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second],
-					[&](glm::vec3 v, size_t index) {
-						vertices[initialVerticesSize + index].normal = v;
+					[&](glm::vec3 n, size_t index) {
+						vertices[initialVerticesSize + index].normal = n;
 					});
 			}
 
@@ -312,9 +350,9 @@ void GLTFModel::loadMeshes()
 			auto uv = p.findAttribute("TEXCOORD_0");
 			if (uv != p.attributes.end()) {
 				fastgltf::iterateAccessorWithIndex<glm::vec2>(mAsset, mAsset.accessors[uv->second],
-					[&](glm::vec2 v, size_t index) {
-						vertices[initialVerticesSize + index].uv_x = v.x;
-						vertices[initialVerticesSize + index].uv_y = v.y;
+					[&](glm::vec2 uv, size_t index) {
+						vertices[initialVerticesSize + index].uv_x = uv.x;
+						vertices[initialVerticesSize + index].uv_y = uv.y;
 					});
 			}
 
@@ -322,8 +360,8 @@ void GLTFModel::loadMeshes()
 			auto colors = p.findAttribute("COLOR_0");
 			if (colors != p.attributes.end()) {
 				fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[(*colors).second],
-					[&](glm::vec4 v, size_t index) {
-						vertices[initialVerticesSize + index].color = v;
+					[&](glm::vec4 c, size_t index) {
+						vertices[initialVerticesSize + index].color = c;
 					});
 			}
 

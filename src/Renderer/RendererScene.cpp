@@ -74,6 +74,7 @@ void SceneManager::init()
 {
 	initBuffers();
 	initDescriptor();
+	initPushConstants();
 }
 
 void SceneManager::initBuffers()

@@ -378,8 +378,9 @@ void Renderer::drawUpdate()
         mRendererScene.mSceneManager.reloadMainBuffers();
         mRendererScene.mSceneManager.regenerateRenderItems();
     } else if (mRendererScene.mSceneManager.mFlags.mInstanceAddedFlag || mRendererScene.mSceneManager.mFlags.mInstanceDestroyedFlag) {
-        mRendererScene.mSceneManager.reloadMainInstancesBuffer();
         mRendererScene.mSceneManager.realignInstancesOffset();
+        mRendererScene.mSceneManager.reloadMainInstancesBuffer();
+        mRendererScene.mSceneManager.regenerateRenderItems();
     } else if (mRendererScene.mSceneManager.mFlags.mInstanceUpdatedFlag) {
         mRendererScene.mSceneManager.reloadMainInstancesBuffer();
     }
