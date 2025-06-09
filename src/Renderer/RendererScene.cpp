@@ -148,6 +148,8 @@ void SceneManager::regenerateRenderItems()
         batch.renderItems.clear();
     }
     for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
         model.generateRenderItems();
     }
     for (auto& batch : mBatches | std::views::values) {
@@ -173,6 +175,8 @@ void SceneManager::realignVertexIndexOffset()
 	int indexCumulative = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		for (auto& mesh : model.mMeshes) {
 			mesh.mMainVertexOffset = vertexCumulative;
 			mesh.mMainFirstIndex = indexCumulative;
@@ -187,6 +191,8 @@ void SceneManager::realignMaterialOffset()
 	int materialCumulative = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		model.mMainFirstMaterial = materialCumulative;
 		materialCumulative += model.mMaterials.size();
 	}
@@ -197,6 +203,8 @@ void SceneManager::realignNodeTransformsOffset()
 	int nodeTransformCumulative = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		model.mMainFirstNodeTransform = nodeTransformCumulative;
 		nodeTransformCumulative += model.mNodes.size();
 	}
@@ -207,6 +215,8 @@ void SceneManager::realignInstancesOffset()
 	int instanceCumulative = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		model.mMainFirstInstance = instanceCumulative;
 		instanceCumulative += model.mInstances.size();
 	}
@@ -225,6 +235,8 @@ void SceneManager::reloadMainVertexBuffer()
 	int dstOffset = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		for (auto& mesh : model.mMeshes) {
 			vk::BufferCopy meshVertexCopy{};
 			meshVertexCopy.dstOffset = dstOffset;
@@ -246,6 +258,8 @@ void SceneManager::reloadMainIndexBuffer()
 	int dstOffset = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		for (auto& mesh : model.mMeshes) {
 			vk::BufferCopy meshIndexCopy{};
 			meshIndexCopy.dstOffset = dstOffset;
@@ -267,6 +281,8 @@ void SceneManager::reloadMainMaterialConstantsBuffer()
 	int dstOffset = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		vk::BufferCopy materialConstantCopy{};
 		materialConstantCopy.dstOffset = dstOffset;
 		materialConstantCopy.srcOffset = 0;
@@ -285,6 +301,8 @@ void SceneManager::reloadMainNodeTransformsBuffer()
 	int dstOffset = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
 		vk::BufferCopy nodeTransformsCopy{};
 		nodeTransformsCopy.dstOffset = dstOffset;
 		nodeTransformsCopy.srcOffset = 0;
@@ -303,6 +321,7 @@ void SceneManager::reloadMainInstancesBuffer()
 	int dstOffset = 0;
 
 	for (auto& model : mModels | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
 		if (model.mInstances.size() == 0) { continue; }
 
 		vk::BufferCopy instancesCopy{};

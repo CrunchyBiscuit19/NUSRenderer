@@ -78,7 +78,7 @@ void Renderer::run()
 
         mGUI.imguiFrame();
 
-        drawUpdate();
+        endOfFrameUpdate();
         draw();
 
         mRendererInfrastructure.mFrameNumber++;
@@ -260,7 +260,8 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
             *batch.visibleRenderItemsBuffer.buffer,
             vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderWrite,
-            vk::PipelineStageFlagBits2::eDrawIndirect, vk::AccessFlagBits2::eIndirectCommandRead);
+            vk::PipelineStageFlagBits2::eDrawIndirect, 
+            vk::AccessFlagBits2::eIndirectCommandRead);
     }
 }
 
@@ -356,7 +357,7 @@ void Renderer::drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView)
     cmd.endRendering();
 }
 
-void Renderer::drawUpdate()
+void Renderer::endOfFrameUpdate()
 {
     const auto start = std::chrono::system_clock::now();
 

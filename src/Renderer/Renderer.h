@@ -40,7 +40,7 @@ public:
 
 	void setViewportScissors(vk::CommandBuffer cmd);
 
-	void drawUpdate();
+	void endOfFrameUpdate();
 
 	void draw();
 	
