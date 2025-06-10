@@ -187,7 +187,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.offset = 0;
 	pushConstantRange.size = sizeof(ScenePushConstants);
-	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
+	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
 		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,

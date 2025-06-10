@@ -157,10 +157,8 @@ void SceneManager::regenerateRenderItems()
 	for (auto& batch : mBatches | std::views::values) {
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-		}); 
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.fillBuffer(*batch.visibleRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-		});
+		}); 
 
 		if (batch.renderItems.size() == 0) { continue; }
 

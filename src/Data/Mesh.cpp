@@ -26,7 +26,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
             currentBatch.pipeline = primitive.mMaterial->mPipeline;
             currentBatch.renderItemsBuffer = renderer->mRendererResources.createBuffer(
                 MAX_RENDER_ITEMS * sizeof(RenderItem),
-                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer  | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
             renderer->mRendererCore.labelResourceDebug(
                 currentBatch.renderItemsBuffer.buffer,
@@ -37,7 +37,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 
             currentBatch.visibleRenderItemsBuffer = renderer->mRendererResources.createBuffer(
                 MAX_RENDER_ITEMS * sizeof(RenderItem),
-                vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
             renderer->mRendererCore.labelResourceDebug(
                 currentBatch.visibleRenderItemsBuffer.buffer, fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
