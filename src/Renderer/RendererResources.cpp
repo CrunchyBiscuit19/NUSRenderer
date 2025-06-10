@@ -27,6 +27,10 @@ void RendererResources::initStaging()
 	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
 	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
 	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
+
+	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsStagingBuffer.buffer, "MaterialConstantsStagingBuffer");
+	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
+	mRenderer->mRendererCore.labelResourceDebug(mInstancesStagingBuffer.buffer, "InstancesStagingBuffer");
 }
 
 void RendererResources::initDefault()

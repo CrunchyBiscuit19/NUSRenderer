@@ -239,21 +239,30 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererInfrastructure.mCullPipeline.pipeline);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {    
-        cmd.fillBuffer(*batch.countBuffer.buffer, 0, vk::WholeSize, 0);
+        cmd.fillBuffer(*batch.countBuffer.buffer, 0, vk::WholeSize, 10000);
 
         vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be reset to zero
             cmd,
             *batch.countBuffer.buffer,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
+            vk::PipelineStageFlagBits2::eComputeShader, 
+            vk::AccessFlagBits2::eShaderRead);
+
+        vkhelper::createBufferPipelineBarrier( 
+            cmd,
+            *batch.renderItemsBuffer.buffer,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eComputeShader, 
+            vk::AccessFlagBits2::eShaderRead);
 
         mRendererScene.mSceneManager.mCullPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
         mRendererScene.mSceneManager.mCullPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
         mRendererScene.mSceneManager.mCullPushConstants.countBuffer = batch.countBuffer.address;
         cmd.pushConstants<CullPushConstants>(*mRendererInfrastructure.mCullPipeline.layout, vk::ShaderStageFlagBits::eCompute, 0, mRendererScene.mSceneManager.mCullPushConstants);
 
-        cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
+        //cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
         vkhelper::createBufferPipelineBarrier( // Wait for culling to write finish all visible render items
             cmd,
@@ -295,10 +304,10 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipeline->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipeline->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
 
-        mRendererScene.mSceneManager.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+        mRendererScene.mSceneManager.mScenePushConstants.visibleRenderItemsBuffer = batch.renderItemsBuffer.address;
         cmd.pushConstants<ScenePushConstants>(*batch.pipeline->layout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, mRendererScene.mSceneManager.mScenePushConstants);
 
-        cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
+        cmd.drawIndexedIndirectCount(*batch.renderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
         mStats.mDrawCallCount++;
     }

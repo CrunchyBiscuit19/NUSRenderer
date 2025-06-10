@@ -132,7 +132,7 @@ void SceneManager::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
 		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
-		});
+	});
 }
 
 void SceneManager::deleteInstances()
@@ -155,6 +155,13 @@ void SceneManager::regenerateRenderItems()
     }
     
 	for (auto& batch : mBatches | std::views::values) {
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+		}); 
+		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			cmd.fillBuffer(*batch.visibleRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+		});
+
 		if (batch.renderItems.size() == 0) { continue; }
 
         std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
@@ -248,8 +255,7 @@ void SceneManager::reloadMainVertexBuffer()
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 				cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
-				});
-
+			});
 		}
 	}
 }
@@ -271,7 +277,7 @@ void SceneManager::reloadMainIndexBuffer()
 
 			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
-				});
+			});
 
 		}
 	}
@@ -293,7 +299,7 @@ void SceneManager::reloadMainMaterialConstantsBuffer()
 
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
-			});
+		});
 	}
 }
 
@@ -313,7 +319,7 @@ void SceneManager::reloadMainNodeTransformsBuffer()
 
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
-			});
+		});
 	}
 }
 

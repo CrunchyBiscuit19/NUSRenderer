@@ -26,7 +26,7 @@ constexpr unsigned int MAIN_INDEX_BUFFER_SIZE = 10 * MESH_INDEX_BUFFER_SIZE;
 constexpr unsigned int MAX_IMAGE_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
 constexpr unsigned int MAX_INSTANCES = 1000;
 constexpr unsigned int MAX_MATERIALS = 1000;
-constexpr unsigned int MAX_NODES = 1000;
+constexpr unsigned int MAX_NODES = 2000;
 constexpr unsigned int MAX_RENDER_ITEMS = 2500;
 constexpr unsigned int MAX_TEXTURE_ARRAY_SLOTS = 10000;
 
