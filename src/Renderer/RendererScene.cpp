@@ -147,24 +147,25 @@ void SceneManager::regenerateRenderItems()
     for (auto& batch : mBatches | std::views::values) {
         batch.renderItems.clear();
     }
-    for (auto& model : mModels | std::views::values) {
+    
+	for (auto& model : mModels | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
         model.generateRenderItems();
     }
-    for (auto& batch : mBatches | std::views::values) {
+    
+	for (auto& batch : mBatches | std::views::values) {
 		if (batch.renderItems.size() == 0) { continue; }
 
-        std::memcpy(mRenderer->mRendererResources.mRenderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
+        std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
 
         vk::BufferCopy renderItemsCopy {};
         renderItemsCopy.dstOffset = 0;
         renderItemsCopy.srcOffset = 0;
         renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
 
-		// TODO this is unsafe. The staging buffer could be overwritten by the next iteration of memcpy before this copyBuffer is done.
         mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-            cmd.copyBuffer(*mRenderer->mRendererResources.mRenderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
+            cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
         });
     }
 }

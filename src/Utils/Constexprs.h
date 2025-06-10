@@ -27,7 +27,7 @@ constexpr unsigned int MAX_IMAGE_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
 constexpr unsigned int MAX_INSTANCES = 1000;
 constexpr unsigned int MAX_MATERIALS = 1000;
 constexpr unsigned int MAX_NODES = 1000;
-constexpr unsigned int MAX_INDIRECT_COMMANDS = 2500;
+constexpr unsigned int MAX_RENDER_ITEMS = 2500;
 constexpr unsigned int MAX_TEXTURE_ARRAY_SLOTS = 10000;
 
 constexpr unsigned int MAX_CULL_LOCAL_SIZE = 256;

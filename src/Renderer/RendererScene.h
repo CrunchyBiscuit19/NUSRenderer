@@ -79,8 +79,10 @@ struct Batch {
 	MainBuffer renderItemsBuffer;
 	MainBuffer visibleRenderItemsBuffer;
 	MainBuffer countBuffer;
+	AllocatedBuffer renderItemsStagingBuffer;
 
 	~Batch() {
+		renderItemsStagingBuffer.cleanup();
 		countBuffer.cleanup();
 		visibleRenderItemsBuffer.cleanup();
 		renderItemsBuffer.cleanup();

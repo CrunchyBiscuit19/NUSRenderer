@@ -298,7 +298,7 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
         mRendererScene.mSceneManager.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
         cmd.pushConstants<ScenePushConstants>(*batch.pipeline->layout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, mRendererScene.mSceneManager.mScenePushConstants);
 
-        cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_INDIRECT_COMMANDS, sizeof(RenderItem));
+        cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
         mStats.mDrawCallCount++;
     }

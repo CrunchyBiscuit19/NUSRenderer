@@ -27,7 +27,6 @@ void RendererResources::initStaging()
 	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
 	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
 	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
-    mRenderItemsStagingBuffer = createStagingBuffer(MAX_INDIRECT_COMMANDS * sizeof(RenderItem));
 }
 
 void RendererResources::initDefault()
@@ -184,7 +183,6 @@ AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize)
 
 void RendererResources::cleanup()
 {
-    mRenderItemsStagingBuffer.cleanup();
 	mNodeTransformsStagingBuffer.cleanup();
 	mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();

@@ -25,7 +25,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 
             currentBatch.pipeline = primitive.mMaterial->mPipeline;
             currentBatch.renderItemsBuffer = renderer->mRendererResources.createBuffer(
-                MAX_INDIRECT_COMMANDS * sizeof(RenderItem),
+                MAX_RENDER_ITEMS * sizeof(RenderItem),
                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
             renderer->mRendererCore.labelResourceDebug(
@@ -36,7 +36,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
                     *currentBatch.renderItemsBuffer.buffer));
 
             currentBatch.visibleRenderItemsBuffer = renderer->mRendererResources.createBuffer(
-                MAX_INDIRECT_COMMANDS * sizeof(RenderItem),
+                MAX_RENDER_ITEMS * sizeof(RenderItem),
                 vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
             renderer->mRendererCore.labelResourceDebug(
@@ -52,6 +52,8 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
                 fmt::format("CountBuffer{}", pipelineId).c_str());
             currentBatch.countBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
                 vk::BufferDeviceAddressInfo(*currentBatch.countBuffer.buffer));
+
+            currentBatch.renderItemsStagingBuffer = renderer->mRendererResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
         }
 
         renderer->mRendererScene.mSceneManager.mBatches[pipelineId].renderItems.emplace_back(
