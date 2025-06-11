@@ -26,32 +26,24 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
             currentBatch.pipeline = primitive.mMaterial->mPipeline;
             currentBatch.renderItemsBuffer = renderer->mRendererResources.createBuffer(
                 MAX_RENDER_ITEMS * sizeof(RenderItem),
-                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
-            renderer->mRendererCore.labelResourceDebug(
-                currentBatch.renderItemsBuffer.buffer,
-                fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
-            currentBatch.renderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
-                vk::BufferDeviceAddressInfo(
-                    *currentBatch.renderItemsBuffer.buffer));
+            renderer->mRendererCore.labelResourceDebug(currentBatch.renderItemsBuffer.buffer, fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
+            currentBatch.renderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*currentBatch.renderItemsBuffer.buffer));
 
             currentBatch.visibleRenderItemsBuffer = renderer->mRendererResources.createBuffer(
                 MAX_RENDER_ITEMS * sizeof(RenderItem),
                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
-            renderer->mRendererCore.labelResourceDebug(
-                currentBatch.visibleRenderItemsBuffer.buffer, fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
-            currentBatch.visibleRenderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
-                vk::BufferDeviceAddressInfo(*currentBatch.visibleRenderItemsBuffer.buffer));
+            renderer->mRendererCore.labelResourceDebug(currentBatch.visibleRenderItemsBuffer.buffer, fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
+            currentBatch.visibleRenderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*currentBatch.visibleRenderItemsBuffer.buffer));
 
             currentBatch.countBuffer = renderer->mRendererResources.createBuffer(
                 sizeof(uint32_t),
                 vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                 VMA_MEMORY_USAGE_GPU_ONLY);
-            renderer->mRendererCore.labelResourceDebug(currentBatch.countBuffer.buffer,
-                fmt::format("CountBuffer{}", pipelineId).c_str());
-            currentBatch.countBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(
-                vk::BufferDeviceAddressInfo(*currentBatch.countBuffer.buffer));
+            renderer->mRendererCore.labelResourceDebug(currentBatch.countBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
+            currentBatch.countBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*currentBatch.countBuffer.buffer));
 
             currentBatch.renderItemsStagingBuffer = renderer->mRendererResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
         }

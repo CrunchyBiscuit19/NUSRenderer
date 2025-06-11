@@ -15,15 +15,6 @@ void main()
     uint renderItemsBufferIndex = gl_GlobalInvocationID.x;
     if (true) { // TODO frustum / occulsion cull
         uint vRenderItemsBufferIndex = atomicAdd(cullPushConstants.countBuffer.count, 1);
-
-        debugPrintfEXT("visibleRenderItemsBuffer[%d] = renderItemsBuffer[%d]", vRenderItemsBufferIndex, renderItemsBufferIndex);
-        debugPrintfEXT("Index Count %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].indexCount);
-        debugPrintfEXT("Instance Count %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].instanceCount);
-        debugPrintfEXT("First Index %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].firstIndex);
-        debugPrintfEXT("Vertex Offset %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].vertexOffset);
-        debugPrintfEXT("First Instance %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].firstInstance);
-        debugPrintfEXT("Material Index %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].materialIndex);
-        debugPrintfEXT("Node Transform Index %d", cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].nodeTransformIndex);
         
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].indexCount = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].indexCount; 
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].instanceCount = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].instanceCount;
@@ -32,8 +23,5 @@ void main()
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].firstInstance = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].firstInstance;
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].materialIndex = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].materialIndex;
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].nodeTransformIndex = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].nodeTransformIndex;
-        
-        //cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex] = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex]; 
-
     }
 }

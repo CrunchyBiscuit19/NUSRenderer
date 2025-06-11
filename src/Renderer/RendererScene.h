@@ -40,6 +40,17 @@ public:
 	void cleanup();
 };
 
+struct RenderItem {
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	uint32_t vertexOffset;
+	uint32_t firstInstance;
+	uint32_t materialIndex;
+	uint32_t nodeTransformIndex;
+	// uint32_t boundsIndex;
+};
+
 struct ScenePushConstants {
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress materialConstantsBuffer;
