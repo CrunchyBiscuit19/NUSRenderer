@@ -74,7 +74,7 @@ public:
 
 	void generateRenderItems();
 
-	void createInstance();
+	void createInstance(TransformData initialTransform = TransformData());
 	void updateInstances();
 
 	void markDelete();

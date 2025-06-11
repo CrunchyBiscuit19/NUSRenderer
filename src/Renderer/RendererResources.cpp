@@ -23,14 +23,25 @@ void RendererResources::init()
 void RendererResources::initStaging()
 {
 	mImageStagingBuffer = createStagingBuffer(MAX_IMAGE_SIZE);
-	mMeshStagingBuffer = createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE);
-	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
-	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
-	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
+	mRenderer->mRendererCore.labelResourceDebug(mImageStagingBuffer.buffer, "ImageStagingBuffer");
+	LOG_INFO(mRenderer->mLogger, "Image Staging Buffer Created");
 
+	mMeshStagingBuffer = createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE);
+	mRenderer->mRendererCore.labelResourceDebug(mMeshStagingBuffer.buffer, "MeshStagingBuffer");
+	LOG_INFO(mRenderer->mLogger, "Mesh Staging Buffer Created");
+
+	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
 	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsStagingBuffer.buffer, "MaterialConstantsStagingBuffer");
-	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
+	LOG_INFO(mRenderer->mLogger, "Material Constants Staging Buffer Created");
+
+	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
 	mRenderer->mRendererCore.labelResourceDebug(mInstancesStagingBuffer.buffer, "InstancesStagingBuffer");
+	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Created");
+
+	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
+	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
+	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
+
 }
 
 void RendererResources::initDefault()
@@ -72,6 +83,8 @@ void RendererResources::initDefault()
 	sampl.addressModeV = vk::SamplerAddressMode::eRepeat;
 	sampl.addressModeW = vk::SamplerAddressMode::eRepeat;
 	mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
+
+	LOG_INFO(mRenderer->mLogger, "Default Images and Samplers Created");
 }
 
 AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -188,12 +201,19 @@ AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize)
 void RendererResources::cleanup()
 {
 	mNodeTransformsStagingBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Destroyed");
 	mImageStagingBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Image Staging Buffer Destroyed");
 	mMeshStagingBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Mesh Staging Buffer Destroyed");
 	mMaterialConstantsStagingBuffer.cleanup( );
+	LOG_INFO(mRenderer->mLogger, "Material Constants Staging Buffer Destroyed");
 	mInstancesStagingBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Destroyed");
 	mDefaultImages.clear();
+	LOG_INFO(mRenderer->mLogger, "Default Images Destroyed");
 	mDefaultSampler.clear();
+	LOG_INFO(mRenderer->mLogger, "Default Sampler Destroyed");
 }
 
 RendererResources::RendererResources(RendererResources&& other) noexcept :

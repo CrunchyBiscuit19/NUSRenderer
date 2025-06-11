@@ -3,6 +3,7 @@
 #include <Utils/Helper.h>
 
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
 #include <Vkbootstrap.h>
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -31,7 +32,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 		break;
 	}
 
-	std::string message;
+	std::string message = "\n";
 	message += fmt::format("{} <{}> Frame {}\n\n", severity, std::string(pCallbackData->pMessageIdName), static_cast<Renderer*>(pUserData)->mRendererInfrastructure.mFrameNumber);
 	message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
@@ -51,7 +52,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 			message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
 	}
 
-	fmt::println("{}", message);
+	LOG_INFO(static_cast<Renderer*>(pUserData)->mLogger, "{}", message);
+
 	return false;
 }
 
@@ -79,6 +81,8 @@ void RendererCore::init()
 		static_cast<int>(mWindowExtent.height),
 		SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
+	LOG_INFO(mRenderer->mLogger, "SDL Window Created");
+
 	mContext = vk::raii::Context();
 
 	vkb::InstanceBuilder builder;
@@ -97,9 +101,14 @@ void RendererCore::init()
 	vk::raii::DebugUtilsMessengerEXT debugMessenger(mInstance, vkbInst.debug_messenger);
 	mDebugMessenger = std::move(debugMessenger);
 
+	LOG_INFO(mRenderer->mLogger, "Vulkan Instance Created");
+	LOG_INFO(mRenderer->mLogger, "Vulkan Debug Messenger Created");
+
 	VkSurfaceKHR tempSurface = nullptr;
 	SDL_Vulkan_CreateSurface(mWindow, *mInstance, &tempSurface);
 	mSurface = vk::raii::SurfaceKHR(mInstance, tempSurface);
+
+	LOG_INFO(mRenderer->mLogger, "Vulkan Surface Created");
 
 	vk::PhysicalDeviceVulkan13Features features13{};
 	features13.dynamicRendering = true;
@@ -112,12 +121,19 @@ void RendererCore::init()
 	features12.descriptorBindingVariableDescriptorCount = true;
 	features12.descriptorBindingPartiallyBound = true;
 	features12.descriptorBindingSampledImageUpdateAfterBind = true;
+	features12.timelineSemaphore = true;
+	features12.vulkanMemoryModel = true;
+	features12.vulkanMemoryModelDeviceScope = true;
+	features12.storageBuffer8BitAccess = true;
 	vk::PhysicalDeviceVulkan11Features features11{};
 	features11.shaderDrawParameters = true;
 	vk::PhysicalDeviceFeatures features{};
 	features.multiDrawIndirect = true;
 	features.samplerAnisotropy = true;
 	features.sampleRateShading = true;
+	features.fragmentStoresAndAtomics = true;
+	features.vertexPipelineStoresAndAtomics = true;
+	features.shaderInt64 = true;
 
 	vkb::PhysicalDeviceSelector selector{ vkbInst };
 	vkb::PhysicalDevice physicalDevice = selector
@@ -137,6 +153,8 @@ void RendererCore::init()
 	mDevice = std::move(device);
 	mChosenGPUProperties = mChosenGPU.getProperties();
 
+	LOG_INFO(mRenderer->mLogger, "Vulkan Physical and Logical Devices Chosen");
+
 	vk::raii::Queue computeQueue(mDevice, vkbDevice.get_queue(vkb::QueueType::compute).value());
 	vk::raii::Queue graphicsQueue(mDevice, vkbDevice.get_queue(vkb::QueueType::graphics).value());
 	mComputeQueue = std::move(computeQueue);
@@ -144,12 +162,16 @@ void RendererCore::init()
 	mComputeQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
 	mGraphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
+	LOG_INFO(mRenderer->mLogger, "Vulkan Compute and Graphics Queues Selected");
+
 	VmaAllocatorCreateInfo allocatorInfo = {};
 	allocatorInfo.physicalDevice = *mChosenGPU;
 	allocatorInfo.device = *mDevice;
 	allocatorInfo.instance = *mInstance;
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	vmaCreateAllocator(&allocatorInfo, &mVmaAllocator);
+
+	LOG_INFO(mRenderer->mLogger, "VMA Allocator Created");
 
 	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
 		const SDL_Keymod modState = SDL_GetModState();
@@ -167,11 +189,18 @@ void RendererCore::cleanup()
 {
 	mGraphicsQueue.clear();
 	mComputeQueue.clear();
+	LOG_INFO(mRenderer->mLogger, "Vulkan Compute and Graphics Queues Destroyed");
 	mSurface.clear();
+	LOG_INFO(mRenderer->mLogger, "Vulkan Surface Destroyed");
 	mDebugMessenger.clear();
+	LOG_INFO(mRenderer->mLogger, "Vulkan Debug Messenger Destroyed");
 	vmaDestroyAllocator(mVmaAllocator);
+	LOG_INFO(mRenderer->mLogger, "VMA Allocator Destroyed");
 	mDevice.clear();
 	mChosenGPU.clear();
+	LOG_INFO(mRenderer->mLogger, "Vulkan Physical and Logical Devices Destoyed");
 	mInstance.clear();
+	LOG_INFO(mRenderer->mLogger, "Vulkan Instance Destroyed");
 	SDL_DestroyWindow(mWindow);
+	LOG_INFO(mRenderer->mLogger, "SDL Window Destroyed");
 }

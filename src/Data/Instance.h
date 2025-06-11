@@ -8,6 +8,20 @@ struct TransformData {
 	glm::vec3 translation;
 	glm::vec3 rotation;
 	glm::f32 scale;
+
+	TransformData(): 
+		translation(glm::vec3()),
+		rotation(glm::vec3()),
+		scale(1.f)
+	{
+	}
+
+	TransformData(glm::vec3 translation, glm::vec3 rotation, glm::f32 scale) :
+		translation(translation),
+		rotation(rotation),
+		scale(scale)
+	{
+	}
 };
 
 struct InstanceData {
@@ -21,5 +35,5 @@ public:
 	bool mDeleteSignal;
 	TransformData mTransformComponents;
 
-	GLTFInstance(GLTFModel* model, int id);
+	GLTFInstance(GLTFModel* model, int id, TransformData initialTransform = TransformData());
 };

@@ -9,6 +9,9 @@
 #include <User/Gui.h>
 #include <Data/Camera.h>
 
+#include <quill/Logger.h>
+#include <quill/LogMacros.h>
+
 struct RendererStats {
 	float mFrametime;
 	float mDrawTime;
@@ -31,6 +34,8 @@ public:
 	Gui mGUI;
 	Camera mCamera;
 	RendererEvent mRendererEvent;
+
+	quill::Logger* mLogger;
 
 	Renderer();
 
