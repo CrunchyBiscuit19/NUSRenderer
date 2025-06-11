@@ -31,7 +31,8 @@ void Perspective::initData()
 void Perspective::initBuffer()
 {
 	mPerspectiveBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PerspectiveData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
-	mRenderer->mRendererCore.labelResourceDebug(mPerspectiveBuffer.buffer, "SceneBuffer");
+	mRenderer->mRendererCore.labelResourceDebug(mPerspectiveBuffer.buffer, "PerspectiveBuffer");
+	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
 }
 
 void Perspective::initDescriptor()
@@ -39,11 +40,14 @@ void Perspective::initDescriptor()
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
 	mPerspectiveDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+	mRenderer->mRendererCore.labelResourceDebug(mPerspectiveDescriptorSetLayout, "PerspectiveDescriptorSetLayout");
 	mPerspectiveDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mPerspectiveDescriptorSetLayout);
+	mRenderer->mRendererCore.labelResourceDebug(mPerspectiveDescriptorSet, "PerspectiveDescriptorSet");
 
 	DescriptorSetBinder writer;
 	writer.bindBuffer(0, *mPerspectiveBuffer.buffer, sizeof(PerspectiveData), 0, vk::DescriptorType::eUniformBuffer);
 	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mPerspectiveDescriptorSet);
+	LOG_INFO(mRenderer->mLogger, "Perspective Descriptor Set and Layout Created");
 }
 
 void Perspective::update()
@@ -61,7 +65,9 @@ void Perspective::cleanup()
 {
 	mPerspectiveDescriptorSet.clear();
 	mPerspectiveDescriptorSetLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Perspective Descriptor Set and Layout Destroyed");
 	mPerspectiveBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Perspective Buffer Destroyed");
 }
 
 SceneManager::SceneManager(Renderer* renderer) :
@@ -83,21 +89,26 @@ void SceneManager::initBuffers()
 	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
 	mMainVertexBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainVertexBuffer.buffer));
+	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Created");
 
 	mMainIndexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
+	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
 	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
 	mMainMaterialConstantsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
+	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Created");
 
 	mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
 	mMainNodeTransformsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainNodeTransformsBuffer.buffer));
+	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
 	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
 	mMainInstancesBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
+	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 }
 
 void SceneManager::initDescriptor()
@@ -105,9 +116,10 @@ void SceneManager::initDescriptor()
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
 	mMainMaterialResourcesDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, true);
-	mMainMaterialResourcesDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(mMainMaterialResourcesDescriptorSetLayout, true);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout, "MainMaterialResourcesDescriptorSetLayout");
+	mMainMaterialResourcesDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(mMainMaterialResourcesDescriptorSetLayout, true);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet, "MainMaterialResourcesDescriptorSet");
+	LOG_INFO(mRenderer->mLogger, "Main Material Resources and Descriptor Set Created");
 }
 
 void SceneManager::initPushConstants()
@@ -116,6 +128,7 @@ void SceneManager::initPushConstants()
 	mScenePushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
 	mScenePushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
 	mScenePushConstants.instancesBuffer = mMainInstancesBuffer.address;
+	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -139,7 +152,9 @@ void SceneManager::deleteModels()
 void SceneManager::deleteInstances()
 {
 	for (auto& model : mModels | std::views::values) {
-		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
+		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { 
+			return instance.mDeleteSignal; 
+		});
 	}
 }
 
@@ -154,6 +169,8 @@ void SceneManager::regenerateRenderItems()
 
         model.generateRenderItems();
     }
+
+	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
     
 	for (auto& batch : mBatches | std::views::values) {
 		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
@@ -173,6 +190,8 @@ void SceneManager::regenerateRenderItems()
         mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
             cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
         });
+
+		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipeline->id);
     }
 }
 
@@ -191,6 +210,8 @@ void SceneManager::realignVertexIndexOffset()
 			indexCumulative += mesh.mNumIndices;
 		}
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Models Vertex / Index Buffers Offsets Realigned");
 }
 
 void SceneManager::realignMaterialOffset()
@@ -203,6 +224,8 @@ void SceneManager::realignMaterialOffset()
 		model.mMainFirstMaterial = materialCumulative;
 		materialCumulative += model.mMaterials.size();
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Models Material Constants Buffer / Resources Descriptor Set Offsets Realigned");
 }
 
 void SceneManager::realignNodeTransformsOffset()
@@ -215,6 +238,8 @@ void SceneManager::realignNodeTransformsOffset()
 		model.mMainFirstNodeTransform = nodeTransformCumulative;
 		nodeTransformCumulative += model.mNodes.size();
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Models Node Transforms Buffer Offsets Realigned");
 }
 
 void SceneManager::realignInstancesOffset()
@@ -227,6 +252,8 @@ void SceneManager::realignInstancesOffset()
 		model.mMainFirstInstance = instanceCumulative;
 		instanceCumulative += model.mInstances.size();
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Models Instances Buffers Offsets Realigned");
 }
 
 void SceneManager::realignOffsets()
@@ -257,6 +284,8 @@ void SceneManager::reloadMainVertexBuffer()
 			});
 		}
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Reloading");
 }
 
 void SceneManager::reloadMainIndexBuffer()
@@ -280,6 +309,8 @@ void SceneManager::reloadMainIndexBuffer()
 
 		}
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Reloading");
 }
 
 void SceneManager::reloadMainMaterialConstantsBuffer()
@@ -300,6 +331,8 @@ void SceneManager::reloadMainMaterialConstantsBuffer()
 			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
 		});
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Reloading");
 }
 
 void SceneManager::reloadMainNodeTransformsBuffer()
@@ -320,6 +353,8 @@ void SceneManager::reloadMainNodeTransformsBuffer()
 			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
 		});
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
 }
 
 void SceneManager::reloadMainInstancesBuffer()
@@ -341,6 +376,8 @@ void SceneManager::reloadMainInstancesBuffer()
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
 		});
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Reloading");
 }
 
 void SceneManager::reloadMainMaterialResourcesArray()
@@ -358,6 +395,8 @@ void SceneManager::reloadMainMaterialResourcesArray()
 			writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mMainMaterialResourcesDescriptorSet);
 		}
 	}
+
+	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Reloaded");
 }
 
 void SceneManager::reloadMainBuffers()
@@ -383,13 +422,21 @@ void SceneManager::cleanup()
 {
 	mModels.clear();
 	mBatches.clear();
+	LOG_INFO(mRenderer->mLogger, "All Batches Destroyed");
 	mMainMaterialResourcesDescriptorSet.clear();
+	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");
 	mMainMaterialResourcesDescriptorSetLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Layout Destroyed");
 	mMainInstancesBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Destroyed");
 	mMainNodeTransformsBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Destroyed");
 	mMainMaterialConstantsBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Destroyed");
 	mMainIndexBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Destroyed");
 	mMainVertexBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Destroyed");
 }
 
 RendererScene::RendererScene(Renderer* renderer) :
@@ -412,7 +459,6 @@ void RendererScene::cleanup()
 	mPerspective.cleanup();
 	mSkybox.cleanup();
 	mSceneManager.cleanup();
-
 }
 
 Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
@@ -424,6 +470,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	renderer->mRendererCore.labelResourceDebug(renderItemsBuffer.buffer, fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
 	renderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*renderItemsBuffer.buffer));
+	LOG_INFO(renderer->mLogger, "Batch {} Render Items Buffer Created", pipelineId);
 
 	visibleRenderItemsBuffer = renderer->mRendererResources.createBuffer(
 		MAX_RENDER_ITEMS * sizeof(RenderItem),
@@ -431,6 +478,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	renderer->mRendererCore.labelResourceDebug(visibleRenderItemsBuffer.buffer, fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
 	visibleRenderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*visibleRenderItemsBuffer.buffer));
+	LOG_INFO(renderer->mLogger, "Batch {} Visible Render Items Buffer Created", pipelineId);
 
 	countBuffer = renderer->mRendererResources.createBuffer(
 		sizeof(uint32_t),
@@ -438,8 +486,10 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	renderer->mRendererCore.labelResourceDebug(countBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
 	countBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*countBuffer.buffer));
+	LOG_INFO(renderer->mLogger, "Batch {} Count Buffer Created", pipelineId);
 
 	renderItemsStagingBuffer = renderer->mRendererResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
+	LOG_INFO(renderer->mLogger, "Batch {} Render Items Staging Buffer Created", pipelineId);
 }
 
 Batch::~Batch()

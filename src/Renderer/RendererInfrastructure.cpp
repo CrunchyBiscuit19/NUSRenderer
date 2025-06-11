@@ -30,6 +30,8 @@ void RendererInfrastructure::initDescriptors()
 		{ vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS },   // Material Textures
 	};
 	mMainDescriptorAllocator.init(1, sizes);
+
+	LOG_INFO(mRenderer->mLogger, "Descriptor Allocator Created");
 }
 
 void RendererInfrastructure::initFrames()
@@ -41,21 +43,28 @@ void RendererInfrastructure::initFrames()
 
 	for (int i = 0; i < mFrames.size(); i++) {
 		mFrames[i].mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mRenderFence, fmt::format("FrameFence{}", i).c_str());
+		LOG_INFO(mRenderer->mLogger, "Frame {} Render Fence Created", i);
+
 		mFrames[i].mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandPool, fmt::format("FrameCommandPool{}", i).c_str());
+		LOG_INFO(mRenderer->mLogger, "Frame {} Command Pool Created", i);
+
 		vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*mFrames[i].mCommandPool, 1);
 		mFrames[i].mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
-		mFrames[i].mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
-
-		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mRenderFence, fmt::format("FrameFence{}", i).c_str());
-		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandPool, fmt::format("FrameCommandPool{}", i).c_str());
 		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandBuffer, fmt::format("FrameCommandBuffer{}", i).c_str());
+		LOG_INFO(mRenderer->mLogger, "Frame {} Command Buffer Created", i);
+
+		mFrames[i].mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
 		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mAvailableSemaphore, fmt::format("FrameAvailableSemaphore{}", i).c_str());
+		LOG_INFO(mRenderer->mLogger, "Frame {} Available Semaphore Created", i);
 	}
 }
 
 void RendererInfrastructure::initCullPipeline()
 {
 	createCullPipeline();
+	LOG_INFO(mRenderer->mLogger, "Culling Pipeline Created");
 }
 
 void RendererInfrastructure::initSwapchain()
@@ -142,6 +151,8 @@ void RendererInfrastructure::initSwapchain()
 			vk::AccessFlagBits2::eTransferRead,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
 	});
+
+	LOG_INFO(mRenderer->mLogger, "Swapchain Created");
 }
 
 void RendererInfrastructure::destroySwapchain()
@@ -167,15 +178,19 @@ void RendererInfrastructure::resizeSwapchain()
 
 	initSwapchain();
 
+	LOG_INFO(mRenderer->mLogger, "Swapchain Resized");
+
 	mResizeRequested = false;
 }
 
 PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipelineOptions)
 {
 	if (mMaterialPipelines.contains(pipelineOptions)) {
+		LOG_INFO(mRenderer->mLogger, "Material Pipeline Retrieved");
 		return &mMaterialPipelines[pipelineOptions];
 	}
 	createMaterialPipeline(pipelineOptions);
+	LOG_INFO(mRenderer->mLogger, "Material Pipeline Created");
 	return &mMaterialPipelines[pipelineOptions];
 }
 
@@ -303,8 +318,28 @@ void RendererInfrastructure::cleanup() {
 	for (auto& frame : mFrames) {
 		frame.cleanup();
 	}
+	LOG_INFO(mRenderer->mLogger, "Frames Destroyed");
 	mMaterialPipelines.clear();
+	LOG_INFO(mRenderer->mLogger, "Material Pipelines Destroyed");
 	mCullPipeline.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Destroyed");
 	destroySwapchain();
+	LOG_INFO(mRenderer->mLogger, "Swapchain Destroyed");
 	mMainDescriptorAllocator.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Descriptor Allocator Destroyed");
+}
+
+Frame::Frame()
+	: mCommandPool(nullptr)
+	, mCommandBuffer(nullptr)
+	, mRenderFence(nullptr)
+	, mAvailableSemaphore(nullptr)
+{}
+
+void Frame::cleanup()
+{
+	mAvailableSemaphore.clear();
+	mRenderFence.clear();
+	mCommandBuffer.clear();
+	mCommandPool.clear();
 }

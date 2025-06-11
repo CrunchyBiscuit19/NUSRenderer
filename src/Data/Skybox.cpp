@@ -34,6 +34,8 @@ void Skybox::loadSkyboxImage(std::filesystem::path skyboxImageDir)
 		vk::Format::eR8G8B8A8Unorm,
 		vk::ImageUsageFlagBits::eSampled,
 		true, false, true);
+
+	LOG_INFO(mRenderer->mLogger, "Skybox Loaded");
 }
 
 void Skybox::initSkyboxDescriptor()
@@ -42,6 +44,7 @@ void Skybox::initSkyboxDescriptor()
 	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler);
 	mSkyboxDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eFragment);
 	mSkyboxDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mSkyboxDescriptorSetLayout);
+	LOG_INFO(mRenderer->mLogger, "Skybox Descriptor Set and Layout Created");
 
 	setSkyboxBindings();
 }
@@ -49,6 +52,7 @@ void Skybox::initSkyboxDescriptor()
 void Skybox::initSkyboxPipeline()
 {
 	mRenderer->mRendererInfrastructure.createSkyboxPipeline();
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Created");
 }
 
 void Skybox::initSkyboxBuffer()
@@ -101,6 +105,7 @@ void Skybox::initSkyboxBuffer()
 
 	mSkyboxVertexBuffer = mRenderer->mRendererResources.createBuffer(skyboxVertexSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mSkyboxVertexBuffer.buffer, "SkyboxVertexBuffer");
+	LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Created");
 
 	std::memcpy(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData, mSkyboxVertices.data(), skyboxVertexSize);
 
@@ -111,7 +116,8 @@ void Skybox::initSkyboxBuffer()
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mSkyboxVertexBuffer.buffer, skyboxVertexCopy);
-		});
+	});
+	LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Uploading");
 
 	vk::BufferDeviceAddressInfo skyboxVertexBufferDeviceAddressInfo;
 	skyboxVertexBufferDeviceAddressInfo.buffer = *mSkyboxVertexBuffer.buffer;
@@ -131,6 +137,7 @@ void Skybox::updateSkyboxImage(std::filesystem::path skyboxDir)
 	loadSkyboxImage(skyboxDir);
 	setSkyboxBindings();
 	oldSkyboxImage.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Skybox Image Updated");
 }
 
 void Skybox::init(std::filesystem::path skyboxDir)
@@ -144,8 +151,12 @@ void Skybox::init(std::filesystem::path skyboxDir)
 void Skybox::cleanup()
 {
 	mSkyboxImage.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Skybox Image Destroyed");
 	mSkyboxDescriptorSet.clear();
 	mSkyboxDescriptorSetLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Skybox Descriptor Set and Layout Destroyed");
 	mSkyboxVertexBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Destroyed");
 	mSkyboxPipeline.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Destroyed");
 }

@@ -415,19 +415,3 @@ void Renderer::perFrameUpdate()
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     mStats.mSceneUpdateTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
 }
-
-Frame::Frame()
-    : mCommandPool(nullptr)
-    , mCommandBuffer(nullptr)
-    , mRenderFence(nullptr)
-    , mAvailableSemaphore(nullptr)
-{
-}
-
-void Frame::cleanup()
-{
-    mAvailableSemaphore.clear();
-    mRenderFence.clear();
-    mCommandBuffer.clear();
-    mCommandPool.clear();
-}

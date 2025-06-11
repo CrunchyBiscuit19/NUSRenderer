@@ -488,8 +488,8 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
-		LOG_INFO(mRenderer->mLogger, "{} Mesh Buffers Uploading", mName);
 	});
+	LOG_INFO(mRenderer->mLogger, "{} Mesh Buffers Uploading", mName);
 }
 
 void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector)
@@ -503,8 +503,8 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
-		LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 	});
+	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 }
 
 void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector)
@@ -520,8 +520,8 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
-		LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 	});
+	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 }
 
 void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
@@ -535,8 +535,8 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
-		LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 	});
+	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 }
 
 void GLTFModel::createInstance(TransformData initialTransform)
