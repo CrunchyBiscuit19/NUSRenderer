@@ -23,7 +23,8 @@ struct Primitive {
 	PbrMaterial* mMaterial;
 };
 
-struct Mesh {
+class Mesh {
+public:
 	std::string mName;
 	int mId;
 	std::vector<Primitive> mPrimitives;
@@ -39,7 +40,8 @@ struct Mesh {
     uint32_t mMainFirstIndex { 0 };
 };
 
-struct Node {
+class Node {
+public:
 	std::string mName;
 	int mRelativeNodeIndex;
 	std::weak_ptr<Node> mParent;
@@ -53,7 +55,8 @@ struct Node {
 	virtual ~Node() = default;
 };
 
-struct MeshNode : Node {
+class MeshNode : public Node {
+public:
 	Mesh* mMesh;
 
 	void generateRenderItems(Renderer* renderer, GLTFModel* model) override;
