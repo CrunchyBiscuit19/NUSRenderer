@@ -9,6 +9,8 @@ constexpr bool USE_VALIDATION_LAYERS = false;
 constexpr bool USE_VALIDATION_LAYERS = true;
 #endif
 
+constexpr bool LOG_TO_FILE = false;
+
 constexpr unsigned int EXPECTED_FRAME_RATE = 60;
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int NUMBER_OF_SWAPCHAIN_IMAGES = 3;

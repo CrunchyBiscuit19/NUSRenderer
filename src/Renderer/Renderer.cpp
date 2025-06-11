@@ -5,6 +5,7 @@
 #include <quill/Backend.h>
 #include <quill/Frontend.h>
 #include <quill/sinks/ConsoleSink.h>
+#include <quill/sinks/FileSink.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <imgui_impl_sdl2.h>
@@ -27,7 +28,19 @@ Renderer::Renderer()
 void Renderer::init()
 {
     quill::Backend::start();
-    mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
+
+    if (LOG_TO_FILE) {
+        auto fileSink = quill::Frontend::create_or_get_sink<quill::FileSink>(fmt::format("{}Run.log", LOGS_PATH).c_str(), []() {
+                quill::FileSinkConfig cfg;
+                cfg.set_open_mode('w');
+                cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+                return cfg;
+        }(), quill::FileEventNotifier{});
+        mLogger = quill::Frontend::create_or_get_logger("FileLogger", std::move(fileSink));
+    }
+    else {
+        mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
+    }
     mLogger->set_log_level(quill::LogLevel::TraceL3);
 
     LOG_INFO(mLogger, "Rendering Started");

@@ -7,3 +7,4 @@ shaders/**/*.spv
 resources/hdr
 CMakeSettings.json
 resources/models
+logs/
