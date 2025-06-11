@@ -92,21 +92,23 @@ struct Batch {
 	MainBuffer countBuffer;
 	AllocatedBuffer renderItemsStagingBuffer;
 
-	~Batch() {
-		renderItemsStagingBuffer.cleanup();
-		countBuffer.cleanup();
-		visibleRenderItemsBuffer.cleanup();
-		renderItemsBuffer.cleanup();
-		renderItems.clear();
-	}
+	Batch() = default;
+	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
+	~Batch();
+
+	Batch(Batch&&) noexcept = default;
+	Batch& operator=(Batch&&) noexcept = default;
+
+	Batch(const Batch&) = delete;
+	Batch& operator=(const Batch&) = delete;
 };
 
 struct Flags {
-	bool mModelAddedFlag;
-	bool mModelDestroyedFlag;
-	bool mInstanceAddedFlag;
-	bool mInstanceDestroyedFlag;
-	bool mReloadMainInstancesBuffer;
+	bool modelAddedFlag;
+	bool modelDestroyedFlag;
+	bool instanceAddedFlag;
+	bool instanceDestroyedFlag;
+	bool reloadMainInstancesBuffer;
 };
 
 class SceneManager {
