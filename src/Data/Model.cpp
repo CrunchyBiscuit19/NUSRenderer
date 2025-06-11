@@ -11,7 +11,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	mModelDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
 {
 	mName = modelPath.stem().string();
-	fmt::println("{} Model [Open File]", mName);
+	LOG_INFO(mRenderer->mLogger, "{} Open GLTF / GLB File", mName);
 
 	mId = mRenderer->mRendererScene.mLatestModelId;
 	mRenderer->mRendererScene.mLatestModelId++;
@@ -24,10 +24,15 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	data.loadFromFile(modelPath);
 
 	auto type = fastgltf::determineGltfFileType(&data);
-	if (type == fastgltf::GltfType::Invalid) { fmt::println("Failed to determine GLTF container for {}", mName); }
+	if (type == fastgltf::GltfType::Invalid) {
+		LOG_ERROR(mRenderer->mLogger, "{} Failed to determine GLTF Container", mName);
+	}
 	auto load = (type == fastgltf::GltfType::glTF) ? (parser.loadGLTF(&data, modelPath.parent_path(), gltfOptions)) : (parser.loadBinaryGLTF(&data, modelPath.parent_path(), gltfOptions));
-	if (load) { gltf = std::move(load.get()); }
-	else { fmt::println("Failed to load GLTF Model for {}: {}", mName, fastgltf::to_underlying(load.error())); }
+	if (load) { 
+		gltf = std::move(load.get()); 
+	} else { 
+		LOG_ERROR(mRenderer->mLogger, "{} Failed to load GLTF Model: {}", mName, fastgltf::to_underlying(load.error()));
+	}
 
 	mAsset = std::move(gltf);
 
@@ -202,27 +207,27 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
 
 void GLTFModel::initBuffers()
 {
-	fmt::println("{} Model [Create Buffers]", mName);
-
 	mMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
+	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
+
 	mNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4),
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
+	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
+	
 	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
-	
-	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
-	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
 	mRenderer->mRendererCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
+	LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 }
 
 void GLTFModel::loadSamplers()
 {
-	fmt::println("{} Model [Load Samplers]", mName);
-
 	mSamplers.reserve(mAsset.samplers.size());
 	for (fastgltf::Sampler& sampler : mAsset.samplers) {
 		vk::SamplerCreateInfo sampl;
@@ -234,6 +239,8 @@ void GLTFModel::loadSamplers()
 		sampl.mipmapMode = extractMipmapMode(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
 		mSamplers.emplace_back(mRenderer->mRendererCore.mDevice.createSampler(sampl));
 	}
+
+	LOG_INFO(mRenderer->mLogger, "{} Samplers Loaded", mName);
 }
 
 void GLTFModel::loadImages()
@@ -247,12 +254,12 @@ void GLTFModel::loadImages()
 		mImages.emplace_back(std::move(newImage));
 		id++;
 	}
+
+	LOG_INFO(mRenderer->mLogger, "{} Images Loaded", mName);
 }
 
 void GLTFModel::loadMaterials()
 {
-	fmt::println("{} Model [Load Materials]", mName);
-
 	std::vector<MaterialConstants> materialConstants;
 	materialConstants.reserve(mAsset.materials.size());
 
@@ -288,13 +295,13 @@ void GLTFModel::loadMaterials()
 		materialIndex++;
 	}
 
+	LOG_INFO(mRenderer->mLogger, "{} Materials Loaded", mName);
+
 	loadMaterialsConstantsBuffer(materialConstants);
 }
 
 void GLTFModel::loadMeshes()
 {
-	fmt::println("{} Model [Load Meshes]", mName);
-
 	std::vector<uint32_t> indices;
 	std::vector<Vertex> vertices;
 
@@ -388,12 +395,12 @@ void GLTFModel::loadMeshes()
 		mMeshes.push_back(std::move(newMesh));
 		mRenderer->mRendererScene.mLatestMeshId++;
 	}
+
+	LOG_INFO(mRenderer->mLogger, "{} Meshes Loaded", mName);
 }
 
 void GLTFModel::loadNodes()
 {
-	fmt::println("{} Model [Load Nodes]", mName);
-
 	int nodeIndex = 0;
 	for (fastgltf::Node& node : mAsset.nodes) {
 		std::shared_ptr<Node> newNode;
@@ -430,6 +437,7 @@ void GLTFModel::loadNodes()
 		mNodes.push_back(newNode);
 		nodeIndex++;
 	}
+	LOG_INFO(mRenderer->mLogger, "{} Nodes Loaded", mName);
 
 	// Setup hierarchy
 	for (int i = 0; i < mAsset.nodes.size(); i++) {
@@ -440,6 +448,7 @@ void GLTFModel::loadNodes()
 			mNodes[nodeChildIndex]->mParent = localNode;
 		}
 	}
+	LOG_INFO(mRenderer->mLogger, "{} Nodes Hierarchy Established", mName);
 
 	// Find the top nodes, with no parents
 	for (auto& node : mNodes) {
@@ -448,6 +457,7 @@ void GLTFModel::loadNodes()
 			node->refreshTransform(glm::mat4{ 1.f });
 		}
 	}
+	LOG_INFO(mRenderer->mLogger, "{} Materials Loaded", mName);
 
 	loadNodeTransformsBuffer(mNodes);
 }
@@ -478,6 +488,7 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
+		LOG_INFO(mRenderer->mLogger, "{} Mesh Buffers Uploading", mName);
 	});
 }
 
@@ -492,6 +503,7 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+		LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 	});
 }
 
@@ -508,6 +520,7 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
+		LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 	});
 }
 
@@ -522,14 +535,15 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+		LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 	});
 }
 
-void GLTFModel::createInstance()
+void GLTFModel::createInstance(TransformData initialTransform)
 {
-	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId);
-	mInstances.back().mTransformComponents.translation = mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector();
+	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId, initialTransform);
 	mRenderer->mRendererScene.mLatestInstanceId++;
+	LOG_INFO(mRenderer->mLogger, "{} Instance Created", mName);
 }
 
 void GLTFModel::updateInstances()
@@ -545,12 +559,16 @@ void GLTFModel::updateInstances()
 		InstanceData instanceData{ tm * rm * sm };
 		instanceDataVector.push_back(instanceData);
 	}
+
+	LOG_INFO(mRenderer->mLogger, "{} Instances Updated", mName);
+
 	loadInstancesBuffer(instanceDataVector);
 }
 
 void GLTFModel::markDelete()
 {
 	mDeleteSignal = mRenderer->mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP;
+	LOG_INFO(mRenderer->mLogger, "{} Marked to Delete", mName);
 }
 
 void GLTFModel::load()
@@ -562,7 +580,7 @@ void GLTFModel::load()
 	loadMeshes();
 	loadNodes();
 
-	fmt::println("{} Model [Finished Loading]", mName);
+	LOG_INFO(mRenderer->mLogger, "{} Completely Loaded", mName);
 }
 
 void GLTFModel::generateRenderItems()
@@ -571,6 +589,7 @@ void GLTFModel::generateRenderItems()
 		for (auto& n : mTopNodes) {
 			n->generateRenderItems(mRenderer, this);
 		}
+		LOG_INFO(mRenderer->mLogger, "{} Render Items Generated", mName);
 	}
 }
 

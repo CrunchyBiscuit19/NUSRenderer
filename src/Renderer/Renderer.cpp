@@ -2,6 +2,9 @@
 #include <Utils/Helper.h>
 
 #include <fmt/core.h>
+#include <quill/Backend.h>
+#include <quill/Frontend.h>
+#include <quill/sinks/ConsoleSink.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <imgui_impl_sdl2.h>
@@ -23,6 +26,12 @@ Renderer::Renderer()
 
 void Renderer::init()
 {
+    quill::Backend::start();
+    mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
+    mLogger->set_log_level(quill::LogLevel::TraceL3);
+
+    LOG_INFO(mLogger, "Rendering Started");
+
     mRendererCore.init();
     mImmSubmit.init();
     mRendererResources.init();
@@ -50,8 +59,6 @@ void Renderer::init()
 
 void Renderer::run()
 {
-    fmt::println("Rendering started");
-
     SDL_Event e;
 
     while (true) {
@@ -87,8 +94,6 @@ void Renderer::run()
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         mStats.mFrametime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
     }
-
-    fmt::println("Rendering ended");
 }
 
 void Renderer::cleanup()
@@ -99,6 +104,8 @@ void Renderer::cleanup()
     mRendererResources.cleanup();
     mRendererInfrastructure.cleanup();
     mRendererCore.cleanup();
+
+    LOG_INFO(mLogger, "Rendering Ended");
 }
 
 void Renderer::setViewportScissors(vk::CommandBuffer cmd)

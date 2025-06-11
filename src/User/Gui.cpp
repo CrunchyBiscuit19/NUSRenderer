@@ -37,7 +37,7 @@ void Gui::SceneGuiComponent::elements()
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
 		if (ImGui::CollapsingHeader(name.c_str())) {
 			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
-				model.createInstance();
+				model.createInstance(TransformData{ mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f });
 				model.mReloadLocalInstancesBuffer = true;
 				mRenderer->mRendererScene.mSceneManager.mFlags.instanceAddedFlag = true;
 			}
@@ -157,8 +157,12 @@ void Gui::init() {
 	poolInfo.pPoolSizes = poolSizes.data();
 	mDescriptorPool = mRenderer->mRendererCore.mDevice.createDescriptorPool(poolInfo);
 
+	LOG_INFO(mRenderer->mLogger, "ImGui Descriptor Pool Created");
+
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
+
+	LOG_INFO(mRenderer->mLogger, "ImGui SDL2 Vulkan Initialized");
 
 	vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
 	pipelineRenderingCreateInfo.colorAttachmentCount = 1;
@@ -179,11 +183,15 @@ void Gui::init() {
 	initInfo.PipelineRenderingCreateInfo = pipelineRenderingCreateInfo;
 	ImGui_ImplVulkan_Init(&initInfo);
 
+	LOG_INFO(mRenderer->mLogger, "ImGui Implementation Vulkan Initialized");
+
 	ImGui_ImplVulkan_CreateFontsTexture();
 	ImGui_ImplVulkan_DestroyFontsTexture();
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
+
+	LOG_INFO(mRenderer->mLogger, "ImGui Configured");
 
 	mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
 	mSelectModelFileDialog.SetTitle("Select GLTF / GLB File");
@@ -192,19 +200,27 @@ void Gui::init() {
 	mSelectSkyboxFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_::ImGuiFileBrowserFlags_SelectDirectory, SKYBOXES_PATH);
 	mSelectSkyboxFileDialog.SetTitle("Select Directory of Skybox Image");
 
+	LOG_INFO(mRenderer->mLogger, "ImGui FileBrowsers Created");
+
 	ImGui::StyleColorsDark();
+
+	LOG_INFO(mRenderer->mLogger, "ImGui Dark Style Applied");
 
 	ImGui::SetNextWindowSize(ImVec2(0.2 * ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y));
 
 	mGuiComponents.push_back(std::make_unique<CameraGuiComponent>(mRenderer, this, "Camera")); // Avoid slicing down to base class
 	mGuiComponents.push_back(std::make_unique<SceneGuiComponent>(mRenderer, this, "Scene"));
 	mGuiComponents.push_back(std::make_unique<MiscGuiComponent>(mRenderer, this, "Misc"));
+
+	LOG_INFO(mRenderer->mLogger, "ImGui Gui Components Added");
 }
 
 void Gui::cleanup() {
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	mDescriptorPool.clear();
+
+	LOG_INFO(mRenderer->mLogger, "ImGui Destroyed");
 }
 
 void Gui::imguiFrame() {
