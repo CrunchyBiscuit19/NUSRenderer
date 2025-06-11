@@ -13,6 +13,9 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	mName = modelPath.stem().string();
 	fmt::println("{} Model [Open File]", mName);
 
+	mId = mRenderer->mRendererScene.mLatestModelId;
+	mRenderer->mRendererScene.mLatestModelId++;
+
 	fastgltf::Parser parser{};
 	fastgltf::Asset gltf;
 	fastgltf::GltfDataBuffer data;
@@ -31,62 +34,6 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	this->load();
 
 	createInstance();
-}
-
-GLTFModel::~GLTFModel()
-{
-	// Jank solution to cleanup per-material resource description sets.
-	// Somehow with it being a shared_ptr it does not get cleaned up when the model is deleted.
-	/*for (auto& material : mMaterials) {
-		material.mResourcesDescriptorSet.clear();
-	}*/
-}
-
-GLTFModel::GLTFModel(GLTFModel&& other) noexcept :
-	mRenderer(other.mRenderer),
-	mName(std::move(other.mName)),
-	mLatestId(other.mLatestId),
-	mDeleteSignal(std::move(other.mDeleteSignal)),
-	mAsset(std::move(other.mAsset)),
-	mTopNodes(std::move(other.mTopNodes)),
-	mNodes(std::move(other.mNodes)),
-	mMeshes(std::move(other.mMeshes)),
-	mSamplers(std::move(other.mSamplers)),
-	mImages(std::move(other.mImages)),
-	mModelDescriptorAllocator(std::move(other.mModelDescriptorAllocator)),
-	mMaterials(std::move(other.mMaterials)),
-	mMaterialConstantsBuffer(std::move(other.mMaterialConstantsBuffer)),
-	mInstances(std::move(other.mInstances)),
-	mInstancesBuffer(std::move(other.mInstancesBuffer))
-{
-	other.mRenderer = nullptr;
-	other.mLatestId = 0;
-}
-
-GLTFModel& GLTFModel::operator=(GLTFModel&& other) noexcept
-{
-	if (this != &other)
-	{
-		mRenderer = other.mRenderer;
-		mName = std::move(other.mName);
-		mLatestId = other.mLatestId;
-		mDeleteSignal = std::move(other.mDeleteSignal),
-			mAsset = std::move(other.mAsset);
-		mTopNodes = std::move(other.mTopNodes);
-		mNodes = std::move(other.mNodes);
-		mMeshes = std::move(other.mMeshes);
-		mSamplers = std::move(other.mSamplers);
-		mImages = std::move(other.mImages);
-		mModelDescriptorAllocator = std::move(other.mModelDescriptorAllocator);
-		mMaterials = std::move(other.mMaterials);
-		mMaterialConstantsBuffer = std::move(other.mMaterialConstantsBuffer);
-		mInstances = std::move(other.mInstances);
-		mInstancesBuffer = std::move(other.mInstancesBuffer);
-
-		other.mRenderer = nullptr;
-		other.mLatestId = 0;
-	}
-	return *this;
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
@@ -135,7 +82,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 				imagesize.width = width;
 				imagesize.height = height;
 				imagesize.depth = 1;
-				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 				stbi_image_free(data);
 			}
 		},
@@ -147,7 +94,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 				imagesize.width = width;
 				imagesize.height = height;
 				imagesize.depth = 1;
-				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+				newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 				stbi_image_free(data);
 			}
 		},
@@ -161,7 +108,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 							imagesize.width = width;
 							imagesize.height = height;
 							imagesize.depth = 1;
-							newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true, false, false);
+							newImage = mRenderer->mRendererResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 							stbi_image_free(data);
 						}
 					},
@@ -178,45 +125,79 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 	return newImage;
 }
 
-void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo)
+void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::Checkerboard], *mRenderer->mRendererResources.mDefaultSampler };
-	if (textureInfo.has_value()) {
-		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
-		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
-		if (img.has_value()) materialImage.image = &mImages[img.value()];
-		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
-	}
+    constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
+
+    resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.pbrData.baseColorTexture.has_value()) {
+        auto img = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.base.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.base.sampler = *mSamplers[sampler.value()];
+    }
 }
 
-void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo)
+void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-	if (textureInfo.has_value()) {
-		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
-		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
-		if (img.has_value()) materialImage.image = &mImages[img.value()];
-		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
-	}
+    constants.metallicRoughnessFactor = glm::vec2(material.pbrData.metallicFactor, material.pbrData.roughnessFactor);
+
+    resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.pbrData.metallicRoughnessTexture.has_value()) {
+        auto img = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.metallicRoughness.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.metallicRoughness.sampler = *mSamplers[sampler.value()];
+    }
 }
 
-void GLTFModel::assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo)
+void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	materialImage = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
-	if (textureInfo.has_value()) {
-		auto img = mAsset.textures[textureInfo.value().textureIndex].imageIndex;
-		auto sampler = mAsset.textures[textureInfo.value().textureIndex].samplerIndex;
-		if (img.has_value()) materialImage.image = &mImages[img.value()];
-		if (sampler.has_value()) materialImage.sampler = *mSamplers[sampler.value()];
-	}
+    constants.emissiveFactor = glm::vec4(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2], 0);
+
+    resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.emissiveTexture.has_value()) {
+        auto img = mAsset.textures[material.emissiveTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.emissiveTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.emissive.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.emissive.sampler = *mSamplers[sampler.value()];
+    }
 }
 
-void GLTFModel::initDescriptors()
+void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
-		{ vk::DescriptorType::eCombinedImageSampler, 5 },
-	};
-	mModelDescriptorAllocator.init(mAsset.materials.size(), sizes);
+    resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.normalTexture.has_value()) {
+        auto img = mAsset.textures[material.normalTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.normalTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.normal.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.normal.sampler = *mSamplers[sampler.value()];
+
+		constants.normalScale = material.normalTexture.value().scale;
+    }
+}
+
+void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
+{
+    resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+    if (material.occlusionTexture.has_value()) {
+        auto img = mAsset.textures[material.occlusionTexture.value().textureIndex].imageIndex;
+        auto sampler = mAsset.textures[material.occlusionTexture.value().textureIndex].samplerIndex;
+        if (img.has_value())
+            resources.occlusion.image = &mImages[img.value()];
+        if (sampler.has_value())
+            resources.occlusion.sampler = *mSamplers[sampler.value()];
+
+		constants.occlusionStrength = material.occlusionTexture.value().strength;
+    }
 }
 
 void GLTFModel::initBuffers()
@@ -224,11 +205,18 @@ void GLTFModel::initBuffers()
 	fmt::println("{} Model [Create Buffers]", mName);
 
 	mMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	mNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4),
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
+	
+	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
 }
 
 void GLTFModel::loadSamplers()
@@ -251,8 +239,13 @@ void GLTFModel::loadSamplers()
 void GLTFModel::loadImages()
 {
 	mImages.reserve(mAsset.images.size());
+	int id = 0;
 	for (fastgltf::Image& image : mAsset.images) {
-		mImages.emplace_back(loadImage(image));
+		AllocatedImage newImage = loadImage(image);
+		mRenderer->mRendererCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(newImage.imageView, fmt::format("{}ImageView{}", mName, id).c_str());
+		mImages.emplace_back(std::move(newImage));
+		id++;
 	}
 }
 
@@ -266,7 +259,8 @@ void GLTFModel::loadMaterials()
 	mMaterials.reserve(mAsset.materials.size());
 	int materialIndex = 0;
 	for (fastgltf::Material& mat : mAsset.materials) {
-		auto newMat = PbrMaterial(mRenderer, &mModelDescriptorAllocator);
+		auto newMat = PbrMaterial(mRenderer);
+
 		auto matName = std::string(mat.name);
 		if (matName.empty()) {
 			matName = fmt::format("{}", materialIndex);
@@ -276,21 +270,19 @@ void GLTFModel::loadMaterials()
 		newMat.mPbrData.alphaMode = mat.alphaMode;
 		newMat.mPbrData.doubleSided = mat.doubleSided;
 		
-		newMat.mPbrData.constants.baseFactor = glm::vec4(mat.pbrData.baseColorFactor[0], mat.pbrData.baseColorFactor[1], mat.pbrData.baseColorFactor[2], mat.pbrData.baseColorFactor[3]);
-		assignTexture(newMat.mPbrData.resources.base, mat.pbrData.baseColorTexture);
-		newMat.mPbrData.constants.metallicRoughnessFactor = glm::vec4(mat.pbrData.metallicFactor, mat.pbrData.roughnessFactor, 0.f, 0.f);
-		assignTexture(newMat.mPbrData.resources.metallicRoughness, mat.pbrData.metallicRoughnessTexture);
-		newMat.mPbrData.constants.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 0);
-		assignTexture(newMat.mPbrData.resources.emissive, mat.emissiveTexture);
-		assignTexture(newMat.mPbrData.resources.normal, mat.normalTexture);
-		assignTexture(newMat.mPbrData.resources.occlusion, mat.occlusionTexture);
+		assignBase(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignMetallicRoughness(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignEmissive(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignNormal(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
+        assignOcclusion(newMat.mPbrData.constants, newMat.mPbrData.resources, mat);
 
 		materialConstants.push_back(newMat.mPbrData.constants);
 
-		newMat.mMaterialIndex = materialIndex;
+		newMat.mRelativeMaterialIndex = materialIndex;
 		newMat.mConstantsBuffer = *mMaterialConstantsBuffer.buffer;
 		newMat.mConstantsBufferOffset = materialIndex * sizeof(MaterialConstants);
-		newMat.writeMaterialResources();
+
+		newMat.getMaterialPipeline();
 
 		mMaterials.push_back(std::move(newMat));
 		materialIndex++;
@@ -307,48 +299,50 @@ void GLTFModel::loadMeshes()
 	std::vector<Vertex> vertices;
 
 	for (fastgltf::Mesh& mesh : mAsset.meshes) {
-		std::shared_ptr<Mesh> newMesh = std::make_shared<Mesh>();
-		newMesh->mName = fmt::format("{}_mesh{}", mName, mesh.name);
+		Mesh newMesh;
+
+		newMesh.mName = fmt::format("{}{}", mName, mesh.name);
+		newMesh.mId = mRenderer->mRendererScene.mLatestMeshId;
 
 		indices.clear();
 		vertices.clear();
 
 		for (auto&& p : mesh.primitives) {
 			Primitive newPrimitive;
-			newPrimitive.indexStart = static_cast<uint32_t>(indices.size());
-			newPrimitive.indexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
+			newPrimitive.mRelativeFirstIndex = static_cast<uint32_t>(indices.size());
+			newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
+			newPrimitive.mIndexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
 
-			size_t initialVerticesSize = vertices.size();
+			size_t vertexStartOffset = vertices.size();
 
 			// Load indexes
 			fastgltf::Accessor& indexAccessor = mAsset.accessors[p.indicesAccessor.value()];
 			indices.reserve(indices.size() + indexAccessor.count);
 			fastgltf::iterateAccessor<std::uint32_t>(mAsset, indexAccessor,
 				[&](std::uint32_t index) {
-					indices.push_back(initialVerticesSize + index); // Add the vertices vector size so indices would reference vertices of current primitive instead of first set of vertices added
+					indices.push_back(index);
 				});
-
 
 			// Load vertex positions           
 			fastgltf::Accessor& posAccessor = mAsset.accessors[p.findAttribute("POSITION")->second];
 			vertices.resize(vertices.size() + posAccessor.count);
 			fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, posAccessor, // Default all the params
-				[&](glm::vec3 v, size_t index) {
-					Vertex newvtx;
-					newvtx.position = v;
-					newvtx.normal = { 1, 0, 0 };
-					newvtx.color = glm::vec4{ 1.f };
-					newvtx.uv_x = 0;
-					newvtx.uv_y = 0;
-					vertices[initialVerticesSize + index] = newvtx;
+				[&](glm::vec3 v, size_t pos) {
+					Vertex newVertex;
+					newVertex.position = v;
+					newVertex.normal = { 1, 0, 0 };
+					newVertex.color = glm::vec4{ 1.f };
+					newVertex.uv_x = 0;
+					newVertex.uv_y = 0;
+					vertices[vertexStartOffset + pos] = newVertex;
 				});
 
 			// Load vertex normals
 			auto normals = p.findAttribute("NORMAL");
 			if (normals != p.attributes.end()) {
 				fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second],
-					[&](glm::vec3 v, size_t index) {
-						vertices[initialVerticesSize + index].normal = v;
+					[&](glm::vec3 n, size_t pos) {
+						vertices[vertexStartOffset + pos].normal = n;
 					});
 			}
 
@@ -356,9 +350,9 @@ void GLTFModel::loadMeshes()
 			auto uv = p.findAttribute("TEXCOORD_0");
 			if (uv != p.attributes.end()) {
 				fastgltf::iterateAccessorWithIndex<glm::vec2>(mAsset, mAsset.accessors[uv->second],
-					[&](glm::vec2 v, size_t index) {
-						vertices[initialVerticesSize + index].uv_x = v.x;
-						vertices[initialVerticesSize + index].uv_y = v.y;
+					[&](glm::vec2 uv, size_t pos) {
+						vertices[vertexStartOffset + pos].uv_x = uv.x;
+						vertices[vertexStartOffset + pos].uv_y = uv.y;
 					});
 			}
 
@@ -366,33 +360,33 @@ void GLTFModel::loadMeshes()
 			auto colors = p.findAttribute("COLOR_0");
 			if (colors != p.attributes.end()) {
 				fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[(*colors).second],
-					[&](glm::vec4 v, size_t index) {
-						vertices[initialVerticesSize + index].color = v;
+					[&](glm::vec4 c, size_t pos) {
+						vertices[vertexStartOffset + pos].color = c;
 					});
 			}
 
 			if (p.materialIndex.has_value())
-				newPrimitive.material = &mMaterials[p.materialIndex.value()];
+				newPrimitive.mMaterial = &mMaterials[p.materialIndex.value()];
 			else
-				newPrimitive.material = &mMaterials[0];
+				newPrimitive.mMaterial = &mMaterials[0];
 
-			// Find min/max bounds
-			glm::vec3 minpos = vertices[initialVerticesSize].position;
-			glm::vec3 maxpos = vertices[initialVerticesSize].position;
-			for (int i = initialVerticesSize; i < vertices.size(); i++) {
-				minpos = glm::min(minpos, vertices[i].position);
-				maxpos = glm::max(maxpos, vertices[i].position);
-			}
-			newPrimitive.bounds.origin = (maxpos + minpos) / 2.f;
-			newPrimitive.bounds.extents = (maxpos - minpos) / 2.f;
-			newPrimitive.bounds.sphereRadius = glm::length(newPrimitive.bounds.extents);
-
-			newMesh->mPrimitives.push_back(newPrimitive);
+			newMesh.mPrimitives.push_back(newPrimitive);
 		}
 
-		loadMeshBuffers(newMesh.get(), indices, vertices);
+		loadMeshBuffers(&newMesh, indices, vertices);
 
-		mMeshes.push_back(newMesh);
+		newMesh.mNumVertices = vertices.size();
+		newMesh.mNumIndices = indices.size();
+
+		newMesh.mBounds.min = glm::vec4(vertices[0].position, 0.f);
+		newMesh.mBounds.max = glm::vec4(vertices[0].position, 0.f);
+		for (auto& vertex: vertices) {
+			newMesh.mBounds.min = glm::min(newMesh.mBounds.min, glm::vec4(vertex.position, 0.f));
+			newMesh.mBounds.max = glm::max(newMesh.mBounds.max, glm::vec4(vertex.position, 0.f));
+		}
+
+		mMeshes.push_back(std::move(newMesh));
+		mRenderer->mRendererScene.mLatestMeshId++;
 	}
 }
 
@@ -400,16 +394,19 @@ void GLTFModel::loadNodes()
 {
 	fmt::println("{} Model [Load Nodes]", mName);
 
+	int nodeIndex = 0;
 	for (fastgltf::Node& node : mAsset.nodes) {
 		std::shared_ptr<Node> newNode;
+
 		if (node.meshIndex.has_value()) {
 			newNode = std::make_shared<MeshNode>();
-			dynamic_cast<MeshNode*>(newNode.get())->mMesh = mMeshes[*node.meshIndex];
+			dynamic_cast<MeshNode*>(newNode.get())->mMesh = &mMeshes[*node.meshIndex];
 		}
 		else {
 			newNode = std::make_shared<Node>();
 		}
 		newNode->mName = fmt::format("{}_node{}", mName, node.name);
+		newNode->mRelativeNodeIndex = nodeIndex;
 
 		// First function if it's a mat4 transform, second function if it's separate transform / rotate / scale quaternion or vec3
 		std::visit(fastgltf::visitor{
@@ -431,9 +428,10 @@ void GLTFModel::loadNodes()
 			node.transform);
 
 		mNodes.push_back(newNode);
+		nodeIndex++;
 	}
 
-	// Setup transform hierarchy
+	// Setup hierarchy
 	for (int i = 0; i < mAsset.nodes.size(); i++) {
 		fastgltf::Node& assetNode = mAsset.nodes[i];
 		std::shared_ptr<Node> localNode = mNodes[i];
@@ -450,43 +448,20 @@ void GLTFModel::loadNodes()
 			node->refreshTransform(glm::mat4{ 1.f });
 		}
 	}
+
+	loadNodeTransformsBuffer(mNodes);
 }
 
-void GLTFModel::loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& materialConstantsVector)
-{
-	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
-
-	vk::BufferCopy materialConstantsCopy{};
-	materialConstantsCopy.dstOffset = 0;
-	materialConstantsCopy.srcOffset = 0;
-	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
-
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
-		});
-}
-
-void GLTFModel::loadInstancesBuffer(std::vector<InstanceData>& instanceDataVector)
-{
-	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
-
-	vk::BufferCopy instancesCopy{};
-	instancesCopy.dstOffset = 0;
-	instancesCopy.srcOffset = 0;
-	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
-
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
-		});
-}
-
-void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector)
+void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector)
 {
 	const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+
+	mRenderer->mRendererCore.labelResourceDebug(mesh->mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh->mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mesh->mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh->mName).c_str());
 
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
@@ -503,14 +478,58 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVecto
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
-		});
+	});
+}
+
+void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector)
+{
+	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.info.pMappedData), materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
+
+	vk::BufferCopy materialConstantsCopy{};
+	materialConstantsCopy.dstOffset = 0;
+	materialConstantsCopy.srcOffset = 0;
+	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
+
+	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+	});
+}
+
+void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector)
+{
+	for (int i = 0; i < nodesVector.size(); i++) {
+		std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof(glm::mat4), &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
+	}
+
+	vk::BufferCopy nodeTransformsCopy{};
+	nodeTransformsCopy.dstOffset = 0;
+	nodeTransformsCopy.srcOffset = 0;
+	nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
+
+	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		cmd.copyBuffer(*mRenderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
+	});
+}
+
+void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
+{
+	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mInstancesStagingBuffer.info.pMappedData), instanceDataVector.data(), instanceDataVector.size() * sizeof(InstanceData));
+
+	vk::BufferCopy instancesCopy{};
+	instancesCopy.dstOffset = 0;
+	instancesCopy.srcOffset = 0;
+	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
+
+	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+	});
 }
 
 void GLTFModel::createInstance()
 {
-	mInstances.emplace_back(this);
+	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId);
 	mInstances.back().mTransformComponents.translation = mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector();
-	mLatestId++;
+	mRenderer->mRendererScene.mLatestInstanceId++;
 }
 
 void GLTFModel::updateInstances()
@@ -536,7 +555,6 @@ void GLTFModel::markDelete()
 
 void GLTFModel::load()
 {
-	initDescriptors();
 	initBuffers();
 	loadSamplers();
 	loadImages();
@@ -551,7 +569,7 @@ void GLTFModel::generateRenderItems()
 {
 	if (!mDeleteSignal.has_value()) {
 		for (auto& n : mTopNodes) {
-			n->generateRenderItems(mRenderer, this, glm::mat4{ 1.f });
+			n->generateRenderItems(mRenderer, this);
 		}
 	}
 }

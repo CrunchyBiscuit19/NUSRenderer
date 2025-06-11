@@ -7,18 +7,21 @@
 namespace vkhelper {};
 
 struct PipelineBundle {
+	int id;
 	vk::raii::Pipeline pipeline;
 	vk::raii::PipelineLayout layout;
 
 	PipelineBundle() :
 		pipeline(nullptr),
-		layout(nullptr)
+		layout(nullptr),
+		id(0)
 	{
 	}
 
-	PipelineBundle(vk::raii::Pipeline pipeline, vk::raii::PipelineLayout layout) :
+	PipelineBundle(int idArg, vk::raii::Pipeline pipeline, vk::raii::PipelineLayout layout) :
 		pipeline(std::move(pipeline)),
-		layout(std::move(layout))
+		layout(std::move(layout)),
+		id(idArg)
 	{
 	}
 
@@ -28,7 +31,8 @@ struct PipelineBundle {
 
 	PipelineBundle(PipelineBundle&& other) noexcept :
 		pipeline(std::move(other.pipeline)),
-		layout(std::move(other.layout))
+		layout(std::move(other.layout)),
+		id(other.id)
 	{
 	}
 
@@ -36,6 +40,7 @@ struct PipelineBundle {
 		if (this != &other) {
 			pipeline = std::move(other.pipeline);
 			layout = std::move(other.layout);
+			id = other.id;
 		}
 		return *this;
 	}

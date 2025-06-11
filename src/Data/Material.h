@@ -8,17 +8,17 @@
 class Renderer;
 class AllocatedImage;
 
-struct MaterialImage { // One AllocatedImage images can be shared across multiple MaterialImage images
+struct MaterialTexture { // One AllocatedImage images can be shared across multiple MaterialImage images
 	AllocatedImage* image;
 	vk::Sampler sampler;
 
-	MaterialImage() :
+	MaterialTexture() :
 		image(nullptr),
 		sampler(nullptr)
 	{
 	}
 
-	MaterialImage(AllocatedImage* image, vk::Sampler sampler) :
+	MaterialTexture(AllocatedImage* image, vk::Sampler sampler) :
 		image(image),
 		sampler(sampler)
 	{
@@ -28,15 +28,17 @@ struct MaterialImage { // One AllocatedImage images can be shared across multipl
 struct MaterialConstants {
 	glm::vec4 baseFactor;
 	glm::vec4 emissiveFactor;
-	glm::vec4 metallicRoughnessFactor; // Combine for alignment
+	glm::vec2 metallicRoughnessFactor;
+    float normalScale;
+    float occlusionStrength;
 };
 
 struct MaterialResources {
-	MaterialImage base;
-	MaterialImage metallicRoughness;
-	MaterialImage normal;
-	MaterialImage occlusion;
-	MaterialImage emissive;
+	MaterialTexture base;
+	MaterialTexture metallicRoughness;
+	MaterialTexture normal;
+	MaterialTexture occlusion;
+	MaterialTexture emissive;
 };
 
 struct PbrData {
@@ -48,22 +50,16 @@ struct PbrData {
 
 class PbrMaterial {
 	Renderer* mRenderer;
-	DescriptorAllocatorGrowable* mModelDescriptorAllocator;
 
 public:
 	std::string mName;
-	uint32_t mMaterialIndex;
+	uint32_t mRelativeMaterialIndex;
 	PipelineBundle* mPipeline;
 	PbrData mPbrData;
 	vk::Buffer mConstantsBuffer;
 	uint32_t mConstantsBufferOffset;
-	vk::raii::DescriptorSet mResourcesDescriptorSet;
-	static vk::raii::DescriptorSetLayout mResourcesDescriptorSetLayout;
 
-	PbrMaterial(Renderer* renderer, DescriptorAllocatorGrowable* descriptorAllocator);
-
-	static void createResourcesDescriptorSetLayout(Renderer* renderer);
+	PbrMaterial(Renderer* renderer);
 
 	void getMaterialPipeline();
-	void writeMaterialResources();
 };

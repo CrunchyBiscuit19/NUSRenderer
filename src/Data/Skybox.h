@@ -20,6 +20,8 @@ private:
 	AllocatedBuffer mSkyboxVertexBuffer;
 
 public:
+	bool mActive{ true };
+
 	PipelineBundle mSkyboxPipeline;
 
 	vk::raii::DescriptorSetLayout mSkyboxDescriptorSetLayout;

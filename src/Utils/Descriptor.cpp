@@ -16,16 +16,25 @@ void DescriptorLayoutBuilder::clear()
 	mBindings.clear();
 }
 
-vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages)
+vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless)
 {
 	for (auto& b : mBindings) {
 		b.stageFlags |= shaderStages;
 	}
 
 	vk::DescriptorSetLayoutCreateInfo info{};
-	info.pNext = nullptr;
 	info.pBindings = mBindings.data();
 	info.bindingCount = static_cast<uint32_t>(mBindings.size());
+
+	vk::DescriptorBindingFlags bindlessFlags = vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind | vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+	vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {};
+	bindingFlagsInfo.pBindingFlags = &bindlessFlags;
+	bindingFlagsInfo.bindingCount = static_cast<uint32_t>(mBindings.size());
+
+	if (useBindless) {
+		info.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
+		info.pNext = &bindingFlagsInfo;
+	}
 
 	return device.createDescriptorSetLayout(info, nullptr);
 }
@@ -64,7 +73,7 @@ void DescriptorAllocatorGrowable::destroyPools()
 	mFullPools.clear();
 }
 
-vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::DescriptorSetLayout layout)
+vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::DescriptorSetLayout layout, bool useBindless)
 {
 	vk::raii::DescriptorPool poolToUse = getPool();
 
@@ -73,6 +82,12 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::Descript
 	allocInfo.descriptorPool = *poolToUse;
 	allocInfo.descriptorSetCount = 1;
 	allocInfo.pSetLayouts = &layout;
+
+	vk::DescriptorSetVariableDescriptorCountAllocateInfo countInfo;
+	countInfo.descriptorSetCount = 1;
+	countInfo.pDescriptorCounts = &MAX_TEXTURE_ARRAY_SLOTS;
+	if (useBindless)
+		allocInfo.pNext = &countInfo;
 
 	std::vector<vk::raii::DescriptorSet> ds;
 	try {
@@ -137,7 +152,7 @@ void DescriptorSetBinder::bindImage(int binding, const vk::ImageView image, cons
 	mWrites.push_back(write);
 }
 
-void DescriptorSetBinder::bindImageArray(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type, uint32_t arrayIndex)
+void DescriptorSetBinder::bindImageArray(int binding, uint32_t arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type)
 {
 	const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
 	vk::WriteDescriptorSet write = {};

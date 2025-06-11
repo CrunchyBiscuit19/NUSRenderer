@@ -85,8 +85,9 @@ void RendererCore::init()
 	auto instResult = builder
 		.set_app_name("Vulkan renderer")
 		.request_validation_layers(USE_VALIDATION_LAYERS)
+        .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
 		.set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
-		.set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
+		.set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
 		.set_debug_callback(debugMessageFunc)
 		.set_debug_callback_user_data_pointer(mRenderer)
 		.require_api_version(1, 3, 0)
@@ -107,10 +108,10 @@ void RendererCore::init()
 	features12.bufferDeviceAddress = true;
 	features12.descriptorIndexing = true;
 	features12.drawIndirectCount = true;
-	features12.descriptorBindingPartiallyBound = true;
 	features12.runtimeDescriptorArray = true;
-	features12.descriptorBindingSampledImageUpdateAfterBind = true;
 	features12.descriptorBindingVariableDescriptorCount = true;
+	features12.descriptorBindingPartiallyBound = true;
+	features12.descriptorBindingSampledImageUpdateAfterBind = true;
 	vk::PhysicalDeviceVulkan11Features features11{};
 	features11.shaderDrawParameters = true;
 	vk::PhysicalDeviceFeatures features{};

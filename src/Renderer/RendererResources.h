@@ -178,6 +178,7 @@ public:
 	AllocatedBuffer mMeshStagingBuffer;
 	AllocatedBuffer mMaterialConstantsStagingBuffer;
 	AllocatedBuffer mInstancesStagingBuffer;
+	AllocatedBuffer mNodeTransformsStagingBuffer;
 
 	std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
 	vk::raii::Sampler mDefaultSampler;
@@ -193,8 +194,8 @@ public:
 	AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	AllocatedBuffer createStagingBuffer(size_t allocSize);
 
-	AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = true, bool multisampling = true, bool cubemap = false);
-	AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = true, bool multisampling = true, bool cubemap = false);
+	AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false, bool cubemap = false);
+	AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false, bool cubemap = false);
 
 	void cleanup();
 

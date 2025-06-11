@@ -55,8 +55,9 @@ public:
 	AllocatedImage mDepthImage;
 	AllocatedImage mIntermediateImage;
 
+	int mLatestPipelineId{ 0 };
 	std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelines;
-	std::unordered_map<PipelineOptions, PipelineBundle> mComputePipelines;
+	PipelineBundle mCullPipeline;
 
 	RendererInfrastructure(Renderer* renderer);
 
@@ -64,13 +65,15 @@ public:
 
 	void initDescriptors();
 	void initFrames();
+	void initCullPipeline();
 	void initSwapchain();
+	
 	void destroySwapchain();
 	void resizeSwapchain();
 
 	PipelineBundle* getMaterialPipeline(PipelineOptions pipelineOptions);
 	void createMaterialPipeline(PipelineOptions pipelineOptions);
-	void createComputePipeline(PipelineOptions pipelineOptions);
+	void createCullPipeline();
 	void createSkyboxPipeline();
 
 	void cleanup();

@@ -11,53 +11,50 @@ struct Vertex {
 	glm::vec4 color;
 };
 
-struct Bounds {
-	glm::vec3 origin;
-	float sphereRadius;
-	glm::vec3 extents;
+struct AABB {
+	glm::vec4 min;
+	glm::vec4 max;
 };
 
 struct Primitive {
-	uint32_t indexStart;
-	uint32_t indexCount;
-	PbrMaterial* material;
-	Bounds bounds;
+	uint32_t mRelativeFirstIndex;
+	uint32_t mIndexCount;
+	uint32_t mRelativeVertexOffset;
+	PbrMaterial* mMaterial;
 };
 
 struct Mesh {
 	std::string mName;
+	int mId;
 	std::vector<Primitive> mPrimitives;
+
+	AABB mBounds;
+
 	AllocatedBuffer mVertexBuffer;
+    uint32_t mNumVertices { 0 };
+    uint32_t mMainVertexOffset { 0 };
+	
 	AllocatedBuffer mIndexBuffer;
+    uint32_t mNumIndices { 0 };
+    uint32_t mMainFirstIndex { 0 };
 };
 
 struct Node {
 	std::string mName;
+	int mRelativeNodeIndex;
 	std::weak_ptr<Node> mParent;
 	std::vector<std::shared_ptr<Node>> mChildren;
 	glm::mat4 mLocalTransform;
 	glm::mat4 mWorldTransform;
 
 	void refreshTransform(const glm::mat4& parentTransform);
-	virtual void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix);
+	virtual void generateRenderItems(Renderer* renderer, GLTFModel* model);
 
 	virtual ~Node() = default;
 };
 
 struct MeshNode : Node {
-	std::shared_ptr<Mesh> mMesh;
+	Mesh* mMesh;
 
-	void generateRenderItems(Renderer* renderer, GLTFModel* model, const glm::mat4& topMatrix) override;
-};
-
-struct RenderItem {
-	Primitive* primitive;
-	Mesh* mesh;
-	GLTFModel* model;
-
-	glm::mat4 transform;
-
-	vk::DeviceAddress vertexBufferAddress;
-	vk::DeviceAddress instancesBufferAddress;
-	vk::DeviceAddress materialConstantsBufferAddress;
+	void generateRenderItems(Renderer* renderer, GLTFModel* model) override;
 };

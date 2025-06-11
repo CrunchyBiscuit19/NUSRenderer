@@ -29,56 +29,64 @@ void Gui::CameraGuiComponent::elements()
 
 void Gui::SceneGuiComponent::elements()
 {
-	if (ImGui::CollapsingHeader("Models")) {
-		if (ImGui::Button("Add Model")) {
-			mGui->mSelectModelFileDialog.Open();
-		}
-		for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
-			const auto name = model.mName;
-			ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
-			if (ImGui::CollapsingHeader(name.c_str())) {
-				if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
-					model.createInstance();
-				}
-				ImGui::SameLine();
-				ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-				if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
-					for (auto& instance : model.mInstances) {
-						instance.mDeleteSignal = true;
-					}
-					model.markDelete();
-					mRenderer->mRegenRenderItems = true;
-				}
-				ImGui::PopStyleColor();
-
-				for (auto& instance : model.mInstances) {
-					if (ImGui::TreeNode(fmt::format("{}-{}", model.mName, instance.mId).c_str())) {
-						ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
-
-						if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation))) { model.mReloadInstancesBuffer = true; };
-						if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { model.mReloadInstancesBuffer = true; }
-						if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { model.mReloadInstancesBuffer = true; }
-
-						ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-						if (ImGui::Button("Delete Instance")) {
-							instance.mDeleteSignal = true;
-							model.mReloadInstancesBuffer = true;
-						}
-						ImGui::PopStyleColor();
-
-						ImGui::PopID();
-						ImGui::TreePop();
-					}
-				}
+	if (ImGui::Button("Add Model")) {
+		mGui->mSelectModelFileDialog.Open();
+	}
+	for (auto& model : mRenderer->mRendererScene.mSceneManager.mModels | std::views::values) {
+		const auto name = model.mName;
+		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
+		if (ImGui::CollapsingHeader(name.c_str())) {
+			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
+				model.createInstance();
+				model.mReloadLocalInstancesBuffer = true;
+				mRenderer->mRendererScene.mSceneManager.mFlags.mInstanceAddedFlag = true;
+			}
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
+			if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
+				model.markDelete();
+				mRenderer->mRendererScene.mSceneManager.mFlags.mModelDestroyedFlag = true;
 			}
 			ImGui::PopStyleColor();
+
+			for (auto& instance : model.mInstances) {
+				if (ImGui::TreeNode(fmt::format("{}-{}", model.mName, instance.mId).c_str())) {
+					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
+
+					if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation))) { 
+						model.mReloadLocalInstancesBuffer = true; 
+						mRenderer->mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer = true;
+					};
+					if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { 
+						model.mReloadLocalInstancesBuffer = true; 
+						mRenderer->mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer = true;
+					}
+					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { 
+						model.mReloadLocalInstancesBuffer = true; 
+						mRenderer->mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer = true;
+					}
+
+					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
+					if (ImGui::Button("Delete Instance")) {
+						instance.mDeleteSignal = true;
+						model.mReloadLocalInstancesBuffer = true;
+						mRenderer->mRendererScene.mSceneManager.mFlags.mInstanceDestroyedFlag = true;
+					}
+					ImGui::PopStyleColor();
+
+					ImGui::PopID();
+					ImGui::TreePop();
+				}
+			}
 		}
+		ImGui::PopStyleColor();
 	}
+	
 	if (ImGui::CollapsingHeader("Sunlight")) {
-		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.ambientColor));
-		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightColor));
-		ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection), 0.f, 1.f);
-		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mSceneResources.mSceneData.sunlightDirection[3]);
+		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mPerspectiveData.ambientColor));
+		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mPerspectiveData.sunlightColor));
+		ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mPerspectiveData.sunlightDirection), 0.f, 1.f);
+		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mPerspective.mPerspectiveData.sunlightDirection[3]);
 	}
 	if (ImGui::CollapsingHeader("Skybox")) {
 		if (ImGui::Button("Change Skybox")) {
@@ -86,7 +94,7 @@ void Gui::SceneGuiComponent::elements()
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Skybox")) {
-			mRenderer->mRendererScene.mSkyboxActive = !mRenderer->mRendererScene.mSkyboxActive;
+			mRenderer->mRendererScene.mSkybox.mActive = !mRenderer->mRendererScene.mSkybox.mActive;
 		}
 	}
 
@@ -100,9 +108,9 @@ void Gui::SceneGuiComponent::elements()
 	mGui->mSelectModelFileDialog.Display();
 	if (mGui->mSelectModelFileDialog.HasSelected()) {
 		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
-		mRenderer->mRendererScene.loadModels(selectedFiles);
+		mRenderer->mRendererScene.mSceneManager.loadModels(selectedFiles);
 		mGui->mSelectModelFileDialog.ClearSelected();
-		mRenderer->mRegenRenderItems = true;
+		mRenderer->mRendererScene.mSceneManager.mFlags.mModelAddedFlag = true;
 	}
 }
 
@@ -115,10 +123,10 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
 		ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
 	}
-	if (ImGui::CollapsingHeader("Hotkeys")) {
-		ImGui::Text("[F12] Change Camera Mode");
-		ImGui::Text("[F11] Change Mouse Mode");
+	if (ImGui::CollapsingHeader("Controls")) {
+		ImGui::Text("[F11] Change Camera Mode");
 		ImGui::Text("[F10] Toggle Borderless Fullscreen");
+		ImGui::Text("[Right Click] Change Mouse Mode");
 	}
 }
 

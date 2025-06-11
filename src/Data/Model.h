@@ -20,34 +20,41 @@ private:
 
 public:
 	std::string mName;
-	int mLatestId{ 0 };
+	int mId{ 0 };
 	std::optional<uint64_t> mDeleteSignal{ std::nullopt };
-	bool mReloadInstancesBuffer{ true };
-
-	fastgltf::Asset mAsset;
-	std::vector<std::shared_ptr<Node>> mTopNodes;
-	std::vector<std::shared_ptr<Node>> mNodes;
-	std::vector<std::shared_ptr<Mesh>> mMeshes;
-	std::vector<vk::raii::Sampler> mSamplers;
-	std::vector<AllocatedImage> mImages;
+	bool mReloadLocalInstancesBuffer{ true };
 
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
+	fastgltf::Asset mAsset;
+	std::vector<Mesh> mMeshes;
+	std::vector<vk::raii::Sampler> mSamplers;
+	std::vector<AllocatedImage> mImages;
+
 	std::vector<PbrMaterial> mMaterials;
 	AllocatedBuffer mMaterialConstantsBuffer;
+    uint32_t mMainFirstMaterial { 0 };
+
+	std::vector<std::shared_ptr<Node>> mTopNodes;
+	std::vector<std::shared_ptr<Node>> mNodes;
+	AllocatedBuffer mNodeTransformsBuffer;
+    uint32_t mMainFirstNodeTransform { 0 };
 
 	std::vector<GLTFInstance> mInstances;
 	AllocatedBuffer mInstancesBuffer;
+    uint32_t mMainFirstInstance { 0 };
 
 private:
 	vk::Filter extractFilter(fastgltf::Filter filter);
 	vk::SamplerMipmapMode extractMipmapMode(fastgltf::Filter filter);
 	AllocatedImage loadImage(fastgltf::Image& image);
-	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::TextureInfo>& textureInfo);
-	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::NormalTextureInfo>& textureInfo);
-	void assignTexture(MaterialImage& materialImage, fastgltf::Optional<fastgltf::OcclusionTextureInfo>& textureInfo);
 
-	void initDescriptors();
+	void assignBase(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+    void assignMetallicRoughness(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+    void assignEmissive(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+    void assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+    void assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+
 	void initBuffers();
 	void loadSamplers();
 	void loadImages();
@@ -55,16 +62,13 @@ private:
 	void loadMeshes();
 	void loadNodes();
 
-	void loadMaterialsConstantsBuffer(std::vector<MaterialConstants>& materialConstantsVector);
-	void loadInstancesBuffer(std::vector<InstanceData>& instanceDataVector);
-	void loadMeshBuffers(Mesh* mesh, std::vector<uint32_t>& srcIndexVector, std::vector<Vertex>& srcVertexVector);
+	void loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector);
+	void loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector);
+	void loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector);
+	void loadInstancesBuffer(std::span<InstanceData> instanceDataVector);
 
 public:
 	GLTFModel(Renderer* renderer, std::filesystem::path modelPath);
-	~GLTFModel();
-
-	GLTFModel(GLTFModel&& other) noexcept;
-	GLTFModel& operator=(GLTFModel&& other) noexcept;
 
 	void load();
 

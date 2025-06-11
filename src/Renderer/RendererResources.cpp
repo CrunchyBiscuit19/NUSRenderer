@@ -22,23 +22,28 @@ void RendererResources::init()
 
 void RendererResources::initStaging()
 {
-	mImageStagingBuffer = std::move(createStagingBuffer(MAX_IMAGE_SIZE));
-	mMeshStagingBuffer = std::move(createStagingBuffer(DEFAULT_VERTEX_BUFFER_SIZE + DEFAULT_INDEX_BUFFER_SIZE));
-	mMaterialConstantsStagingBuffer = std::move(createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants)));
-	mInstancesStagingBuffer = std::move(createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData)));
+	mImageStagingBuffer = createStagingBuffer(MAX_IMAGE_SIZE);
+	mMeshStagingBuffer = createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE);
+	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
+	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
+	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
+
+	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsStagingBuffer.buffer, "MaterialConstantsStagingBuffer");
+	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
+	mRenderer->mRendererCore.labelResourceDebug(mInstancesStagingBuffer.buffer, "InstancesStagingBuffer");
 }
 
 void RendererResources::initDefault()
 {
 	// Colour data interpreted as little endian
 	constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
-	mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
+	mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t grey = std::byteswap(0xAAAAAAFF);
-	mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
+	mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t black = std::byteswap(0x000000FF);
-	mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
+	mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t blue = std::byteswap(0x769DDBFF);
-	mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
+	mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	std::array<uint32_t, 16 * 16> pixels;
 	for (int x = 0; x < 16; x++) {
 		for (int y = 0; y < 16; y++) {
@@ -46,7 +51,18 @@ void RendererResources::initDefault()
 			pixels[static_cast<std::array<uint32_t, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
 		}
 	}
-	mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, false, false, false));
+	mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::White].image, "DefaultWhiteImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::White].imageView, "DefaultWhiteImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Grey].image, "DefaultGreyImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Grey].imageView, "DefaultGreyImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Black].image, "DefaultBlackImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Black].imageView, "DefaultBlackImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Blue].image, "DefaultBlueImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Blue].imageView, "DefaultBlueImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].image, "DefaultCheckboardImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].imageView, "DefaultCheckboardImageView");
 
 	vk::SamplerCreateInfo sampl;
 	sampl.magFilter = vk::Filter::eLinear;
@@ -171,9 +187,10 @@ AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize)
 
 void RendererResources::cleanup()
 {
+	mNodeTransformsStagingBuffer.cleanup();
 	mImageStagingBuffer.cleanup();
 	mMeshStagingBuffer.cleanup();
-	mMaterialConstantsStagingBuffer.cleanup();
+	mMaterialConstantsStagingBuffer.cleanup( );
 	mInstancesStagingBuffer.cleanup();
 	mDefaultImages.clear();
 	mDefaultSampler.clear();

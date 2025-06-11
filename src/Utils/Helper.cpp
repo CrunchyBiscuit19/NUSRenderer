@@ -404,3 +404,23 @@ vk::PipelineShaderStageCreateInfo vkhelper::pipelineShaderStageCreateInfo(vk::Sh
 	info.pName = entry;
 	return info;
 }
+
+void vkhelper::createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buffer, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask)
+{
+	vk::BufferMemoryBarrier2 bufferBarrier {};
+	bufferBarrier.pNext = nullptr;
+		bufferBarrier.srcStageMask = srcStageMask;
+		bufferBarrier.srcAccessMask = srcAccessMask;
+		bufferBarrier.dstStageMask = dstStageMask;
+		bufferBarrier.dstAccessMask = dstAccessMask;
+		bufferBarrier.buffer = buffer;
+	bufferBarrier.offset = 0;
+	bufferBarrier.size = vk::WholeSize;
+
+	vk::DependencyInfo depInfo {};
+	depInfo.pNext = nullptr;
+	depInfo.pBufferMemoryBarriers = &bufferBarrier;
+	depInfo.bufferMemoryBarrierCount = 1;
+
+	cmd.pipelineBarrier2(depInfo);
+}

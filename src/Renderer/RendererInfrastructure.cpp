@@ -17,17 +17,17 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 
 void RendererInfrastructure::init() {
 	initSwapchain();
+	initCullPipeline();
 	initDescriptors();
 	initFrames();
 }
 
 void RendererInfrastructure::initDescriptors()
 {
-	PbrMaterial::createResourcesDescriptorSetLayout(mRenderer);
-
 	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
 		{ vk::DescriptorType::eUniformBuffer, 1 },          // Scene UBO
 		{ vk::DescriptorType::eCombinedImageSampler, 1 },   // Skybox Cubemap
+		{ vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS },   // Material Textures
 	};
 	mMainDescriptorAllocator.init(1, sizes);
 }
@@ -39,13 +39,23 @@ void RendererInfrastructure::initFrames()
 	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
 
-	for (Frame& frame : mFrames) {
-		frame.mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
-		frame.mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
-		vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*frame.mCommandPool, 1);
-		frame.mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
-		frame.mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
+	for (int i = 0; i < mFrames.size(); i++) {
+		mFrames[i].mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
+		mFrames[i].mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
+		vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*mFrames[i].mCommandPool, 1);
+		mFrames[i].mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
+		mFrames[i].mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
+
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mRenderFence, fmt::format("FrameFence{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandPool, fmt::format("FrameCommandPool{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandBuffer, fmt::format("FrameCommandBuffer{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mAvailableSemaphore, fmt::format("FrameAvailableSemaphore{}", i).c_str());
 	}
+}
+
+void RendererInfrastructure::initCullPipeline()
+{
+	createCullPipeline();
 }
 
 void RendererInfrastructure::initSwapchain()
@@ -76,21 +86,33 @@ void RendererInfrastructure::initSwapchain()
 		);
 	}
 
+	for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].image, fmt::format("SwapchainImage{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].imageView, fmt::format("SwapchainImageView{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].renderedSemaphore, fmt::format("SwapchainRenderedSemaphore{}", i).c_str());
+	}
+
 	mDrawImage = mRenderer->mRendererResources.createImage(
 		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
 		vk::Format::eR16G16B16A16Sfloat,
 		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
-		false, true, false);
+		false, true);
 	mDepthImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
 		vk::Format::eD32Sfloat,
 		vk::ImageUsageFlagBits::eDepthStencilAttachment,
-		false, true, false);
+		false, true);
 	mIntermediateImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
 		vk::Format::eR16G16B16A16Sfloat,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
-		false, false, false);
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment);
+
+	mRenderer->mRendererCore.labelResourceDebug(mDrawImage.image, "DrawImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.image, "DepthImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.imageView, "DepthImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.image, "IntermediateImage");
+	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
 
 	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
 		for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
@@ -164,12 +186,12 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(PushConstants);
+	pushConstantRange.size = sizeof(ScenePushConstants);
 	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-		*mRenderer->mRendererScene.mSceneResources.mSceneDescriptorSetLayout,
-		*PbrMaterial::mResourcesDescriptorSetLayout
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
+		*mRenderer->mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSetLayout
 	};
 	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
 	pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
@@ -199,19 +221,27 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 	pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
 	PipelineBundle materialPipeline = PipelineBundle{
+		mLatestPipelineId++,
 		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(pipelineLayout)
 	};
 	mMaterialPipelines.emplace(pipelineOptions, std::move(materialPipeline));
 }
 
-void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptions)
+void RendererInfrastructure::createCullPipeline()
 {
-	vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule("Placeholder path", mRenderer->mRendererCore.mDevice);
+	vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv", mRenderer->mRendererCore.mDevice);
+
+	vk::PushConstantRange pushConstantRange{};
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(CullPushConstants);
+	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
 
 	vk::PipelineLayoutCreateInfo computeLayoutInfo{};
 	computeLayoutInfo.setLayoutCount = 0;
 	computeLayoutInfo.pSetLayouts = nullptr;
+	computeLayoutInfo.pPushConstantRanges = &pushConstantRange;
+	computeLayoutInfo.pushConstantRangeCount = 1;
 
 	vk::raii::PipelineLayout computePipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(computeLayoutInfo);
 
@@ -220,10 +250,11 @@ void RendererInfrastructure::createComputePipeline(PipelineOptions pipelineOptio
 	computePipelineBuilder.mPipelineLayout = *computePipelineLayout;
 
 	PipelineBundle computePipeline = PipelineBundle{
+		mLatestPipelineId++,
 		std::move(computePipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(computePipelineLayout)
 	};
-	mComputePipelines.emplace(pipelineOptions, std::move(computePipeline));
+	mCullPipeline = std::move(computePipeline);
 }
 
 void RendererInfrastructure::createSkyboxPipeline()
@@ -237,7 +268,7 @@ void RendererInfrastructure::createSkyboxPipeline()
 	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-		*mRenderer->mRendererScene.mSceneResources.mSceneDescriptorSetLayout,
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
 		*mRenderer->mRendererScene.mSkybox.mSkyboxDescriptorSetLayout
 	};
 	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
@@ -262,18 +293,18 @@ void RendererInfrastructure::createSkyboxPipeline()
 	pipelineBuilder.mPipelineLayout = *pipelineLayout;
 
 	mRenderer->mRendererScene.mSkybox.mSkyboxPipeline = PipelineBundle{
+		mLatestPipelineId++,
 		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(pipelineLayout)
 	};
 }
 
 void RendererInfrastructure::cleanup() {
-	PbrMaterial::mResourcesDescriptorSetLayout.clear();
 	for (auto& frame : mFrames) {
 		frame.cleanup();
 	}
 	mMaterialPipelines.clear();
-	mComputePipelines.clear();
+	mCullPipeline.cleanup();
 	destroySwapchain();
 	mMainDescriptorAllocator.cleanup();
 }
