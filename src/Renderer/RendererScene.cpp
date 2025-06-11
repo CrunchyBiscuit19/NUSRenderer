@@ -3,6 +3,7 @@
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <fmt/core.h>
 
 #include <ranges>
 
@@ -371,11 +372,11 @@ void SceneManager::reloadMainBuffers()
 
 void SceneManager::resetFlags()
 {
-	mFlags.mModelAddedFlag = false;
-	mFlags.mModelDestroyedFlag = false;
-	mFlags.mInstanceAddedFlag = false;
-	mFlags.mInstanceDestroyedFlag = false;
-	mFlags.mReloadMainInstancesBuffer = false;
+	mFlags.modelAddedFlag = false;
+	mFlags.modelDestroyedFlag = false;
+	mFlags.instanceAddedFlag = false;
+	mFlags.instanceDestroyedFlag = false;
+	mFlags.reloadMainInstancesBuffer = false;
 }
 
 void SceneManager::cleanup()
@@ -412,4 +413,40 @@ void RendererScene::cleanup()
 	mSkybox.cleanup();
 	mSceneManager.cleanup();
 
+}
+
+Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
+{
+	pipeline = primitive.mMaterial->mPipeline;
+	renderItemsBuffer = renderer->mRendererResources.createBuffer(
+		MAX_RENDER_ITEMS * sizeof(RenderItem),
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	renderer->mRendererCore.labelResourceDebug(renderItemsBuffer.buffer, fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
+	renderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*renderItemsBuffer.buffer));
+
+	visibleRenderItemsBuffer = renderer->mRendererResources.createBuffer(
+		MAX_RENDER_ITEMS * sizeof(RenderItem),
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	renderer->mRendererCore.labelResourceDebug(visibleRenderItemsBuffer.buffer, fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
+	visibleRenderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*visibleRenderItemsBuffer.buffer));
+
+	countBuffer = renderer->mRendererResources.createBuffer(
+		sizeof(uint32_t),
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	renderer->mRendererCore.labelResourceDebug(countBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
+	countBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*countBuffer.buffer));
+
+	renderItemsStagingBuffer = renderer->mRendererResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
+}
+
+Batch::~Batch()
+{
+	renderItemsStagingBuffer.cleanup();
+	countBuffer.cleanup();
+	visibleRenderItemsBuffer.cleanup();
+	renderItemsBuffer.cleanup();
+	renderItems.clear();	
 }

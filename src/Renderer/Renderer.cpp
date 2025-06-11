@@ -390,15 +390,15 @@ void Renderer::perFrameUpdate()
         }
     }
 
-    if (mRendererScene.mSceneManager.mFlags.mModelAddedFlag || mRendererScene.mSceneManager.mFlags.mModelDestroyedFlag) {
+    if (mRendererScene.mSceneManager.mFlags.modelAddedFlag || mRendererScene.mSceneManager.mFlags.modelDestroyedFlag) {
         mRendererScene.mSceneManager.realignOffsets();
         mRendererScene.mSceneManager.reloadMainBuffers();
         mRendererScene.mSceneManager.regenerateRenderItems();
-    } else if (mRendererScene.mSceneManager.mFlags.mInstanceAddedFlag || mRendererScene.mSceneManager.mFlags.mInstanceDestroyedFlag) {
+    } else if (mRendererScene.mSceneManager.mFlags.instanceAddedFlag || mRendererScene.mSceneManager.mFlags.instanceDestroyedFlag) {
         mRendererScene.mSceneManager.realignInstancesOffset();
         mRendererScene.mSceneManager.reloadMainInstancesBuffer();
         mRendererScene.mSceneManager.regenerateRenderItems();
-    } else if (mRendererScene.mSceneManager.mFlags.mReloadMainInstancesBuffer) {
+    } else if (mRendererScene.mSceneManager.mFlags.reloadMainInstancesBuffer) {
         mRendererScene.mSceneManager.reloadMainInstancesBuffer();
     }
 
