@@ -271,6 +271,14 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
             vk::AccessFlagBits2::eShaderWrite,
             vk::PipelineStageFlagBits2::eVertexShader, 
             vk::AccessFlagBits2::eShaderRead);
+
+        vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be written to
+            cmd,
+            *batch.countBuffer.buffer,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eDrawIndirect,
+            vk::AccessFlagBits2::eIndirectCommandRead);
     }
 }
 
