@@ -10,7 +10,10 @@ std::filesystem::path shaderDir = SHADERS_PATH;
 RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 	mRenderer(renderer),
 	mSwapchainBundle(nullptr),
-	mMainDescriptorAllocator(DescriptorAllocatorGrowable(renderer))
+	mMainDescriptorAllocator(DescriptorAllocatorGrowable(renderer)),
+	mMaterialPipelineLayout(nullptr),
+	mCullPipeline(nullptr),
+	mCullPipelineLayout(nullptr)
 {
 	mFrames.resize(FRAME_OVERLAP);
 }
@@ -18,6 +21,7 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 void RendererInfrastructure::init() {
 	initSwapchain();
 	initCullPipeline();
+	initPipelineLayouts();
 	initDescriptors();
 	initFrames();
 }
@@ -65,6 +69,64 @@ void RendererInfrastructure::initCullPipeline()
 {
 	createCullPipeline();
 	LOG_INFO(mRenderer->mLogger, "Culling Pipeline Created");
+}
+
+void RendererInfrastructure::initPipelineLayouts()
+{
+	vk::PushConstantRange materialPushConstantRange{};
+	materialPushConstantRange.offset = 0;
+	materialPushConstantRange.size = sizeof(ScenePushConstants);
+	materialPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
+	std::vector<vk::DescriptorSetLayout> materialDescriptorLayouts = {
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
+		*mRenderer->mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSetLayout
+	};
+
+	vk::PipelineLayoutCreateInfo materialPipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
+	materialPipelineLayoutCreateInfo.pSetLayouts = materialDescriptorLayouts.data();
+	materialPipelineLayoutCreateInfo.setLayoutCount = materialDescriptorLayouts.size();
+	materialPipelineLayoutCreateInfo.pPushConstantRanges = &materialPushConstantRange;
+	materialPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+
+	mMaterialPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(materialPipelineLayoutCreateInfo);
+	mRenderer->mRendererCore.labelResourceDebug(mMaterialPipelineLayout, "MaterialPipelineLayout");
+	LOG_INFO(mRenderer->mLogger, "Material Pipeline Layout Created");
+
+	vk::PushConstantRange cullPushConstantRange{};
+	cullPushConstantRange.offset = 0;
+	cullPushConstantRange.size = sizeof(CullPushConstants);
+	cullPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+	vk::PipelineLayoutCreateInfo cullLayoutInfo{};
+	cullLayoutInfo.setLayoutCount = 0;
+	cullLayoutInfo.pSetLayouts = nullptr;
+	cullLayoutInfo.pPushConstantRanges = &cullPushConstantRange;
+	cullLayoutInfo.pushConstantRangeCount = 1;
+
+	mCullPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(cullLayoutInfo);
+	mRenderer->mRendererCore.labelResourceDebug(mCullPipelineLayout, "CullPipelineLayout");
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Layout Created");
+
+	vk::PushConstantRange skyBoxPushConstantRange{};
+	skyBoxPushConstantRange.offset = 0;
+	skyBoxPushConstantRange.size = sizeof(SkyBoxPushConstants);
+	skyBoxPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
+	std::vector<vk::DescriptorSetLayout> skyboxDescriptorLayouts = {
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
+		*mRenderer->mRendererScene.mSkybox.mSkyboxDescriptorSetLayout
+	};
+	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
+	pipelineLayoutCreateInfo.pSetLayouts = skyboxDescriptorLayouts.data();
+	pipelineLayoutCreateInfo.setLayoutCount = skyboxDescriptorLayouts.size();
+	pipelineLayoutCreateInfo.pPushConstantRanges = &skyBoxPushConstantRange;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+
+	mRenderer->mRendererScene.mSkybox.mSkyboxPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
+	mRenderer->mRendererCore.labelResourceDebug(mRenderer->mRendererScene.mSkybox.mSkyboxPipelineLayout, "SkyboxPipelineLayout");
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Layout Created");
+
 }
 
 void RendererInfrastructure::initSwapchain()
@@ -183,93 +245,59 @@ void RendererInfrastructure::resizeSwapchain()
 	mResizeRequested = false;
 }
 
-PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipelineOptions)
+vk::Pipeline RendererInfrastructure::getMaterialPipeline(PipelineOptions materialPipelineOptions)
 {
-	if (mMaterialPipelinesCache.contains(pipelineOptions)) {
-		LOG_INFO(mRenderer->mLogger, "Material Pipeline Retrieved");
-		return &mMaterialPipelinesCache[pipelineOptions];
+	if (auto it = mMaterialPipelinesCache.find(materialPipelineOptions); it != mMaterialPipelinesCache.end()) {
+		return *it->second;
 	}
-	createMaterialPipeline(pipelineOptions);
-	LOG_INFO(mRenderer->mLogger, "Material Pipeline Created");
-	return &mMaterialPipelinesCache[pipelineOptions];
+	createMaterialPipeline(materialPipelineOptions);
+	return *mMaterialPipelinesCache.at(materialPipelineOptions);
 }
 
-void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOptions)
+void RendererInfrastructure::createMaterialPipeline(PipelineOptions materialPipelineOptions)
 {
 	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv");
 	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv");
 
-	vk::PushConstantRange pushConstantRange{};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(ScenePushConstants);
-	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-
-	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
-		*mRenderer->mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSetLayout
-	};
-	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
-	pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
-	pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
-	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-
-	vk::raii::PipelineLayout pipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
-
 	vk::CullModeFlags cullMode;
-	(pipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
+	(materialPipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
 	bool transparency;
-	(pipelineOptions.alphaMode == fastgltf::AlphaMode::Blend) ? (transparency = true) : (transparency = false);
+	(materialPipelineOptions.alphaMode == fastgltf::AlphaMode::Blend) ? (transparency = true) : (transparency = false);
 
-	GraphicsPipelineBuilder pipelineBuilder;
-	pipelineBuilder.setShaders(vertexShader, fragShader);
-	pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
-	pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
-	pipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
-	pipelineBuilder.enableMultisampling();
-	pipelineBuilder.enableSampleShading();
-	transparency ? pipelineBuilder.enableBlendingAlpha() : pipelineBuilder.disableBlending();
-	transparency ? pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual) : pipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);;
-	pipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
-	pipelineBuilder.setColorAttachmentFormat(mDrawImage.imageFormat);
-	pipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
-	pipelineBuilder.mPipelineLayout = *pipelineLayout;
+	GraphicsPipelineBuilder materialPipelineBuilder;
+	materialPipelineBuilder.setShaders(vertexShader, fragShader);
+	materialPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
+	materialPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
+	materialPipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
+	materialPipelineBuilder.enableMultisampling();
+	materialPipelineBuilder.enableSampleShading();
+	transparency ? materialPipelineBuilder.enableBlendingAlpha() : materialPipelineBuilder.disableBlending();
+	transparency ? materialPipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual) : materialPipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);;
+	materialPipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
+	materialPipelineBuilder.setColorAttachmentFormat(mDrawImage.imageFormat);
+	materialPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
+	materialPipelineBuilder.mPipelineLayout = *mMaterialPipelineLayout;
 
-	PipelineBundle materialPipeline = PipelineBundle{
-		mLatestPipelineId++,
-		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
-		std::move(pipelineLayout)
-	};
-	mMaterialPipelinesCache.emplace(pipelineOptions, std::move(materialPipeline));
+	auto [it, _] = mMaterialPipelinesCache.try_emplace(materialPipelineOptions, mRenderer->mRendererCore.mDevice, nullptr, materialPipelineBuilder.createPipelineCreateInfo());
+	mRenderer->mRendererCore.labelResourceDebug(it->second, fmt::format("MaterialPipeline{}", mLatestPipelineId).c_str());
+	LOG_INFO(mRenderer->mLogger, "{}", fmt::format("Material Pipeline {} Created", mLatestPipelineId).c_str());
+
+	mLatestPipelineId++;
 }
 
 void RendererInfrastructure::createCullPipeline()
 {
 	vk::ShaderModule computeShaderModule = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv");
 
-	vk::PushConstantRange pushConstantRange{};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(CullPushConstants);
-	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
-
-	vk::PipelineLayoutCreateInfo computeLayoutInfo{};
-	computeLayoutInfo.setLayoutCount = 0;
-	computeLayoutInfo.pSetLayouts = nullptr;
-	computeLayoutInfo.pPushConstantRanges = &pushConstantRange;
-	computeLayoutInfo.pushConstantRangeCount = 1;
-
-	vk::raii::PipelineLayout computePipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(computeLayoutInfo);
-
 	ComputePipelineBuilder computePipelineBuilder;
 	computePipelineBuilder.setShader(computeShaderModule);
-	computePipelineBuilder.mPipelineLayout = *computePipelineLayout;
+	computePipelineBuilder.mPipelineLayout = *mCullPipelineLayout;
 
-	PipelineBundle computePipeline = PipelineBundle{
-		mLatestPipelineId++,
-		std::move(computePipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
-		std::move(computePipelineLayout)
-	};
-	mCullPipeline = std::move(computePipeline);
+	mCullPipeline = vk::raii::Pipeline(mRenderer->mRendererCore.mDevice, nullptr, computePipelineBuilder.createPipelineCreateInfo());
+	mRenderer->mRendererCore.labelResourceDebug(mCullPipeline, "CullPipeline");
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Created");
+
+	mLatestPipelineId++;
 }
 
 void RendererInfrastructure::createSkyboxPipeline()
@@ -277,41 +305,24 @@ void RendererInfrastructure::createSkyboxPipeline()
 	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv");
 	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv");
 
-	vk::PushConstantRange pushConstantRange{};
-	pushConstantRange.offset = 0;
-	pushConstantRange.size = sizeof(SkyBoxPushConstants);
-	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+	GraphicsPipelineBuilder skyboxPipelineBuilder;
+	skyboxPipelineBuilder.setShaders(vertexShader, fragShader);
+	skyboxPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
+	skyboxPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
+	skyboxPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
+	skyboxPipelineBuilder.enableMultisampling();
+	skyboxPipelineBuilder.enableSampleShading();
+	skyboxPipelineBuilder.enableBlendingSkybox();
+	skyboxPipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
+	skyboxPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
+	skyboxPipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
+	skyboxPipelineBuilder.mPipelineLayout = *mRenderer->mRendererScene.mSkybox.mSkyboxPipelineLayout;
 
-	std::vector<vk::DescriptorSetLayout> descriptorLayouts = {
-		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
-		*mRenderer->mRendererScene.mSkybox.mSkyboxDescriptorSetLayout
-	};
-	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
-	pipelineLayoutCreateInfo.pSetLayouts = descriptorLayouts.data();
-	pipelineLayoutCreateInfo.setLayoutCount = descriptorLayouts.size();
-	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+	mRenderer->mRendererScene.mSkybox.mSkyboxPipeline = vk::raii::Pipeline(mRenderer->mRendererCore.mDevice, nullptr, skyboxPipelineBuilder.createPipelineCreateInfo());
+	mRenderer->mRendererCore.labelResourceDebug(mRenderer->mRendererScene.mSkybox.mSkyboxPipeline, "SkyboxPipeline");
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Created");
 
-	vk::raii::PipelineLayout pipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
-
-	GraphicsPipelineBuilder pipelineBuilder;
-	pipelineBuilder.setShaders(vertexShader, fragShader);
-	pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
-	pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
-	pipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
-	pipelineBuilder.enableMultisampling();
-	pipelineBuilder.enableSampleShading();
-	pipelineBuilder.enableBlendingSkybox();
-	pipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
-	pipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
-	pipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
-	pipelineBuilder.mPipelineLayout = *pipelineLayout;
-
-	mRenderer->mRendererScene.mSkybox.mSkyboxPipeline = PipelineBundle{
-		mLatestPipelineId++,
-		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
-		std::move(pipelineLayout)
-	};
+	mLatestPipelineId++;
 }
 
 void RendererInfrastructure::cleanup() {
@@ -321,8 +332,12 @@ void RendererInfrastructure::cleanup() {
 	LOG_INFO(mRenderer->mLogger, "Frames Destroyed");
 	mMaterialPipelinesCache.clear();
 	LOG_INFO(mRenderer->mLogger, "Material Pipelines Destroyed");
-	mCullPipeline.cleanup();
+	mMaterialPipelineLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Material Pipelines Layout Destroyed");
+	mCullPipeline.clear();
 	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Destroyed");
+	mCullPipelineLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Layout Destroyed");
 	destroySwapchain();
 	LOG_INFO(mRenderer->mLogger, "Swapchain Destroyed");
 	mMainDescriptorAllocator.cleanup();

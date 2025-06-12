@@ -323,17 +323,17 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     cmd.beginRendering(renderInfo);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {
-        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipeline->pipeline);
+        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
         
         setViewportScissors(cmd);
         
         cmd.bindIndexBuffer(*mRendererScene.mSceneManager.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipeline->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipeline->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
 
         mRendererScene.mSceneManager.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-        cmd.pushConstants<ScenePushConstants>(*batch.pipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSceneManager.mScenePushConstants);
+        cmd.pushConstants<ScenePushConstants>(*batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSceneManager.mScenePushConstants);
 
         cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 

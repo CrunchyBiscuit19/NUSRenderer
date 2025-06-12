@@ -4,37 +4,25 @@
 
 #include <fastgltf/types.hpp>
 
-namespace vkhelper {};
-
 struct PipelineBundle {
 	int id;
-	vk::raii::Pipeline pipeline;
-	vk::raii::PipelineLayout layout;
+	vk::Pipeline pipeline;
+	vk::PipelineLayout layout;
 
-	PipelineBundle() :
-		pipeline(nullptr),
-		layout(nullptr),
-		id(0)
-	{
-	}
-
-	PipelineBundle(int idArg, vk::raii::Pipeline pipeline, vk::raii::PipelineLayout layout) :
+	PipelineBundle(int id_, vk::raii::Pipeline pipeline, vk::raii::PipelineLayout layout) :
 		pipeline(std::move(pipeline)),
 		layout(std::move(layout)),
-		id(idArg)
-	{
-	}
+		id(id_)
+	{}
 
-	~PipelineBundle() {
-		cleanup();
-	}
+	~PipelineBundle() 
+	{}
 
 	PipelineBundle(PipelineBundle&& other) noexcept :
 		pipeline(std::move(other.pipeline)),
 		layout(std::move(other.layout)),
 		id(other.id)
-	{
-	}
+	{}
 
 	PipelineBundle& operator=(PipelineBundle&& other) noexcept {
 		if (this != &other) {
@@ -47,11 +35,6 @@ struct PipelineBundle {
 
 	PipelineBundle(const PipelineBundle&) = delete;
 	PipelineBundle& operator=(const PipelineBundle&) = delete;
-
-	void cleanup() {
-		layout.clear();
-		pipeline.clear();
-	}
 };
 
 struct PipelineOptions {
@@ -77,8 +60,6 @@ struct std::hash<PipelineOptions> {
 class PipelineBuilder {
 public:
 	vk::PipelineLayout mPipelineLayout;
-
-	virtual vk::raii::Pipeline buildPipeline(vk::raii::Device& device) = 0;
 };
 
 class GraphicsPipelineBuilder : PipelineBuilder {
@@ -96,7 +77,7 @@ public:
 	GraphicsPipelineBuilder();
 
 	void clear();
-	vk::raii::Pipeline buildPipeline(vk::raii::Device& device) override;
+	vk::GraphicsPipelineCreateInfo createPipelineCreateInfo();
 	void setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader);
 	void setInputTopology(vk::PrimitiveTopology topology);
 	void setPolygonMode(vk::PolygonMode mode);
@@ -122,6 +103,6 @@ public:
 
 	ComputePipelineBuilder();
 
-	vk::raii::Pipeline buildPipeline(vk::raii::Device& device) override;
+	vk::ComputePipelineCreateInfo createPipelineCreateInfo();
 	void setShader(vk::ShaderModule computeShader);
 };

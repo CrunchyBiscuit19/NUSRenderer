@@ -25,9 +25,8 @@ void GraphicsPipelineBuilder::clear()
 	mShaderStages.clear();
 }
 
-vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& device)
+vk::GraphicsPipelineCreateInfo GraphicsPipelineBuilder::createPipelineCreateInfo()
 {
-	// Make viewport state from our stored viewport and scissor.
 	vk::PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.pNext = nullptr;
 	viewportState.viewportCount = 1;
@@ -49,7 +48,6 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
 	// Completely clear VertexInputStateCreateInfo, as we have no need for it.
 	constexpr vk::PipelineVertexInputStateCreateInfo vertexInputInfo = { };
 
-	// Use all the info structs to create the pipeline
 	vk::GraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.pNext = &mRenderInfo;
 	pipelineInfo.stageCount = static_cast<uint32_t>(mShaderStages.size());
@@ -64,7 +62,7 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
 	pipelineInfo.layout = mPipelineLayout;
 	pipelineInfo.pDynamicState = &dynamicInfo;
 
-	return vk::raii::Pipeline(device, nullptr, pipelineInfo);
+	return pipelineInfo;
 }
 
 void GraphicsPipelineBuilder::setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader)
@@ -210,11 +208,11 @@ void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
 }
 
-vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device)
+vk::ComputePipelineCreateInfo ComputePipelineBuilder::createPipelineCreateInfo()
 {
 	vk::ComputePipelineCreateInfo computePipelineInfo = {};
 	computePipelineInfo.layout = mPipelineLayout;
 	computePipelineInfo.stage = mComputeShaderStageCreateInfo;
 
-	return vk::raii::Pipeline(device, nullptr, computePipelineInfo);
+	return computePipelineInfo;
 }

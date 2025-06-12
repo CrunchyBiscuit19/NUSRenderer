@@ -191,7 +191,7 @@ void SceneManager::regenerateRenderItems()
             cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
         });
 
-		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipeline->id);
+		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
     }
 }
 
@@ -463,7 +463,7 @@ void RendererScene::cleanup()
 
 Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 {
-	pipeline = primitive.mMaterial->mPipeline;
+	pipelineBundle = primitive.mMaterial->mPipelineBundle;
 	renderItemsBuffer = renderer->mRendererResources.createBuffer(
 		MAX_RENDER_ITEMS * sizeof(RenderItem),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,

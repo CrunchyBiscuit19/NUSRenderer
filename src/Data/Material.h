@@ -54,7 +54,7 @@ class PbrMaterial {
 public:
 	std::string mName;
 	uint32_t mRelativeMaterialIndex;
-	PipelineBundle* mPipeline;
+	PipelineBundle mPipelineBundle;
 	PbrData mPbrData;
 	vk::Buffer mConstantsBuffer;
 	uint32_t mConstantsBufferOffset;

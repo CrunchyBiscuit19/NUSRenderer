@@ -7,7 +7,9 @@
 Skybox::Skybox(Renderer* renderer) :
 	mRenderer(renderer),
 	mSkyboxDescriptorSet(nullptr),
-	mSkyboxDescriptorSetLayout(nullptr)
+	mSkyboxDescriptorSetLayout(nullptr),
+	mSkyboxPipeline(nullptr),
+	mSkyboxPipelineLayout(nullptr)
 {
 }
 
@@ -157,6 +159,8 @@ void Skybox::cleanup()
 	LOG_INFO(mRenderer->mLogger, "Skybox Descriptor Set and Layout Destroyed");
 	mSkyboxVertexBuffer.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Destroyed");
-	mSkyboxPipeline.cleanup();
+	mSkyboxPipeline.clear();
 	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Destroyed");
+	mSkyboxPipelineLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Layout Destroyed");
 }

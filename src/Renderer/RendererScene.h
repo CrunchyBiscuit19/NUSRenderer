@@ -85,7 +85,7 @@ struct MainBuffer : AllocatedBuffer {
 };
 
 struct Batch {
-	PipelineBundle* pipeline;
+	PipelineBundle pipelineBundle;
 	std::vector<RenderItem> renderItems;
 	MainBuffer renderItemsBuffer;
 	MainBuffer visibleRenderItemsBuffer;

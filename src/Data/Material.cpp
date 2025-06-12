@@ -5,12 +5,12 @@
 
 PbrMaterial::PbrMaterial(Renderer* renderer) :
 	mRenderer(renderer),
-	mPipeline(nullptr)
+	mPipelineBundle(nullptr)
 {
 }
 
 void PbrMaterial::getMaterialPipeline()
 {
 	PipelineOptions options{ mPbrData.doubleSided, mPbrData.alphaMode };
-	mPipeline = mRenderer->mRendererInfrastructure.getMaterialPipeline(options);
+	mPipelineBundle = mRenderer->mRendererInfrastructure.getMaterialPipeline(options);
 }

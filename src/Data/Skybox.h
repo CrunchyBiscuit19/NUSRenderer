@@ -22,10 +22,11 @@ private:
 public:
 	bool mActive{ true };
 
-	PipelineBundle mSkyboxPipeline;
+	vk::raii::Pipeline mSkyboxPipeline;
+	vk::raii::PipelineLayout mSkyboxPipelineLayout;
 
-	vk::raii::DescriptorSetLayout mSkyboxDescriptorSetLayout;
 	vk::raii::DescriptorSet mSkyboxDescriptorSet;
+	vk::raii::DescriptorSetLayout mSkyboxDescriptorSetLayout;
 
 	SkyBoxPushConstants mSkyboxPushConstants;
 
