@@ -8,7 +8,7 @@
 class Renderer;
 class AllocatedImage;
 
-struct MaterialTexture { // One AllocatedImage images can be shared across multiple MaterialImage images
+struct MaterialTexture {
 	AllocatedImage* image;
 	vk::Sampler sampler;
 

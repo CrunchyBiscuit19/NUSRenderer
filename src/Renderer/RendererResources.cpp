@@ -9,7 +9,6 @@
 
 RendererResources::RendererResources(Renderer* renderer) :
 	mRenderer(renderer),
-	mDefaultSampler(nullptr),
 	mColorClearValue(CLEAR_COLOR)
 {
 }
@@ -17,7 +16,8 @@ RendererResources::RendererResources(Renderer* renderer) :
 void RendererResources::init()
 {
 	initStaging();
-	initDefault();
+	initDefaultImages();
+	initDefaultSampler();
 }
 
 void RendererResources::initStaging()
@@ -44,7 +44,7 @@ void RendererResources::initStaging()
 
 }
 
-void RendererResources::initDefault()
+void RendererResources::initDefaultImages()
 {
 	// Colour data interpreted as little endian
 	constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
@@ -75,16 +75,32 @@ void RendererResources::initDefault()
 	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].image, "DefaultCheckboardImage");
 	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].imageView, "DefaultCheckboardImageView");
 
-	vk::SamplerCreateInfo sampl;
-	sampl.magFilter = vk::Filter::eLinear;
-	sampl.minFilter = vk::Filter::eLinear;
-	sampl.mipmapMode = vk::SamplerMipmapMode::eLinear;
-	sampl.addressModeU = vk::SamplerAddressMode::eRepeat;
-	sampl.addressModeV = vk::SamplerAddressMode::eRepeat;
-	sampl.addressModeW = vk::SamplerAddressMode::eRepeat;
-	mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
+	LOG_INFO(mRenderer->mLogger, "Default Images Created");
+}
 
-	LOG_INFO(mRenderer->mLogger, "Default Images and Samplers Created");
+void RendererResources::initDefaultSampler()
+{
+	vk::SamplerCreateInfo defaultSamplerCreateInfo;
+	defaultSamplerCreateInfo.magFilter = vk::Filter::eLinear;
+	defaultSamplerCreateInfo.minFilter = vk::Filter::eLinear;
+	defaultSamplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	defaultSamplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+	defaultSamplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+	defaultSamplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;	
+
+	SamplerOptions defaultSamplerOptions;
+	mSamplersCache.try_emplace(defaultSamplerOptions, mRenderer->mRendererCore.mDevice.createSampler(defaultSamplerCreateInfo));
+
+	LOG_INFO(mRenderer->mLogger, "Default Sampler Created");
+}
+
+vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInfo)
+{
+	SamplerOptions samplerOptions(samplerCreateInfo);
+	mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice.createSampler(samplerCreateInfo));
+	if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
+		return *it->second;
+	}
 }
 
 AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -212,8 +228,10 @@ void RendererResources::cleanup()
 	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Destroyed");
 	mDefaultImages.clear();
 	LOG_INFO(mRenderer->mLogger, "Default Images Destroyed");
-	mDefaultSampler.clear();
-	LOG_INFO(mRenderer->mLogger, "Default Sampler Destroyed");
+	mSamplersCache.clear();
+	LOG_INFO(mRenderer->mLogger, "All Samplers Destroyed");
+	mShadersCache.clear();
+	LOG_INFO(mRenderer->mLogger, "All Shaders Destroyed");
 }
 
 RendererResources::RendererResources(RendererResources&& other) noexcept :
@@ -221,7 +239,8 @@ RendererResources::RendererResources(RendererResources&& other) noexcept :
 	mImageStagingBuffer(std::move(other.mImageStagingBuffer)),
 	mMeshStagingBuffer(std::move(other.mMeshStagingBuffer)),
 	mDefaultImages(std::move(other.mDefaultImages)),
-	mDefaultSampler(std::move(other.mDefaultSampler))
+	mSamplersCache(std::move(other.mSamplersCache)),
+	mShadersCache(std::move(other.mShadersCache))
 {
 }
 
@@ -231,7 +250,8 @@ RendererResources& RendererResources::operator=(RendererResources&& other) noexc
 		mImageStagingBuffer = std::move(other.mImageStagingBuffer);
 		mMeshStagingBuffer = std::move(other.mMeshStagingBuffer);
 		mDefaultImages = std::move(other.mDefaultImages);
-		mDefaultSampler = std::move(other.mDefaultSampler);
+		mSamplersCache = std::move(other.mSamplersCache);
+		mShadersCache = std::move(other.mShadersCache);
 	}
 	return *this;
 }

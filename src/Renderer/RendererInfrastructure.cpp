@@ -185,13 +185,13 @@ void RendererInfrastructure::resizeSwapchain()
 
 PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipelineOptions)
 {
-	if (mMaterialPipelines.contains(pipelineOptions)) {
+	if (mMaterialPipelinesCache.contains(pipelineOptions)) {
 		LOG_INFO(mRenderer->mLogger, "Material Pipeline Retrieved");
-		return &mMaterialPipelines[pipelineOptions];
+		return &mMaterialPipelinesCache[pipelineOptions];
 	}
 	createMaterialPipeline(pipelineOptions);
 	LOG_INFO(mRenderer->mLogger, "Material Pipeline Created");
-	return &mMaterialPipelines[pipelineOptions];
+	return &mMaterialPipelinesCache[pipelineOptions];
 }
 
 void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOptions)
@@ -240,7 +240,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(pipelineLayout)
 	};
-	mMaterialPipelines.emplace(pipelineOptions, std::move(materialPipeline));
+	mMaterialPipelinesCache.emplace(pipelineOptions, std::move(materialPipeline));
 }
 
 void RendererInfrastructure::createCullPipeline()
@@ -319,7 +319,7 @@ void RendererInfrastructure::cleanup() {
 		frame.cleanup();
 	}
 	LOG_INFO(mRenderer->mLogger, "Frames Destroyed");
-	mMaterialPipelines.clear();
+	mMaterialPipelinesCache.clear();
 	LOG_INFO(mRenderer->mLogger, "Material Pipelines Destroyed");
 	mCullPipeline.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Destroyed");
