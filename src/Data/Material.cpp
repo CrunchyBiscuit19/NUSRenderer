@@ -76,11 +76,19 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 
 	auto [it, _] = mMaterialPipelinesCache.try_emplace(materialPipelineOptions,
 		mRenderer->mRendererInfrastructure.mLatestPipelineId,
-		materialPipelineBuilder.createPipeline(mRenderer->mRendererCore.mDevice),
+		materialPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
 		*mMaterialPipelineLayout
 	);
 	mRenderer->mRendererCore.labelResourceDebug(it->second.pipeline, fmt::format("MaterialPipeline{}", mRenderer->mRendererInfrastructure.mLatestPipelineId).c_str());
 	LOG_INFO(mRenderer->mLogger, "{}", fmt::format("Material Pipeline {} Created", mRenderer->mRendererInfrastructure.mLatestPipelineId).c_str());
 
 	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
+}
+
+void PbrMaterial::cleanup(Renderer* renderer)
+{
+	mMaterialPipelinesCache.clear();
+	LOG_INFO(renderer->mLogger, "All Material Pipelines Destroyed");
+	mMaterialPipelineLayout.clear();
+	LOG_INFO(renderer->mLogger, "Material Pipeline Layout Destroyed");
 }

@@ -162,7 +162,7 @@ void SceneManager::initCullPipeline()
 
 	mCullPipelineBundle = PipelineBundle(
 		mRenderer->mRendererInfrastructure.mLatestPipelineId,
-		cullPipelineBuilder.createPipeline(mRenderer->mRendererCore.mDevice),
+		cullPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
 		*mCullPipelineLayout		
 	);
 	mRenderer->mRendererCore.labelResourceDebug(mCullPipelineBundle.pipeline, "CullPipeline");

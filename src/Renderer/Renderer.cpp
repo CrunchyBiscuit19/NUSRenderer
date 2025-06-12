@@ -113,6 +113,8 @@ void Renderer::run()
 
 void Renderer::cleanup()
 {
+    PbrMaterial::cleanup(this);
+
     mGUI.cleanup();
     mRendererScene.cleanup();
     mImmSubmit.cleanup();

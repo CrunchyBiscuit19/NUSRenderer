@@ -73,6 +73,8 @@ struct std::hash<PipelineOptions> {
 class PipelineBuilder {
 public:
 	vk::PipelineLayout mPipelineLayout;
+
+	virtual vk::raii::Pipeline buildPipeline(vk::raii::Device& device) = 0;
 };
 
 class GraphicsPipelineBuilder : PipelineBuilder {
@@ -90,7 +92,7 @@ public:
 	GraphicsPipelineBuilder();
 
 	void clear();
-	vk::raii::Pipeline createPipeline(vk::raii::Device& device);
+	vk::raii::Pipeline buildPipeline(vk::raii::Device& device) override;
 	void setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader);
 	void setInputTopology(vk::PrimitiveTopology topology);
 	void setPolygonMode(vk::PolygonMode mode);
@@ -116,6 +118,6 @@ public:
 
 	ComputePipelineBuilder();
 
-	vk::raii::Pipeline createPipeline(vk::raii::Device& device);
+	vk::raii::Pipeline buildPipeline(vk::raii::Device& device) override;
 	void setShader(vk::ShaderModule computeShader);
 };

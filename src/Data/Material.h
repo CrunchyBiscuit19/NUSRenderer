@@ -67,4 +67,6 @@ public:
 	static void initMaterialPipelineLayout(Renderer* renderer);
 	void getMaterialPipeline();
 	void createMaterialPipeline(PipelineOptions materialPipelineOptions);
+
+	static void cleanup(Renderer* renderer);
 };

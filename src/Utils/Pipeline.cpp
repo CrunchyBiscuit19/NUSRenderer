@@ -25,7 +25,7 @@ void GraphicsPipelineBuilder::clear()
 	mShaderStages.clear();
 }
 
-vk::raii::Pipeline GraphicsPipelineBuilder::createPipeline(vk::raii::Device& device)
+vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& device)
 {
 	vk::PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.pNext = nullptr;
@@ -208,7 +208,7 @@ void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
 }
 
-vk::raii::Pipeline ComputePipelineBuilder::createPipeline(vk::raii::Device& device)
+vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device)
 {
 	vk::ComputePipelineCreateInfo computePipelineInfo = {};
 	computePipelineInfo.layout = mPipelineLayout;

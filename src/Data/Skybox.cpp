@@ -74,7 +74,7 @@ void Skybox::initSkyboxPipeline()
 
 	mSkyboxPipelineBundle = PipelineBundle(
 		mRenderer->mRendererInfrastructure.mLatestPipelineId,
-		skyboxPipelineBuilder.createPipeline(mRenderer->mRendererCore.mDevice),
+		skyboxPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
 		*mSkyboxPipelineLayout
 	);
 	mRenderer->mRendererCore.labelResourceDebug(mSkyboxPipelineBundle.pipeline, "SkyboxPipeline");
