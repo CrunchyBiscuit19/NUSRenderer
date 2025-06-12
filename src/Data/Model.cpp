@@ -38,7 +38,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 
 	this->load();
 
-	createInstance();
+	createInstance(TransformData{ mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f });
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
