@@ -257,6 +257,7 @@ public:
 	void initDefaultSampler();
 
 	vk::Sampler getSampler(vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear));
+	vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
 	AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	AllocatedBuffer createStagingBuffer(size_t allocSize);

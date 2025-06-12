@@ -144,9 +144,8 @@ void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 void SceneManager::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
-		bool toDelete = pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
-		if (toDelete) { mFlags.modelDestroyedFlag = true; }
-		return toDelete;
+		if (pair.second.mDeleteSignal.has_value()) { mFlags.modelDestroyedFlag = true; }
+		return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
 	});
 }
 

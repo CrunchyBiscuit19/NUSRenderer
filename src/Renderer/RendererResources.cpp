@@ -6,6 +6,7 @@
 #include <fmt/core.h>
 
 #include <bit>
+#include <fstream>
 
 RendererResources::RendererResources(Renderer* renderer) :
 	mRenderer(renderer),
@@ -97,11 +98,33 @@ void RendererResources::initDefaultSampler()
 vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInfo)
 {
 	SamplerOptions samplerOptions(samplerCreateInfo);
+	mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice, samplerCreateInfo);
 	if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
 		return *it->second;
 	}
-	auto [it, _] = mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice.createSampler(samplerCreateInfo));
-	return *it->second;
+}
+
+vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath)
+{
+	auto shaderFileName = shaderPath.filename().string();
+	if (auto it = mShadersCache.find(shaderFileName); it != mShadersCache.end()) {
+		return *it->second;
+	}
+
+	std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
+	const size_t fileSize = file.tellg();
+	std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+	file.seekg(0);
+	file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(fileSize)); // Load whole file into buffer
+	file.close();
+
+	vk::ShaderModuleCreateInfo shaderCreateInfo = {};
+	shaderCreateInfo.pNext = nullptr;
+	shaderCreateInfo.codeSize = buffer.size() * sizeof(uint32_t);
+	shaderCreateInfo.pCode = buffer.data();
+
+	mShadersCache.try_emplace(shaderFileName, mRenderer->mRendererCore.mDevice, shaderCreateInfo);
+	return *mShadersCache.at(shaderFileName);
 }
 
 AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
