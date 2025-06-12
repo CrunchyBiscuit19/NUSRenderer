@@ -85,7 +85,7 @@ struct MainBuffer : AllocatedBuffer {
 };
 
 struct Batch {
-	PipelineBundle pipelineBundle;
+	PipelineBundle* pipelineBundle;
 	std::vector<RenderItem> renderItems;
 	MainBuffer renderItemsBuffer;
 	MainBuffer visibleRenderItemsBuffer;
@@ -120,6 +120,9 @@ public:
 
 	std::unordered_map<int, Batch> mBatches;
 	ScenePushConstants mScenePushConstants;
+	
+	PipelineBundle mCullPipelineBundle;
+	vk::raii::PipelineLayout mCullPipelineLayout;
 	CullPushConstants mCullPushConstants;
 
 	MainBuffer mMainVertexBuffer;
@@ -138,6 +141,8 @@ public:
 	void initBuffers();
 	void initDescriptor();
 	void initPushConstants();
+	void initCullPipelineLayout();
+	void initCullPipeline();
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();

@@ -102,6 +102,9 @@ vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInf
 	if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
 		return *it->second;
 	}
+
+	assert(false);
+	return nullptr;
 }
 
 vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath)

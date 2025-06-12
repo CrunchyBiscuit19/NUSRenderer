@@ -25,7 +25,7 @@ void GraphicsPipelineBuilder::clear()
 	mShaderStages.clear();
 }
 
-vk::GraphicsPipelineCreateInfo GraphicsPipelineBuilder::createPipelineCreateInfo()
+vk::raii::Pipeline GraphicsPipelineBuilder::createPipeline(vk::raii::Device& device)
 {
 	vk::PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.pNext = nullptr;
@@ -48,21 +48,21 @@ vk::GraphicsPipelineCreateInfo GraphicsPipelineBuilder::createPipelineCreateInfo
 	// Completely clear VertexInputStateCreateInfo, as we have no need for it.
 	constexpr vk::PipelineVertexInputStateCreateInfo vertexInputInfo = { };
 
-	vk::GraphicsPipelineCreateInfo pipelineInfo = {};
-	pipelineInfo.pNext = &mRenderInfo;
-	pipelineInfo.stageCount = static_cast<uint32_t>(mShaderStages.size());
-	pipelineInfo.pStages = mShaderStages.data();
-	pipelineInfo.pVertexInputState = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &mInputAssembly;
-	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pRasterizationState = &mRasterizer;
-	pipelineInfo.pMultisampleState = &mMultisampling;
-	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDepthStencilState = &mDepthStencil;
-	pipelineInfo.layout = mPipelineLayout;
-	pipelineInfo.pDynamicState = &dynamicInfo;
+	vk::GraphicsPipelineCreateInfo graphicsPipelineInfo = {};
+	graphicsPipelineInfo.pNext = &mRenderInfo;
+	graphicsPipelineInfo.stageCount = static_cast<uint32_t>(mShaderStages.size());
+	graphicsPipelineInfo.pStages = mShaderStages.data();
+	graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
+	graphicsPipelineInfo.pInputAssemblyState = &mInputAssembly;
+	graphicsPipelineInfo.pViewportState = &viewportState;
+	graphicsPipelineInfo.pRasterizationState = &mRasterizer;
+	graphicsPipelineInfo.pMultisampleState = &mMultisampling;
+	graphicsPipelineInfo.pColorBlendState = &colorBlending;
+	graphicsPipelineInfo.pDepthStencilState = &mDepthStencil;
+	graphicsPipelineInfo.layout = mPipelineLayout;
+	graphicsPipelineInfo.pDynamicState = &dynamicInfo;
 
-	return pipelineInfo;
+	return vk::raii::Pipeline(device, nullptr, graphicsPipelineInfo);;
 }
 
 void GraphicsPipelineBuilder::setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader)
@@ -208,11 +208,11 @@ void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
 }
 
-vk::ComputePipelineCreateInfo ComputePipelineBuilder::createPipelineCreateInfo()
+vk::raii::Pipeline ComputePipelineBuilder::createPipeline(vk::raii::Device& device)
 {
 	vk::ComputePipelineCreateInfo computePipelineInfo = {};
 	computePipelineInfo.layout = mPipelineLayout;
 	computePipelineInfo.stage = mComputeShaderStageCreateInfo;
 
-	return computePipelineInfo;
+	return vk::raii::Pipeline(device, nullptr, computePipelineInfo);
 }

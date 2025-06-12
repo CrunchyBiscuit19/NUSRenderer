@@ -54,12 +54,17 @@ class PbrMaterial {
 public:
 	std::string mName;
 	uint32_t mRelativeMaterialIndex;
-	PipelineBundle mPipelineBundle;
+	PipelineBundle* mPipelineBundle;
 	PbrData mPbrData;
 	vk::Buffer mConstantsBuffer;
 	uint32_t mConstantsBufferOffset;
 
+	static std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelinesCache;
+	static vk::raii::PipelineLayout mMaterialPipelineLayout;
+
 	PbrMaterial(Renderer* renderer);
 
+	static void initMaterialPipelineLayout(Renderer* renderer);
 	void getMaterialPipeline();
+	void createMaterialPipeline(PipelineOptions materialPipelineOptions);
 };

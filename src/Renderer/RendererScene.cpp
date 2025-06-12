@@ -73,7 +73,8 @@ void Perspective::cleanup()
 SceneManager::SceneManager(Renderer* renderer) :
 	mRenderer(renderer),
 	mMainMaterialResourcesDescriptorSet(nullptr),
-	mMainMaterialResourcesDescriptorSetLayout(nullptr)
+	mMainMaterialResourcesDescriptorSetLayout(nullptr),
+	mCullPipelineLayout(nullptr)
 {
 }
 
@@ -82,6 +83,8 @@ void SceneManager::init()
 	initBuffers();
 	initDescriptor();
 	initPushConstants();
+	initCullPipelineLayout();
+	initCullPipeline();
 }
 
 void SceneManager::initBuffers()
@@ -129,6 +132,43 @@ void SceneManager::initPushConstants()
 	mScenePushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
 	mScenePushConstants.instancesBuffer = mMainInstancesBuffer.address;
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
+}
+
+void SceneManager::initCullPipelineLayout()
+{
+	vk::PushConstantRange cullPushConstantRange{};
+	cullPushConstantRange.offset = 0;
+	cullPushConstantRange.size = sizeof(CullPushConstants);
+	cullPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+	vk::PipelineLayoutCreateInfo cullLayoutInfo{};
+	cullLayoutInfo.setLayoutCount = 0;
+	cullLayoutInfo.pSetLayouts = nullptr;
+	cullLayoutInfo.pPushConstantRanges = &cullPushConstantRange;
+	cullLayoutInfo.pushConstantRangeCount = 1;
+
+	mCullPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(cullLayoutInfo);
+	mRenderer->mRendererCore.labelResourceDebug(mCullPipelineLayout, "CullPipelineLayout");
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Layout Created");
+}
+
+void SceneManager::initCullPipeline()
+{
+	vk::ShaderModule computeShaderModule = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv");
+
+	ComputePipelineBuilder cullPipelineBuilder;
+	cullPipelineBuilder.setShader(computeShaderModule);
+	cullPipelineBuilder.mPipelineLayout = *mCullPipelineLayout;
+
+	mCullPipelineBundle = PipelineBundle(
+		mRenderer->mRendererInfrastructure.mLatestPipelineId,
+		cullPipelineBuilder.createPipeline(mRenderer->mRendererCore.mDevice),
+		*mCullPipelineLayout		
+	);
+	mRenderer->mRendererCore.labelResourceDebug(mCullPipelineBundle.pipeline, "CullPipeline");
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Created");
+
+	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
 }
 
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
@@ -423,6 +463,10 @@ void SceneManager::cleanup()
 	mModels.clear();
 	mBatches.clear();
 	LOG_INFO(mRenderer->mLogger, "All Batches Destroyed");
+	mCullPipelineBundle.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Destroyed");
+	mCullPipelineLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Layout Destroyed");
 	mMainMaterialResourcesDescriptorSet.clear();
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");
 	mMainMaterialResourcesDescriptorSetLayout.clear();

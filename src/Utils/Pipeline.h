@@ -6,17 +6,30 @@
 
 struct PipelineBundle {
 	int id;
-	vk::Pipeline pipeline;
+	vk::raii::Pipeline pipeline;
 	vk::PipelineLayout layout;
 
-	PipelineBundle(int id_, vk::raii::Pipeline pipeline, vk::raii::PipelineLayout layout) :
+	PipelineBundle() :
+		pipeline(nullptr),
+		layout(nullptr),
+		id(-1)
+	{}
+
+	PipelineBundle(int id_, vk::raii::Pipeline pipeline, vk::PipelineLayout layout) :
 		pipeline(std::move(pipeline)),
-		layout(std::move(layout)),
+		layout(layout),
 		id(id_)
 	{}
 
 	~PipelineBundle() 
-	{}
+	{
+		cleanup();
+	}
+
+	void cleanup()
+	{
+		pipeline.clear();
+	}
 
 	PipelineBundle(PipelineBundle&& other) noexcept :
 		pipeline(std::move(other.pipeline)),
@@ -77,7 +90,7 @@ public:
 	GraphicsPipelineBuilder();
 
 	void clear();
-	vk::GraphicsPipelineCreateInfo createPipelineCreateInfo();
+	vk::raii::Pipeline createPipeline(vk::raii::Device& device);
 	void setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader);
 	void setInputTopology(vk::PrimitiveTopology topology);
 	void setPolygonMode(vk::PolygonMode mode);
@@ -103,6 +116,6 @@ public:
 
 	ComputePipelineBuilder();
 
-	vk::ComputePipelineCreateInfo createPipelineCreateInfo();
+	vk::raii::Pipeline createPipeline(vk::raii::Device& device);
 	void setShader(vk::ShaderModule computeShader);
 };

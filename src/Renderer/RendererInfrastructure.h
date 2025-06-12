@@ -57,29 +57,16 @@ public:
 
 	int mLatestPipelineId{ 0 };
 
-	std::unordered_map<PipelineOptions, vk::raii::Pipeline> mMaterialPipelinesCache;
-	vk::raii::PipelineLayout mMaterialPipelineLayout;
-
-	vk::raii::Pipeline mCullPipeline;
-	vk::raii::PipelineLayout mCullPipelineLayout;
-
 	RendererInfrastructure(Renderer* renderer);
 
 	void init();
 
 	void initDescriptors();
 	void initFrames();
-	void initCullPipeline();
-	void initPipelineLayouts();
 	void initSwapchain();
 	
 	void destroySwapchain();
 	void resizeSwapchain();
-
-	PipelineBundle getMaterialPipeline(PipelineOptions materialPipelineOptions);
-	void createMaterialPipeline(PipelineOptions materialPipelineOptions);
-	void createCullPipeline();
-	void createSkyboxPipeline();
 
 	void cleanup();
 };

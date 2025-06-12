@@ -22,7 +22,7 @@ private:
 public:
 	bool mActive{ true };
 
-	vk::raii::Pipeline mSkyboxPipeline;
+	PipelineBundle mSkyboxPipelineBundle;
 	vk::raii::PipelineLayout mSkyboxPipelineLayout;
 
 	vk::raii::DescriptorSet mSkyboxDescriptorSet;
@@ -32,15 +32,15 @@ public:
 
 	Skybox(Renderer* renderer);
 
-	void loadSkyboxImage(std::filesystem::path skyboxImageDir);
+	void init(std::optional<std::filesystem::path> skyboxImageDir = std::nullopt);
 	void initSkyboxDescriptor();
+	void initSkyboxPipelineLayout();
 	void initSkyboxPipeline();
 	void initSkyboxBuffer();
 
 	void setSkyboxBindings();
+	void loadSkyboxImage(std::filesystem::path skyboxImageDir);
 	void updateSkyboxImage(std::filesystem::path skyboxImageDir);
-
-	void init(std::filesystem::path skyboxImageDir);
 
 	void cleanup();
 };
