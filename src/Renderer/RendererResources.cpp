@@ -97,10 +97,11 @@ void RendererResources::initDefaultSampler()
 vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInfo)
 {
 	SamplerOptions samplerOptions(samplerCreateInfo);
-	mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice.createSampler(samplerCreateInfo));
 	if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
 		return *it->second;
 	}
+	auto [it, _] = mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice.createSampler(samplerCreateInfo));
+	return *it->second;
 }
 
 AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)

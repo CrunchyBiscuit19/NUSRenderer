@@ -45,7 +45,6 @@ void Gui::SceneGuiComponent::elements()
 			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 			if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
 				model.markDelete();
-				mRenderer->mRendererScene.mSceneManager.mFlags.modelDestroyedFlag = true;
 			}
 			ImGui::PopStyleColor();
 
@@ -110,7 +109,6 @@ void Gui::SceneGuiComponent::elements()
 		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
 		mRenderer->mRendererScene.mSceneManager.loadModels(selectedFiles);
 		mGui->mSelectModelFileDialog.ClearSelected();
-		mRenderer->mRendererScene.mSceneManager.mFlags.modelAddedFlag = true;
 	}
 }
 

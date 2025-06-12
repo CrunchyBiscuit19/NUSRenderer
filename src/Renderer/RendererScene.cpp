@@ -134,18 +134,19 @@ void SceneManager::initPushConstants()
 void SceneManager::loadModels(const std::vector<std::filesystem::path>& paths)
 {
 	for (const auto& modelPath : paths) {
-		if (mModels.contains(modelPath.stem().string())) {
-			continue;
-		}
+		auto modelShortPath = modelPath.stem().string();
 		auto modelFullPath = MODELS_PATH / modelPath;
-		mModels.emplace(modelPath.stem().string(), std::move(GLTFModel(mRenderer, modelFullPath)));
+		auto [_, inserted] = mModels.try_emplace(modelShortPath, mRenderer, modelFullPath);
+		if (inserted) { mFlags.modelAddedFlag = true; }
 	}
 }
 
 void SceneManager::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
-		return (pair.second.mDeleteSignal.has_value()) && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
+		bool toDelete = pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
+		if (toDelete) { mFlags.modelDestroyedFlag = true; }
+		return toDelete;
 	});
 }
 
