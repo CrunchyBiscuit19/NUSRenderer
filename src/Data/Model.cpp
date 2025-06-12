@@ -148,7 +148,7 @@ void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& reso
 {
     constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
 
-	resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
+	resources.base = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.pbrData.baseColorTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].samplerIndex;
@@ -163,7 +163,7 @@ void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialRe
 {
     constants.metallicRoughnessFactor = glm::vec2(material.pbrData.metallicFactor, material.pbrData.roughnessFactor);
 
-	resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
+	resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.pbrData.metallicRoughnessTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex;
@@ -178,7 +178,7 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
 {
     constants.emissiveFactor = glm::vec4(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2], 0);
 
-	resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
+	resources.emissive = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.emissiveTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.emissiveTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.emissiveTexture.value().textureIndex].samplerIndex;
@@ -191,7 +191,7 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
 
 void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
+	resources.normal = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.normalTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.normalTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.normalTexture.value().textureIndex].samplerIndex;
@@ -206,7 +206,7 @@ void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& re
 
 void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-	resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
+	resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.occlusionTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.occlusionTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.occlusionTexture.value().textureIndex].samplerIndex;
