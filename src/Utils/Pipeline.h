@@ -79,8 +79,6 @@ public:
 	vk::PipelineLayout mPipelineLayout;
 
 	virtual vk::raii::Pipeline buildPipeline(vk::raii::Device& device) = 0;
-
-	static vk::raii::ShaderModule loadShaderModule(std::filesystem::path filePath, vk::raii::Device& device);
 };
 
 class GraphicsPipelineBuilder : PipelineBuilder {

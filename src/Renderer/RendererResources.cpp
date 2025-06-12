@@ -6,10 +6,10 @@
 #include <fmt/core.h>
 
 #include <bit>
+#include <fstream>
 
 RendererResources::RendererResources(Renderer* renderer) :
 	mRenderer(renderer),
-	mDefaultSampler(nullptr),
 	mColorClearValue(CLEAR_COLOR)
 {
 }
@@ -17,7 +17,8 @@ RendererResources::RendererResources(Renderer* renderer) :
 void RendererResources::init()
 {
 	initStaging();
-	initDefault();
+	initDefaultImages();
+	initDefaultSampler();
 }
 
 void RendererResources::initStaging()
@@ -44,17 +45,17 @@ void RendererResources::initStaging()
 
 }
 
-void RendererResources::initDefault()
+void RendererResources::initDefaultImages()
 {
 	// Colour data interpreted as little endian
 	constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
-	mDefaultImages.emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+	mDefaultImages.try_emplace(DefaultImage::White, createImage(&white, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t grey = std::byteswap(0xAAAAAAFF);
-	mDefaultImages.emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+	mDefaultImages.try_emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t black = std::byteswap(0x000000FF);
-	mDefaultImages.emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+	mDefaultImages.try_emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t blue = std::byteswap(0x769DDBFF);
-	mDefaultImages.emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+	mDefaultImages.try_emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{ 1, 1, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 	std::array<uint32_t, 16 * 16> pixels;
 	for (int x = 0; x < 16; x++) {
 		for (int y = 0; y < 16; y++) {
@@ -62,29 +63,68 @@ void RendererResources::initDefault()
 			pixels[static_cast<std::array<uint32_t, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
 		}
 	}
-	mDefaultImages.emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
+	mDefaultImages.try_emplace(DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{ 16, 16, 1 }, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled));
 
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::White].image, "DefaultWhiteImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::White].imageView, "DefaultWhiteImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Grey].image, "DefaultGreyImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Grey].imageView, "DefaultGreyImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Black].image, "DefaultBlackImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Black].imageView, "DefaultBlackImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Blue].image, "DefaultBlueImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Blue].imageView, "DefaultBlueImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].image, "DefaultCheckboardImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages[DefaultImage::Checkerboard].imageView, "DefaultCheckboardImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).image, "DefaultWhiteImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).imageView, "DefaultWhiteImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).image, "DefaultGreyImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).imageView, "DefaultGreyImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).image, "DefaultBlackImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).imageView, "DefaultBlackImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).image, "DefaultBlueImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).imageView, "DefaultBlueImageView");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).image, "DefaultCheckboardImage");
+	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).imageView, "DefaultCheckboardImageView");
 
-	vk::SamplerCreateInfo sampl;
-	sampl.magFilter = vk::Filter::eLinear;
-	sampl.minFilter = vk::Filter::eLinear;
-	sampl.mipmapMode = vk::SamplerMipmapMode::eLinear;
-	sampl.addressModeU = vk::SamplerAddressMode::eRepeat;
-	sampl.addressModeV = vk::SamplerAddressMode::eRepeat;
-	sampl.addressModeW = vk::SamplerAddressMode::eRepeat;
-	mDefaultSampler = mRenderer->mRendererCore.mDevice.createSampler(sampl);
+	LOG_INFO(mRenderer->mLogger, "Default Images Created");
+}
 
-	LOG_INFO(mRenderer->mLogger, "Default Images and Samplers Created");
+void RendererResources::initDefaultSampler()
+{
+	vk::SamplerCreateInfo defaultSamplerCreateInfo;
+	defaultSamplerCreateInfo.magFilter = vk::Filter::eLinear;
+	defaultSamplerCreateInfo.minFilter = vk::Filter::eLinear;
+	defaultSamplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	defaultSamplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+	defaultSamplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+	defaultSamplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;	
+
+	SamplerOptions defaultSamplerOptions;
+	mSamplersCache.try_emplace(defaultSamplerOptions, mRenderer->mRendererCore.mDevice.createSampler(defaultSamplerCreateInfo));
+
+	LOG_INFO(mRenderer->mLogger, "Default Sampler Created");
+}
+
+vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInfo)
+{
+	SamplerOptions samplerOptions(samplerCreateInfo);
+	mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice, samplerCreateInfo);
+	if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
+		return *it->second;
+	}
+}
+
+vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath)
+{
+	auto shaderFileName = shaderPath.filename().string();
+	if (auto it = mShadersCache.find(shaderFileName); it != mShadersCache.end()) {
+		return *it->second;
+	}
+
+	std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
+	const size_t fileSize = file.tellg();
+	std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+	file.seekg(0);
+	file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(fileSize)); // Load whole file into buffer
+	file.close();
+
+	vk::ShaderModuleCreateInfo shaderCreateInfo = {};
+	shaderCreateInfo.pNext = nullptr;
+	shaderCreateInfo.codeSize = buffer.size() * sizeof(uint32_t);
+	shaderCreateInfo.pCode = buffer.data();
+
+	mShadersCache.try_emplace(shaderFileName, mRenderer->mRendererCore.mDevice, shaderCreateInfo);
+	return *mShadersCache.at(shaderFileName);
 }
 
 AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -212,8 +252,10 @@ void RendererResources::cleanup()
 	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Destroyed");
 	mDefaultImages.clear();
 	LOG_INFO(mRenderer->mLogger, "Default Images Destroyed");
-	mDefaultSampler.clear();
-	LOG_INFO(mRenderer->mLogger, "Default Sampler Destroyed");
+	mSamplersCache.clear();
+	LOG_INFO(mRenderer->mLogger, "All Samplers Destroyed");
+	mShadersCache.clear();
+	LOG_INFO(mRenderer->mLogger, "All Shaders Destroyed");
 }
 
 RendererResources::RendererResources(RendererResources&& other) noexcept :
@@ -221,7 +263,8 @@ RendererResources::RendererResources(RendererResources&& other) noexcept :
 	mImageStagingBuffer(std::move(other.mImageStagingBuffer)),
 	mMeshStagingBuffer(std::move(other.mMeshStagingBuffer)),
 	mDefaultImages(std::move(other.mDefaultImages)),
-	mDefaultSampler(std::move(other.mDefaultSampler))
+	mSamplersCache(std::move(other.mSamplersCache)),
+	mShadersCache(std::move(other.mShadersCache))
 {
 }
 
@@ -231,7 +274,8 @@ RendererResources& RendererResources::operator=(RendererResources&& other) noexc
 		mImageStagingBuffer = std::move(other.mImageStagingBuffer);
 		mMeshStagingBuffer = std::move(other.mMeshStagingBuffer);
 		mDefaultImages = std::move(other.mDefaultImages);
-		mDefaultSampler = std::move(other.mDefaultSampler);
+		mSamplersCache = std::move(other.mSamplersCache);
+		mShadersCache = std::move(other.mShadersCache);
 	}
 	return *this;
 }

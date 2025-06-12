@@ -92,7 +92,6 @@ struct Batch {
 	MainBuffer countBuffer;
 	AllocatedBuffer renderItemsStagingBuffer;
 
-	Batch() = default;
 	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
 	~Batch();
 

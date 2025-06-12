@@ -28,7 +28,7 @@ public:
 
 	fastgltf::Asset mAsset;
 	std::vector<Mesh> mMeshes;
-	std::vector<vk::raii::Sampler> mSamplers;
+	std::vector<vk::SamplerCreateInfo> mSamplerCreateInfos;
 	std::vector<AllocatedImage> mImages;
 
 	std::vector<PbrMaterial> mMaterials;
@@ -47,6 +47,8 @@ public:
 private:
 	vk::Filter extractFilter(fastgltf::Filter filter);
 	vk::SamplerMipmapMode extractMipmapMode(fastgltf::Filter filter);
+	vk::SamplerAddressMode extractAddressMode(fastgltf::Wrap wrap);
+
 	AllocatedImage loadImage(fastgltf::Image& image);
 
 	void assignBase(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
@@ -56,7 +58,7 @@ private:
     void assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
 
 	void initBuffers();
-	void loadSamplers();
+	void loadSamplerCreateInfos();
 	void loadImages();
 	void loadMaterials();
 	void loadMeshes();

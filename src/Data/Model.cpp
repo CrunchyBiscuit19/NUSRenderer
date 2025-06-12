@@ -38,7 +38,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 
 	this->load();
 
-	createInstance();
+	createInstance(TransformData{ mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f });
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
@@ -68,6 +68,20 @@ vk::SamplerMipmapMode GLTFModel::extractMipmapMode(fastgltf::Filter filter)
 	case fastgltf::Filter::LinearMipMapLinear:
 	default:
 		return vk::SamplerMipmapMode::eLinear;
+	}
+}
+
+vk::SamplerAddressMode GLTFModel::extractAddressMode(fastgltf::Wrap wrap)
+{
+	switch (wrap) {
+	case fastgltf::Wrap::Repeat: 
+		return vk::SamplerAddressMode::eRepeat;
+	case fastgltf::Wrap::ClampToEdge: 
+		return vk::SamplerAddressMode::eClampToEdge;
+	case fastgltf::Wrap::MirroredRepeat: 
+		return vk::SamplerAddressMode::eMirroredRepeat;
+	default: 
+		return vk::SamplerAddressMode::eRepeat;
 	}
 }
 
@@ -134,14 +148,14 @@ void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& reso
 {
     constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
 
-    resources.base = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	resources.base = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.pbrData.baseColorTexture.has_value()) {
-        auto img = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].imageIndex;
-        auto sampler = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].samplerIndex;
-        if (img.has_value())
-            resources.base.image = &mImages[img.value()];
-        if (sampler.has_value())
-            resources.base.sampler = *mSamplers[sampler.value()];
+        auto imageIndex = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].imageIndex;
+        auto samplerIndex = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].samplerIndex;
+        if (imageIndex.has_value())
+            resources.base.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value())
+            resources.base.sampler = mRenderer->mRendererResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
     }
 }
 
@@ -149,14 +163,14 @@ void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialRe
 {
     constants.metallicRoughnessFactor = glm::vec2(material.pbrData.metallicFactor, material.pbrData.roughnessFactor);
 
-    resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	resources.metallicRoughness = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.pbrData.metallicRoughnessTexture.has_value()) {
-        auto img = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex;
-        auto sampler = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex;
-        if (img.has_value())
-            resources.metallicRoughness.image = &mImages[img.value()];
-        if (sampler.has_value())
-            resources.metallicRoughness.sampler = *mSamplers[sampler.value()];
+        auto imageIndex = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex;
+        auto samplerIndex = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex;
+        if (imageIndex.has_value())
+            resources.metallicRoughness.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value())
+            resources.metallicRoughness.sampler = mRenderer->mRendererResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
     }
 }
 
@@ -164,27 +178,27 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
 {
     constants.emissiveFactor = glm::vec4(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2], 0);
 
-    resources.emissive = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	resources.emissive = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.emissiveTexture.has_value()) {
-        auto img = mAsset.textures[material.emissiveTexture.value().textureIndex].imageIndex;
-        auto sampler = mAsset.textures[material.emissiveTexture.value().textureIndex].samplerIndex;
-        if (img.has_value())
-            resources.emissive.image = &mImages[img.value()];
-        if (sampler.has_value())
-            resources.emissive.sampler = *mSamplers[sampler.value()];
+        auto imageIndex = mAsset.textures[material.emissiveTexture.value().textureIndex].imageIndex;
+        auto samplerIndex = mAsset.textures[material.emissiveTexture.value().textureIndex].samplerIndex;
+        if (imageIndex.has_value())
+            resources.emissive.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value())
+            resources.emissive.sampler = mRenderer->mRendererResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);;
     }
 }
 
 void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-    resources.normal = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	resources.normal = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.normalTexture.has_value()) {
-        auto img = mAsset.textures[material.normalTexture.value().textureIndex].imageIndex;
-        auto sampler = mAsset.textures[material.normalTexture.value().textureIndex].samplerIndex;
-        if (img.has_value())
-            resources.normal.image = &mImages[img.value()];
-        if (sampler.has_value())
-            resources.normal.sampler = *mSamplers[sampler.value()];
+        auto imageIndex = mAsset.textures[material.normalTexture.value().textureIndex].imageIndex;
+        auto samplerIndex = mAsset.textures[material.normalTexture.value().textureIndex].samplerIndex;
+        if (imageIndex.has_value())
+            resources.normal.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value())
+            resources.normal.sampler = mRenderer->mRendererResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);;
 
 		constants.normalScale = material.normalTexture.value().scale;
     }
@@ -192,14 +206,14 @@ void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& re
 
 void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
-    resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages[DefaultImage::White], *mRenderer->mRendererResources.mDefaultSampler };
+	resources.occlusion = { &mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White), mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()) };
     if (material.occlusionTexture.has_value()) {
-        auto img = mAsset.textures[material.occlusionTexture.value().textureIndex].imageIndex;
-        auto sampler = mAsset.textures[material.occlusionTexture.value().textureIndex].samplerIndex;
-        if (img.has_value())
-            resources.occlusion.image = &mImages[img.value()];
-        if (sampler.has_value())
-            resources.occlusion.sampler = *mSamplers[sampler.value()];
+        auto imageIndex = mAsset.textures[material.occlusionTexture.value().textureIndex].imageIndex;
+        auto samplerIndex = mAsset.textures[material.occlusionTexture.value().textureIndex].samplerIndex;
+        if (imageIndex.has_value())
+            resources.occlusion.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value())
+            resources.occlusion.sampler = mRenderer->mRendererResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);;
 
 		constants.occlusionStrength = material.occlusionTexture.value().strength;
     }
@@ -226,21 +240,24 @@ void GLTFModel::initBuffers()
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 }
 
-void GLTFModel::loadSamplers()
+void GLTFModel::loadSamplerCreateInfos()
 {
-	mSamplers.reserve(mAsset.samplers.size());
+	mSamplerCreateInfos.reserve(mAsset.samplers.size());
 	for (fastgltf::Sampler& sampler : mAsset.samplers) {
-		vk::SamplerCreateInfo sampl;
-		sampl.pNext = nullptr;
-		sampl.maxLod = vk::LodClampNone;
-		sampl.minLod = 0;
-		sampl.magFilter = extractFilter(sampler.magFilter.value_or(fastgltf::Filter::Nearest));
-		sampl.minFilter = extractFilter(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
-		sampl.mipmapMode = extractMipmapMode(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
-		mSamplers.emplace_back(mRenderer->mRendererCore.mDevice.createSampler(sampl));
+		vk::SamplerCreateInfo samplerCreateInfo;
+		samplerCreateInfo.pNext = nullptr;
+		samplerCreateInfo.maxLod = vk::LodClampNone;
+		samplerCreateInfo.minLod = 0;
+		samplerCreateInfo.magFilter = extractFilter(sampler.magFilter.value_or(fastgltf::Filter::Nearest));
+		samplerCreateInfo.minFilter = extractFilter(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
+		samplerCreateInfo.mipmapMode = extractMipmapMode(sampler.minFilter.value_or(fastgltf::Filter::Nearest));
+		samplerCreateInfo.addressModeU = extractAddressMode(sampler.wrapS);
+		samplerCreateInfo.addressModeV = extractAddressMode(sampler.wrapT);
+		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+		mSamplerCreateInfos.push_back(samplerCreateInfo);
 	}
 
-	LOG_INFO(mRenderer->mLogger, "{} Samplers Loaded", mName);
+	LOG_INFO(mRenderer->mLogger, "{} Sampler Options Loaded", mName);
 }
 
 void GLTFModel::loadImages()
@@ -574,7 +591,7 @@ void GLTFModel::markDelete()
 void GLTFModel::load()
 {
 	initBuffers();
-	loadSamplers();
+	loadSamplerCreateInfos();
 	loadImages();
 	loadMaterials();
 	loadMeshes();

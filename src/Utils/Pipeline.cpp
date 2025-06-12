@@ -7,25 +7,6 @@
 
 #include <fstream>
 
-vk::raii::ShaderModule PipelineBuilder::loadShaderModule(std::filesystem::path filePath, vk::raii::Device& device)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-	const size_t fileSize = file.tellg();
-
-	// Reserve vector for SPIRV
-	std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
-	file.seekg(0);
-	file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(fileSize)); // Load whole file into buffer
-	file.close();
-
-	vk::ShaderModuleCreateInfo createInfo = {};
-	createInfo.pNext = nullptr;
-	createInfo.codeSize = buffer.size() * sizeof(uint32_t);
-	createInfo.pCode = buffer.data();
-
-	return vk::raii::ShaderModule(device, createInfo);
-}
-
 GraphicsPipelineBuilder::GraphicsPipelineBuilder()
 {
 	clear();

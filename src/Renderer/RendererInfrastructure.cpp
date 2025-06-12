@@ -185,19 +185,19 @@ void RendererInfrastructure::resizeSwapchain()
 
 PipelineBundle* RendererInfrastructure::getMaterialPipeline(PipelineOptions pipelineOptions)
 {
-	if (mMaterialPipelines.contains(pipelineOptions)) {
+	if (mMaterialPipelinesCache.contains(pipelineOptions)) {
 		LOG_INFO(mRenderer->mLogger, "Material Pipeline Retrieved");
-		return &mMaterialPipelines[pipelineOptions];
+		return &mMaterialPipelinesCache[pipelineOptions];
 	}
 	createMaterialPipeline(pipelineOptions);
 	LOG_INFO(mRenderer->mLogger, "Material Pipeline Created");
-	return &mMaterialPipelines[pipelineOptions];
+	return &mMaterialPipelinesCache[pipelineOptions];
 }
 
 void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOptions)
 {
-	vk::raii::ShaderModule fragShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv", mRenderer->mRendererCore.mDevice);
-	vk::raii::ShaderModule vertexShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv", mRenderer->mRendererCore.mDevice);
+	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv");
+	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv");
 
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.offset = 0;
@@ -222,7 +222,7 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 	(pipelineOptions.alphaMode == fastgltf::AlphaMode::Blend) ? (transparency = true) : (transparency = false);
 
 	GraphicsPipelineBuilder pipelineBuilder;
-	pipelineBuilder.setShaders(*vertexShader, *fragShader);
+	pipelineBuilder.setShaders(vertexShader, fragShader);
 	pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
 	pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
 	pipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
@@ -240,12 +240,12 @@ void RendererInfrastructure::createMaterialPipeline(PipelineOptions pipelineOpti
 		std::move(pipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice)),
 		std::move(pipelineLayout)
 	};
-	mMaterialPipelines.emplace(pipelineOptions, std::move(materialPipeline));
+	mMaterialPipelinesCache.emplace(pipelineOptions, std::move(materialPipeline));
 }
 
 void RendererInfrastructure::createCullPipeline()
 {
-	vk::raii::ShaderModule computeShaderModule = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv", mRenderer->mRendererCore.mDevice);
+	vk::ShaderModule computeShaderModule = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv");
 
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.offset = 0;
@@ -261,7 +261,7 @@ void RendererInfrastructure::createCullPipeline()
 	vk::raii::PipelineLayout computePipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(computeLayoutInfo);
 
 	ComputePipelineBuilder computePipelineBuilder;
-	computePipelineBuilder.setShader(*computeShaderModule);
+	computePipelineBuilder.setShader(computeShaderModule);
 	computePipelineBuilder.mPipelineLayout = *computePipelineLayout;
 
 	PipelineBundle computePipeline = PipelineBundle{
@@ -274,8 +274,8 @@ void RendererInfrastructure::createCullPipeline()
 
 void RendererInfrastructure::createSkyboxPipeline()
 {
-	vk::raii::ShaderModule fragShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv", mRenderer->mRendererCore.mDevice);
-	vk::raii::ShaderModule vertexShader = PipelineBuilder::loadShaderModule(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv", mRenderer->mRendererCore.mDevice);
+	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv");
+	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv");
 
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.offset = 0;
@@ -295,7 +295,7 @@ void RendererInfrastructure::createSkyboxPipeline()
 	vk::raii::PipelineLayout pipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
 
 	GraphicsPipelineBuilder pipelineBuilder;
-	pipelineBuilder.setShaders(*vertexShader, *fragShader);
+	pipelineBuilder.setShaders(vertexShader, fragShader);
 	pipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
 	pipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
 	pipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
@@ -319,7 +319,7 @@ void RendererInfrastructure::cleanup() {
 		frame.cleanup();
 	}
 	LOG_INFO(mRenderer->mLogger, "Frames Destroyed");
-	mMaterialPipelines.clear();
+	mMaterialPipelinesCache.clear();
 	LOG_INFO(mRenderer->mLogger, "Material Pipelines Destroyed");
 	mCullPipeline.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Destroyed");

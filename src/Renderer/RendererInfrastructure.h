@@ -56,7 +56,7 @@ public:
 	AllocatedImage mIntermediateImage;
 
 	int mLatestPipelineId{ 0 };
-	std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelines;
+	std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelinesCache;
 	PipelineBundle mCullPipeline;
 
 	RendererInfrastructure(Renderer* renderer);

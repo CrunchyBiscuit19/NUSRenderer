@@ -127,7 +127,7 @@ void Skybox::initSkyboxBuffer()
 void Skybox::setSkyboxBindings()
 {
 	DescriptorSetBinder writer;
-	writer.bindImage(0, *mSkyboxImage.imageView, *mRenderer->mRendererResources.mDefaultSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+	writer.bindImage(0, *mSkyboxImage.imageView, mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo()), vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
 	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
 }
 
