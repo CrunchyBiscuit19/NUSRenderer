@@ -510,7 +510,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 	pipelineBundle = primitive.mMaterial->mPipelineBundle;
 	renderItemsBuffer = renderer->mRendererResources.createBuffer(
 		MAX_RENDER_ITEMS * sizeof(RenderItem),
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	renderer->mRendererCore.labelResourceDebug(renderItemsBuffer.buffer, fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
 	renderItemsBuffer.address = renderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*renderItemsBuffer.buffer));
