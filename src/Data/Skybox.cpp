@@ -7,35 +7,18 @@
 Skybox::Skybox(Renderer* renderer) :
 	mRenderer(renderer),
 	mSkyboxDescriptorSet(nullptr),
-	mSkyboxDescriptorSetLayout(nullptr)
+	mSkyboxDescriptorSetLayout(nullptr),
+	mSkyboxPipelineLayout(nullptr)
 {
 }
 
-void Skybox::loadSkyboxImage(std::filesystem::path skyboxImageDir)
+void Skybox::init(std::optional<std::filesystem::path> skyboxDir)
 {
-	std::vector<std::filesystem::path> skyboxImagePaths = { skyboxImageDir / "px.png", skyboxImageDir / "nx.png", skyboxImageDir / "py.png", skyboxImageDir / "ny.png", skyboxImageDir / "pz.png", skyboxImageDir / "nz.png" };
-	std::vector<std::byte> skyboxImageData(MAX_IMAGE_SIZE);
-
-	int width = 0, height = 0, nrChannels = 0;
-	int offset = 0;
-
-	for (auto& path : skyboxImagePaths) {
-		if (unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &nrChannels, 4)) {
-			int imageSize = width * height * 4;
-			std::memcpy(skyboxImageData.data() + offset, data, imageSize);
-			offset += imageSize;
-			stbi_image_free(data);
-		}
-	}
-
-	mSkyboxImage = mRenderer->mRendererResources.createImage(
-		skyboxImageData.data(),
-		vk::Extent3D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 },
-		vk::Format::eR8G8B8A8Unorm,
-		vk::ImageUsageFlagBits::eSampled,
-		true, false, true);
-
-	LOG_INFO(mRenderer->mLogger, "Skybox Loaded");
+	if (skyboxDir.has_value()) { loadSkyboxImage(skyboxDir.value()); }
+	initSkyboxDescriptor();
+	initSkyboxPipelineLayout();
+	initSkyboxPipeline();
+	initSkyboxBuffer();
 }
 
 void Skybox::initSkyboxDescriptor()
@@ -49,10 +32,55 @@ void Skybox::initSkyboxDescriptor()
 	setSkyboxBindings();
 }
 
+void Skybox::initSkyboxPipelineLayout()
+{
+	vk::PushConstantRange skyBoxPushConstantRange{};
+	skyBoxPushConstantRange.offset = 0;
+	skyBoxPushConstantRange.size = sizeof(SkyBoxPushConstants);
+	skyBoxPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
+	std::vector<vk::DescriptorSetLayout> skyboxDescriptorLayouts = {
+		*mRenderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
+		mSkyboxDescriptorSetLayout
+	};
+	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
+	pipelineLayoutCreateInfo.pSetLayouts = skyboxDescriptorLayouts.data();
+	pipelineLayoutCreateInfo.setLayoutCount = skyboxDescriptorLayouts.size();
+	pipelineLayoutCreateInfo.pPushConstantRanges = &skyBoxPushConstantRange;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+
+	mSkyboxPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pipelineLayoutCreateInfo);
+	mRenderer->mRendererCore.labelResourceDebug(mSkyboxPipelineLayout, "SkyboxPipelineLayout");
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Layout Created");
+}
+
 void Skybox::initSkyboxPipeline()
 {
-	mRenderer->mRendererInfrastructure.createSkyboxPipeline();
+	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.frag.spv");
+	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "skybox/skybox.vert.spv");
+
+	GraphicsPipelineBuilder skyboxPipelineBuilder;
+	skyboxPipelineBuilder.setShaders(vertexShader, fragShader);
+	skyboxPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
+	skyboxPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
+	skyboxPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
+	skyboxPipelineBuilder.enableMultisampling();
+	skyboxPipelineBuilder.enableSampleShading();
+	skyboxPipelineBuilder.enableBlendingSkybox();
+	skyboxPipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
+	skyboxPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
+	skyboxPipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
+	skyboxPipelineBuilder.mPipelineLayout = *mRenderer->mRendererScene.mSkybox.mSkyboxPipelineLayout;
+
+	mSkyboxPipelineBundle = PipelineBundle(
+		mRenderer->mRendererInfrastructure.mLatestPipelineId,
+		skyboxPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
+		*mSkyboxPipelineLayout
+	);
+	mRenderer->mRendererCore.labelResourceDebug(mSkyboxPipelineBundle.pipeline, "SkyboxPipeline");
 	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Created");
+
+	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
 }
 
 void Skybox::initSkyboxBuffer()
@@ -131,6 +159,33 @@ void Skybox::setSkyboxBindings()
 	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mSkyboxDescriptorSet);
 }
 
+void Skybox::loadSkyboxImage(std::filesystem::path skyboxImageDir)
+{
+	std::vector<std::filesystem::path> skyboxImagePaths = { skyboxImageDir / "px.png", skyboxImageDir / "nx.png", skyboxImageDir / "py.png", skyboxImageDir / "ny.png", skyboxImageDir / "pz.png", skyboxImageDir / "nz.png" };
+	std::vector<std::byte> skyboxImageData(MAX_IMAGE_SIZE);
+
+	int width = 0, height = 0, nrChannels = 0;
+	int offset = 0;
+
+	for (auto& path : skyboxImagePaths) {
+		if (unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &nrChannels, 4)) {
+			int imageSize = width * height * 4;
+			std::memcpy(skyboxImageData.data() + offset, data, imageSize);
+			offset += imageSize;
+			stbi_image_free(data);
+		}
+	}
+
+	mSkyboxImage = mRenderer->mRendererResources.createImage(
+		skyboxImageData.data(),
+		vk::Extent3D{ static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 },
+		vk::Format::eR8G8B8A8Unorm,
+		vk::ImageUsageFlagBits::eSampled,
+		true, false, true);
+
+	LOG_INFO(mRenderer->mLogger, "Skybox Loaded");
+}
+
 void Skybox::updateSkyboxImage(std::filesystem::path skyboxDir)
 {
 	AllocatedImage oldSkyboxImage = std::move(mSkyboxImage);
@@ -138,14 +193,6 @@ void Skybox::updateSkyboxImage(std::filesystem::path skyboxDir)
 	setSkyboxBindings();
 	oldSkyboxImage.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Skybox Image Updated");
-}
-
-void Skybox::init(std::filesystem::path skyboxDir)
-{
-	loadSkyboxImage(skyboxDir);
-	initSkyboxDescriptor();
-	initSkyboxPipeline();
-	initSkyboxBuffer();
 }
 
 void Skybox::cleanup()
@@ -157,6 +204,8 @@ void Skybox::cleanup()
 	LOG_INFO(mRenderer->mLogger, "Skybox Descriptor Set and Layout Destroyed");
 	mSkyboxVertexBuffer.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Destroyed");
-	mSkyboxPipeline.cleanup();
+	mSkyboxPipelineBundle.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Destroyed");
+	mSkyboxPipelineLayout.clear();
+	LOG_INFO(mRenderer->mLogger, "Skybox Pipeline Layout Destroyed");
 }

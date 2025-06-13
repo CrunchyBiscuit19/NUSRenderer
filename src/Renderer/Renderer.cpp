@@ -53,6 +53,8 @@ void Renderer::init()
     mGUI.init();
     mCamera.init();
 
+    PbrMaterial::initMaterialPipelineLayout(this);
+
     mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
         if (e.type == SDL_QUIT) {
             for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) {
@@ -111,6 +113,8 @@ void Renderer::run()
 
 void Renderer::cleanup()
 {
+    PbrMaterial::cleanup(this);
+
     mGUI.cleanup();
     mRendererScene.cleanup();
     mImmSubmit.cleanup();
@@ -256,7 +260,7 @@ void Renderer::draw()
 
 void Renderer::cullRenderItems(vk::CommandBuffer cmd)
 {
-    cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererInfrastructure.mCullPipeline.pipeline);
+    cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mSceneManager.mCullPipelineBundle.pipeline);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {    
         cmd.fillBuffer(*batch.countBuffer.buffer, 0, vk::WholeSize, 0);
@@ -280,7 +284,7 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
         mRendererScene.mSceneManager.mCullPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
         mRendererScene.mSceneManager.mCullPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
         mRendererScene.mSceneManager.mCullPushConstants.countBuffer = batch.countBuffer.address;
-        cmd.pushConstants<CullPushConstants>(*mRendererInfrastructure.mCullPipeline.layout, vk::ShaderStageFlagBits::eCompute, 0, mRendererScene.mSceneManager.mCullPushConstants);
+        cmd.pushConstants<CullPushConstants>(mRendererScene.mSceneManager.mCullPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mRendererScene.mSceneManager.mCullPushConstants);
 
         cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
@@ -323,17 +327,17 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     cmd.beginRendering(renderInfo);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {
-        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipeline->pipeline);
+        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
         
         setViewportScissors(cmd);
         
         cmd.bindIndexBuffer(*mRendererScene.mSceneManager.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipeline->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *batch.pipeline->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
 
         mRendererScene.mSceneManager.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-        cmd.pushConstants<ScenePushConstants>(*batch.pipeline->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSceneManager.mScenePushConstants);
+        cmd.pushConstants<ScenePushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSceneManager.mScenePushConstants);
 
         cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
@@ -351,8 +355,9 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 
     cmd.beginRendering(renderInfo);
 
-    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.pipeline);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipeline.layout, 0, std::vector<vk::DescriptorSet> { *mRendererScene.mPerspective.mPerspectiveDescriptorSet, *mRendererScene.mSkybox.mSkyboxDescriptorSet }, nullptr);
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipelineBundle.pipeline);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mSkybox.mSkyboxPipelineBundle.layout, 0, 
+        std::vector<vk::DescriptorSet> { *mRendererScene.mPerspective.mPerspectiveDescriptorSet, *mRendererScene.mSkybox.mSkyboxDescriptorSet }, nullptr);
     vk::Viewport viewport = {
         0,
         0,
@@ -367,7 +372,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
         vk::Extent2D { mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height },
     };
     cmd.setScissor(0, scissor);
-    cmd.pushConstants<SkyBoxPushConstants>(*mRendererScene.mSkybox.mSkyboxPipeline.layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSkybox.mSkyboxPushConstants);
+    cmd.pushConstants<SkyBoxPushConstants>(mRendererScene.mSkybox.mSkyboxPipelineBundle.layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSkybox.mSkyboxPushConstants);
 
     cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
     mStats.mDrawCallCount++;

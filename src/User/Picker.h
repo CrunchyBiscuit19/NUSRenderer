@@ -15,7 +15,8 @@ private:
 	AllocatedImage mPickerImage;
 
 public:
-	PipelineBundle mPickerPipeline;
+	vk::raii::Pipeline mPickerPipeline;
+	vk::raii::Pipeline mPickerPipelineLayout;
 
 	vk::raii::DescriptorSetLayout mPickerDescriptorSetLayout;
 	vk::raii::DescriptorSet mPickerDescriptorSet;

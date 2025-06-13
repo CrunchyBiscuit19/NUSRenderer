@@ -4,37 +4,38 @@
 
 #include <fastgltf/types.hpp>
 
-namespace vkhelper {};
-
 struct PipelineBundle {
 	int id;
 	vk::raii::Pipeline pipeline;
-	vk::raii::PipelineLayout layout;
+	vk::PipelineLayout layout;
 
 	PipelineBundle() :
 		pipeline(nullptr),
 		layout(nullptr),
-		id(0)
-	{
-	}
+		id(-1)
+	{}
 
-	PipelineBundle(int idArg, vk::raii::Pipeline pipeline, vk::raii::PipelineLayout layout) :
+	PipelineBundle(int id_, vk::raii::Pipeline pipeline, vk::PipelineLayout layout) :
 		pipeline(std::move(pipeline)),
-		layout(std::move(layout)),
-		id(idArg)
+		layout(layout),
+		id(id_)
+	{}
+
+	~PipelineBundle() 
 	{
+		cleanup();
 	}
 
-	~PipelineBundle() {
-		cleanup();
+	void cleanup()
+	{
+		pipeline.clear();
 	}
 
 	PipelineBundle(PipelineBundle&& other) noexcept :
 		pipeline(std::move(other.pipeline)),
 		layout(std::move(other.layout)),
 		id(other.id)
-	{
-	}
+	{}
 
 	PipelineBundle& operator=(PipelineBundle&& other) noexcept {
 		if (this != &other) {
@@ -47,11 +48,6 @@ struct PipelineBundle {
 
 	PipelineBundle(const PipelineBundle&) = delete;
 	PipelineBundle& operator=(const PipelineBundle&) = delete;
-
-	void cleanup() {
-		layout.clear();
-		pipeline.clear();
-	}
 };
 
 struct PipelineOptions {

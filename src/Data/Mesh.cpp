@@ -18,7 +18,7 @@ void Node::generateRenderItems(Renderer* renderer, GLTFModel* model)
 void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 {
     for (auto& primitive : mMesh->mPrimitives) {
-        int pipelineId = primitive.mMaterial->mPipeline->id;
+        int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
         renderer->mRendererScene.mSceneManager.mBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
 
