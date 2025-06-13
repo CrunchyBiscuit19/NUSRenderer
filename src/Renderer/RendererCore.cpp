@@ -52,7 +52,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 			message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
 	}
 
-	LOG_INFO(static_cast<Renderer*>(pUserData)->mLogger, "{}", message);
+	switch (messageSeverity) {
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+		severity = "ERROR";
+		LOG_ERROR(static_cast<Renderer*>(pUserData)->mLogger, "{}", message);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+		severity = "WARNING";
+		LOG_DEBUG(static_cast<Renderer*>(pUserData)->mLogger, "{}", message);
+		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+	default:
+		break;
+	}
 
 	return false;
 }
