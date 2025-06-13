@@ -14,6 +14,7 @@ public:
 	vk::raii::CommandPool mCommandPool;
 	vk::raii::CommandBuffer mCommandBuffer;
 	vk::raii::Fence mFence;
+	std::vector<std::function<void(Renderer* renderer, vk::CommandBuffer)>> mCallbacks;
 
 public:
 	ImmSubmit(Renderer* renderer);
@@ -26,7 +27,6 @@ public:
 	{
 		other.mRenderer = nullptr;
 	}
-
 	ImmSubmit& operator=(ImmSubmit&& other) noexcept {
 		if (this != &other) {
 			mRenderer = other.mRenderer;
@@ -43,7 +43,8 @@ public:
 
 	void init();
 
-	void submit(std::function<void(vk::raii::CommandBuffer& cmd) >&& function);
+	void individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function);
+	void queuedSubmit();
 
 	void cleanup();
 };

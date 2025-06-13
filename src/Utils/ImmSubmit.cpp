@@ -28,7 +28,7 @@ void ImmSubmit::init()
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Fence Created");
 }
 
-void ImmSubmit::submit(std::function<void(vk::raii::CommandBuffer& cmd) >&& function)
+void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function)
 {
 	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
 
@@ -36,7 +36,27 @@ void ImmSubmit::submit(std::function<void(vk::raii::CommandBuffer& cmd) >&& func
 
 	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	mCommandBuffer.begin(cmdBeginInfo);
-	function(mCommandBuffer);
+	function(mRenderer, *mCommandBuffer);
+	mCommandBuffer.end();
+
+	vk::CommandBufferSubmitInfo cmdSubmitInfo = vkhelper::commandBufferSubmitInfo(*mCommandBuffer);
+	vk::SubmitInfo2 submitInfo = vkhelper::submitInfo(&cmdSubmitInfo, nullptr, nullptr);
+
+	mRenderer->mRendererCore.mGraphicsQueue.submit2(submitInfo, *mFence);
+	mRenderer->mRendererCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
+}
+
+void ImmSubmit::queuedSubmit()
+{
+	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
+
+	mCommandBuffer.reset();
+
+	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	mCommandBuffer.begin(cmdBeginInfo);
+	for (auto& callback : mCallbacks) {
+		callback(mRenderer, *mCommandBuffer);
+	}
 	mCommandBuffer.end();
 
 	vk::CommandBufferSubmitInfo cmdSubmitInfo = vkhelper::commandBufferSubmitInfo(*mCommandBuffer);

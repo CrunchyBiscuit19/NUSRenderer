@@ -64,7 +64,7 @@ private:
 	void loadMeshes();
 	void loadNodes();
 
-	void loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector);
+	void loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector);
 	void loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector);
 	void loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector);
 	void loadInstancesBuffer(std::span<InstanceData> instanceDataVector);

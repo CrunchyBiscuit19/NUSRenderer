@@ -52,8 +52,10 @@ void Renderer::init()
     mRendererScene.init();
     mGUI.init();
     mCamera.init();
-
     PbrMaterial::initMaterialPipelineLayout(this);
+
+    mImmSubmit.queuedSubmit();
+    mImmSubmit.mCallbacks.clear();
 
     mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
         if (e.type == SDL_QUIT) {
@@ -428,6 +430,9 @@ void Renderer::perFrameUpdate()
     }
 
     mRendererScene.mSceneManager.resetFlags();
+
+    mImmSubmit.queuedSubmit();
+    mImmSubmit.mCallbacks.clear();
 
     const auto end = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

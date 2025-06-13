@@ -142,8 +142,8 @@ void Skybox::initSkyboxBuffer()
 	skyboxVertexCopy.srcOffset = 0;
 	skyboxVertexCopy.size = skyboxVertexSize;
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mSkyboxVertexBuffer.buffer, skyboxVertexCopy);
+	mRenderer->mImmSubmit.mCallbacks.push_back([this, skyboxVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		cmd.copyBuffer(renderer->mRendererResources.mMeshStagingBuffer.buffer, *mSkyboxVertexBuffer.buffer, skyboxVertexCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Uploading");
 

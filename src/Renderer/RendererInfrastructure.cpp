@@ -116,28 +116,28 @@ void RendererInfrastructure::initSwapchain()
 	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.image, "IntermediateImage");
 	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
 		for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
-			vkhelper::transitionImage(*cmd, mSwapchainBundle.mImages[i].image,
+			vkhelper::transitionImage(cmd, mSwapchainBundle.mImages[i].image,
 				vk::PipelineStageFlagBits2::eNone,
 				vk::AccessFlagBits2::eNone,
 				vk::PipelineStageFlagBits2::eNone,
 				vk::AccessFlagBits2::eNone,
 				vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 		}
-		vkhelper::transitionImage(*cmd, *mDrawImage.image,
+		vkhelper::transitionImage(cmd, *mDrawImage.image,
 			vk::PipelineStageFlagBits2::eNone,
 			vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
 			vk::AccessFlagBits2::eColorAttachmentWrite,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
-		vkhelper::transitionImage(*cmd, *mDepthImage.image,
+		vkhelper::transitionImage(cmd, *mDepthImage.image,
 			vk::PipelineStageFlagBits2::eNone,
 			vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eEarlyFragmentTests,
 			vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
-		vkhelper::transitionImage(*cmd, *mIntermediateImage.image,
+		vkhelper::transitionImage(cmd, *mIntermediateImage.image,
 			vk::PipelineStageFlagBits2::eNone,
 			vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eTransfer,
