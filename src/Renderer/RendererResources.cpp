@@ -201,7 +201,7 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 
 	AllocatedImage newImage = createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, multisampling, cubemap);
 
-	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.submit([&](Renderer* renderer, vk::CommandBuffer cmd) {
 		vkhelper::transitionImage(cmd, *newImage.image,
 			vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,

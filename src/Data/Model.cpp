@@ -322,6 +322,7 @@ void GLTFModel::loadMeshes()
 	std::vector<uint32_t> indices;
 	std::vector<Vertex> vertices;
 
+	mMeshes.reserve(mAsset.meshes.size());
 	for (fastgltf::Mesh& mesh : mAsset.meshes) {
 		Mesh newMesh;
 
@@ -397,8 +398,6 @@ void GLTFModel::loadMeshes()
 			newMesh.mPrimitives.push_back(newPrimitive);
 		}
 
-		loadMeshBuffers(&newMesh, indices, vertices);
-
 		newMesh.mNumVertices = vertices.size();
 		newMesh.mNumIndices = indices.size();
 
@@ -410,6 +409,9 @@ void GLTFModel::loadMeshes()
 		}
 
 		mMeshes.push_back(std::move(newMesh));
+
+		loadMeshBuffers(mMeshes.back(), indices, vertices);
+
 		mRenderer->mRendererScene.mLatestMeshId++;
 	}
 
@@ -419,6 +421,7 @@ void GLTFModel::loadMeshes()
 void GLTFModel::loadNodes()
 {
 	int nodeIndex = 0;
+	mNodes.reserve(mAsset.nodes.size());
 	for (fastgltf::Node& node : mAsset.nodes) {
 		std::shared_ptr<Node> newNode;
 
@@ -479,16 +482,16 @@ void GLTFModel::loadNodes()
 	loadNodeTransformsBuffer(mNodes);
 }
 
-void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector)
+void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector)
 {
 	const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-	mesh->mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mesh->mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+	mesh.mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mesh.mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 
-	mRenderer->mRendererCore.labelResourceDebug(mesh->mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh->mName).c_str());
-	mRenderer->mRendererCore.labelResourceDebug(mesh->mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh->mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mesh.mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh.mName).c_str());
+	mRenderer->mRendererCore.labelResourceDebug(mesh.mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh.mName).c_str());
 
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize, srcIndexVector.data(), srcIndexVectorSize);
@@ -502,11 +505,11 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, 
 	indexCopy.srcOffset = srcVertexVectorSize;
 	indexCopy.size = srcIndexVectorSize;
 
-	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
-		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
+	mRenderer->mImmSubmit.submit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, mesh.mVertexBuffer.buffer, vertexCopy);
+		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, mesh.mIndexBuffer.buffer, indexCopy);
 	});
-	LOG_INFO(mRenderer->mLogger, "{} Mesh Buffers Uploading", mName);
+	LOG_INFO(mRenderer->mLogger, "{} Model Buffer {} Uploading", mName, mesh.mId);
 }
 
 void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector)
@@ -518,8 +521,8 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 	materialConstantsCopy.srcOffset = 0;
 	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
-	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+	mRenderer->mImmSubmit.mCallbacks.push_back([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		cmd.copyBuffer(*renderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 }
@@ -535,8 +538,8 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 	nodeTransformsCopy.srcOffset = 0;
 	nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
 
-	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
+	mRenderer->mImmSubmit.mCallbacks.push_back([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		cmd.copyBuffer(*renderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 }
@@ -550,8 +553,8 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	instancesCopy.srcOffset = 0;
 	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
-	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
-		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+	mRenderer->mImmSubmit.mCallbacks.push_back([this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		cmd.copyBuffer(*renderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 }
