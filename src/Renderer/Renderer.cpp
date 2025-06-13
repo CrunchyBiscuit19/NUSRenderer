@@ -54,7 +54,7 @@ void Renderer::init()
     mCamera.init();
     PbrMaterial::initMaterialPipelineLayout(this);
 
-    mImmSubmit.submit2();
+    mImmSubmit.queuedSubmit();
     mImmSubmit.mCallbacks.clear();
 
     mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
@@ -431,7 +431,7 @@ void Renderer::perFrameUpdate()
 
     mRendererScene.mSceneManager.resetFlags();
 
-    mImmSubmit.submit2();
+    mImmSubmit.queuedSubmit();
     mImmSubmit.mCallbacks.clear();
 
     const auto end = std::chrono::system_clock::now();

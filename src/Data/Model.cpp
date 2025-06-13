@@ -505,7 +505,7 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 	indexCopy.srcOffset = srcVertexVectorSize;
 	indexCopy.size = srcIndexVectorSize;
 
-	mRenderer->mImmSubmit.submit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.individualSubmit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, mesh.mVertexBuffer.buffer, vertexCopy);
 		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, mesh.mIndexBuffer.buffer, indexCopy);
 	});

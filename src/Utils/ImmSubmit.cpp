@@ -28,7 +28,7 @@ void ImmSubmit::init()
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Fence Created");
 }
 
-void ImmSubmit::submit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function)
+void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function)
 {
 	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
 
@@ -46,7 +46,7 @@ void ImmSubmit::submit(std::function<void(Renderer* renderer, vk::CommandBuffer 
 	mRenderer->mRendererCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
 }
 
-void ImmSubmit::submit2()
+void ImmSubmit::queuedSubmit()
 {
 	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
 

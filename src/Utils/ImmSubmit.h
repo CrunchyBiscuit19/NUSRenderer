@@ -43,8 +43,8 @@ public:
 
 	void init();
 
-	void submit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function);
-	void submit2();
+	void individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function);
+	void queuedSubmit();
 
 	void cleanup();
 };
