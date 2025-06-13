@@ -265,6 +265,8 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mSceneManager.mCullPipelineBundle.pipeline);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {    
+        if (batch.renderItems.size() == 0) { continue; }
+
         cmd.fillBuffer(*batch.countBuffer.buffer, 0, vk::WholeSize, 0);
 
         vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be reset to zero
@@ -329,6 +331,8 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
     cmd.beginRendering(renderInfo);
 
     for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {
+        if (batch.renderItems.size() == 0) { continue; }
+
         cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
         
         setViewportScissors(cmd);

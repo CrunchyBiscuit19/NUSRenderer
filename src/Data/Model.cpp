@@ -521,7 +521,7 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 	materialConstantsCopy.srcOffset = 0;
 	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*renderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
@@ -538,7 +538,7 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 	nodeTransformsCopy.srcOffset = 0;
 	nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.individualSubmit([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*renderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
@@ -553,7 +553,7 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	instancesCopy.srcOffset = 0;
 	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.individualSubmit([this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*renderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
