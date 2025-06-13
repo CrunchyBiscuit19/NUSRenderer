@@ -213,11 +213,6 @@ void SceneManager::regenerateRenderItems()
 	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
     
 	for (auto& batch : mBatches | std::views::values) {
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-			cmd.fillBuffer(*batch.visibleRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-		}); 
-
 		if (batch.renderItems.size() == 0) { continue; }
 
         std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
@@ -227,7 +222,9 @@ void SceneManager::regenerateRenderItems()
         renderItemsCopy.srcOffset = 0;
         renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
 
-        mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+        mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+			cmd.fillBuffer(*batch.visibleRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
             cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
         });
 
@@ -319,7 +316,7 @@ void SceneManager::reloadMainVertexBuffer()
 
 			dstOffset += meshVertexCopy.size;
 
-			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 				cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
 			});
 		}
@@ -343,7 +340,7 @@ void SceneManager::reloadMainIndexBuffer()
 
 			dstOffset += meshIndexCopy.size;
 
-			mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+			mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
 			});
 
@@ -367,7 +364,7 @@ void SceneManager::reloadMainMaterialConstantsBuffer()
 
 		dstOffset += materialConstantCopy.size;
 
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
 		});
 	}
@@ -389,7 +386,7 @@ void SceneManager::reloadMainNodeTransformsBuffer()
 
 		dstOffset += nodeTransformsCopy.size;
 
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
 		});
 	}
@@ -412,7 +409,7 @@ void SceneManager::reloadMainInstancesBuffer()
 
 		dstOffset += instancesCopy.size;
 
-		mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
 		});
 	}

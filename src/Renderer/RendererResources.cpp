@@ -201,8 +201,8 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 
 	AllocatedImage newImage = createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, multisampling, cubemap);
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
-		vkhelper::transitionImage(*cmd, *newImage.image,
+	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
+		vkhelper::transitionImage(cmd, *newImage.image,
 			vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
 			vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
 			vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
@@ -225,9 +225,9 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 		cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegions);
 
 		if (mipmapped)
-			vkhelper::generateMipmaps(*cmd, *newImage.image, vk::Extent2D{ newImage.imageExtent.width, newImage.imageExtent.height }, cubemap);
+			vkhelper::generateMipmaps(cmd, *newImage.image, vk::Extent2D{ newImage.imageExtent.width, newImage.imageExtent.height }, cubemap);
 		else
-			vkhelper::transitionImage(*cmd, *newImage.image,
+			vkhelper::transitionImage(cmd, *newImage.image,
 				vk::PipelineStageFlagBits2KHR::eTransfer, vk::AccessFlagBits2::eTransferWrite,
 				vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead,
 				vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);

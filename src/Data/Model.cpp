@@ -502,7 +502,7 @@ void GLTFModel::loadMeshBuffers(Mesh* mesh, std::span<uint32_t> srcIndexVector, 
 	indexCopy.srcOffset = srcVertexVectorSize;
 	indexCopy.size = srcIndexVectorSize;
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mVertexBuffer.buffer, vertexCopy);
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh->mIndexBuffer.buffer, indexCopy);
 	});
@@ -518,7 +518,7 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 	materialConstantsCopy.srcOffset = 0;
 	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
@@ -535,7 +535,7 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 	nodeTransformsCopy.srcOffset = 0;
 	nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
@@ -550,7 +550,7 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	instancesCopy.srcOffset = 0;
 	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
-	mRenderer->mImmSubmit.submit([&](vk::raii::CommandBuffer& cmd) {
+	mRenderer->mImmSubmit.submit([&](vk::CommandBuffer cmd) {
 		cmd.copyBuffer(*mRenderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
