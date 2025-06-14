@@ -1,5 +1,6 @@
 #include <Renderer/Renderer.h>
 #include <Data/Model.h>
+#include <Utils/Helper.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -488,9 +489,8 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
 	mesh.mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
-	mesh.mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
-
 	mRenderer->mRendererCore.labelResourceDebug(mesh.mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh.mName).c_str());
+	mesh.mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mesh.mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh.mName).c_str());
 
 	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
@@ -506,8 +506,35 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 	indexCopy.size = srcIndexVectorSize;
 
 	mRenderer->mImmSubmit.individualSubmit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, mesh.mVertexBuffer.buffer, vertexCopy);
-		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, mesh.mIndexBuffer.buffer, indexCopy);
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*renderer->mRendererResources.mMeshStagingBuffer.buffer,
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+
+		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh.mVertexBuffer.buffer, vertexCopy);
+		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh.mIndexBuffer.buffer, indexCopy);
+
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mesh.mVertexBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mesh.mIndexBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Model Buffer {} Uploading", mName, mesh.mId);
 }
@@ -522,7 +549,25 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 	materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
 	mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*renderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer,
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+
 		cmd.copyBuffer(*renderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
+
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mMaterialConstantsBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 }
@@ -539,7 +584,25 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 	nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
 
 	mRenderer->mImmSubmit.individualSubmit([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*renderer->mRendererResources.mNodeTransformsStagingBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+
 		cmd.copyBuffer(*renderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
+
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mNodeTransformsBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 }
@@ -554,7 +617,25 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
 	mRenderer->mImmSubmit.individualSubmit([this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*renderer->mRendererResources.mInstancesStagingBuffer.buffer,
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+
 		cmd.copyBuffer(*renderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer, instancesCopy);
+
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mInstancesBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
 	});
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 }
