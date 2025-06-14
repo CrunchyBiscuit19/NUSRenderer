@@ -1,5 +1,6 @@
 #include <Renderer/RendererScene.h>
 #include <Renderer/Renderer.h>
+#include <Utils/Helper.h>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -224,8 +225,24 @@ void SceneManager::regenerateRenderItems()
 
         mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-			cmd.fillBuffer(*batch.visibleRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-            cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
+
+			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
+				cmd,
+				*batch.renderItemsBuffer.buffer,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite);
+			
+			cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
+			
+			vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
+				cmd,
+				*batch.renderItemsBuffer.buffer,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eComputeShader,
+				vk::AccessFlagBits2::eShaderRead);
         });
 
 		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
@@ -322,6 +339,16 @@ void SceneManager::reloadMainVertexBuffer()
 		}
 	}
 
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier( // Wait for main vertex buffer to finish uploading
+			cmd,
+			*mMainVertexBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderRead);
+	});
+
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Reloading");
 }
 
@@ -342,10 +369,20 @@ void SceneManager::reloadMainIndexBuffer()
 
 			mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
-			});
+			}); 
 
 		}
 	}
+
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier( // Wait for main index buffer to finish uploading
+			cmd,
+			*mMainIndexBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderRead);
+	});
 
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Reloading");
 }
@@ -369,6 +406,16 @@ void SceneManager::reloadMainMaterialConstantsBuffer()
 		});
 	}
 
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier( // Wait for main material constants buffer to finish uploading
+			cmd,
+			*mMainMaterialConstantsBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderRead);
+	});
+
 	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Reloading");
 }
 
@@ -390,6 +437,16 @@ void SceneManager::reloadMainNodeTransformsBuffer()
 			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
 		});
 	}
+
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier( // Wait for main node transforms buffer to finish uploading
+			cmd,
+			*mMainNodeTransformsBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderRead);
+	});
 
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
 }
@@ -413,6 +470,16 @@ void SceneManager::reloadMainInstancesBuffer()
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
 		});
 	}
+
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier( // Wait for main instances buffer to finish uploading
+			cmd,
+			*mMainInstancesBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderRead);
+	});
 
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Reloading");
 }
