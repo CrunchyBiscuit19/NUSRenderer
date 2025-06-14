@@ -275,15 +275,7 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eComputeShader, 
-            vk::AccessFlagBits2::eShaderRead);
-
-        vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
-            cmd,
-            *batch.renderItemsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eComputeShader, 
-            vk::AccessFlagBits2::eShaderRead);
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
         mRendererScene.mSceneManager.mCullPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
         mRendererScene.mSceneManager.mCullPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
