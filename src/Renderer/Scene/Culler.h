@@ -20,7 +20,7 @@ public:
 	vk::raii::PipelineLayout mPipelineLayout;
 	CullPushConstants mPushConstants;
 
-	Culler();
+	Culler(Renderer* renderer);
 
 	void init();
 	void initPipelineLayout();

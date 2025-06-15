@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Data/Mesh.h>
+#include <Data/Model.h>
 #include <Renderer/Scene/Perspective.h>
 #include <Renderer/Scene/Skybox.h>
 #include <Renderer/Scene/Culler.h>

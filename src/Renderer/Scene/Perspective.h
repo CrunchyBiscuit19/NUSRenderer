@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Renderer/RendererInfrastructure.h>
-#include <Renderer/RendererResources.h>
 
 #include <glm/glm.hpp>
 

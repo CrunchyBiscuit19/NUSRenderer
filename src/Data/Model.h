@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Data/Mesh.h>
-#include <Renderer/RendererScene.h>
 #include <Data/Instance.h>
 #include <Utils/Descriptor.h>
 

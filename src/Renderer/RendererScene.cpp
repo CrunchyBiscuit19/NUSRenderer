@@ -444,6 +444,7 @@ RendererScene::RendererScene(Renderer* renderer) :
 	mRenderer(renderer),
 	mPerspective(Perspective(renderer)),
 	mSkybox(Skybox(renderer)),
+	mCuller(Culler(renderer)),
 	mMainScene(MainScene(renderer))
 {
 }
@@ -460,5 +461,6 @@ void RendererScene::cleanup()
 {
 	mPerspective.cleanup();
 	mSkybox.cleanup();
+	mCuller.cleanup();
 	mMainScene.cleanup();
 }

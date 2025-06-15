@@ -1,7 +1,8 @@
 #include <Renderer/Scene/Culler.h>
 #include <Renderer/Renderer.h>
 
-Culler::Culler() :
+Culler::Culler(Renderer* renderer) :
+	mRenderer(renderer),
 	mPipelineLayout(nullptr)
 {}
 
