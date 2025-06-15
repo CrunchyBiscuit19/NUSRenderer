@@ -29,7 +29,8 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
             mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
             model->mMainFirstInstance,
             model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
-            model->mMainFirstNodeTransform + this->mRelativeNodeIndex
+            model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
+            model->mId
         );
     }
 

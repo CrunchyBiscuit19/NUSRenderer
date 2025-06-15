@@ -169,6 +169,24 @@ struct AllocatedBuffer {
 	}
 };
 
+struct AddressedBuffer : AllocatedBuffer {
+	vk::DeviceAddress address{};
+
+	AddressedBuffer() = default;
+
+	AddressedBuffer(AllocatedBuffer&& other) noexcept
+		: AllocatedBuffer(std::move(other))
+	{
+	}
+	AddressedBuffer& operator=(AllocatedBuffer&& other) noexcept {
+		static_cast<AllocatedBuffer&>(*this) = std::move(other);
+		return *this;
+	}
+
+	AddressedBuffer(const AddressedBuffer&) = delete;
+	AddressedBuffer& operator=(const AddressedBuffer&) = delete;
+};
+
 struct SamplerOptions {
 	vk::Filter magFilter;
 	vk::Filter minFilter;

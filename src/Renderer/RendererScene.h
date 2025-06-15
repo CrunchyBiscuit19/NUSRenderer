@@ -49,6 +49,25 @@ struct RenderItem {
 	uint32_t materialIndex;
 	uint32_t nodeTransformIndex;
 	// uint32_t boundsIndex;
+	uint32_t modelId;
+};
+
+struct Batch {
+	PipelineBundle* pipelineBundle;
+	std::vector<RenderItem> renderItems;
+	AddressedBuffer renderItemsBuffer;
+	AddressedBuffer visibleRenderItemsBuffer;
+	AddressedBuffer countBuffer;
+	AllocatedBuffer renderItemsStagingBuffer;
+
+	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
+	~Batch();
+
+	Batch(Batch&&) noexcept = default;
+	Batch& operator=(Batch&&) noexcept = default;
+
+	Batch(const Batch&) = delete;
+	Batch& operator=(const Batch&) = delete;
 };
 
 struct ScenePushConstants {
@@ -65,41 +84,6 @@ struct CullPushConstants {
 	// vk::DeviceAddress boundsBuffer;
 	// Frustum as a GPU_ONLY uniform buffer, passed as DS? (vec4 planes[6]; vec4 corners[8];) -> 224 bytes
 	vk::DeviceAddress countBuffer;
-};
-
-struct MainBuffer : AllocatedBuffer {
-	vk::DeviceAddress address{};
-
-	MainBuffer() = default;
-
-	MainBuffer(AllocatedBuffer&& other) noexcept
-		: AllocatedBuffer(std::move(other)) 
-	{}
-	MainBuffer& operator=(AllocatedBuffer&& other) noexcept {
-		static_cast<AllocatedBuffer&>(*this) = std::move(other);
-		return *this;
-	}
-
-	MainBuffer(const MainBuffer&) = delete;
-	MainBuffer& operator=(const MainBuffer&) = delete;
-};
-
-struct Batch {
-	PipelineBundle* pipelineBundle;
-	std::vector<RenderItem> renderItems;
-	MainBuffer renderItemsBuffer;
-	MainBuffer visibleRenderItemsBuffer;
-	MainBuffer countBuffer;
-	AllocatedBuffer renderItemsStagingBuffer;
-
-	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
-	~Batch();
-
-	Batch(Batch&&) noexcept = default;
-	Batch& operator=(Batch&&) noexcept = default;
-
-	Batch(const Batch&) = delete;
-	Batch& operator=(const Batch&) = delete;
 };
 
 struct Flags {
@@ -125,15 +109,15 @@ public:
 	vk::raii::PipelineLayout mCullPipelineLayout;
 	CullPushConstants mCullPushConstants;
 
-	MainBuffer mMainVertexBuffer;
+	AddressedBuffer mMainVertexBuffer;
 	AllocatedBuffer mMainIndexBuffer;
 
-	MainBuffer mMainMaterialConstantsBuffer;
+	AddressedBuffer mMainMaterialConstantsBuffer;
 	vk::raii::DescriptorSet mMainMaterialResourcesDescriptorSet;
 	vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
 
-	MainBuffer mMainNodeTransformsBuffer;
-	MainBuffer mMainInstancesBuffer;
+	AddressedBuffer mMainNodeTransformsBuffer;
+	AddressedBuffer mMainInstancesBuffer;
 
 	SceneManager(Renderer* renderer);
 

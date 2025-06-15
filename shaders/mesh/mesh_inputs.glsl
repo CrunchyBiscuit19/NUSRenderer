@@ -43,13 +43,14 @@ layout (buffer_reference, std430) readonly buffer InstanceBuffer {
 };
 
 struct VisibleRenderItem {
-	int indexCount;
-	int instanceCount;
-	int firstIndex;
-	int vertexOffset;
-	int firstInstance;
-	int materialIndex;
-	int nodeTransformIndex;
+	uint indexCount;
+	uint instanceCount;
+	uint firstIndex;
+	uint vertexOffset;
+	uint firstInstance;
+	uint materialIndex;
+	uint nodeTransformIndex;
+	uint modelId;
 };
 layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer { 
 	VisibleRenderItem visibleRenderItems[];
