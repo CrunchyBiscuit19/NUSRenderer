@@ -59,8 +59,8 @@ public:
 	vk::Buffer mConstantsBuffer;
 	uint32_t mConstantsBufferOffset;
 
-	static std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelinesCache;
-	static vk::raii::PipelineLayout mMaterialPipelineLayout;
+	static std::unordered_map<PipelineOptions, PipelineBundle> mPipelinesCache;
+	static vk::raii::PipelineLayout mPipelineLayout;
 
 	PbrMaterial(Renderer* renderer);
 

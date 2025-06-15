@@ -59,7 +59,7 @@ void Renderer::init()
 
     mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
         if (e.type == SDL_QUIT) {
-            for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) {
+            for (auto& model : mRendererScene.mMainScene.mModels | std::views::values) {
                 model.markDelete();
             }
             mRendererInfrastructure.mProgramEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
@@ -262,9 +262,9 @@ void Renderer::draw()
 
 void Renderer::cullRenderItems(vk::CommandBuffer cmd)
 {
-    cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mSceneManager.mCullPipelineBundle.pipeline);
+    cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mCuller.mPipelineBundle.pipeline);
 
-    for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {    
+    for (auto& batch : mRendererScene.mMainScene.mBatches | std::views::values) {    
         if (batch.renderItems.size() == 0) { continue; }
 
         cmd.fillBuffer(*batch.countBuffer.buffer, 0, vk::WholeSize, 0);
@@ -277,10 +277,10 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
             vk::PipelineStageFlagBits2::eComputeShader, 
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
-        mRendererScene.mSceneManager.mCullPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
-        mRendererScene.mSceneManager.mCullPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-        mRendererScene.mSceneManager.mCullPushConstants.countBuffer = batch.countBuffer.address;
-        cmd.pushConstants<CullPushConstants>(mRendererScene.mSceneManager.mCullPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mRendererScene.mSceneManager.mCullPushConstants);
+        mRendererScene.mCuller.mPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+        mRendererScene.mCuller.mPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+        mRendererScene.mCuller.mPushConstants.countBuffer = batch.countBuffer.address;
+        cmd.pushConstants<CullPushConstants>(mRendererScene.mCuller.mPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mRendererScene.mCuller.mPushConstants);
 
         cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
@@ -322,20 +322,20 @@ void Renderer::drawGeometry(vk::CommandBuffer cmd)
 
     cmd.beginRendering(renderInfo);
 
-    for (auto& batch : mRendererScene.mSceneManager.mBatches | std::views::values) {
+    for (auto& batch : mRendererScene.mMainScene.mBatches | std::views::values) {
         if (batch.renderItems.size() == 0) { continue; }
 
         cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
         
         setViewportScissors(cmd);
         
-        cmd.bindIndexBuffer(*mRendererScene.mSceneManager.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+        cmd.bindIndexBuffer(*mRendererScene.mMainScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0, *mRendererScene.mPerspective.mPerspectiveDescriptorSet, nullptr);
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSet, nullptr);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mRendererScene.mMainScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-        mRendererScene.mSceneManager.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-        cmd.pushConstants<ScenePushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSceneManager.mScenePushConstants);
+        mRendererScene.mMainScene.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+        cmd.pushConstants<ScenePushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mMainScene.mScenePushConstants);
 
         cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
@@ -353,9 +353,9 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
 
     cmd.beginRendering(renderInfo);
 
-    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mSkyboxPipelineBundle.pipeline);
-    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mSkybox.mSkyboxPipelineBundle.layout, 0, 
-        std::vector<vk::DescriptorSet> { *mRendererScene.mPerspective.mPerspectiveDescriptorSet, *mRendererScene.mSkybox.mSkyboxDescriptorSet }, nullptr);
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mPipelineBundle.pipeline);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mSkybox.mPipelineBundle.layout, 0, 
+        std::vector<vk::DescriptorSet> { *mRendererScene.mPerspective.mDescriptorSet, *mRendererScene.mSkybox.mDescriptorSet }, nullptr);
     vk::Viewport viewport = {
         0,
         0,
@@ -370,7 +370,7 @@ void Renderer::drawSkybox(vk::CommandBuffer cmd)
         vk::Extent2D { mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height },
     };
     cmd.setScissor(0, scissor);
-    cmd.pushConstants<SkyBoxPushConstants>(mRendererScene.mSkybox.mSkyboxPipelineBundle.layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSkybox.mSkyboxPushConstants);
+    cmd.pushConstants<SkyBoxPushConstants>(mRendererScene.mSkybox.mPipelineBundle.layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mSkybox.mPushConstants);
 
     cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
     mStats.mDrawCallCount++;
@@ -403,29 +403,29 @@ void Renderer::perFrameUpdate()
 
     mRendererScene.mPerspective.update();
 
-    mRendererScene.mSceneManager.deleteModels();
-    mRendererScene.mSceneManager.deleteInstances();
+    mRendererScene.mMainScene.deleteModels();
+    mRendererScene.mMainScene.deleteInstances();
 
-    for (auto& model : mRendererScene.mSceneManager.mModels | std::views::values) {
+    for (auto& model : mRendererScene.mMainScene.mModels | std::views::values) {
         if (model.mReloadLocalInstancesBuffer) {
             model.updateInstances();
             model.mReloadLocalInstancesBuffer = false;
         }
     }
 
-    if (mRendererScene.mSceneManager.mFlags.modelAddedFlag || mRendererScene.mSceneManager.mFlags.modelDestroyedFlag) {
-        mRendererScene.mSceneManager.realignOffsets();
-        mRendererScene.mSceneManager.reloadMainBuffers();
-        mRendererScene.mSceneManager.regenerateRenderItems();
-    } else if (mRendererScene.mSceneManager.mFlags.instanceAddedFlag || mRendererScene.mSceneManager.mFlags.instanceDestroyedFlag) {
-        mRendererScene.mSceneManager.realignInstancesOffset();
-        mRendererScene.mSceneManager.reloadMainInstancesBuffer();
-        mRendererScene.mSceneManager.regenerateRenderItems();
-    } else if (mRendererScene.mSceneManager.mFlags.reloadMainInstancesBuffer) {
-        mRendererScene.mSceneManager.reloadMainInstancesBuffer();
+    if (mRendererScene.mMainScene.mFlags.modelAddedFlag || mRendererScene.mMainScene.mFlags.modelDestroyedFlag) {
+        mRendererScene.mMainScene.realignOffsets();
+        mRendererScene.mMainScene.reloadMainBuffers();
+        mRendererScene.mMainScene.regenerateRenderItems();
+    } else if (mRendererScene.mMainScene.mFlags.instanceAddedFlag || mRendererScene.mMainScene.mFlags.instanceDestroyedFlag) {
+        mRendererScene.mMainScene.realignInstancesOffset();
+        mRendererScene.mMainScene.reloadMainInstancesBuffer();
+        mRendererScene.mMainScene.regenerateRenderItems();
+    } else if (mRendererScene.mMainScene.mFlags.reloadMainInstancesBuffer) {
+        mRendererScene.mMainScene.reloadMainInstancesBuffer();
     }
 
-    mRendererScene.mSceneManager.resetFlags();
+    mRendererScene.mMainScene.resetFlags();
 
     mImmSubmit.queuedSubmit();
     mImmSubmit.mCallbacks.clear();

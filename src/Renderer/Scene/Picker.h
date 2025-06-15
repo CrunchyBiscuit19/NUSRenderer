@@ -9,17 +9,17 @@ private:
 	Renderer* mRenderer;
 
 public:
-	AllocatedImage mPickerDrawImage;
+	AllocatedImage mImage;
 
-	PipelineBundle mPickerPipelineBundle;
-	vk::raii::PipelineLayout mPickerPipelineLayout;
+	PipelineBundle mPipelineBundle;
+	vk::raii::PipelineLayout mPipelineLayout;
 
 	Picker(Renderer* renderer);
 
 	void init();
 	void initImage();
-	void initPickerPipelineLayout();
-	void initPickerPipeline();
+	void initPipelineLayout();
+	void initPipeline();
 
 	void cleanup();
 };

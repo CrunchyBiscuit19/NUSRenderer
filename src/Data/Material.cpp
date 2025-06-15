@@ -5,8 +5,8 @@
 
 #include <fmt/core.h>
 
-std::unordered_map<PipelineOptions, PipelineBundle> PbrMaterial::mMaterialPipelinesCache = {};
-vk::raii::PipelineLayout PbrMaterial::mMaterialPipelineLayout = nullptr;
+std::unordered_map<PipelineOptions, PipelineBundle> PbrMaterial::mPipelinesCache = {};
+vk::raii::PipelineLayout PbrMaterial::mPipelineLayout = nullptr;
 
 PbrMaterial::PbrMaterial(Renderer* renderer) :
 	mRenderer(renderer),
@@ -23,8 +23,8 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer)
 	materialPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector<vk::DescriptorSetLayout> materialDescriptorLayouts = {
-		*renderer->mRendererScene.mPerspective.mPerspectiveDescriptorSetLayout,
-		*renderer->mRendererScene.mSceneManager.mMainMaterialResourcesDescriptorSetLayout
+		*renderer->mRendererScene.mPerspective.mDescriptorSetLayout,
+		*renderer->mRendererScene.mMainScene.mMainMaterialResourcesDescriptorSetLayout
 	};
 
 	vk::PipelineLayoutCreateInfo materialPipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
@@ -33,20 +33,20 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer)
 	materialPipelineLayoutCreateInfo.pPushConstantRanges = &materialPushConstantRange;
 	materialPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-	mMaterialPipelineLayout = renderer->mRendererCore.mDevice.createPipelineLayout(materialPipelineLayoutCreateInfo);
-	renderer->mRendererCore.labelResourceDebug(mMaterialPipelineLayout, "MaterialPipelineLayout");
+	mPipelineLayout = renderer->mRendererCore.mDevice.createPipelineLayout(materialPipelineLayoutCreateInfo);
+	renderer->mRendererCore.labelResourceDebug(mPipelineLayout, "MaterialPipelineLayout");
 	LOG_INFO(renderer->mLogger, "Material Pipeline Layout Created");
 }
 
 void PbrMaterial::getMaterialPipeline()
 {
 	PipelineOptions materialPipelineOptions{ mPbrData.doubleSided, mPbrData.alphaMode };
-	if (auto it = mMaterialPipelinesCache.find(materialPipelineOptions); it != mMaterialPipelinesCache.end()) {
+	if (auto it = mPipelinesCache.find(materialPipelineOptions); it != mPipelinesCache.end()) {
 		mPipelineBundle = &it->second;
 		return;
 	}
 	createMaterialPipeline(materialPipelineOptions);
-	mPipelineBundle = &mMaterialPipelinesCache.at(materialPipelineOptions);
+	mPipelineBundle = &mPipelinesCache.at(materialPipelineOptions);
 	return;
 }
 
@@ -72,12 +72,12 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 	materialPipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
 	materialPipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
 	materialPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
-	materialPipelineBuilder.mPipelineLayout = *mMaterialPipelineLayout;
+	materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
-	auto [it, _] = mMaterialPipelinesCache.try_emplace(materialPipelineOptions,
+	auto [it, _] = mPipelinesCache.try_emplace(materialPipelineOptions,
 		mRenderer->mRendererInfrastructure.mLatestPipelineId,
 		materialPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
-		*mMaterialPipelineLayout
+		*mPipelineLayout
 	);
 	mRenderer->mRendererCore.labelResourceDebug(it->second.pipeline, fmt::format("MaterialPipeline{}", mRenderer->mRendererInfrastructure.mLatestPipelineId).c_str());
 	LOG_INFO(mRenderer->mLogger, "{}", fmt::format("Material Pipeline {} Created", mRenderer->mRendererInfrastructure.mLatestPipelineId).c_str());
@@ -87,8 +87,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 
 void PbrMaterial::cleanup(Renderer* renderer)
 {
-	mMaterialPipelinesCache.clear();
+	mPipelinesCache.clear();
 	LOG_INFO(renderer->mLogger, "All Material Pipelines Destroyed");
-	mMaterialPipelineLayout.clear();
+	mPipelineLayout.clear();
 	LOG_INFO(renderer->mLogger, "Material Pipeline Layout Destroyed");
 }

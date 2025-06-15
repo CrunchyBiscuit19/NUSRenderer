@@ -22,12 +22,14 @@ project(NUSRenderer)
 file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/Scene/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Data/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/User/*.cpp"
 )
 file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/Scene/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Data/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/User/*.h"

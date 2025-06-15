@@ -1,7 +1,7 @@
 #pragma once
 
+#include <Renderer/RendererResources.h>
 #include <Utils/Constexprs.h>
-#include <Data/Model.h>
 #include <Utils/Descriptor.h>
 #include <Utils/Pipeline.h>
 
