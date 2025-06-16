@@ -124,6 +124,7 @@ void Gui::MiscGuiComponent::elements()
 	if (ImGui::CollapsingHeader("Controls")) {
 		ImGui::Text("[F11] Change Camera Mode");
 		ImGui::Text("[F10] Toggle Borderless Fullscreen");
+		ImGui::Text("[F9] Toggle GUI");
 		ImGui::Text("[Right Click] Change Mouse Mode");
 	}
 }
@@ -131,14 +132,15 @@ void Gui::MiscGuiComponent::elements()
 Gui::Gui(Renderer* renderer) :
 	mRenderer(renderer),
 	mDescriptorPool(nullptr),
-	mDescriptorSet(nullptr)
-{
-}
+	mDescriptorSet(nullptr),
+	mShown(true)
+{}
 
 void Gui::init()
 {
 	initDescriptors();
 	initImGui();
+	initKeyBinding();
 }
 
 void Gui::initDescriptors() {
@@ -223,6 +225,18 @@ void Gui::initImGui()
 	LOG_INFO(mRenderer->mLogger, "ImGui Gui Components Added");
 }
 
+void Gui::initKeyBinding()
+{
+	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
+		const SDL_Keymod modState = SDL_GetModState();
+		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+
+		if (keyState[SDL_SCANCODE_F9] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mShown = !mShown;
+		}
+	});
+}
+
 void Gui::cleanup() {
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
@@ -237,8 +251,9 @@ void Gui::imguiFrame() {
 	ImGui::NewFrame();
 
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetWindowSize().x, ImGui::GetMainViewport()->Size.y));
-
-	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove)) {
+	ImGui::SetNextWindowCollapsed(mShown, ImGuiCond_Always);
+	ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove);
+	if (!ImGui::IsWindowCollapsed()) {
 		if (ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown))
 		{
 			for (auto& component : mGuiComponents) {
@@ -250,8 +265,8 @@ void Gui::imguiFrame() {
 			}
 			ImGui::EndTabBar();
 		}
-		ImGui::End();
 	}
+	ImGui::End();
 
 	ImGui::Render();
 }

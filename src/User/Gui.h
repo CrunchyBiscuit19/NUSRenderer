@@ -38,6 +38,7 @@ private:
 	vk::raii::DescriptorPool mDescriptorPool;
 	vk::raii::DescriptorSet mDescriptorSet;
 
+	bool mShown;
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
 	ImGui::FileBrowser mSelectModelFileDialog;
@@ -49,6 +50,7 @@ public:
 	void init();
 	void initDescriptors();
 	void initImGui();
+	void initKeyBinding();
 
 	void cleanup();
 
