@@ -20,9 +20,9 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
     for (auto& primitive : mMesh->mPrimitives) {
         int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
-        renderer->mRendererScene.mMainScene.mBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
+        renderer->mRendererScene.mBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
 
-        renderer->mRendererScene.mMainScene.mBatches.at(pipelineId).renderItems.emplace_back(
+        renderer->mRendererScene.mBatches.at(pipelineId).renderItems.emplace_back(
             primitive.mIndexCount, 
             model->mInstances.size(),
             mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,

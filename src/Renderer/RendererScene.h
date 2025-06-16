@@ -21,10 +21,19 @@ struct ScenePushConstants {
 	vk::DeviceAddress visibleRenderItemsBuffer;
 };
 
-class MainScene {
+class RendererScene {
+private:
 	Renderer* mRenderer;
 
 public:
+	Perspective mPerspective;
+	Skybox mSkybox;
+	Culler mCuller;
+
+	int mLatestInstanceId{ 0 };
+	int mLatestMeshId{ 0 };
+	int mLatestModelId{ 0 };
+
 	struct Flags {
 		bool modelAddedFlag;
 		bool modelDestroyedFlag;
@@ -49,7 +58,7 @@ public:
 	AddressedBuffer mMainNodeTransformsBuffer;
 	AddressedBuffer mMainInstancesBuffer;
 
-	MainScene(Renderer* renderer);
+	RendererScene(Renderer* renderer);
 
 	void init();
 	void initBuffers();
@@ -79,29 +88,6 @@ public:
 	void reloadMainBuffers();
 
 	void resetFlags();
-
-	void cleanup();
-};
-
-class RendererScene {
-private:
-	Renderer* mRenderer;
-
-public:
-	Perspective mPerspective;
-	Skybox mSkybox;
-	Culler mCuller;
-	MainScene mMainScene;
-
-	int mLatestInstanceId{ 0 };
-	int mLatestMeshId{ 0 };
-	int mLatestModelId{ 0 };
-
-
-
-	RendererScene(Renderer* renderer);
-
-	void init();
 
 	void cleanup();
 };

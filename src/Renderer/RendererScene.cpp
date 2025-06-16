@@ -8,21 +8,28 @@
 
 #include <ranges>
 
-MainScene::MainScene(Renderer* renderer) :
+RendererScene::RendererScene(Renderer* renderer) :
 	mRenderer(renderer),
+	mPerspective(Perspective(renderer)),
+	mSkybox(Skybox(renderer)),
+	mCuller(Culler(renderer)),
 	mMainMaterialResourcesDescriptorSet(nullptr),
 	mMainMaterialResourcesDescriptorSetLayout(nullptr)
 {
 }
 
-void MainScene::init()
+void RendererScene::init()
 {
+	mPerspective.init();
+	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
+	mCuller.init();
+
 	initBuffers();
 	initDescriptor();
 	initPushConstants();
 }
 
-void MainScene::initBuffers()
+void RendererScene::initBuffers()
 {
 	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
@@ -49,7 +56,7 @@ void MainScene::initBuffers()
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 }
 
-void MainScene::initDescriptor()
+void RendererScene::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
@@ -60,7 +67,7 @@ void MainScene::initDescriptor()
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources and Descriptor Set Created");
 }
 
-void MainScene::initPushConstants()
+void RendererScene::initPushConstants()
 {
 	mScenePushConstants.vertexBuffer = mMainVertexBuffer.address;
 	mScenePushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
@@ -69,7 +76,7 @@ void MainScene::initPushConstants()
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
-void MainScene::loadModels(const std::vector<std::filesystem::path>& paths)
+void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
 {
 	for (const auto& modelPath : paths) {
 		auto modelShortPath = modelPath.stem().string();
@@ -79,7 +86,7 @@ void MainScene::loadModels(const std::vector<std::filesystem::path>& paths)
 	}
 }
 
-void MainScene::deleteModels()
+void RendererScene::deleteModels()
 {
 	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
 		if (pair.second.mDeleteSignal.has_value()) { mFlags.modelDestroyedFlag = true; }
@@ -87,7 +94,7 @@ void MainScene::deleteModels()
 	});
 }
 
-void MainScene::deleteInstances()
+void RendererScene::deleteInstances()
 {
 	for (auto& model : mModels | std::views::values) {
 		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { 
@@ -96,7 +103,7 @@ void MainScene::deleteInstances()
 	}
 }
 
-void MainScene::regenerateRenderItems()
+void RendererScene::regenerateRenderItems()
 {
     for (auto& batch : mBatches | std::views::values) {
         batch.renderItems.clear();
@@ -146,7 +153,7 @@ void MainScene::regenerateRenderItems()
     }
 }
 
-void MainScene::realignVertexIndexOffset()
+void RendererScene::realignVertexIndexOffset()
 {
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
@@ -165,7 +172,7 @@ void MainScene::realignVertexIndexOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Vertex / Index Buffers Offsets Realigned");
 }
 
-void MainScene::realignMaterialOffset()
+void RendererScene::realignMaterialOffset()
 {
 	int materialCumulative = 0;
 
@@ -179,7 +186,7 @@ void MainScene::realignMaterialOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Material Constants Buffer / Resources Descriptor Set Offsets Realigned");
 }
 
-void MainScene::realignNodeTransformsOffset()
+void RendererScene::realignNodeTransformsOffset()
 {
 	int nodeTransformCumulative = 0;
 
@@ -193,7 +200,7 @@ void MainScene::realignNodeTransformsOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Node Transforms Buffer Offsets Realigned");
 }
 
-void MainScene::realignInstancesOffset()
+void RendererScene::realignInstancesOffset()
 {
 	int instanceCumulative = 0;
 
@@ -207,7 +214,7 @@ void MainScene::realignInstancesOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Instances Buffers Offsets Realigned");
 }
 
-void MainScene::realignOffsets()
+void RendererScene::realignOffsets()
 {
 	realignVertexIndexOffset();
 	realignMaterialOffset();
@@ -215,7 +222,7 @@ void MainScene::realignOffsets()
 	realignInstancesOffset();
 }
 
-void MainScene::reloadMainVertexBuffer()
+void RendererScene::reloadMainVertexBuffer()
 {
 	int dstOffset = 0;
 
@@ -249,7 +256,7 @@ void MainScene::reloadMainVertexBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Reloading");
 }
 
-void MainScene::reloadMainIndexBuffer()
+void RendererScene::reloadMainIndexBuffer()
 {
 	int dstOffset = 0;
 
@@ -284,7 +291,7 @@ void MainScene::reloadMainIndexBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Reloading");
 }
 
-void MainScene::reloadMainMaterialConstantsBuffer()
+void RendererScene::reloadMainMaterialConstantsBuffer()
 {
 	int dstOffset = 0;
 
@@ -316,7 +323,7 @@ void MainScene::reloadMainMaterialConstantsBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Reloading");
 }
 
-void MainScene::reloadMainNodeTransformsBuffer()
+void RendererScene::reloadMainNodeTransformsBuffer()
 {
 	int dstOffset = 0;
 
@@ -348,7 +355,7 @@ void MainScene::reloadMainNodeTransformsBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
 }
 
-void MainScene::reloadMainInstancesBuffer()
+void RendererScene::reloadMainInstancesBuffer()
 {
 	int dstOffset = 0;
 
@@ -381,7 +388,7 @@ void MainScene::reloadMainInstancesBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Reloading");
 }
 
-void MainScene::reloadMainMaterialResourcesArray()
+void RendererScene::reloadMainMaterialResourcesArray()
 {
 	for (auto& model : mModels | std::views::values) {
 		for (auto& material : model.mMaterials) {
@@ -400,7 +407,7 @@ void MainScene::reloadMainMaterialResourcesArray()
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Reloaded");
 }
 
-void MainScene::reloadMainBuffers()
+void RendererScene::reloadMainBuffers()
 {
 	reloadMainVertexBuffer();
 	reloadMainIndexBuffer();
@@ -410,7 +417,7 @@ void MainScene::reloadMainBuffers()
 	reloadMainMaterialResourcesArray();
 }
 
-void MainScene::resetFlags()
+void RendererScene::resetFlags()
 {
 	mFlags.modelAddedFlag = false;
 	mFlags.modelDestroyedFlag = false;
@@ -419,8 +426,12 @@ void MainScene::resetFlags()
 	mFlags.reloadMainInstancesBuffer = false;
 }
 
-void MainScene::cleanup()
+void RendererScene::cleanup()
 {
+	mPerspective.cleanup();
+	mSkybox.cleanup();
+	mCuller.cleanup();
+
 	mModels.clear();
 	mBatches.clear();
 	LOG_INFO(mRenderer->mLogger, "All Batches Destroyed");
@@ -438,29 +449,4 @@ void MainScene::cleanup()
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Destroyed");
 	mMainVertexBuffer.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Destroyed");
-}
-
-RendererScene::RendererScene(Renderer* renderer) :
-	mRenderer(renderer),
-	mPerspective(Perspective(renderer)),
-	mSkybox(Skybox(renderer)),
-	mCuller(Culler(renderer)),
-	mMainScene(MainScene(renderer))
-{
-}
-
-void RendererScene::init()
-{
-	mPerspective.init();
-	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
-	mCuller.init();
-	mMainScene.init();
-}
-
-void RendererScene::cleanup()
-{
-	mPerspective.cleanup();
-	mSkybox.cleanup();
-	mCuller.cleanup();
-	mMainScene.cleanup();
 }

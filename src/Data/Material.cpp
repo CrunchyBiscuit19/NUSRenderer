@@ -24,7 +24,7 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer)
 
 	std::vector<vk::DescriptorSetLayout> materialDescriptorLayouts = {
 		*renderer->mRendererScene.mPerspective.mDescriptorSetLayout,
-		*renderer->mRendererScene.mMainScene.mMainMaterialResourcesDescriptorSetLayout
+		*renderer->mRendererScene.mMainMaterialResourcesDescriptorSetLayout
 	};
 
 	vk::PipelineLayoutCreateInfo materialPipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();

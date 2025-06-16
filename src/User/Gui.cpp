@@ -32,14 +32,14 @@ void Gui::SceneGuiComponent::elements()
 	if (ImGui::Button("Add Model")) {
 		mGui->mSelectModelFileDialog.Open();
 	}
-	for (auto& model : mRenderer->mRendererScene.mMainScene.mModels | std::views::values) {
+	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values) {
 		const auto name = model.mName;
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
 		if (ImGui::CollapsingHeader(name.c_str())) {
 			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
 				model.createInstance(TransformData{ mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f });
 				model.mReloadLocalInstancesBuffer = true;
-				mRenderer->mRendererScene.mMainScene.mFlags.instanceAddedFlag = true;
+				mRenderer->mRendererScene.mFlags.instanceAddedFlag = true;
 			}
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
@@ -54,22 +54,22 @@ void Gui::SceneGuiComponent::elements()
 
 					if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation))) { 
 						model.mReloadLocalInstancesBuffer = true; 
-						mRenderer->mRendererScene.mMainScene.mFlags.reloadMainInstancesBuffer = true;
+						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
 					};
 					if (ImGui::SliderFloat3("Pitch / Yaw / Roll", glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(), glm::pi<float>())) { 
 						model.mReloadLocalInstancesBuffer = true; 
-						mRenderer->mRendererScene.mMainScene.mFlags.reloadMainInstancesBuffer = true;
+						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
 					}
 					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f)) { 
 						model.mReloadLocalInstancesBuffer = true; 
-						mRenderer->mRendererScene.mMainScene.mFlags.reloadMainInstancesBuffer = true;
+						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
 					}
 
 					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 					if (ImGui::Button("Delete Instance")) {
 						instance.mDeleteSignal = true;
 						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mMainScene.mFlags.instanceDestroyedFlag = true;
+						mRenderer->mRendererScene.mFlags.instanceDestroyedFlag = true;
 					}
 					ImGui::PopStyleColor();
 
@@ -107,7 +107,7 @@ void Gui::SceneGuiComponent::elements()
 	mGui->mSelectModelFileDialog.Display();
 	if (mGui->mSelectModelFileDialog.HasSelected()) {
 		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
-		mRenderer->mRendererScene.mMainScene.loadModels(selectedFiles);
+		mRenderer->mRendererScene.loadModels(selectedFiles);
 		mGui->mSelectModelFileDialog.ClearSelected();
 	}
 }
