@@ -46,7 +46,7 @@ void Perspective::initDescriptor()
 
 void Perspective::update()
 {
-	mRenderer->mCamera.update(mRenderer->mStats.mFrametime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
+	mRenderer->mCamera.update(mRenderer->mStats.mFrameTime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mData.view = mRenderer->mCamera.getViewMatrix();
 	mData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
 	mData.proj[1][1] *= -1;

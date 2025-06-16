@@ -108,7 +108,7 @@ public:
 	void setColorAttachmentFormat(vk::Format format);
 	void setDepthFormat(vk::Format format);
 	void disableDepthtest();
-	void enableDepthtest(bool depthWriteEnable, vk::CompareOp op);
+	void enableDepthTest(bool depthWriteEnable, vk::CompareOp op);
 };
 
 class ComputePipelineBuilder : PipelineBuilder {

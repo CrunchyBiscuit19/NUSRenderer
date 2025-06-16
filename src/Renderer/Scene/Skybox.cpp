@@ -3,7 +3,6 @@
 #include <Utils/Helper.h>
 
 #include <stb_image.h>
-#include "Picker.h"
 
 Skybox::Skybox(Renderer* renderer) :
 	mRenderer(renderer),
@@ -70,7 +69,7 @@ void Skybox::initPipeline()
 	skyboxPipelineBuilder.enableBlendingSkybox();
 	skyboxPipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
 	skyboxPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
-	skyboxPipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual);
+	skyboxPipelineBuilder.enableDepthTest(false, vk::CompareOp::eGreaterOrEqual);
 	skyboxPipelineBuilder.mPipelineLayout = *mRenderer->mRendererScene.mSkybox.mPipelineLayout;
 
 	mPipelineBundle = PipelineBundle(

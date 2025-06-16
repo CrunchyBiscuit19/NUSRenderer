@@ -186,7 +186,7 @@ void GraphicsPipelineBuilder::disableDepthtest()
 	mDepthStencil.maxDepthBounds = 1.f;
 }
 
-void GraphicsPipelineBuilder::enableDepthtest(bool depthWriteEnable, vk::CompareOp op)
+void GraphicsPipelineBuilder::enableDepthTest(bool depthWriteEnable, vk::CompareOp op)
 {
 	mDepthStencil.depthTestEnable = VK_TRUE;
 	mDepthStencil.depthWriteEnable = depthWriteEnable;

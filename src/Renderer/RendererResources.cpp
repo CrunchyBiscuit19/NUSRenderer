@@ -262,7 +262,7 @@ void RendererResources::cleanup()
 }
 
 RendererResources::RendererResources(RendererResources&& other) noexcept :
-	mRenderer(std::exchange(other.mRenderer, nullptr)),
+	mRenderer(std::move(other.mRenderer)),
 	mImageStagingBuffer(std::move(other.mImageStagingBuffer)),
 	mMeshStagingBuffer(std::move(other.mMeshStagingBuffer)),
 	mDefaultImages(std::move(other.mDefaultImages)),
@@ -273,7 +273,7 @@ RendererResources::RendererResources(RendererResources&& other) noexcept :
 
 RendererResources& RendererResources::operator=(RendererResources&& other) noexcept {
 	if (this != &other) {
-		mRenderer = std::exchange(other.mRenderer, nullptr);
+		mRenderer = std::move(other.mRenderer);
 		mImageStagingBuffer = std::move(other.mImageStagingBuffer);
 		mMeshStagingBuffer = std::move(other.mMeshStagingBuffer);
 		mDefaultImages = std::move(other.mDefaultImages);

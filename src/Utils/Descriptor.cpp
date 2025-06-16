@@ -1,7 +1,5 @@
-#include <Renderer/Renderer.h>
 #include <Utils/Descriptor.h>
-
-#include "quill/LogMacros.h"
+#include <Renderer/Renderer.h>
 
 void DescriptorLayoutBuilder::addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count)
 {

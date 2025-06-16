@@ -13,10 +13,14 @@
 #include <quill/LogMacros.h>
 
 struct RendererStats {
-	float mFrametime;
+	float mFrameTime;
 	float mDrawTime;
 	int mDrawCallCount;
 	float mSceneUpdateTime;
+
+	void reset() {
+		mDrawCallCount = 0;
+	}
 };
 
 class Renderer {
@@ -51,7 +55,9 @@ public:
 	
 	void cullRenderItems(vk::CommandBuffer cmd);
 
-	void drawClearScreen(vk::CommandBuffer cmd);
+	void clearScreen(vk::CommandBuffer cmd);
+
+	//void drawPick(vk::CommandBuffer cmd);
 	void drawGeometry(vk::CommandBuffer cmd);
 	void drawSkybox(vk::CommandBuffer cmd);
 	

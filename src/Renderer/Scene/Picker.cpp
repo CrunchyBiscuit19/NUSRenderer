@@ -3,6 +3,7 @@
 #include <Utils/Helper.h>
 
 Picker::Picker(Renderer* renderer) :
+	mRenderer(renderer),
 	mPipelineLayout(nullptr)
 {}
 
@@ -15,11 +16,25 @@ void Picker::init()
 
 void Picker::initImage()
 {
-	mImage = mRenderer->mRendererResources.createImage(
-		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
-		vk::Format::eR32G32B32Uint, // Model Id / Mesh Id / Instance Id
-		vk::ImageUsageFlagBits::eColorAttachment 
+	mObjectImage = mRenderer->mRendererResources.createImage(
+		mRenderer->mRendererInfrastructure.mDrawImage.imageExtent,
+		vk::Format::eR32G32B32A32Uint, // Model Id / Mesh Id / Instance Id
+		vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled
 	);
+	mRenderer->mRendererCore.labelResourceDebug(mObjectImage.image, "PickerObjectImage");
+	LOG_INFO(mRenderer->mLogger, "Picker Object Image Created");
+	mRenderer->mRendererCore.labelResourceDebug(mObjectImage.imageView, "PickerObjectImageView");
+	LOG_INFO(mRenderer->mLogger, "Picker Object Image View Created");
+
+	mDepthImage = mRenderer->mRendererResources.createImage(
+		mObjectImage.imageExtent,
+		vk::Format::eD32Sfloat, // Model Id / Mesh Id / Instance Id
+		vk::ImageUsageFlagBits::eDepthStencilAttachment
+	);
+	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
+	LOG_INFO(mRenderer->mLogger, "Picker Depth Image Created");
+	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.imageView, "PickerDepthImageView");
+	LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
 }
 
 void Picker::initPipelineLayout()
@@ -56,9 +71,9 @@ void Picker::initPipeline()
 	pickerPipelineBuilder.disableMultisampling();
 	pickerPipelineBuilder.disableSampleShading();
 	pickerPipelineBuilder.disableBlending();
-	pickerPipelineBuilder.setColorAttachmentFormat(mImage.imageFormat); 
-	pickerPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
-	pickerPipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
+	pickerPipelineBuilder.setColorAttachmentFormat(mObjectImage.imageFormat); 
+	pickerPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
+	pickerPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
 	pickerPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
 	mPipelineBundle = PipelineBundle(
@@ -74,8 +89,10 @@ void Picker::initPipeline()
 
 void Picker::cleanup()
 {
-	mImage.cleanup();
-	LOG_INFO(mRenderer->mLogger, "Picker Image Destroyed");
+	mObjectImage.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Picker Object Image Destroyed");
+	mDepthImage.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Picker Depth Image Destroyed");
 	mPipelineBundle.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Picker Pipeline Destroyed");
 	mPipelineLayout.clear();

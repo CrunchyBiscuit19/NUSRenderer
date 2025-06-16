@@ -116,7 +116,7 @@ void Gui::MiscGuiComponent::elements()
 {
 	if (ImGui::CollapsingHeader("Stats")) {
 		ImGui::Text("VALIDATION LAYERS: %s", (USE_VALIDATION_LAYERS ? "ON" : "OFF"));
-		ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrametime);
+		ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrameTime);
 		ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
 		ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
 		ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
@@ -130,11 +130,18 @@ void Gui::MiscGuiComponent::elements()
 
 Gui::Gui(Renderer* renderer) :
 	mRenderer(renderer),
-	mDescriptorPool(nullptr)
+	mDescriptorPool(nullptr),
+	mDescriptorSet(nullptr)
 {
 }
 
-void Gui::init() {
+void Gui::init()
+{
+	initDescriptors();
+	initImGui();
+}
+
+void Gui::initDescriptors() {
 	std::vector<vk::DescriptorPoolSize> poolSizes = {
 		{ vk::DescriptorType::eSampler, 100 },
 		{ vk::DescriptorType::eCombinedImageSampler, 100 },
@@ -156,7 +163,10 @@ void Gui::init() {
 	mDescriptorPool = mRenderer->mRendererCore.mDevice.createDescriptorPool(poolInfo);
 
 	LOG_INFO(mRenderer->mLogger, "ImGui Descriptor Pool Created");
+}
 
+void Gui::initImGui()
+{
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
 
@@ -226,10 +236,9 @@ void Gui::imguiFrame() {
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetWindowSize().x, ImGui::GetMainViewport()->Size.y));
 
-	if (ImGui::Begin("Renderer Options"), nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar) {
+	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove)) {
 		if (ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown))
 		{
 			for (auto& component : mGuiComponents) {

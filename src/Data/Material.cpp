@@ -68,8 +68,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 	materialPipelineBuilder.enableMultisampling();
 	materialPipelineBuilder.enableSampleShading();
 	transparency ? materialPipelineBuilder.enableBlendingAlpha() : materialPipelineBuilder.disableBlending();
-	transparency ? materialPipelineBuilder.enableDepthtest(false, vk::CompareOp::eGreaterOrEqual) : materialPipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);;
-	materialPipelineBuilder.enableDepthtest(true, vk::CompareOp::eGreaterOrEqual);
+	//materialPipelineBuilder.enableDepthtest(!transparency, vk::CompareOp::eGreaterOrEqual); // TODO transparency
+	materialPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
 	materialPipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
 	materialPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
 	materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;

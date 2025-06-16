@@ -1,5 +1,5 @@
-#include <Renderer/Renderer.h>
 #include <Data/Camera.h>
+#include <Renderer/Renderer.h>
 
 Camera::Camera(Renderer* renderer) :
 	mRenderer(renderer)

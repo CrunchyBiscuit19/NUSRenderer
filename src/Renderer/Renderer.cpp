@@ -81,6 +81,8 @@ void Renderer::run()
     while (true) {
         auto start = std::chrono::system_clock::now();
 
+        mStats.reset();
+
         if (mRendererInfrastructure.mProgramEndFrameNumber.has_value() && (mRendererInfrastructure.mFrameNumber < mRendererInfrastructure.mProgramEndFrameNumber.value())) {
             mRendererCore.mDevice.waitIdle();
             break;
@@ -109,7 +111,7 @@ void Renderer::run()
 
         auto end = std::chrono::system_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        mStats.mFrametime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
+        mStats.mFrameTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
     }
 }
 
@@ -167,14 +169,11 @@ void Renderer::draw()
 
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
-
+    
     cullRenderItems(cmd);
 
-    // Resizing bigger window, don't make swapchain extent go beyond draw image extent
-    mRendererInfrastructure.mDrawImage.imageExtent.height = std::min(mRendererInfrastructure.mSwapchainBundle.mExtent.height, mRendererInfrastructure.mDrawImage.imageExtent.height);
-    mRendererInfrastructure.mDrawImage.imageExtent.width = std::min(mRendererInfrastructure.mSwapchainBundle.mExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.width);
-
-    drawClearScreen(cmd);
+    clearScreen(cmd);
+    //drawPick(cmd);
     drawGeometry(cmd);
     if (mRendererScene.mSkybox.mActive) {
         drawSkybox(cmd);
@@ -302,7 +301,7 @@ void Renderer::cullRenderItems(vk::CommandBuffer cmd)
     }
 }
 
-void Renderer::drawClearScreen(vk::CommandBuffer cmd)
+void Renderer::clearScreen(vk::CommandBuffer cmd)
 {
     vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
     vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear);
@@ -312,10 +311,33 @@ void Renderer::drawClearScreen(vk::CommandBuffer cmd)
     cmd.endRendering();
 }
 
+/*void Renderer::drawPick(vk::CommandBuffer cmd)
+{
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mObjectImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D{ mRendererScene.mPicker.mObjectImage.imageExtent.width, mRendererScene.mPicker.mObjectImage.imageExtent.height }, &colorAttachment, &depthAttachment);
+
+    cmd.beginRendering(renderInfo);
+
+    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mPipelineBundle.pipeline);
+    setViewportScissors(cmd);
+    cmd.bindIndexBuffer(*mRendererScene.mMainScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mPipelineLayout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
+
+    for (auto& batch : mRendererScene.mMainScene.mBatches | std::views::values) {
+        if (batch.renderItems.size() == 0) { continue; }
+
+        mRendererScene.mMainScene.mScenePushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+        cmd.pushConstants<ScenePushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mMainScene.mScenePushConstants);
+
+        cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
+    }
+
+    cmd.endRendering();
+}*/
+
 void Renderer::drawGeometry(vk::CommandBuffer cmd)
 {
-    mStats.mDrawCallCount = 0;
-
     vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
     vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
     const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vk::Extent2D { mRendererInfrastructure.mDrawImage.imageExtent.width, mRendererInfrastructure.mDrawImage.imageExtent.height }, &colorAttachment, &depthAttachment);

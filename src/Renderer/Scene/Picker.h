@@ -9,7 +9,8 @@ private:
 	Renderer* mRenderer;
 
 public:
-	AllocatedImage mImage;
+	AllocatedImage mObjectImage;
+	AllocatedImage mDepthImage;
 
 	PipelineBundle mPipelineBundle;
 	vk::raii::PipelineLayout mPipelineLayout;

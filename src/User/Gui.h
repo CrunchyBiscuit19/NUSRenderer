@@ -36,7 +36,7 @@ private:
 
 	Renderer* mRenderer;
 	vk::raii::DescriptorPool mDescriptorPool;
-
+	vk::raii::DescriptorSet mDescriptorSet;
 
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
@@ -47,6 +47,9 @@ public:
 	Gui(Renderer* renderer);
 
 	void init();
+	void initDescriptors();
+	void initImGui();
+
 	void cleanup();
 
 	void imguiFrame();

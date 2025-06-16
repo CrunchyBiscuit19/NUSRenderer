@@ -5,6 +5,7 @@
 #include <Renderer/Scene/Skybox.h>
 #include <Renderer/Scene/Culler.h>
 #include <Renderer/Scene/Batch.h>
+#include <Renderer/Scene/Picker.h>
 
 #include <glm/fwd.hpp>
 
@@ -87,14 +88,16 @@ private:
 	Renderer* mRenderer;
 
 public:
-	int mLatestInstanceId{ 0 };
-	int mLatestMeshId{ 0 };
-	int mLatestModelId{ 0 };
-
 	Perspective mPerspective;
 	Skybox mSkybox;
 	Culler mCuller;
 	MainScene mMainScene;
+
+	int mLatestInstanceId{ 0 };
+	int mLatestMeshId{ 0 };
+	int mLatestModelId{ 0 };
+
+
 
 	RendererScene(Renderer* renderer);
 
