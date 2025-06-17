@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Data/Model.h>
-#include <Renderer/Scene/Perspective.h>
-#include <Renderer/Scene/Skybox.h>
-#include <Renderer/Scene/Culler.h>
-#include <Renderer/Scene/Batch.h>
-#include <Renderer/Scene/Picker.h>
+#include <Scene/Perspective.h>
+#include <Scene/Skybox.h>
+#include <Scene/Culler.h>
+#include <Scene/Batch.h>
+#include <Scene/Picker.h>
 
 #include <glm/fwd.hpp>
 

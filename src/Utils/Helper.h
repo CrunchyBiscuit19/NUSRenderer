@@ -41,6 +41,9 @@ namespace vkhelper {
 
 	vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo();
 	vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shaderModule, const char* entry = "main");
+	void setViewportScissors(vk::CommandBuffer cmd, vk::Extent3D drawImageExtent);
 
 	void createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buffer, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask);
+
+	vk::Extent2D extent3dTo2d(vk::Extent3D extent3d);
 }

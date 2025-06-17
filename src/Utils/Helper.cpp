@@ -405,6 +405,27 @@ vk::PipelineShaderStageCreateInfo vkhelper::pipelineShaderStageCreateInfo(vk::Sh
 	return info;
 }
 
+
+void vkhelper::setViewportScissors(vk::CommandBuffer cmd, vk::Extent3D drawImageExtent)
+{
+	vk::Extent2D drawImage2dExtent = extent3dTo2d(drawImageExtent);
+
+	vk::Viewport viewport = {
+		0,
+		0,
+		static_cast<float>(drawImage2dExtent.width),
+		static_cast<float>(drawImage2dExtent.height),
+		0.f,
+		1.f,
+	};
+	cmd.setViewport(0, viewport);
+	vk::Rect2D scissor = {
+		vk::Offset2D { 0, 0 },
+		drawImage2dExtent,
+	};
+	cmd.setScissor(0, scissor);
+}
+
 void vkhelper::createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buffer, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask)
 {
 	vk::BufferMemoryBarrier2 bufferBarrier {};
@@ -423,4 +444,9 @@ void vkhelper::createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buf
 	depInfo.bufferMemoryBarrierCount = 1;
 
 	cmd.pipelineBarrier2(depInfo);
+}
+
+vk::Extent2D vkhelper::extent3dTo2d(vk::Extent3D extent3d)
+{
+	return vk::Extent2D(extent3d.width, extent3d.height);
 }

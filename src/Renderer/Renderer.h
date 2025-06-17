@@ -23,6 +23,29 @@ struct RendererStats {
 	}
 };
 
+enum class PassType {
+	Cull,
+	ClearScreen,
+	Pick,
+	Geometry,
+	Skybox,
+	ResolveMSAA,
+	ImGui
+};
+
+struct Pass {
+	static Renderer* mRenderer;
+	std::function<void(vk::CommandBuffer)> mFunction;
+
+	Pass(std::function<void(vk::CommandBuffer)> function) :
+		mFunction(function)
+	{}
+
+	void execute(vk::CommandBuffer cmd) {
+		mFunction(cmd);
+	}
+};
+
 class Renderer {
 public:
 	bool mIsInitialized{ false };
@@ -38,21 +61,27 @@ public:
 	Gui mGUI;
 	Camera mCamera;
 	RendererEvent mRendererEvent;
-
 	quill::Logger* mLogger;
+
+	std::unordered_map<PassType, Pass> mPasses;
 
 	Renderer();
 
 	void init();
+	void initLogger();
+	void initComponents();
+	void initPasses();
+
 	void run();
-	void cleanup();
-
-	void setViewportScissors(vk::CommandBuffer cmd);
-
 	void perFrameUpdate();
-
 	void draw();
 	
+	void cleanup();
+
+
+
+
+
 	void cullRenderItems(vk::CommandBuffer cmd);
 
 	void clearScreen(vk::CommandBuffer cmd);

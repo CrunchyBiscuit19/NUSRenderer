@@ -1,5 +1,5 @@
 #include <Renderer/Renderer.h>
-#include <Renderer/Scene/Skybox.h>
+#include <Scene/Skybox.h>
 #include <Utils/Helper.h>
 
 #include <stb_image.h>
