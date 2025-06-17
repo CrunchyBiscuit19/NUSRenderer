@@ -133,7 +133,7 @@ Gui::Gui(Renderer* renderer) :
 	mRenderer(renderer),
 	mDescriptorPool(nullptr),
 	mDescriptorSet(nullptr),
-	mShown(true)
+	mCollapsed(false)
 {}
 
 void Gui::init()
@@ -232,7 +232,7 @@ void Gui::initKeyBinding()
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
 		if (keyState[SDL_SCANCODE_F9] && e.type == SDL_KEYDOWN && !e.key.repeat) {
-			mShown = !mShown;
+			mCollapsed = !mCollapsed;
 		}
 	});
 }
@@ -251,7 +251,7 @@ void Gui::imguiFrame() {
 	ImGui::NewFrame();
 
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetWindowSize().x, ImGui::GetMainViewport()->Size.y));
-	ImGui::SetNextWindowCollapsed(mShown, ImGuiCond_Always);
+	ImGui::SetNextWindowCollapsed(mCollapsed, ImGuiCond_Always);
 	ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove);
 	if (!ImGui::IsWindowCollapsed()) {
 		if (ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown))

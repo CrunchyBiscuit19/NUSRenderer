@@ -239,6 +239,7 @@ void Renderer::initPasses()
         const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
         cmd.beginRendering(renderInfo);
+        mGUI.imguiFrame();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
         cmd.endRendering();
     });
@@ -271,8 +272,6 @@ void Renderer::run()
         if (mRendererInfrastructure.mResizeRequested) {
             mRendererInfrastructure.resizeSwapchain();
         }
-
-        mGUI.imguiFrame();
 
         perFrameUpdate();
         draw();
