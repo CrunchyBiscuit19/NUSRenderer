@@ -8,6 +8,7 @@
 #include <Utils/ImmSubmit.h>
 #include <User/Gui.h>
 #include <Data/Camera.h>
+#include <Utils/Helper.h>
 
 #include <quill/Logger.h>
 #include <quill/LogMacros.h>
@@ -30,19 +31,59 @@ enum class PassType {
 	Geometry,
 	Skybox,
 	ResolveMSAA,
+	IntermediateToSwapchain,
 	ImGui
 };
 
 struct Pass {
-	static Renderer* mRenderer;
-	std::function<void(vk::CommandBuffer)> mFunction;
+	static Renderer* renderer;
+	std::function<void(vk::CommandBuffer)> function;
 
 	Pass(std::function<void(vk::CommandBuffer)> function) :
-		mFunction(function)
+		function(function)
 	{}
 
 	void execute(vk::CommandBuffer cmd) {
-		mFunction(cmd);
+		function(cmd);
+	}
+};
+
+enum class TransitionType {
+	IntermediateTransferSrcIntoColorAttachment,
+	IntermediateColorAttachmentIntoTransferSrc,
+	SwapchainPresentIntoTransferDst,
+	SwapchainTransferDstIntoColorAttachment,
+	SwapchainColorAttachmentIntoPresent,
+};
+
+struct Transition {
+	vk::PipelineStageFlags2 srcStageMask;
+	vk::AccessFlags2 srcAccessMask;
+	vk::PipelineStageFlags2 dstStageMask;
+	vk::AccessFlags2 dstAccessMask;
+	vk::ImageLayout currentLayout;
+	vk::ImageLayout newLayout;
+
+	Transition(vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) :
+		srcStageMask(srcStageMask),
+		srcAccessMask(srcAccessMask),
+		dstStageMask(dstStageMask),
+		dstAccessMask(dstAccessMask),
+		currentLayout(currentLayout),
+		newLayout(newLayout)
+	{}
+
+	void execute(vk::CommandBuffer cmd, vk::Image image) {
+		vkhelper::transitionImage(
+			cmd, 
+			image,
+			srcStageMask,
+			srcAccessMask,
+			dstStageMask,
+			dstAccessMask,
+			currentLayout, 
+			newLayout
+		);
 	}
 };
 
@@ -64,6 +105,7 @@ public:
 	quill::Logger* mLogger;
 
 	std::unordered_map<PassType, Pass> mPasses;
+	std::unordered_map<TransitionType, Transition> mTransitions;
 
 	Renderer();
 
@@ -71,27 +113,11 @@ public:
 	void initLogger();
 	void initComponents();
 	void initPasses();
+	void initTransitions();
 
 	void run();
 	void perFrameUpdate();
 	void draw();
 	
 	void cleanup();
-
-
-
-
-
-	void cullRenderItems(vk::CommandBuffer cmd);
-
-	void clearScreen(vk::CommandBuffer cmd);
-
-	//void drawPick(vk::CommandBuffer cmd);
-	void drawGeometry(vk::CommandBuffer cmd);
-	void drawSkybox(vk::CommandBuffer cmd);
-	
-	void resolveMsaa(vk::CommandBuffer cmd);
-	
-	void drawGui(vk::CommandBuffer cmd, vk::ImageView swapchainImageView);
-
 };

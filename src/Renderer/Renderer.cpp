@@ -1,5 +1,4 @@
 #include <Renderer/Renderer.h>
-#include <Utils/Helper.h>
 
 #include <fmt/core.h>
 #include <quill/Backend.h>
@@ -13,7 +12,7 @@
 
 #include <ranges>
 
-Renderer* Pass::mRenderer = nullptr;
+Renderer* Pass::renderer = nullptr;
 
 Renderer::Renderer()
     : mRendererCore(RendererCore(this))
@@ -32,6 +31,7 @@ void Renderer::init()
     initLogger();
     initComponents();
     initPasses();
+    initTransitions();
 
     LOG_INFO(mLogger, "Rendering Started");
 }
@@ -234,6 +234,15 @@ void Renderer::initPasses()
         cmd.endRendering();
     });
 
+    mPasses.try_emplace(PassType::IntermediateToSwapchain, [&](vk::CommandBuffer cmd) {
+        vkhelper::copyImage(
+            cmd, 
+            *mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.getCurrentSwapchainImage().image,
+            vkhelper::extent3dTo2d(mRendererInfrastructure.mIntermediateImage.imageExtent),
+            mRendererInfrastructure.mSwapchainBundle.mExtent
+        );
+    });
+
     mPasses.try_emplace(PassType::ImGui, [&](vk::CommandBuffer cmd) {
         vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererInfrastructure.getCurrentSwapchainImage().imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eDontCare);
         const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
@@ -243,6 +252,54 @@ void Renderer::initPasses()
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
         cmd.endRendering();
     });
+}
+
+void Renderer::initTransitions()
+{
+    mTransitions.try_emplace(TransitionType::IntermediateTransferSrcIntoColorAttachment, 
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferRead,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::eTransferSrcOptimal, 
+        vk::ImageLayout::eColorAttachmentOptimal
+    );
+
+    mTransitions.try_emplace(TransitionType::IntermediateColorAttachmentIntoTransferSrc,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferRead,
+        vk::ImageLayout::eColorAttachmentOptimal, 
+        vk::ImageLayout::eTransferSrcOptimal
+    );
+
+    mTransitions.try_emplace(TransitionType::SwapchainPresentIntoTransferDst,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eNone,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferWrite,
+        vk::ImageLayout::ePresentSrcKHR,
+        vk::ImageLayout::eTransferDstOptimal
+    );
+
+    mTransitions.try_emplace(TransitionType::SwapchainTransferDstIntoColorAttachment,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferWrite,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::eTransferDstOptimal, 
+        vk::ImageLayout::eColorAttachmentOptimal
+    );
+
+    mTransitions.try_emplace(TransitionType::SwapchainColorAttachmentIntoPresent,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eNone,
+        vk::ImageLayout::eColorAttachmentOptimal, 
+        vk::ImageLayout::ePresentSrcKHR
+    );
 }
 
 void Renderer::run()
@@ -349,58 +406,23 @@ void Renderer::draw()
     mPasses.at(PassType::Geometry).execute(cmd);
     mPasses.at(PassType::Skybox).execute(cmd);
     
-    // Transition intermediate image into resolvable color compatible layout
-    vkhelper::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+    mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(cmd, *mRendererInfrastructure.mIntermediateImage.image);
 
     mPasses.at(PassType::ResolveMSAA).execute(cmd);
 
-    // Transition intermediate image and swapchain image to transfer layouts to copy over
-    vkhelper::transitionImage(cmd, *mRendererInfrastructure.mIntermediateImage.image,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal);
-    vkhelper::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite,
-        vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
+    mTransitions.at(TransitionType::IntermediateColorAttachmentIntoTransferSrc).execute(cmd, *mRendererInfrastructure.mIntermediateImage.image);
+    mTransitions.at(TransitionType::SwapchainPresentIntoTransferDst).execute(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image);
 
-    vkhelper::copyImage(cmd, *mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.getCurrentSwapchainImage().image,
-        vk::Extent2D {
-            mRendererInfrastructure.mIntermediateImage.imageExtent.width,
-            mRendererInfrastructure.mIntermediateImage.imageExtent.height,
-        },
-        mRendererInfrastructure.mSwapchainBundle.mExtent);
+    mPasses.at(PassType::IntermediateToSwapchain).execute(cmd);
 
-    // Transition swapchain image to color optimal to draw GUI into final swapchain image
-    vkhelper::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+    mTransitions.at(TransitionType::SwapchainTransferDstIntoColorAttachment).execute(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image);
 
     mPasses.at(PassType::ImGui).execute(cmd);
 
-    // Set swapchain image layout to presentable layout
-    vkhelper::transitionImage(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR);
+    mTransitions.at(TransitionType::SwapchainColorAttachmentIntoPresent).execute(cmd, mRendererInfrastructure.getCurrentSwapchainImage().image);
 
     cmd.end();
 
-    // Prepare the submission to the queue. (Reading semaphore states)
     vk::CommandBufferSubmitInfo cmdinfo = vkhelper::commandBufferSubmitInfo(cmd);
     vk::SemaphoreSubmitInfo waitInfo = vkhelper::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore);
     vk::SemaphoreSubmitInfo signalInfo = vkhelper::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput, *mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
