@@ -2,6 +2,8 @@
 #include <Utils/ImmSubmit.h>
 #include <Utils/Helper.h>
 
+#include <quill/LogMacros.h>
+
 ImmSubmit::ImmSubmit(Renderer* renderer) :
 	mRenderer(renderer),
 	mCommandPool(nullptr),

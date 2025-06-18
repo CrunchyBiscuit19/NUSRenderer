@@ -3,6 +3,7 @@
 #include <Utils/Helper.h>
 
 #include <stb_image.h>
+#include <quill/LogMacros.h>
 
 Skybox::Skybox(Renderer* renderer) :
 	mRenderer(renderer),

@@ -1,6 +1,8 @@
 #include <Scene/Culler.h>
 #include <Renderer/Renderer.h>
 
+#include <quill/LogMacros.h>
+
 Culler::Culler(Renderer* renderer) :
 	mRenderer(renderer),
 	mPipelineLayout(nullptr)

@@ -1,12 +1,9 @@
 #pragma once
 
 #include <Data/Material.h>
-#include <Data/Instance.h>
 
 #include <vulkan/vulkan_raii.hpp>
 #include <vk_mem_alloc.h>
-
-#include <map>
 
 struct GLTFModel;
 struct Mesh;

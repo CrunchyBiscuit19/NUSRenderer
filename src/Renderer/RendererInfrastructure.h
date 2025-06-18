@@ -3,7 +3,6 @@
 #include <Renderer/RendererResources.h>
 #include <Utils/Constexprs.h>
 #include <Utils/Descriptor.h>
-#include <Utils/Pipeline.h>
 
 class Renderer;
 

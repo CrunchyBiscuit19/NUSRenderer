@@ -5,8 +5,7 @@
 #include <quill/Frontend.h>
 #include <quill/sinks/ConsoleSink.h>
 #include <quill/sinks/FileSink.h>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/matrix_transform.hpp>
+#include <quill/LogMacros.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 

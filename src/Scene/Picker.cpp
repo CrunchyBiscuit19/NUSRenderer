@@ -2,6 +2,8 @@
 #include <Renderer/Renderer.h>
 #include <Utils/Helper.h>
 
+#include <quill/LogMacros.h>
+
 Picker::Picker(Renderer* renderer) :
 	mRenderer(renderer),
 	mPipelineLayout(nullptr)

@@ -2,9 +2,7 @@
 #include <Renderer/Renderer.h>
 #include <Utils/Helper.h>
 
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <fmt/core.h>
+#include <quill/LogMacros.h>
 
 #include <ranges>
 
@@ -13,6 +11,7 @@ RendererScene::RendererScene(Renderer* renderer) :
 	mPerspective(Perspective(renderer)),
 	mSkybox(Skybox(renderer)),
 	mCuller(Culler(renderer)),
+	mPicker(Picker(renderer)),
 	mMainMaterialResourcesDescriptorSet(nullptr),
 	mMainMaterialResourcesDescriptorSetLayout(nullptr)
 {

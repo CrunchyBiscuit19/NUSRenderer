@@ -7,10 +7,7 @@
 #include <Scene/Batch.h>
 #include <Scene/Picker.h>
 
-#include <glm/fwd.hpp>
-
 #include <vector>
-#include <map>
 #include <filesystem>
 
 struct ScenePushConstants
@@ -30,6 +27,7 @@ public:
 	Perspective mPerspective;
 	Skybox mSkybox;
 	Culler mCuller;
+	Picker mPicker;
 
 	int mLatestInstanceId{0};
 	int mLatestMeshId{0};

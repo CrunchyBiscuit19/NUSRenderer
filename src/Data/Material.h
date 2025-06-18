@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Utils/Pipeline.h>
-#include <Utils/Descriptor.h>
 
 #include <fastgltf/types.hpp>
 

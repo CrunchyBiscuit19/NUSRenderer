@@ -4,6 +4,7 @@
 #include <Data/Material.h>
 
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
 
 std::unordered_map<PipelineOptions, PipelineBundle> PbrMaterial::mPipelinesCache = {};
 vk::raii::PipelineLayout PbrMaterial::mPipelineLayout = nullptr;

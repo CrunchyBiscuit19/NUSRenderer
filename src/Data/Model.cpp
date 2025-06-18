@@ -6,6 +6,8 @@
 #include <stb_image.h>
 #include <glm/gtx/euler_angles.hpp>
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
+#include <fastgltf/glm_element_traits.hpp>
 
 GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	mRenderer(renderer),

@@ -3,9 +3,11 @@
 
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
+#include <SDL_vulkan.h>
 #include <Vkbootstrap.h>
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
+
 
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(

@@ -2,6 +2,7 @@
 #include <Renderer/Renderer.h>
 
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
 
 Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 {

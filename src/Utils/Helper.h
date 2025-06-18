@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <vulkan/vulkan_raii.hpp>
-
 namespace vkhelper
 {
 	vk::CommandPoolCreateInfo commandPoolCreateInfo(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flags);

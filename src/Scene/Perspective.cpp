@@ -1,6 +1,8 @@
 #include <Scene/Perspective.h>
 #include <Renderer/Renderer.h>
 
+#include <quill/LogMacros.h>
+
 Perspective::Perspective(Renderer* renderer) :
 	mRenderer(renderer),
 	mDescriptorSet(nullptr),

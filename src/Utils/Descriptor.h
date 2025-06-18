@@ -3,7 +3,6 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include <deque>
-#include <span>
 
 class Renderer;
 

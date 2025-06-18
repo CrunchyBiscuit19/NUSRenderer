@@ -2,7 +2,6 @@
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
-#include <SDL_vulkan.h>
 #include <vk_mem_alloc.h>
 
 #include <vulkan/vulkan.hpp>

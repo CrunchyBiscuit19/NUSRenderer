@@ -11,7 +11,6 @@
 #include <Utils/Helper.h>
 
 #include <quill/Logger.h>
-#include <quill/LogMacros.h>
 
 struct RendererStats
 {

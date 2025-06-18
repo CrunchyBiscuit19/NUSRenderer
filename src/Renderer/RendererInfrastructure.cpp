@@ -4,6 +4,7 @@
 
 #include <VkBootstrap.h>
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
 
 std::filesystem::path shaderDir = SHADERS_PATH;
 

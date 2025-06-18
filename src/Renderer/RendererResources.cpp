@@ -1,9 +1,9 @@
 #include <Renderer/RendererResources.h>
 #include <Renderer/Renderer.h>
-#include <Utils/Descriptor.h>
 #include <Utils/Helper.h>
 
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
 
 #include <bit>
 #include <fstream>

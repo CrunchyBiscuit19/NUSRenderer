@@ -1,13 +1,14 @@
 #include <User/Gui.h>
 #include <Renderer/Renderer.h>
 
+#include <fmt/core.h>
 #include <magic_enum.hpp>
 #include <imgui_internal.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 #include <vulkan/vulkan_raii.hpp>
-#include <fmt/core.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <quill/LogMacros.h>
 
 #include <ranges>
 
