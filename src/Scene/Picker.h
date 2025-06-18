@@ -4,8 +4,8 @@
 
 class Renderer;
 
-class Picker {
-private:
+class Picker
+{
 	Renderer* mRenderer;
 
 public:

@@ -12,7 +12,8 @@ struct GLTFModel;
 struct Mesh;
 struct Vertex;
 
-enum class DefaultImage {
+enum class DefaultImage
+{
 	White,
 	Grey,
 	Black,
@@ -22,7 +23,8 @@ enum class DefaultImage {
 
 class Renderer;
 
-struct AllocatedImage {
+struct AllocatedImage
+{
 	vk::raii::Image image;
 	vk::raii::ImageView imageView;
 	vk::Format imageFormat;
@@ -34,13 +36,14 @@ struct AllocatedImage {
 		image(nullptr),
 		imageView(nullptr),
 		imageFormat(vk::Format::eUndefined),
-		imageExtent({ 0, 0, 0 }),
+		imageExtent({0, 0, 0}),
 		allocator(nullptr),
 		allocation(nullptr)
 	{
 	}
 
-	AllocatedImage(vk::raii::Image image, vk::raii::ImageView imageView, vk::Format imageFormat, vk::Extent3D imageExtent, VmaAllocator* allocator, VmaAllocation allocation) :
+	AllocatedImage(vk::raii::Image image, vk::raii::ImageView imageView, vk::Format imageFormat,
+	               vk::Extent3D imageExtent, VmaAllocator* allocator, VmaAllocation allocation) :
 		image(std::move(image)),
 		imageView(std::move(imageView)),
 		imageFormat(imageFormat),
@@ -64,8 +67,10 @@ struct AllocatedImage {
 		other.imageExtent = vk::Extent3D{};
 	}
 
-	AllocatedImage& operator=(AllocatedImage&& other) noexcept {
-		if (this != &other) {
+	AllocatedImage& operator=(AllocatedImage&& other) noexcept
+	{
+		if (this != &other)
+		{
 			image = std::move(other.image);
 			imageView = std::move(other.imageView);
 			imageFormat = other.imageFormat;
@@ -84,7 +89,8 @@ struct AllocatedImage {
 	AllocatedImage(const AllocatedImage&) = delete;
 	AllocatedImage& operator=(const AllocatedImage&) = delete;
 
-	void cleanup() {
+	void cleanup()
+	{
 		if (allocator == nullptr) { return; } // If destroying a moved AllocatedImage
 		image.clear();
 		imageView.clear();
@@ -98,12 +104,14 @@ struct AllocatedImage {
 		imageExtent = vk::Extent3D{};
 	}
 
-	~AllocatedImage() {
+	~AllocatedImage()
+	{
 		cleanup();
 	}
 };
 
-struct AllocatedBuffer {
+struct AllocatedBuffer
+{
 	vk::raii::Buffer buffer;
 	VmaAllocator* allocator;
 	VmaAllocation allocation;
@@ -117,7 +125,8 @@ struct AllocatedBuffer {
 	{
 	}
 
-	AllocatedBuffer(vk::raii::Buffer buffer, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info) :
+	AllocatedBuffer(vk::raii::Buffer buffer, VmaAllocator* allocator, VmaAllocation allocation,
+	                VmaAllocationInfo info) :
 		buffer(std::move(buffer)),
 		allocator(allocator),
 		allocation(allocation),
@@ -136,8 +145,10 @@ struct AllocatedBuffer {
 		other.info = {};
 	}
 
-	AllocatedBuffer& operator=(AllocatedBuffer&& other) noexcept {
-		if (this != &other) {
+	AllocatedBuffer& operator=(AllocatedBuffer&& other) noexcept
+	{
+		if (this != &other)
+		{
 			buffer = std::move(other.buffer);
 			allocator = other.allocator;
 			allocation = other.allocation;
@@ -153,7 +164,8 @@ struct AllocatedBuffer {
 	AllocatedBuffer(const AllocatedBuffer&) = delete;
 	AllocatedBuffer& operator=(const AllocatedBuffer&) = delete;
 
-	void cleanup() {
+	void cleanup()
+	{
 		if (allocator == nullptr) { return; } // If destroying a moved AllocatedBuffer
 		buffer.clear();
 		vmaFreeMemory(*allocator, allocation);
@@ -164,12 +176,14 @@ struct AllocatedBuffer {
 		info = {};
 	}
 
-	~AllocatedBuffer() {
+	~AllocatedBuffer()
+	{
 		cleanup();
 	}
 };
 
-struct AddressedBuffer : AllocatedBuffer {
+struct AddressedBuffer : AllocatedBuffer
+{
 	vk::DeviceAddress address{};
 
 	AddressedBuffer() = default;
@@ -178,7 +192,9 @@ struct AddressedBuffer : AllocatedBuffer {
 		: AllocatedBuffer(std::move(other))
 	{
 	}
-	AddressedBuffer& operator=(AllocatedBuffer&& other) noexcept {
+
+	AddressedBuffer& operator=(AllocatedBuffer&& other) noexcept
+	{
 		static_cast<AllocatedBuffer&>(*this) = std::move(other);
 		return *this;
 	}
@@ -187,7 +203,8 @@ struct AddressedBuffer : AllocatedBuffer {
 	AddressedBuffer& operator=(const AddressedBuffer&) = delete;
 };
 
-struct SamplerOptions {
+struct SamplerOptions
+{
 	vk::Filter magFilter;
 	vk::Filter minFilter;
 	vk::SamplerMipmapMode mipmapMode;
@@ -195,25 +212,27 @@ struct SamplerOptions {
 	vk::SamplerAddressMode addressModeV;
 	vk::SamplerAddressMode addressModeW;
 
-	inline SamplerOptions() :
+	SamplerOptions() :
 		magFilter(vk::Filter::eLinear),
 		minFilter(vk::Filter::eLinear),
 		mipmapMode(vk::SamplerMipmapMode::eLinear),
 		addressModeU(vk::SamplerAddressMode::eRepeat),
 		addressModeV(vk::SamplerAddressMode::eRepeat),
 		addressModeW(vk::SamplerAddressMode::eRepeat)
-	{}
+	{
+	}
 
-	inline SamplerOptions(vk::SamplerCreateInfo samplerCreateInfo) :
+	SamplerOptions(vk::SamplerCreateInfo samplerCreateInfo) :
 		magFilter(samplerCreateInfo.magFilter),
 		minFilter(samplerCreateInfo.minFilter),
 		mipmapMode(samplerCreateInfo.mipmapMode),
 		addressModeU(samplerCreateInfo.addressModeU),
 		addressModeV(samplerCreateInfo.addressModeV),
 		addressModeW(samplerCreateInfo.addressModeW)
-	{}
+	{
+	}
 
-	inline bool operator==(const SamplerOptions& other) const
+	bool operator==(const SamplerOptions& other) const
 	{
 		return (
 			magFilter == other.magFilter &&
@@ -227,10 +246,11 @@ struct SamplerOptions {
 };
 
 template <>
-struct std::hash<SamplerOptions> {
+struct std::hash<SamplerOptions>
+{
 	// Compute individual hash values for strings
 	// Combine them using XOR and bit shifting
-	inline std::size_t operator()(const SamplerOptions& k) const
+	std::size_t operator()(const SamplerOptions& k) const
 	{
 		std::size_t seed = 0;
 		hashCombine(seed, static_cast<uint32_t>(k.magFilter));
@@ -242,15 +262,15 @@ struct std::hash<SamplerOptions> {
 		return seed;
 	}
 
-	static inline void hashCombine(std::size_t seed, std::size_t value)
+	static void hashCombine(std::size_t seed, std::size_t value)
 	{
 		std::hash<std::size_t> hasher;
 		seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 	}
 };
 
-class RendererResources {
-private:
+class RendererResources
+{
 	Renderer* mRenderer;
 	AllocatedBuffer mImageStagingBuffer;
 
@@ -274,14 +294,18 @@ public:
 	void initDefaultImages();
 	void initDefaultSampler();
 
-	vk::Sampler getSampler(vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear));
+	vk::Sampler getSampler(
+		vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear,
+		                                                                vk::SamplerMipmapMode::eLinear));
 	vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
 	AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	AllocatedBuffer createStagingBuffer(size_t allocSize);
 
-	AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false, bool cubemap = false);
-	AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false, bool cubemap = false);
+	AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
+	                           bool mipmapped = false, bool multisampling = false, bool cubemap = false);
+	AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
+	                           bool mipmapped = false, bool multisampling = false, bool cubemap = false);
 
 	void cleanup();
 
@@ -291,4 +315,3 @@ public:
 	RendererResources(const RendererResources&) = delete;
 	RendererResources& operator=(const RendererResources&) = delete;
 };
-

@@ -3,7 +3,8 @@
 #include <Data/Material.h>
 #include <Renderer/RendererResources.h>
 
-struct Vertex {
+struct Vertex
+{
 	glm::vec3 position;
 	float uv_x;
 	glm::vec3 normal;
@@ -11,19 +12,22 @@ struct Vertex {
 	glm::vec4 color;
 };
 
-struct AABB {
+struct AABB
+{
 	glm::vec4 min;
 	glm::vec4 max;
 };
 
-struct Primitive {
+struct Primitive
+{
 	uint32_t mRelativeFirstIndex;
 	uint32_t mIndexCount;
 	uint32_t mRelativeVertexOffset;
 	PbrMaterial* mMaterial;
 };
 
-class Mesh {
+class Mesh
+{
 public:
 	std::string mName;
 	int mId;
@@ -32,15 +36,16 @@ public:
 	AABB mBounds;
 
 	AllocatedBuffer mVertexBuffer;
-    uint32_t mNumVertices { 0 };
-    uint32_t mMainVertexOffset { 0 };
-	
+	uint32_t mNumVertices{0};
+	uint32_t mMainVertexOffset{0};
+
 	AllocatedBuffer mIndexBuffer;
-    uint32_t mNumIndices { 0 };
-    uint32_t mMainFirstIndex { 0 };
+	uint32_t mNumIndices{0};
+	uint32_t mMainFirstIndex{0};
 };
 
-class Node {
+class Node
+{
 public:
 	std::string mName;
 	int mRelativeNodeIndex;
@@ -55,7 +60,8 @@ public:
 	virtual ~Node() = default;
 };
 
-class MeshNode : public Node {
+class MeshNode : public Node
+{
 public:
 	Mesh* mMesh;
 

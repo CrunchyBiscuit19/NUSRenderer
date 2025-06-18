@@ -13,18 +13,21 @@
 #include <quill/Logger.h>
 #include <quill/LogMacros.h>
 
-struct RendererStats {
+struct RendererStats
+{
 	float mFrameTime;
 	float mDrawTime;
 	int mDrawCallCount;
 	float mSceneUpdateTime;
 
-	void reset() {
+	void reset()
+	{
 		mDrawCallCount = 0;
 	}
 };
 
-enum class PassType {
+enum class PassType
+{
 	Cull,
 	ClearScreen,
 	Pick,
@@ -35,20 +38,24 @@ enum class PassType {
 	ImGui
 };
 
-struct Pass {
+struct Pass
+{
 	static Renderer* renderer;
 	std::function<void(vk::CommandBuffer)> function;
 
 	Pass(std::function<void(vk::CommandBuffer)> function) :
 		function(function)
-	{}
+	{
+	}
 
-	void execute(vk::CommandBuffer cmd) {
+	void execute(vk::CommandBuffer cmd)
+	{
 		function(cmd);
 	}
 };
 
-enum class TransitionType {
+enum class TransitionType
+{
 	IntermediateTransferSrcIntoColorAttachment,
 	IntermediateColorAttachmentIntoTransferSrc,
 	SwapchainPresentIntoTransferDst,
@@ -56,7 +63,8 @@ enum class TransitionType {
 	SwapchainColorAttachmentIntoPresent,
 };
 
-struct Transition {
+struct Transition
+{
 	vk::PipelineStageFlags2 srcStageMask;
 	vk::AccessFlags2 srcAccessMask;
 	vk::PipelineStageFlags2 dstStageMask;
@@ -64,33 +72,38 @@ struct Transition {
 	vk::ImageLayout currentLayout;
 	vk::ImageLayout newLayout;
 
-	Transition(vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) :
+	Transition(vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
+	           vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout,
+	           vk::ImageLayout newLayout) :
 		srcStageMask(srcStageMask),
 		srcAccessMask(srcAccessMask),
 		dstStageMask(dstStageMask),
 		dstAccessMask(dstAccessMask),
 		currentLayout(currentLayout),
 		newLayout(newLayout)
-	{}
+	{
+	}
 
-	void execute(vk::CommandBuffer cmd, vk::Image image) {
+	void execute(vk::CommandBuffer cmd, vk::Image image)
+	{
 		vkhelper::transitionImage(
-			cmd, 
+			cmd,
 			image,
 			srcStageMask,
 			srcAccessMask,
 			dstStageMask,
 			dstAccessMask,
-			currentLayout, 
+			currentLayout,
 			newLayout
 		);
 	}
 };
 
-class Renderer {
+class Renderer
+{
 public:
-	bool mIsInitialized{ false };
-	bool mStopRendering{ false };
+	bool mIsInitialized{false};
+	bool mStopRendering{false};
 
 	RendererStats mStats;
 
@@ -118,6 +131,6 @@ public:
 	void run();
 	void perFrameUpdate();
 	void draw();
-	
+
 	void cleanup();
 };

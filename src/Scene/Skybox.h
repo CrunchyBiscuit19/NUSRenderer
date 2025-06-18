@@ -6,12 +6,13 @@
 
 class Renderer;
 
-struct SkyBoxPushConstants {
+struct SkyBoxPushConstants
+{
 	vk::DeviceAddress vertexBuffer;
 };
 
-class Skybox {
-private:
+class Skybox
+{
 	Renderer* mRenderer;
 
 	AllocatedImage mImage;
@@ -20,7 +21,7 @@ private:
 	AllocatedBuffer mVertexBuffer;
 
 public:
-	bool mActive{ true };
+	bool mActive{true};
 
 	PipelineBundle mPipelineBundle;
 	vk::raii::PipelineLayout mPipelineLayout;

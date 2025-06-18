@@ -4,7 +4,9 @@
 
 #include <glm/glm.hpp>
 
-struct PerspectiveData { // Will move global lights away in the future
+struct PerspectiveData
+{
+	// Will move global lights away in the future
 	glm::mat4 view;
 	glm::mat4 proj;
 	glm::vec4 ambientColor;
@@ -12,12 +14,13 @@ struct PerspectiveData { // Will move global lights away in the future
 	glm::vec4 sunlightColor;
 };
 
-class Perspective {
+class Perspective
+{
 	Renderer* mRenderer;
 
 public:
 	PerspectiveData mData;
-	
+
 	AllocatedBuffer mDataBuffer;
 
 	vk::raii::DescriptorSet mDescriptorSet;

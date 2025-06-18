@@ -7,8 +7,8 @@
 
 class Renderer;
 
-class RendererEvent {
-private:
+class RendererEvent
+{
 	Renderer* mRenderer;
 	std::vector<std::function<void(SDL_Event& e)>> mInputCallbacks;
 

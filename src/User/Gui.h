@@ -7,7 +7,8 @@
 class Renderer;
 class Gui;
 
-struct GuiComponent {
+struct GuiComponent
+{
 protected:
 	Renderer* mRenderer;
 	Gui* mGui;
@@ -19,18 +20,32 @@ public:
 	virtual void elements() = 0;
 };
 
-class Gui {
-private:
-	struct CameraGuiComponent : GuiComponent {
-		CameraGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
+class Gui
+{
+	struct CameraGuiComponent : GuiComponent
+	{
+		CameraGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name)
+		{
+		}
+
 		void elements() override;
 	};
-	struct SceneGuiComponent : GuiComponent {
-		SceneGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
+
+	struct SceneGuiComponent : GuiComponent
+	{
+		SceneGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name)
+		{
+		}
+
 		void elements() override;
 	};
-	struct MiscGuiComponent : GuiComponent {
-		MiscGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
+
+	struct MiscGuiComponent : GuiComponent
+	{
+		MiscGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name)
+		{
+		}
+
 		void elements() override;
 	};
 

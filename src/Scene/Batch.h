@@ -4,7 +4,8 @@
 
 struct PipelineBundle;
 
-struct RenderItem {
+struct RenderItem
+{
 	uint32_t indexCount;
 	uint32_t instanceCount;
 	uint32_t firstIndex;
@@ -16,7 +17,8 @@ struct RenderItem {
 	uint32_t modelId;
 };
 
-struct Batch {
+struct Batch
+{
 	PipelineBundle* pipelineBundle;
 	std::vector<RenderItem> renderItems;
 	AddressedBuffer renderItemsBuffer;

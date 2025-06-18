@@ -6,8 +6,8 @@
 
 class Renderer;
 
-class ImmSubmit {
-private:
+class ImmSubmit
+{
 	Renderer* mRenderer;
 
 public:
@@ -16,7 +16,6 @@ public:
 	vk::raii::Fence mFence;
 	std::vector<std::function<void(Renderer* renderer, vk::CommandBuffer)>> mCallbacks;
 
-public:
 	ImmSubmit(Renderer* renderer);
 
 	ImmSubmit(ImmSubmit&& other) noexcept :
@@ -27,8 +26,11 @@ public:
 	{
 		other.mRenderer = nullptr;
 	}
-	ImmSubmit& operator=(ImmSubmit&& other) noexcept {
-		if (this != &other) {
+
+	ImmSubmit& operator=(ImmSubmit&& other) noexcept
+	{
+		if (this != &other)
+		{
 			mRenderer = other.mRenderer;
 			mCommandPool = std::move(other.mCommandPool);
 			mCommandBuffer = std::move(other.mCommandBuffer);
@@ -43,7 +45,7 @@ public:
 
 	void init();
 
-	void individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function);
+	void individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd)>&& function);
 	void queuedSubmit();
 
 	void cleanup();

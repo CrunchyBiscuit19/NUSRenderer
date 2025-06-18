@@ -24,7 +24,10 @@ void Perspective::initData()
 
 void Perspective::initBuffer()
 {
-	mDataBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PerspectiveData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	mDataBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PerspectiveData),
+	                                                         vk::BufferUsageFlagBits::eTransferDst |
+	                                                         vk::BufferUsageFlagBits::eUniformBuffer,
+	                                                         VMA_MEMORY_USAGE_CPU_TO_GPU);
 	mRenderer->mRendererCore.labelResourceDebug(mDataBuffer.buffer, "PerspectiveBuffer");
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
 }
@@ -33,7 +36,8 @@ void Perspective::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-	mDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+	mDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice,
+	                                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 	mRenderer->mRendererCore.labelResourceDebug(mDescriptorSetLayout, "PerspectiveDescriptorSetLayout");
 	mDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
 	mRenderer->mRendererCore.labelResourceDebug(mDescriptorSet, "PerspectiveDescriptorSet");
@@ -48,7 +52,9 @@ void Perspective::update()
 {
 	mRenderer->mCamera.update(mRenderer->mStats.mFrameTime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mData.view = mRenderer->mCamera.getViewMatrix();
-	mData.proj = glm::perspective(glm::radians(70.f), static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
+	mData.proj = glm::perspective(glm::radians(70.f),
+	                              static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(
+		                              mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
 	mData.proj[1][1] *= -1;
 
 	auto* sceneBufferPtr = static_cast<PerspectiveData*>(mDataBuffer.info.pMappedData);

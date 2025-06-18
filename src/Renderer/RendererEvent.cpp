@@ -12,7 +12,8 @@ void RendererEvent::addEventCallback(std::function<void(SDL_Event& e)> inputCall
 
 void RendererEvent::executeEventCallbacks(SDL_Event& e)
 {
-	for (auto inputCallback : mInputCallbacks) {
+	for (auto inputCallback : mInputCallbacks)
+	{
 		inputCallback(e);
 	}
 }

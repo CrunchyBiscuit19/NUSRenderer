@@ -5,7 +5,8 @@
 Picker::Picker(Renderer* renderer) :
 	mRenderer(renderer),
 	mPipelineLayout(nullptr)
-{}
+{
+}
 
 void Picker::init()
 {
@@ -60,8 +61,10 @@ void Picker::initPipelineLayout()
 
 void Picker::initPipeline()
 {
-	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "picker/picker.frag.spv");
-	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "picker/picker.vert.spv");
+	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(
+		std::filesystem::path(SHADERS_PATH) / "picker/picker.frag.spv");
+	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(
+		std::filesystem::path(SHADERS_PATH) / "picker/picker.vert.spv");
 
 	GraphicsPipelineBuilder pickerPipelineBuilder;
 	pickerPipelineBuilder.setShaders(vertexShader, fragShader);
@@ -71,7 +74,7 @@ void Picker::initPipeline()
 	pickerPipelineBuilder.disableMultisampling();
 	pickerPipelineBuilder.disableSampleShading();
 	pickerPipelineBuilder.disableBlending();
-	pickerPipelineBuilder.setColorAttachmentFormat(mObjectImage.imageFormat); 
+	pickerPipelineBuilder.setColorAttachmentFormat(mObjectImage.imageFormat);
 	pickerPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
 	pickerPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
 	pickerPipelineBuilder.mPipelineLayout = *mPipelineLayout;

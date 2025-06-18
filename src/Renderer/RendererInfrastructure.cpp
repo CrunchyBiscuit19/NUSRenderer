@@ -15,7 +15,8 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 	mFrames.resize(FRAME_OVERLAP);
 }
 
-void RendererInfrastructure::init() {
+void RendererInfrastructure::init()
+{
 	initSwapchain();
 	initDescriptors();
 	initFrames();
@@ -24,9 +25,9 @@ void RendererInfrastructure::init() {
 void RendererInfrastructure::initDescriptors()
 {
 	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
-		{ vk::DescriptorType::eUniformBuffer, 1 },          // Scene UBO
-		{ vk::DescriptorType::eCombinedImageSampler, 1 },   // Skybox Cubemap
-		{ vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS },   // Material Textures
+		{vk::DescriptorType::eUniformBuffer, 1}, // Scene UBO
+		{vk::DescriptorType::eCombinedImageSampler, 1}, // Skybox Cubemap
+		{vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS}, // Material Textures
 	};
 	mMainDescriptorAllocator.init(1, sizes);
 
@@ -37,25 +38,30 @@ void RendererInfrastructure::initFrames()
 {
 	// mRenderFence to control when the GPU has finished rendering the frame, start signalled so we can wait on it on the first frame
 	vk::FenceCreateInfo fenceCreateInfo = vkhelper::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(
+		mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
 
-	for (int i = 0; i < mFrames.size(); i++) {
+	for (int i = 0; i < mFrames.size(); i++)
+	{
 		mFrames[i].mRenderFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
 		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mRenderFence, fmt::format("FrameFence{}", i).c_str());
 		LOG_INFO(mRenderer->mLogger, "Frame {} Render Fence Created", i);
 
 		mFrames[i].mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
-		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandPool, fmt::format("FrameCommandPool{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandPool,
+		                                            fmt::format("FrameCommandPool{}", i).c_str());
 		LOG_INFO(mRenderer->mLogger, "Frame {} Command Pool Created", i);
 
 		vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*mFrames[i].mCommandPool, 1);
 		mFrames[i].mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
-		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandBuffer, fmt::format("FrameCommandBuffer{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mCommandBuffer,
+		                                            fmt::format("FrameCommandBuffer{}", i).c_str());
 		LOG_INFO(mRenderer->mLogger, "Frame {} Command Buffer Created", i);
 
 		mFrames[i].mAvailableSemaphore = mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo);
-		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mAvailableSemaphore, fmt::format("FrameAvailableSemaphore{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mFrames[i].mAvailableSemaphore,
+		                                            fmt::format("FrameAvailableSemaphore{}", i).c_str());
 		LOG_INFO(mRenderer->mLogger, "Frame {} Available Semaphore Created", i);
 	}
 }
@@ -65,39 +71,53 @@ void RendererInfrastructure::initSwapchain()
 	mSwapchainIndex = 0;
 	mSwapchainBundle.mFormat = vk::Format::eB8G8R8A8Unorm;
 
-	vkb::SwapchainBuilder swapchainBuilder{ *mRenderer->mRendererCore.mChosenGPU, *mRenderer->mRendererCore.mDevice, *mRenderer->mRendererCore.mSurface };
+	vkb::SwapchainBuilder swapchainBuilder{
+		*mRenderer->mRendererCore.mChosenGPU, *mRenderer->mRendererCore.mDevice, *mRenderer->mRendererCore.mSurface
+	};
 	vkb::Swapchain vkbSwapchain = swapchainBuilder
-		.set_desired_format(VkSurfaceFormatKHR{ .format = static_cast<VkFormat>(mSwapchainBundle.mFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear) })
-		.set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
-		.set_desired_extent(mRenderer->mRendererCore.mWindowExtent.width, mRenderer->mRendererCore.mWindowExtent.height)
-		.add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
-		.set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
-		.build()
-		.value();
+	                              .set_desired_format(VkSurfaceFormatKHR{
+		                              .format = static_cast<VkFormat>(mSwapchainBundle.mFormat),
+		                              .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)
+	                              })
+	                              .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
+	                              .set_desired_extent(mRenderer->mRendererCore.mWindowExtent.width,
+	                                                  mRenderer->mRendererCore.mWindowExtent.height)
+	                              .add_image_usage_flags(
+		                              static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
+	                              .set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
+	                              .build()
+	                              .value();
 
 	mSwapchainBundle.mExtent = vkbSwapchain.extent;
 	mSwapchainBundle.mSwapchain = vk::raii::SwapchainKHR(mRenderer->mRendererCore.mDevice, vkbSwapchain.swapchain);
 
 	mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
 	vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
-	for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
+	for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++)
+	{
 		mSwapchainBundle.mImages.emplace_back(
 			vkbSwapchain.get_images().value()[i],
-			mRenderer->mRendererCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
+			mRenderer->mRendererCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(
+				mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
 			mRenderer->mRendererCore.mDevice.createSemaphore(semaphoreCreateInfo)
 		);
 	}
 
-	for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
-		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].image, fmt::format("SwapchainImage{}", i).c_str());
-		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].imageView, fmt::format("SwapchainImageView{}", i).c_str());
-		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].renderedSemaphore, fmt::format("SwapchainRenderedSemaphore{}", i).c_str());
+	for (int i = 0; i < mSwapchainBundle.mImages.size(); i++)
+	{
+		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].image,
+		                                            fmt::format("SwapchainImage{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].imageView,
+		                                            fmt::format("SwapchainImageView{}", i).c_str());
+		mRenderer->mRendererCore.labelResourceDebug(mSwapchainBundle.mImages[i].renderedSemaphore,
+		                                            fmt::format("SwapchainRenderedSemaphore{}", i).c_str());
 	}
 
 	mDrawImage = mRenderer->mRendererResources.createImage(
-		vk::Extent3D{ mRenderer->mRendererCore.mWindowExtent, 1 },
+		vk::Extent3D{mRenderer->mRendererCore.mWindowExtent, 1},
 		vk::Format::eR16G16B16A16Sfloat,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
+		vk::ImageUsageFlagBits::eColorAttachment,
 		false, true);
 	mDepthImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
@@ -107,7 +127,8 @@ void RendererInfrastructure::initSwapchain()
 	mIntermediateImage = mRenderer->mRendererResources.createImage(
 		mDrawImage.imageExtent,
 		vk::Format::eR16G16B16A16Sfloat,
-		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment);
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
+		vk::ImageUsageFlagBits::eColorAttachment);
 
 	mRenderer->mRendererCore.labelResourceDebug(mDrawImage.image, "DrawImage");
 	mRenderer->mRendererCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
@@ -116,33 +137,36 @@ void RendererInfrastructure::initSwapchain()
 	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.image, "IntermediateImage");
 	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-		for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	{
+		for (int i = 0; i < mSwapchainBundle.mImages.size(); i++)
+		{
 			vkhelper::transitionImage(cmd, mSwapchainBundle.mImages[i].image,
-				vk::PipelineStageFlagBits2::eNone,
-				vk::AccessFlagBits2::eNone,
-				vk::PipelineStageFlagBits2::eNone,
-				vk::AccessFlagBits2::eNone,
-				vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+			                          vk::PipelineStageFlagBits2::eNone,
+			                          vk::AccessFlagBits2::eNone,
+			                          vk::PipelineStageFlagBits2::eNone,
+			                          vk::AccessFlagBits2::eNone,
+			                          vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 		}
 		vkhelper::transitionImage(cmd, *mDrawImage.image,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-			vk::AccessFlagBits2::eColorAttachmentWrite,
-			vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+		                          vk::PipelineStageFlagBits2::eNone,
+		                          vk::AccessFlagBits2::eNone,
+		                          vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		                          vk::AccessFlagBits2::eColorAttachmentWrite,
+		                          vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 		vkhelper::transitionImage(cmd, *mDepthImage.image,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-			vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-			vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
+		                          vk::PipelineStageFlagBits2::eNone,
+		                          vk::AccessFlagBits2::eNone,
+		                          vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+		                          vk::AccessFlagBits2::eDepthStencilAttachmentRead |
+		                          vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+		                          vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
 		vkhelper::transitionImage(cmd, *mIntermediateImage.image,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eTransfer,
-			vk::AccessFlagBits2::eTransferRead,
-			vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+		                          vk::PipelineStageFlagBits2::eNone,
+		                          vk::AccessFlagBits2::eNone,
+		                          vk::PipelineStageFlagBits2::eTransfer,
+		                          vk::AccessFlagBits2::eTransferRead,
+		                          vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
 	});
 
 	LOG_INFO(mRenderer->mLogger, "Swapchain Created");
@@ -176,8 +200,10 @@ void RendererInfrastructure::resizeSwapchain()
 	mResizeRequested = false;
 }
 
-void RendererInfrastructure::cleanup() {
-	for (auto& frame : mFrames) {
+void RendererInfrastructure::cleanup()
+{
+	for (auto& frame : mFrames)
+	{
 		frame.cleanup();
 	}
 	LOG_INFO(mRenderer->mLogger, "Frames Destroyed");
@@ -189,10 +215,11 @@ void RendererInfrastructure::cleanup() {
 
 Frame::Frame()
 	: mCommandPool(nullptr)
-	, mCommandBuffer(nullptr)
-	, mRenderFence(nullptr)
-	, mAvailableSemaphore(nullptr)
-{}
+	  , mCommandBuffer(nullptr)
+	  , mRenderFence(nullptr)
+	  , mAvailableSemaphore(nullptr)
+{
+}
 
 void Frame::cleanup()
 {

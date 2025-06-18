@@ -4,7 +4,8 @@
 
 class Renderer;
 
-struct CullPushConstants {
+struct CullPushConstants
+{
 	vk::DeviceAddress renderItemsBuffer;
 	vk::DeviceAddress visibleRenderItemsBuffer;
 	// vk::DeviceAddress boundsBuffer;
@@ -12,7 +13,8 @@ struct CullPushConstants {
 	vk::DeviceAddress countBuffer;
 };
 
-class Culler {
+class Culler
+{
 	Renderer* mRenderer;
 
 public:

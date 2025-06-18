@@ -13,7 +13,8 @@
 #include <map>
 #include <filesystem>
 
-struct ScenePushConstants {
+struct ScenePushConstants
+{
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress materialConstantsBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;
@@ -21,8 +22,8 @@ struct ScenePushConstants {
 	vk::DeviceAddress visibleRenderItemsBuffer;
 };
 
-class RendererScene {
-private:
+class RendererScene
+{
 	Renderer* mRenderer;
 
 public:
@@ -30,17 +31,19 @@ public:
 	Skybox mSkybox;
 	Culler mCuller;
 
-	int mLatestInstanceId{ 0 };
-	int mLatestMeshId{ 0 };
-	int mLatestModelId{ 0 };
+	int mLatestInstanceId{0};
+	int mLatestMeshId{0};
+	int mLatestModelId{0};
 
-	struct Flags {
+	struct Flags
+	{
 		bool modelAddedFlag;
 		bool modelDestroyedFlag;
 		bool instanceAddedFlag;
 		bool instanceDestroyedFlag;
 		bool reloadMainInstancesBuffer;
 	};
+
 	Flags mFlags;
 
 	std::unordered_map<std::string, GLTFModel> mModels;
@@ -91,4 +94,3 @@ public:
 
 	void cleanup();
 };
-

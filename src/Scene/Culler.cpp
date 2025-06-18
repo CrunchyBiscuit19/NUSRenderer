@@ -4,7 +4,9 @@
 Culler::Culler(Renderer* renderer) :
 	mRenderer(renderer),
 	mPipelineLayout(nullptr)
-{}
+
+{
+}
 
 void Culler::init()
 {
@@ -32,7 +34,8 @@ void Culler::initPipelineLayout()
 
 void Culler::initPipeline()
 {
-	vk::ShaderModule computeShaderModule = mRenderer->mRendererResources.getShader(std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv");
+	vk::ShaderModule computeShaderModule = mRenderer->mRendererResources.getShader(
+		std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv");
 
 	ComputePipelineBuilder cullPipelineBuilder;
 	cullPipelineBuilder.setShader(computeShaderModule);

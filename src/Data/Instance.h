@@ -4,12 +4,13 @@
 
 class GLTFModel;
 
-struct TransformData {
+struct TransformData
+{
 	glm::vec3 translation;
 	glm::vec3 rotation;
 	glm::f32 scale;
 
-	TransformData(): 
+	TransformData():
 		translation(glm::vec3()),
 		rotation(glm::vec3()),
 		scale(1.f)
@@ -24,11 +25,13 @@ struct TransformData {
 	}
 };
 
-struct InstanceData {
+struct InstanceData
+{
 	glm::mat4 transformMatrix;
 };
 
-class GLTFInstance {
+class GLTFInstance
+{
 public:
 	GLTFModel* mModel;
 	int mId;

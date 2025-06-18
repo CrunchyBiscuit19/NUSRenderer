@@ -31,28 +31,49 @@ void RendererScene::init()
 
 void RendererScene::initBuffers()
 {
-	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mMainVertexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE,
+	                                                               vk::BufferUsageFlagBits::eTransferDst |
+	                                                               vk::BufferUsageFlagBits::eStorageBuffer |
+	                                                               vk::BufferUsageFlagBits::eShaderDeviceAddress,
+	                                                               VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
-	mMainVertexBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainVertexBuffer.buffer));
+	mMainVertexBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*mMainVertexBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Created");
 
-	mMainIndexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+	mMainIndexBuffer = mRenderer->mRendererResources.createBuffer(MAIN_INDEX_BUFFER_SIZE,
+	                                                              vk::BufferUsageFlagBits::eTransferDst |
+	                                                              vk::BufferUsageFlagBits::eIndexBuffer,
+	                                                              VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
-	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mMainMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(
+		MAX_MATERIALS * sizeof(MaterialConstants),
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
-	mMainMaterialConstantsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
+	mMainMaterialConstantsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Created");
 
-	mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mMainNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(
+		MAX_NODES * sizeof(glm::mat4),
+		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
-	mMainNodeTransformsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainNodeTransformsBuffer.buffer));
+	mMainNodeTransformsBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*mMainNodeTransformsBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
-	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+	mMainInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData),
+	                                                                  vk::BufferUsageFlagBits::eTransferDst |
+	                                                                  vk::BufferUsageFlagBits::eStorageBuffer |
+	                                                                  vk::BufferUsageFlagBits::eShaderDeviceAddress,
+	                                                                  VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mRendererCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
-	mMainInstancesBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
+	mMainInstancesBuffer.address = mRenderer->mRendererCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 }
 
@@ -60,10 +81,15 @@ void RendererScene::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
-	mMainMaterialResourcesDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, true);
-	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout, "MainMaterialResourcesDescriptorSetLayout");
-	mMainMaterialResourcesDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(mMainMaterialResourcesDescriptorSetLayout, true);
-	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet, "MainMaterialResourcesDescriptorSet");
+	mMainMaterialResourcesDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice,
+	                                                          vk::ShaderStageFlagBits::eVertex |
+	                                                          vk::ShaderStageFlagBits::eFragment, true);
+	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout,
+	                                            "MainMaterialResourcesDescriptorSetLayout");
+	mMainMaterialResourcesDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(
+		mMainMaterialResourcesDescriptorSetLayout, true);
+	mRenderer->mRendererCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet,
+	                                            "MainMaterialResourcesDescriptorSet");
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources and Descriptor Set Created");
 }
 
@@ -78,7 +104,8 @@ void RendererScene::initPushConstants()
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
 {
-	for (const auto& modelPath : paths) {
+	for (const auto& modelPath : paths)
+	{
 		auto modelShortPath = modelPath.stem().string();
 		auto modelFullPath = MODELS_PATH / modelPath;
 		auto [_, inserted] = mModels.try_emplace(modelShortPath, mRenderer, modelFullPath);
@@ -88,46 +115,55 @@ void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
 
 void RendererScene::deleteModels()
 {
-	std::erase_if(mModels, [&](const std::pair <const std::string, GLTFModel>& pair) {
+	std::erase_if(mModels, [&](const std::pair<const std::string, GLTFModel>& pair)
+	{
 		if (pair.second.mDeleteSignal.has_value()) { mFlags.modelDestroyedFlag = true; }
-		return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->mRendererInfrastructure.mFrameNumber);
+		return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->
+			mRendererInfrastructure.mFrameNumber);
 	});
 }
 
 void RendererScene::deleteInstances()
 {
-	for (auto& model : mModels | std::views::values) {
-		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { 
-			return instance.mDeleteSignal; 
+	for (auto& model : mModels | std::views::values)
+	{
+		std::erase_if(model.mInstances, [&](const GLTFInstance& instance)
+		{
+			return instance.mDeleteSignal;
 		});
 	}
 }
 
 void RendererScene::regenerateRenderItems()
 {
-    for (auto& batch : mBatches | std::views::values) {
-        batch.renderItems.clear();
-    }
-    
-	for (auto& model : mModels | std::views::values) {
+	for (auto& batch : mBatches | std::views::values)
+	{
+		batch.renderItems.clear();
+	}
+
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-        model.generateRenderItems();
-    }
+		model.generateRenderItems();
+	}
 
 	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
-    
-	for (auto& batch : mBatches | std::views::values) {
-		if (batch.renderItems.size() == 0) { continue; }
 
-        std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
+	for (auto& batch : mBatches | std::views::values)
+	{
+		if (batch.renderItems.empty()) { continue; }
 
-        vk::BufferCopy renderItemsCopy {};
-        renderItemsCopy.dstOffset = 0;
-        renderItemsCopy.srcOffset = 0;
-        renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
+		std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(),
+		            batch.renderItems.size() * sizeof(RenderItem));
 
-        mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		vk::BufferCopy renderItemsCopy{};
+		renderItemsCopy.dstOffset = 0;
+		renderItemsCopy.srcOffset = 0;
+		renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
+
+		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)
+		{
 			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 
 			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
@@ -137,9 +173,9 @@ void RendererScene::regenerateRenderItems()
 				vk::AccessFlagBits2::eTransferWrite,
 				vk::PipelineStageFlagBits2::eTransfer,
 				vk::AccessFlagBits2::eTransferWrite);
-			
+
 			cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
-			
+
 			vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
 				cmd,
 				*batch.renderItemsBuffer.buffer,
@@ -147,10 +183,10 @@ void RendererScene::regenerateRenderItems()
 				vk::AccessFlagBits2::eTransferWrite,
 				vk::PipelineStageFlagBits2::eComputeShader,
 				vk::AccessFlagBits2::eShaderRead);
-        });
+		});
 
 		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
-    }
+	}
 }
 
 void RendererScene::realignVertexIndexOffset()
@@ -158,10 +194,12 @@ void RendererScene::realignVertexIndexOffset()
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-		for (auto& mesh : model.mMeshes) {
+		for (auto& mesh : model.mMeshes)
+		{
 			mesh.mMainVertexOffset = vertexCumulative;
 			mesh.mMainFirstIndex = indexCumulative;
 			vertexCumulative += mesh.mNumVertices;
@@ -176,7 +214,8 @@ void RendererScene::realignMaterialOffset()
 {
 	int materialCumulative = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.mMainFirstMaterial = materialCumulative;
@@ -190,7 +229,8 @@ void RendererScene::realignNodeTransformsOffset()
 {
 	int nodeTransformCumulative = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.mMainFirstNodeTransform = nodeTransformCumulative;
@@ -204,7 +244,8 @@ void RendererScene::realignInstancesOffset()
 {
 	int instanceCumulative = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.mMainFirstInstance = instanceCumulative;
@@ -226,10 +267,12 @@ void RendererScene::reloadMainVertexBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-		for (auto& mesh : model.mMeshes) {
+		for (auto& mesh : model.mMeshes)
+		{
 			vk::BufferCopy meshVertexCopy{};
 			meshVertexCopy.dstOffset = dstOffset;
 			meshVertexCopy.srcOffset = 0;
@@ -237,13 +280,16 @@ void RendererScene::reloadMainVertexBuffer()
 
 			dstOffset += meshVertexCopy.size;
 
-			mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-				cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
-			});
+			mRenderer->mImmSubmit.mCallbacks.push_back(
+				[&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd)
+				{
+					cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
+				});
 		}
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	{
 		vkhelper::createBufferPipelineBarrier( // Wait for main vertex buffer to finish uploading
 			cmd,
 			*mMainVertexBuffer.buffer,
@@ -260,10 +306,12 @@ void RendererScene::reloadMainIndexBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-		for (auto& mesh : model.mMeshes) {
+		for (auto& mesh : model.mMeshes)
+		{
 			vk::BufferCopy meshIndexCopy{};
 			meshIndexCopy.dstOffset = dstOffset;
 			meshIndexCopy.srcOffset = 0;
@@ -271,14 +319,16 @@ void RendererScene::reloadMainIndexBuffer()
 
 			dstOffset += meshIndexCopy.size;
 
-			mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-				cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
-			}); 
-
+			mRenderer->mImmSubmit.mCallbacks.push_back(
+				[&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd)
+				{
+					cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
+				});
 		}
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	{
 		vkhelper::createBufferPipelineBarrier( // Wait for main index buffer to finish uploading
 			cmd,
 			*mMainIndexBuffer.buffer,
@@ -295,7 +345,8 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		vk::BufferCopy materialConstantCopy{};
@@ -305,12 +356,16 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 
 		dstOffset += materialConstantCopy.size;
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-			cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
-		});
+		mRenderer->mImmSubmit.mCallbacks.push_back(
+			[&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd)
+			{
+				cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer,
+				               materialConstantCopy);
+			});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	{
 		vkhelper::createBufferPipelineBarrier( // Wait for main material constants buffer to finish uploading
 			cmd,
 			*mMainMaterialConstantsBuffer.buffer,
@@ -327,7 +382,8 @@ void RendererScene::reloadMainNodeTransformsBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		vk::BufferCopy nodeTransformsCopy{};
@@ -337,12 +393,16 @@ void RendererScene::reloadMainNodeTransformsBuffer()
 
 		dstOffset += nodeTransformsCopy.size;
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-			cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
-		});
+		mRenderer->mImmSubmit.mCallbacks.push_back(
+			[&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd)
+			{
+				cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer,
+				               nodeTransformsCopy);
+			});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	{
 		vkhelper::createBufferPipelineBarrier( // Wait for main node transforms buffer to finish uploading
 			cmd,
 			*mMainNodeTransformsBuffer.buffer,
@@ -359,9 +419,10 @@ void RendererScene::reloadMainInstancesBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values) {
+	for (auto& model : mModels | std::views::values)
+	{
 		if (model.mDeleteSignal.has_value()) { continue; }
-		if (model.mInstances.size() == 0) { continue; }
+		if (model.mInstances.empty()) { continue; }
 
 		vk::BufferCopy instancesCopy{};
 		instancesCopy.dstOffset = dstOffset;
@@ -370,12 +431,15 @@ void RendererScene::reloadMainInstancesBuffer()
 
 		dstOffset += instancesCopy.size;
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
-		});
+		mRenderer->mImmSubmit.mCallbacks.push_back(
+			[&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd)
+			{
+				cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
+			});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	{
 		vkhelper::createBufferPipelineBarrier( // Wait for main instances buffer to finish uploading
 			cmd,
 			*mMainInstancesBuffer.buffer,
@@ -390,16 +454,32 @@ void RendererScene::reloadMainInstancesBuffer()
 
 void RendererScene::reloadMainMaterialResourcesArray()
 {
-	for (auto& model : mModels | std::views::values) {
-		for (auto& material : model.mMaterials) {
+	for (auto& model : mModels | std::views::values)
+	{
+		for (auto& material : model.mMaterials)
+		{
 			int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
 
 			DescriptorSetBinder writer;
-			writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView, material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 1, *material.mPbrData.resources.metallicRoughness.image->imageView, material.mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 2, *material.mPbrData.resources.emissive.image->imageView, material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 3, *material.mPbrData.resources.normal.image->imageView, material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-			writer.bindImageArray(0, materialTextureArrayIndex + 4, *material.mPbrData.resources.occlusion.image->imageView, material.mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView,
+			                      material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+			                      vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 1,
+			                      *material.mPbrData.resources.metallicRoughness.image->imageView,
+			                      material.mPbrData.resources.metallicRoughness.sampler,
+			                      vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 2,
+			                      *material.mPbrData.resources.emissive.image->imageView,
+			                      material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+			                      vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 3,
+			                      *material.mPbrData.resources.normal.image->imageView,
+			                      material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+			                      vk::DescriptorType::eCombinedImageSampler);
+			writer.bindImageArray(0, materialTextureArrayIndex + 4,
+			                      *material.mPbrData.resources.occlusion.image->imageView,
+			                      material.mPbrData.resources.occlusion.sampler,
+			                      vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
 			writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mMainMaterialResourcesDescriptorSet);
 		}
 	}
