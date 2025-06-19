@@ -16,8 +16,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	mName = modelPath.stem().string();
 	LOG_INFO(mRenderer->mLogger, "{} Open GLTF / GLB File", mName);
 
-	mId = mRenderer->mRendererScene.mLatestModelId;
-	mRenderer->mRendererScene.mLatestModelId++;
+	mId = mRenderer->mRendererScene.mLatestModelId++;
 
 	fastgltf::Parser parser{};
 	fastgltf::Asset gltf;

@@ -50,7 +50,7 @@ struct VisibleRenderItem {
 	uint firstInstance;
 	uint materialIndex;
 	uint nodeTransformIndex;
-	uint modelId;
+	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer { 
 	VisibleRenderItem visibleRenderItems[];

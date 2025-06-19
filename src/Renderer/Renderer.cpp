@@ -153,7 +153,7 @@ void Renderer::initPasses()
 		cmd.endRendering();
 	});
 
-	/*mPasses.try_emplace(PassType::Pick, [&](vk::CommandBuffer cmd) {
+	mPasses.try_emplace(PassType::Pick, [&](vk::CommandBuffer cmd) {
 	    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mObjectImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 	    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
 	    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mObjectImage.imageExtent), &colorAttachment, &depthAttachment);
@@ -175,7 +175,7 @@ void Renderer::initPasses()
 	    }
 
 	    cmd.endRendering();
-	});*/
+	});
 
 	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)
 	{
@@ -462,7 +462,7 @@ void Renderer::draw()
 	mPasses.at(PassType::Cull).execute(cmd);
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
-	//mPasses.at(PassType::Pick).execute(cmd);
+	mPasses.at(PassType::Pick).execute(cmd);
 	mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);
 

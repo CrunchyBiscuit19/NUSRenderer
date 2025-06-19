@@ -112,10 +112,12 @@ void RendererCore::init()
 		                  static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
 	                  .set_debug_messenger_severity(
 		                  static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
+							  vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
 			                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
 			                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
 	                  .set_debug_messenger_type(
-		                  static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+		                  static_cast<VkDebugUtilsMessageTypeFlagsEXT>(
+							  vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
 			                  vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
 			                  vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
 	                  .set_debug_callback(debugMessageFunc)

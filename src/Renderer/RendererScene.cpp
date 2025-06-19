@@ -22,6 +22,7 @@ void RendererScene::init()
 	mPerspective.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 	mCuller.init();
+	mPicker.init();
 
 	initBuffers();
 	initDescriptor();
@@ -510,6 +511,7 @@ void RendererScene::cleanup()
 	mPerspective.cleanup();
 	mSkybox.cleanup();
 	mCuller.cleanup();
+	mPicker.cleanup();
 
 	mModels.clear();
 	mBatches.clear();

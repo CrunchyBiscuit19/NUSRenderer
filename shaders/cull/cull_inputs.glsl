@@ -9,7 +9,7 @@ struct RenderItem {
 	uint materialIndex;
 	uint nodeTransformIndex;
 	//uint boundsIndex;
-	uint modelId;
+	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer RenderItemsBuffer { 
 	RenderItem renderItems[];
@@ -23,7 +23,7 @@ struct visibleRenderItem {
 	uint firstInstance;
 	uint materialIndex;
 	uint nodeTransformIndex;
-	uint modelId;
+	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer { 
 	visibleRenderItem vRenderItems[];
