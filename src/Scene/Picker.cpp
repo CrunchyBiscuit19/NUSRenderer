@@ -6,15 +6,16 @@
 
 Picker::Picker(Renderer* renderer) :
 	mRenderer(renderer),
-	mPipelineLayout(nullptr)
-{
-}
+	mPipelineLayout(nullptr),
+	mMouseClickLocation(std::pair(0, 0))
+{}
 
 void Picker::init()
 {
 	initImage();
 	initPipelineLayout();
 	initPipeline();
+	initCallback();
 }
 
 void Picker::initImage()
@@ -31,7 +32,7 @@ void Picker::initImage()
 
 	mDepthImage = mRenderer->mRendererResources.createImage(
 		mObjectImage.imageExtent,
-		vk::Format::eD32Sfloat, // Model Id / Mesh Id / Instance Id
+		vk::Format::eD32Sfloat,
 		vk::ImageUsageFlagBits::eDepthStencilAttachment
 	);
 	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
@@ -90,6 +91,17 @@ void Picker::initPipeline()
 	LOG_INFO(mRenderer->mLogger, "Picker Pipeline Created");
 
 	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
+}
+
+void Picker::initCallback()
+{
+	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	{
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !mRenderer->mCamera.mRelativeMode) {
+			ImGuiIO& io = ImGui::GetIO();
+			mMouseClickLocation = std::pair(io.MousePos.x, io.MousePos.y);
+		}
+	});
 }
 
 void Picker::cleanup()

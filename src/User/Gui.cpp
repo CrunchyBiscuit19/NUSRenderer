@@ -39,7 +39,7 @@ void Gui::SceneGuiComponent::elements()
 	{
 		const auto name = model.mName;
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
-		if (ImGui::CollapsingHeader(name.c_str()))
+		if (ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str()))
 			{
@@ -98,7 +98,7 @@ void Gui::SceneGuiComponent::elements()
 		ImGui::PopStyleColor();
 	}
 
-	if (ImGui::CollapsingHeader("Sunlight"))
+	if (ImGui::CollapsingHeader("Sunlight", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.ambientColor));
 		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightColor));
@@ -106,7 +106,7 @@ void Gui::SceneGuiComponent::elements()
 		                    glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
 		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mPerspective.mData.sunlightDirection[3]);
 	}
-	if (ImGui::CollapsingHeader("Skybox"))
+	if (ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		if (ImGui::Button("Change Skybox"))
 		{
@@ -138,7 +138,7 @@ void Gui::SceneGuiComponent::elements()
 
 void Gui::MiscGuiComponent::elements()
 {
-	if (ImGui::CollapsingHeader("Stats"))
+	if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		ImGui::Text("VALIDATION LAYERS: %s", (USE_VALIDATION_LAYERS ? "ON" : "OFF"));
 		ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrameTime);
@@ -146,12 +146,16 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
 		ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
 	}
-	if (ImGui::CollapsingHeader("Controls"))
+	if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		ImGui::Text("[F11] Change Camera Mode");
 		ImGui::Text("[F10] Toggle Borderless Fullscreen");
 		ImGui::Text("[F9] Toggle GUI");
 		ImGui::Text("[Right Click] Change Mouse Mode");
+	}
+	if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::Text("Mouse Last Clicked: (%d, %d)", mRenderer->mRendererScene.mPicker.mMouseClickLocation.first, mRenderer->mRendererScene.mPicker.mMouseClickLocation.second);
 	}
 }
 

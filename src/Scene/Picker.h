@@ -15,12 +15,15 @@ public:
 	PipelineBundle mPipelineBundle;
 	vk::raii::PipelineLayout mPipelineLayout;
 
+	std::pair<int,int> mMouseClickLocation;
+
 	Picker(Renderer* renderer);
 
 	void init();
 	void initImage();
 	void initPipelineLayout();
 	void initPipeline();
+	void initCallback();
 
 	void cleanup();
 };
