@@ -97,8 +97,8 @@ void Picker::initCallback()
 {
 	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
 	{
-		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !mRenderer->mCamera.mRelativeMode) {
-			ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ImGui::GetIO();
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !mRenderer->mCamera.mRelativeMode && !io.WantCaptureMouse) {
 			mMouseClickLocation = std::pair(io.MousePos.x, io.MousePos.y);
 		}
 	});
