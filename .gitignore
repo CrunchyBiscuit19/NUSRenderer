@@ -8,3 +8,4 @@ resources/hdr
 CMakeSettings.json
 resources/models
 logs/
+src/includes*

@@ -1,14 +1,14 @@
 #pragma once
 
 #include <Utils/Pipeline.h>
-#include <Utils/Descriptor.h>
 
 #include <fastgltf/types.hpp>
 
 class Renderer;
 class AllocatedImage;
 
-struct MaterialTexture {
+struct MaterialTexture
+{
 	AllocatedImage* image;
 	vk::Sampler sampler;
 
@@ -25,15 +25,17 @@ struct MaterialTexture {
 	}
 };
 
-struct MaterialConstants {
+struct MaterialConstants
+{
 	glm::vec4 baseFactor;
 	glm::vec4 emissiveFactor;
 	glm::vec2 metallicRoughnessFactor;
-    float normalScale;
-    float occlusionStrength;
+	float normalScale;
+	float occlusionStrength;
 };
 
-struct MaterialResources {
+struct MaterialResources
+{
 	MaterialTexture base;
 	MaterialTexture metallicRoughness;
 	MaterialTexture normal;
@@ -41,14 +43,16 @@ struct MaterialResources {
 	MaterialTexture emissive;
 };
 
-struct PbrData {
+struct PbrData
+{
 	bool doubleSided;
 	fastgltf::AlphaMode alphaMode;
 	MaterialConstants constants;
 	MaterialResources resources;
 };
 
-class PbrMaterial {
+class PbrMaterial
+{
 	Renderer* mRenderer;
 
 public:
@@ -59,8 +63,8 @@ public:
 	vk::Buffer mConstantsBuffer;
 	uint32_t mConstantsBufferOffset;
 
-	static std::unordered_map<PipelineOptions, PipelineBundle> mMaterialPipelinesCache;
-	static vk::raii::PipelineLayout mMaterialPipelineLayout;
+	static std::unordered_map<PipelineOptions, PipelineBundle> mPipelinesCache;
+	static vk::raii::PipelineLayout mPipelineLayout;
 
 	PbrMaterial(Renderer* renderer);
 

@@ -13,18 +13,18 @@ enum MovementMode
 	DRONE,
 };
 
-class Camera {
-private:
+class Camera
+{
 	Renderer* mRenderer;
 
 public:
 	glm::vec3 mVelocity;
 	glm::vec3 mPosition;
-	float mPitch{ 0.f };
-	float mYaw{ 0.f };
-	float mSpeed{ 10.f };
+	float mPitch{0.f};
+	float mYaw{0.f};
+	float mSpeed{10.f};
 
-	SDL_bool mRelativeMode{ SDL_FALSE };
+	SDL_bool mRelativeMode{SDL_FALSE};
 	MovementMode mMovementMode;
 	std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
 

@@ -20,17 +20,6 @@ layout (buffer_reference, std430) readonly buffer VertexBuffer {
 	Vertex vertices[];
 };
 
-struct MaterialConstant {
-	vec4 baseFactor;
-	vec4 emissiveFactor;
-	vec2 metallicRoughnessFactor;
-    float normalScale;
-    float occlusionStrength;
-};
-layout (buffer_reference, std430) readonly buffer MaterialConstantsBuffer {
-	MaterialConstant materialConstants[];
-};
-
 layout (buffer_reference, std430) readonly buffer NodeTransformsBuffer {
 	mat4 nodeTransforms[];
 };
@@ -59,7 +48,8 @@ layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer {
 layout( push_constant ) uniform ScenePushConstants
 {
 	VertexBuffer vertexBuffer;
-	MaterialConstantsBuffer materialConstantsBuffer;
+	int _pad1;
+	int _pad2;
 	NodeTransformsBuffer nodeTransformsBuffer;
 	InstanceBuffer instancesBuffer;
 	VisibleRenderItemsBuffer visibleRenderItemsBuffer;

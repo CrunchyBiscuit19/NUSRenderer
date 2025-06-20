@@ -33,7 +33,7 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
 	viewportState.scissorCount = 1;
 
 	vk::PipelineDynamicStateCreateInfo dynamicInfo = {};
-	constexpr vk::DynamicState state[] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+	constexpr vk::DynamicState state[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
 	dynamicInfo.pDynamicStates = &state[0];
 	dynamicInfo.dynamicStateCount = 2;
 
@@ -46,7 +46,7 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
 	colorBlending.pAttachments = &mColorBlendAttachment;
 
 	// Completely clear VertexInputStateCreateInfo, as we have no need for it.
-	constexpr vk::PipelineVertexInputStateCreateInfo vertexInputInfo = { };
+	constexpr vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 
 	vk::GraphicsPipelineCreateInfo graphicsPipelineInfo = {};
 	graphicsPipelineInfo.pNext = &mRenderInfo;
@@ -62,7 +62,7 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
 	graphicsPipelineInfo.layout = mPipelineLayout;
 	graphicsPipelineInfo.pDynamicState = &dynamicInfo;
 
-	return vk::raii::Pipeline(device, nullptr, graphicsPipelineInfo);;
+	return vk::raii::Pipeline(device, nullptr, graphicsPipelineInfo);
 }
 
 void GraphicsPipelineBuilder::setShaders(vk::ShaderModule vertexShader, vk::ShaderModule fragmentShader)
@@ -120,14 +120,16 @@ void GraphicsPipelineBuilder::enableSampleShading()
 void GraphicsPipelineBuilder::disableBlending()
 {
 	// default write mask
-	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+		vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	// no blending
 	mColorBlendAttachment.blendEnable = VK_FALSE;
 }
 
 void GraphicsPipelineBuilder::enableBlendingAdditive()
 {
-	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+		vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	mColorBlendAttachment.blendEnable = VK_TRUE;
 	mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
 	mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
@@ -139,7 +141,8 @@ void GraphicsPipelineBuilder::enableBlendingAdditive()
 
 void GraphicsPipelineBuilder::enableBlendingAlpha()
 {
-	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+		vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	mColorBlendAttachment.blendEnable = VK_TRUE;
 	mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
 	mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
@@ -151,7 +154,8 @@ void GraphicsPipelineBuilder::enableBlendingAlpha()
 
 void GraphicsPipelineBuilder::enableBlendingSkybox()
 {
-	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+	mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+		vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	mColorBlendAttachment.blendEnable = VK_TRUE;
 	mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha;
 	mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
@@ -186,7 +190,7 @@ void GraphicsPipelineBuilder::disableDepthtest()
 	mDepthStencil.maxDepthBounds = 1.f;
 }
 
-void GraphicsPipelineBuilder::enableDepthtest(bool depthWriteEnable, vk::CompareOp op)
+void GraphicsPipelineBuilder::enableDepthTest(bool depthWriteEnable, vk::CompareOp op)
 {
 	mDepthStencil.depthTestEnable = VK_TRUE;
 	mDepthStencil.depthWriteEnable = depthWriteEnable;
@@ -205,7 +209,8 @@ ComputePipelineBuilder::ComputePipelineBuilder()
 
 void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 {
-	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
+	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(
+		vk::ShaderStageFlagBits::eCompute, computeShader, "main");
 }
 
 vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device)

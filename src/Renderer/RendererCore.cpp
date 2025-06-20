@@ -1,23 +1,25 @@
 #include <Renderer/Renderer.h>
 #include <Renderer/RendererCore.h>
-#include <Utils/Helper.h>
 
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
+#include <SDL_vulkan.h>
 #include <Vkbootstrap.h>
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
 
+
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
-	VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
-	VkDebugUtilsMessengerCallbackDataEXT const* pCallbackData,
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData
 )
 {
 	std::string severity;
-	switch (messageSeverity) {
+	switch (messageSeverity)
+	{
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 		severity = "ERROR";
 		break;
@@ -33,7 +35,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 	}
 
 	std::string message = "\n";
-	message += fmt::format("{} <{}> Frame {}\n\n", severity, std::string(pCallbackData->pMessageIdName), static_cast<Renderer*>(pUserData)->mRendererInfrastructure.mFrameNumber);
+	message += fmt::format("{} <{}> Frame {}\n\n", severity, std::string(pCallbackData->pMessageIdName),
+	                       static_cast<Renderer*>(pUserData)->mRendererInfrastructure.mFrameNumber);
 	message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
 	message += fmt::format("Queue Labels:\n");
@@ -47,12 +50,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 
 	for (int i = 0; i < pCallbackData->objectCount; i++)
 	{
-		message += fmt::format("Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n", std::to_string(i), vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)), std::to_string(pCallbackData->pObjects[i].objectHandle));
+		message += fmt::format("Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n", std::to_string(i),
+		                       vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)),
+		                       std::to_string(pCallbackData->pObjects[i].objectHandle));
 		if (pCallbackData->pObjects[i].pObjectName)
 			message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
 	}
 
-	switch (messageSeverity) {
+	switch (messageSeverity)
+	{
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 		severity = "ERROR";
 		LOG_ERROR(static_cast<Renderer*>(pUserData)->mLogger, "{}", message);
@@ -73,10 +79,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 RendererCore::RendererCore(Renderer* renderer) :
 	mRenderer(renderer),
 	mContext(),
-	mInstance(nullptr),
 	mDebugMessenger(nullptr),
-	mChosenGPU(nullptr),
+	mInstance(nullptr),
 	mDevice(nullptr),
+	mChosenGPU(nullptr),
 	mSurface(nullptr),
 	mComputeQueue(nullptr),
 	mGraphicsQueue(nullptr)
@@ -100,15 +106,24 @@ void RendererCore::init()
 
 	vkb::InstanceBuilder builder;
 	auto instResult = builder
-		.set_app_name("Vulkan renderer")
-		.request_validation_layers(USE_VALIDATION_LAYERS)
-        .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
-		.set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
-		.set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
-		.set_debug_callback(debugMessageFunc)
-		.set_debug_callback_user_data_pointer(mRenderer)
-		.require_api_version(1, 3, 0)
-		.build();
+	                  .set_app_name("Vulkan renderer")
+	                  .request_validation_layers(USE_VALIDATION_LAYERS)
+	                  .add_validation_feature_enable(
+		                  static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
+	                  .set_debug_messenger_severity(
+		                  static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
+							  vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+			                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+			                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
+	                  .set_debug_messenger_type(
+		                  static_cast<VkDebugUtilsMessageTypeFlagsEXT>(
+							  vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+			                  vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+			                  vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
+	                  .set_debug_callback(debugMessageFunc)
+	                  .set_debug_callback_user_data_pointer(mRenderer)
+	                  .require_api_version(1, 3, 0)
+	                  .build();
 	const vkb::Instance vkbInst = instResult.value();
 	mInstance = vk::raii::Instance(mContext, vkbInst.instance);
 	vk::raii::DebugUtilsMessengerEXT debugMessenger(mInstance, vkbInst.debug_messenger);
@@ -148,17 +163,17 @@ void RendererCore::init()
 	features.vertexPipelineStoresAndAtomics = true;
 	features.shaderInt64 = true;
 
-	vkb::PhysicalDeviceSelector selector{ vkbInst };
+	vkb::PhysicalDeviceSelector selector{vkbInst};
 	vkb::PhysicalDevice physicalDevice = selector
-		.set_minimum_version(1, 3)
-		.set_required_features_13(features13)
-		.set_required_features_12(features12)
-		.set_required_features_11(features11)
-		.set_required_features(features)
-		.set_surface(*mSurface)
-		.select()
-		.value();
-	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
+	                                     .set_minimum_version(1, 3)
+	                                     .set_required_features_13(features13)
+	                                     .set_required_features_12(features12)
+	                                     .set_required_features_11(features11)
+	                                     .set_required_features(features)
+	                                     .set_surface(*mSurface)
+	                                     .select()
+	                                     .value();
+	vkb::DeviceBuilder deviceBuilder{physicalDevice};
 	vkb::Device vkbDevice = deviceBuilder.build().value();
 	vk::raii::PhysicalDevice chosenGPU(mInstance, vkbDevice.physical_device);
 	vk::raii::Device device(chosenGPU, vkbDevice.device);
@@ -186,11 +201,13 @@ void RendererCore::init()
 
 	LOG_INFO(mRenderer->mLogger, "VMA Allocator Created");
 
-	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void {
+	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	{
 		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-		if (keyState[SDL_SCANCODE_F10] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+		if (keyState[SDL_SCANCODE_F10] && e.type == SDL_KEYDOWN && !e.key.repeat)
+		{
 			mWindowFullScreen = !mWindowFullScreen;
 			SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 			SDL_SetWindowBordered(mWindow, mWindowFullScreen ? SDL_FALSE : SDL_TRUE);

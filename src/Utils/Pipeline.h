@@ -4,24 +4,27 @@
 
 #include <fastgltf/types.hpp>
 
-struct PipelineBundle {
+struct PipelineBundle
+{
 	int id;
 	vk::raii::Pipeline pipeline;
 	vk::PipelineLayout layout;
 
 	PipelineBundle() :
+		id(-1),
 		pipeline(nullptr),
-		layout(nullptr),
-		id(-1)
-	{}
+		layout(nullptr)
+	{
+	}
 
 	PipelineBundle(int id_, vk::raii::Pipeline pipeline, vk::PipelineLayout layout) :
+		id(id_),
 		pipeline(std::move(pipeline)),
-		layout(layout),
-		id(id_)
-	{}
+		layout(layout)
+	{
+	}
 
-	~PipelineBundle() 
+	~PipelineBundle()
 	{
 		cleanup();
 	}
@@ -32,13 +35,16 @@ struct PipelineBundle {
 	}
 
 	PipelineBundle(PipelineBundle&& other) noexcept :
+		id(other.id),
 		pipeline(std::move(other.pipeline)),
-		layout(std::move(other.layout)),
-		id(other.id)
-	{}
+		layout(std::move(other.layout))
+	{
+	}
 
-	PipelineBundle& operator=(PipelineBundle&& other) noexcept {
-		if (this != &other) {
+	PipelineBundle& operator=(PipelineBundle&& other) noexcept
+	{
+		if (this != &other)
+		{
 			pipeline = std::move(other.pipeline);
 			layout = std::move(other.layout);
 			id = other.id;
@@ -50,34 +56,38 @@ struct PipelineBundle {
 	PipelineBundle& operator=(const PipelineBundle&) = delete;
 };
 
-struct PipelineOptions {
+struct PipelineOptions
+{
 	bool doubleSided;
 	fastgltf::AlphaMode alphaMode;
 
-	inline bool operator==(const PipelineOptions& other) const
+	bool operator==(const PipelineOptions& other) const
 	{
 		return (doubleSided == other.doubleSided && alphaMode == other.alphaMode);
 	}
 };
 
 template <>
-struct std::hash<PipelineOptions> {
+struct std::hash<PipelineOptions>
+{
 	// Compute individual hash values for strings
 	// Combine them using XOR and bit shifting
-	inline std::size_t operator()(const PipelineOptions& k) const
+	std::size_t operator()(const PipelineOptions& k) const
 	{
 		return ((std::hash<bool>()(k.doubleSided) ^ (std::hash<fastgltf::AlphaMode>()(k.alphaMode) << 1)) >> 1);
 	}
 };
 
-class PipelineBuilder {
+class PipelineBuilder
+{
 public:
 	vk::PipelineLayout mPipelineLayout;
 
 	virtual vk::raii::Pipeline buildPipeline(vk::raii::Device& device) = 0;
 };
 
-class GraphicsPipelineBuilder : PipelineBuilder {
+class GraphicsPipelineBuilder : PipelineBuilder
+{
 public:
 	std::vector<vk::PipelineShaderStageCreateInfo> mShaderStages;
 	vk::PipelineInputAssemblyStateCreateInfo mInputAssembly;
@@ -108,10 +118,11 @@ public:
 	void setColorAttachmentFormat(vk::Format format);
 	void setDepthFormat(vk::Format format);
 	void disableDepthtest();
-	void enableDepthtest(bool depthWriteEnable, vk::CompareOp op);
+	void enableDepthTest(bool depthWriteEnable, vk::CompareOp op);
 };
 
-class ComputePipelineBuilder : PipelineBuilder {
+class ComputePipelineBuilder : PipelineBuilder
+{
 public:
 	vk::PipelineShaderStageCreateInfo mComputeShaderStageCreateInfo;
 	vk::PipelineLayout mPipelineLayout;

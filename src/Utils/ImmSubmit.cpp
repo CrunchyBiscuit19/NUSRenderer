@@ -1,6 +1,8 @@
- #include <Renderer/Renderer.h>
+#include <Renderer/Renderer.h>
 #include <Utils/ImmSubmit.h>
 #include <Utils/Helper.h>
+
+#include <quill/LogMacros.h>
 
 ImmSubmit::ImmSubmit(Renderer* renderer) :
 	mRenderer(renderer),
@@ -12,7 +14,8 @@ ImmSubmit::ImmSubmit(Renderer* renderer) :
 
 void ImmSubmit::init()
 {
-	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(
+		mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
 
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Command Pool Created");
@@ -28,13 +31,14 @@ void ImmSubmit::init()
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Fence Created");
 }
 
-void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd) >&& function)
+void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd)>&& function)
 {
 	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
 
 	mCommandBuffer.reset();
 
-	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	mCommandBuffer.begin(cmdBeginInfo);
 	function(mRenderer, *mCommandBuffer);
 	mCommandBuffer.end();
@@ -52,9 +56,11 @@ void ImmSubmit::queuedSubmit()
 
 	mCommandBuffer.reset();
 
-	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	mCommandBuffer.begin(cmdBeginInfo);
-	for (auto& callback : mCallbacks) {
+	for (auto& callback : mCallbacks)
+	{
 		callback(mRenderer, *mCommandBuffer);
 	}
 	mCommandBuffer.end();

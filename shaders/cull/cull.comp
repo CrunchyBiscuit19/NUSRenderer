@@ -23,5 +23,6 @@ void main()
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].firstInstance = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].firstInstance;
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].materialIndex = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].materialIndex;
         cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].nodeTransformIndex = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].nodeTransformIndex;
+        cullPushConstants.vRenderItemsBuffer.vRenderItems[vRenderItemsBufferIndex].modelIndex = cullPushConstants.renderItemsBuffer.renderItems[renderItemsBufferIndex].modelIndex;
     }
 }
