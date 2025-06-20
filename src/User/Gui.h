@@ -58,22 +58,23 @@ class Gui
 	ImGui::FileBrowser mSelectSkyboxFileBrowser;
 
 	bool mCollapsed;
+
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
-	static void createDockSpace();
-	void createRendererOptionsMenu() const;
+	void createDockSpace();
+	void createRendererOptionsWindow();
 
 public:
 	Gui(Renderer* renderer);
 
 	void init();
 	void initDescriptors();
-	void initBackend();
+	void initBackend() const;
 	void initFileBrowsers();
 	void initComponents();
-	void initKeyBinding() const;
+	void initKeyBinding();
 
-	void imguiFrame() const;
+	void imguiFrame();
 
 	void cleanup();
 

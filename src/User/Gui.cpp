@@ -161,9 +161,6 @@ void Gui::MiscGuiComponent::elements()
 
 void Gui::createDockSpace()
 {
-	static ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-	static ImGuiID mainDockSpace = ImGui::GetID("DockSpace0");
-
 	static ImGuiDockNodeFlags dockSpaceFlags =
 		ImGuiDockNodeFlags_NoDockingOverCentralNode |
 		ImGuiDockNodeFlags_PassthruCentralNode;
@@ -177,18 +174,8 @@ void Gui::createDockSpace()
 		ImGuiWindowFlags_NoNavFocus |
 		ImGuiWindowFlags_NoBackground;
 
-	static bool initialized = false;
-	if (initialized) {
-		initialized = true;
-		ImGui::DockBuilderRemoveNode(mainDockSpace);
-		ImGui::DockBuilderAddNode(mainDockSpace, ImGuiDockNodeFlags_DockSpace);
-		ImGui::DockBuilderSetNodeSize(mainDockSpace, mainViewport->WorkSize);
-		ImGuiID leftDock = ImGui::DockBuilderSplitNode(mainDockSpace, ImGuiDir_Left, 0.2f, nullptr, &mainDockSpace);
-		ImGuiID rightDock = mainDockSpace;
-		ImGui::DockBuilderDockWindow("Renderer Options", leftDock);
-		ImGui::DockBuilderDockWindow("Renderer Output", rightDock);
-		ImGui::DockBuilderFinish(mainDockSpace);
-	}
+	static ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+	static ImGuiID mainDockSpace = ImGui::DockSpaceOverViewport(0, mainViewport, dockSpaceFlags);
 
 	ImGui::SetNextWindowPos(mainViewport->WorkPos);
 	ImGui::SetNextWindowSize(mainViewport->WorkSize);
@@ -197,15 +184,16 @@ void Gui::createDockSpace()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-	ImGui::Begin("DockSpace Window", nullptr, windowFlags);
+	ImGui::Begin("DockSpace Window", &mCollapsed, windowFlags);
 	ImGui::DockSpace(mainDockSpace, ImVec2(0.0f, 0.0f), dockSpaceFlags);
 	ImGui::End();
 	ImGui::PopStyleVar(3);
 }
 
-void Gui::createRendererOptionsMenu() const
+void Gui::createRendererOptionsWindow()
 {
-	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+	if (mCollapsed) return;
+	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
 		if (!ImGui::IsWindowCollapsed()) {
 			if (ImGui::BeginTabBar("RendererOptionsTabBar",
 				ImGuiTabBarFlags_Reorderable |
@@ -230,7 +218,8 @@ void Gui::createRendererOptionsMenu() const
 Gui::Gui(Renderer* renderer) :
 	mRenderer(renderer),
 	mDescriptorPool(nullptr),
-	mDescriptorSet(nullptr)
+	mDescriptorSet(nullptr),
+	mCollapsed(false)
 {
 }
 
@@ -268,7 +257,7 @@ void Gui::initDescriptors()
 	LOG_INFO(mRenderer->mLogger, "ImGui Descriptor Pool Created");
 }
 
-void Gui::initBackend()
+void Gui::initBackend() const
 {
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
@@ -327,23 +316,26 @@ void Gui::initComponents()
 	LOG_INFO(mRenderer->mLogger, "ImGui Gui Components Added");
 }
 
-void Gui::initKeyBinding() const
+void Gui::initKeyBinding()
 {
 	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
 	{
-		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+
+		if (keyState[SDL_SCANCODE_F9] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mCollapsed = !mCollapsed;
+		}
 	});
 }
 
-void Gui::imguiFrame() const
+void Gui::imguiFrame()
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 
 	createDockSpace();
-	createRendererOptionsMenu();
+	createRendererOptionsWindow();
 
 	ImGui::Render();
 }
