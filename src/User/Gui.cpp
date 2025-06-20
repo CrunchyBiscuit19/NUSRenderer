@@ -24,7 +24,7 @@ void Gui::CameraGuiComponent::elements()
 	ImGui::Text("Camera Mode: %s", magic_enum::enum_name(mRenderer->mCamera.mMovementMode).data());
 	ImGui::Text("Mouse Mode: %s", (mRenderer->mCamera.mRelativeMode ? "RELATIVE" : "NORMAL"));
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.mPosition.x, mRenderer->mCamera.mPosition.y,
-	            mRenderer->mCamera.mPosition.z);
+		mRenderer->mCamera.mPosition.z);
 	ImGui::Text("Pitch / Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
 	ImGui::SliderFloat("Speed", &mRenderer->mCamera.mSpeed, 0.f, 100.f, "%.2f");
 }
@@ -33,7 +33,7 @@ void Gui::SceneGuiComponent::elements()
 {
 	if (ImGui::Button("Add Model"))
 	{
-		mGui->mSelectModelFileDialog.Open();
+		mGui->mSelectModelFileBrowser.Open();
 	}
 	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values)
 	{
@@ -45,7 +45,7 @@ void Gui::SceneGuiComponent::elements()
 			{
 				model.createInstance(TransformData{
 					mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f
-				});
+					});
 				model.mReloadLocalInstancesBuffer = true;
 				mRenderer->mRendererScene.mFlags.instanceAddedFlag = true;
 			}
@@ -69,8 +69,8 @@ void Gui::SceneGuiComponent::elements()
 						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
 					}
 					if (ImGui::SliderFloat3("Pitch / Yaw / Roll",
-					                        glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(),
-					                        glm::pi<float>()))
+						glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(),
+						glm::pi<float>()))
 					{
 						model.mReloadLocalInstancesBuffer = true;
 						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
@@ -103,14 +103,14 @@ void Gui::SceneGuiComponent::elements()
 		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.ambientColor));
 		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightColor));
 		ImGui::SliderFloat3("Sunlight Direction",
-		                    glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
+			glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
 		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mPerspective.mData.sunlightDirection[3]);
 	}
 	if (ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		if (ImGui::Button("Change Skybox"))
 		{
-			mGui->mSelectSkyboxFileDialog.Open();
+			mGui->mSelectSkyboxFileBrowser.Open();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Skybox"))
@@ -119,20 +119,20 @@ void Gui::SceneGuiComponent::elements()
 		}
 	}
 
-	mGui->mSelectSkyboxFileDialog.Display();
-	if (mGui->mSelectSkyboxFileDialog.HasSelected())
+	mGui->mSelectSkyboxFileBrowser.Display();
+	if (mGui->mSelectSkyboxFileBrowser.HasSelected())
 	{
-		std::filesystem::path selectedSkyboxDir = mGui->mSelectSkyboxFileDialog.GetSelected();
+		std::filesystem::path selectedSkyboxDir = mGui->mSelectSkyboxFileBrowser.GetSelected();
 		mRenderer->mRendererScene.mSkybox.updateImage(selectedSkyboxDir);
-		mGui->mSelectSkyboxFileDialog.ClearSelected();
+		mGui->mSelectSkyboxFileBrowser.ClearSelected();
 	}
 
-	mGui->mSelectModelFileDialog.Display();
-	if (mGui->mSelectModelFileDialog.HasSelected())
+	mGui->mSelectModelFileBrowser.Display();
+	if (mGui->mSelectModelFileBrowser.HasSelected())
 	{
-		auto selectedFiles = mGui->mSelectModelFileDialog.GetMultiSelected();
+		auto selectedFiles = mGui->mSelectModelFileBrowser.GetMultiSelected();
 		mRenderer->mRendererScene.loadModels(selectedFiles);
-		mGui->mSelectModelFileDialog.ClearSelected();
+		mGui->mSelectModelFileBrowser.ClearSelected();
 	}
 }
 
@@ -159,18 +159,87 @@ void Gui::MiscGuiComponent::elements()
 	}
 }
 
+void Gui::createDockSpace()
+{
+	static ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+	static ImGuiID mainDockSpace = ImGui::GetID("DockSpace0");
+
+	static ImGuiDockNodeFlags dockSpaceFlags =
+		ImGuiDockNodeFlags_NoDockingOverCentralNode |
+		ImGuiDockNodeFlags_PassthruCentralNode;
+	static ImGuiWindowFlags windowFlags =
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoNavFocus |
+		ImGuiWindowFlags_NoBackground;
+
+	static bool initialized = false;
+	if (initialized) {
+		initialized = true;
+		ImGui::DockBuilderRemoveNode(mainDockSpace);
+		ImGui::DockBuilderAddNode(mainDockSpace, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(mainDockSpace, mainViewport->WorkSize);
+		ImGuiID leftDock = ImGui::DockBuilderSplitNode(mainDockSpace, ImGuiDir_Left, 0.2f, nullptr, &mainDockSpace);
+		ImGuiID rightDock = mainDockSpace;
+		ImGui::DockBuilderDockWindow("Renderer Options", leftDock);
+		ImGui::DockBuilderDockWindow("Renderer Output", rightDock);
+		ImGui::DockBuilderFinish(mainDockSpace);
+	}
+
+	ImGui::SetNextWindowPos(mainViewport->WorkPos);
+	ImGui::SetNextWindowSize(mainViewport->WorkSize);
+	ImGui::SetNextWindowViewport(mainViewport->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+	ImGui::Begin("DockSpace Window", nullptr, windowFlags);
+	ImGui::DockSpace(mainDockSpace, ImVec2(0.0f, 0.0f), dockSpaceFlags);
+	ImGui::End();
+	ImGui::PopStyleVar(3);
+}
+
+void Gui::createRendererOptionsMenu() const
+{
+	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+		if (!ImGui::IsWindowCollapsed()) {
+			if (ImGui::BeginTabBar("RendererOptionsTabBar",
+				ImGuiTabBarFlags_Reorderable |
+				ImGuiTabBarFlags_NoCloseWithMiddleMouseButton |
+				ImGuiTabBarFlags_FittingPolicyResizeDown))
+			{
+				for (auto& component : mGuiComponents)
+				{
+					if (ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton))
+					{
+						component->elements();
+						ImGui::EndTabItem();
+					}
+				}
+				ImGui::EndTabBar();
+			}
+		}
+	}
+	ImGui::End();
+}
+
 Gui::Gui(Renderer* renderer) :
 	mRenderer(renderer),
 	mDescriptorPool(nullptr),
-	mDescriptorSet(nullptr),
-	mCollapsed(false)
+	mDescriptorSet(nullptr)
 {
 }
 
 void Gui::init()
 {
 	initDescriptors();
-	initImGui();
+	initBackend();
+	initFileBrowsers();
+	initComponents();
 	initKeyBinding();
 }
 
@@ -199,7 +268,7 @@ void Gui::initDescriptors()
 	LOG_INFO(mRenderer->mLogger, "ImGui Descriptor Pool Created");
 }
 
-void Gui::initImGui()
+void Gui::initBackend()
 {
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
@@ -234,42 +303,49 @@ void Gui::initImGui()
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
 
 	LOG_INFO(mRenderer->mLogger, "ImGui Configured");
+}
 
-	mSelectModelFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
-	mSelectModelFileDialog.SetTitle("Select GLTF / GLB File");
-	mSelectModelFileDialog.SetTypeFilters({".glb", ".gltf"});
+void Gui::initFileBrowsers()
+{
+	mSelectModelFileBrowser = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
+	mSelectModelFileBrowser.SetTitle("Select GLTF / GLB File");
+	mSelectModelFileBrowser.SetTypeFilters({ ".glb", ".gltf" });
 
-	mSelectSkyboxFileDialog = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_SelectDirectory, SKYBOXES_PATH);
-	mSelectSkyboxFileDialog.SetTitle("Select Directory of Skybox Image");
+	mSelectSkyboxFileBrowser = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_SelectDirectory, SKYBOXES_PATH);
+	mSelectSkyboxFileBrowser.SetTitle("Select Directory of Skybox Image");
 
 	LOG_INFO(mRenderer->mLogger, "ImGui FileBrowsers Created");
+}
 
-	ImGui::StyleColorsDark();
-
-	LOG_INFO(mRenderer->mLogger, "ImGui Dark Style Applied");
-
-	ImGui::SetNextWindowSize(ImVec2(0.2 * ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y));
+void Gui::initComponents()
+{
 
 	mGuiComponents.push_back(std::make_unique<CameraGuiComponent>(mRenderer, this, "Camera"));
-	// Avoid slicing down to base class
 	mGuiComponents.push_back(std::make_unique<SceneGuiComponent>(mRenderer, this, "Scene"));
 	mGuiComponents.push_back(std::make_unique<MiscGuiComponent>(mRenderer, this, "Misc"));
 
 	LOG_INFO(mRenderer->mLogger, "ImGui Gui Components Added");
 }
 
-void Gui::initKeyBinding()
+void Gui::initKeyBinding() const
 {
 	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
 	{
 		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
-
-		if (keyState[SDL_SCANCODE_F9] && e.type == SDL_KEYDOWN && !e.key.repeat)
-		{
-			mCollapsed = !mCollapsed;
-		}
 	});
+}
+
+void Gui::imguiFrame() const
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+
+	createDockSpace();
+	createRendererOptionsMenu();
+
+	ImGui::Render();
 }
 
 void Gui::cleanup()
@@ -279,35 +355,4 @@ void Gui::cleanup()
 	mDescriptorPool.clear();
 
 	LOG_INFO(mRenderer->mLogger, "ImGui Destroyed");
-}
-
-void Gui::imguiFrame()
-{
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplSDL2_NewFrame();
-	ImGui::NewFrame();
-
-	ImGui::SetNextWindowSize(ImVec2(ImGui::GetWindowSize().x, ImGui::GetMainViewport()->Size.y));
-	ImGui::SetNextWindowCollapsed(mCollapsed, ImGuiCond_Always);
-	ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoMove);
-	if (!ImGui::IsWindowCollapsed())
-	{
-		if (ImGui::BeginTabBar("RendererOptionsTabBar",
-		                       ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton |
-		                       ImGuiTabBarFlags_FittingPolicyResizeDown))
-		{
-			for (auto& component : mGuiComponents)
-			{
-				if (ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton))
-				{
-					component->elements();
-					ImGui::EndTabItem();
-				}
-			}
-			ImGui::EndTabBar();
-		}
-	}
-	ImGui::End();
-
-	ImGui::Render();
 }

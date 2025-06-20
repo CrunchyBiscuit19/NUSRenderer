@@ -50,24 +50,31 @@ class Gui
 	};
 
 	Renderer* mRenderer;
+
 	vk::raii::DescriptorPool mDescriptorPool;
 	vk::raii::DescriptorSet mDescriptorSet;
+
+	ImGui::FileBrowser mSelectModelFileBrowser;
+	ImGui::FileBrowser mSelectSkyboxFileBrowser;
 
 	bool mCollapsed;
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
-	ImGui::FileBrowser mSelectModelFileDialog;
-	ImGui::FileBrowser mSelectSkyboxFileDialog;
+	static void createDockSpace();
+	void createRendererOptionsMenu() const;
 
 public:
 	Gui(Renderer* renderer);
 
 	void init();
 	void initDescriptors();
-	void initImGui();
-	void initKeyBinding();
+	void initBackend();
+	void initFileBrowsers();
+	void initComponents();
+	void initKeyBinding() const;
+
+	void imguiFrame() const;
 
 	void cleanup();
 
-	void imguiFrame();
 };
