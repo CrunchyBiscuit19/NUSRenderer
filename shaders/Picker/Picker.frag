@@ -14,5 +14,6 @@ layout (location = 0) out uvec2 outData;
 
 void main() 
 {
-    outData = uvec2(inModelIndex + 100, inInstanceIndex + 100);
+    //outData = uvec2(inModelIndex + 100, inInstanceIndex + 100);
+    outData = uvec2(inModelIndex, inInstanceIndex);
 }

@@ -168,7 +168,7 @@ void Renderer::initPasses()
 	    for (auto& batch : mRendererScene.mBatches | std::views::values) {
 	        if (batch.renderItems.empty()) { continue; }
 
-	        mRendererScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+	        mRendererScene.mPicker.mPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
 	        cmd.pushConstants<PickerPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPicker.mPushConstants);
 
 	        cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
@@ -460,8 +460,8 @@ void Renderer::draw()
 	mPasses.at(PassType::Cull).execute(cmd);
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
-	mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Pick).execute(cmd);
+	mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);
 
 	mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(

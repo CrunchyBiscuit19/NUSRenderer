@@ -26,4 +26,4 @@ void main()
 	outUV.y = v.uv_y;
 	outModelIndex = visibleRenderItemsBuffer.d[gl_DrawID].modelIndex;
 	outInstanceIndex = gl_InstanceIndex;
-} 
+}
