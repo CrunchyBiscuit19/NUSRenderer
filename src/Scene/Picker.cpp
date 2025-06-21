@@ -14,6 +14,7 @@ Picker::Picker(Renderer* renderer) :
 
 void Picker::init()
 {
+	initPushConstants();
 	initBuffer();
 	initImage();
 	initDescriptor();
@@ -41,7 +42,7 @@ void Picker::initImage()
 {
 	mImage = mRenderer->mRendererResources.createImage(
 		mRenderer->mRendererInfrastructure.mDrawImage.imageExtent,
-		vk::Format::eR32G32B32A32Uint, // Model Id / Mesh Id / Instance Id
+		vk::Format::eR32G32Uint, // Model Id / Instance Id
 		vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled
 	);
 	mRenderer->mRendererCore.labelResourceDebug(mImage.image, "PickerObjectImage");

@@ -161,7 +161,7 @@ void Renderer::initPasses()
 	    cmd.beginRendering(renderInfo);
 
 	    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineBundle.pipeline);
-	    vkhelper::setViewportScissors(cmd, mRendererInfrastructure.mDrawImage.imageExtent);
+	    vkhelper::setViewportScissors(cmd, mRendererScene.mPicker.mImage.imageExtent);
 	    cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 	    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineLayout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
 
@@ -204,11 +204,9 @@ void Renderer::initPasses()
 			                       *mRendererScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
 			mRendererScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-			cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0,
-			                                      mRendererScene.mForwardPushConstants);
+			cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0,mRendererScene.mForwardPushConstants);
 
-			cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0,
-			                             MAX_RENDER_ITEMS, sizeof(RenderItem));
+			cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
 			mStats.mDrawCallCount++;
 		}
@@ -462,8 +460,8 @@ void Renderer::draw()
 	mPasses.at(PassType::Cull).execute(cmd);
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
-	//mPasses.at(PassType::Pick).execute(cmd);
 	mPasses.at(PassType::Geometry).execute(cmd);
+	mPasses.at(PassType::Pick).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);
 
 	mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(
