@@ -44,14 +44,12 @@ void Culler::initPipeline()
 	cullPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
 	mPipelineBundle = PipelineBundle(
-		mRenderer->mRendererInfrastructure.mLatestPipelineId,
+		mRenderer->mRendererInfrastructure.mLatestPipelineId++,
 		cullPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
 		*mPipelineLayout
 	);
 	mRenderer->mRendererCore.labelResourceDebug(mPipelineBundle.pipeline, "CullPipeline");
 	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Created");
-
-	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
 }
 
 void Culler::cleanup()

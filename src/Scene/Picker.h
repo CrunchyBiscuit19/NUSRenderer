@@ -4,25 +4,38 @@
 
 class Renderer;
 
+struct PickerData
+{
+	glm::vec2 uvData;
+	glm::uvec2 readData;
+};
+
 class Picker
 {
 	Renderer* mRenderer;
 
 public:
-	AllocatedImage mObjectImage;
+	AllocatedBuffer mBuffer;
+
+	AllocatedImage mImage;
 	AllocatedImage mDepthImage;
 
-	PipelineBundle mPipelineBundle;
-	vk::raii::PipelineLayout mPipelineLayout;
+	vk::raii::DescriptorSet mDescriptorSet;
+	vk::raii::DescriptorSetLayout mDescriptorSetLayout;
 
-	std::pair<int,int> mMouseClickLocation;
+	PipelineBundle mDrawPipelineBundle;
+	vk::raii::PipelineLayout mDrawPipelineLayout;
+	PipelineBundle mPickPipelineBundle;
+	vk::raii::PipelineLayout mPickPipelineLayout;
 
 	Picker(Renderer* renderer);
 
 	void init();
+	void initBuffer();
 	void initImage();
-	void initPipelineLayout();
-	void initPipeline();
+	void initDescriptor();
+	void initDrawPipeline();
+	void initPickPipeline();
 	void initCallback();
 
 	void cleanup();

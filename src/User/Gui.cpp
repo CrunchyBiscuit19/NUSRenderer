@@ -153,10 +153,6 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("[F9] Toggle GUI");
 		ImGui::Text("[Right Click] Change Mouse Mode");
 	}
-	if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
-	{
-		ImGui::Text("Mouse Last Clicked: (%d, %d)", mRenderer->mRendererScene.mPicker.mMouseClickLocation.first, mRenderer->mRendererScene.mPicker.mMouseClickLocation.second);
-	}
 }
 
 void Gui::createDockSpace()

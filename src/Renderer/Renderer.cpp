@@ -154,16 +154,16 @@ void Renderer::initPasses()
 	});
 
 	mPasses.try_emplace(PassType::Pick, [&](vk::CommandBuffer cmd) {
-	    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mObjectImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+	    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 	    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-	    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mObjectImage.imageExtent), &colorAttachment, &depthAttachment);
+	    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
 
 	    cmd.beginRendering(renderInfo);
 
-	    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mPipelineBundle.pipeline);
+	    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineBundle.pipeline);
 	    vkhelper::setViewportScissors(cmd, mRendererInfrastructure.mDrawImage.imageExtent);
 	    cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
-	    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mPipelineLayout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
+	    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineLayout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
 
 	    for (auto& batch : mRendererScene.mBatches | std::views::values) {
 	        if (batch.renderItems.empty()) { continue; }

@@ -27,6 +27,8 @@ void RendererInfrastructure::initDescriptors()
 {
 	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
 		{vk::DescriptorType::eUniformBuffer, 1}, // Scene UBO
+		{vk::DescriptorType::eUniformBuffer, 1}, // Picker UBO
+		{vk::DescriptorType::eCombinedImageSampler, 1}, // Picker Object Image
 		{vk::DescriptorType::eCombinedImageSampler, 1}, // Skybox Cubemap
 		{vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS}, // Material Textures
 	};

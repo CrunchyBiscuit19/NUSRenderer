@@ -7,7 +7,6 @@ layout (set = 0, binding = 0) uniform SceneData {
 	vec4 sunlightDirection; //w for sun power
 	vec4 sunlightColor;
 } scene;
-layout (set = 1, binding = 0) uniform sampler2D materialResources[];
 
 struct Vertex {
 	vec3 position;
@@ -48,8 +47,6 @@ layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer {
 layout( push_constant ) uniform ScenePushConstants
 {
 	VertexBuffer vertexBuffer;
-	int _pad1;
-	int _pad2;
 	NodeTransformsBuffer nodeTransformsBuffer;
 	InstanceBuffer instancesBuffer;
 	VisibleRenderItemsBuffer visibleRenderItemsBuffer;
