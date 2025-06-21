@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_debug_printf : require
 
-#include "picker_inputs.glsl"
+#include "Picker.h.glsl"
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;

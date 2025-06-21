@@ -2,16 +2,15 @@
 
 #extension GL_GOOGLE_include_directive : require
 
-#include "skybox_inputs.glsl"
+#include "skybox.h.glsl"
 
 layout (location = 0) out vec3 outUVW;
 
 void main() 
 {
-	Vertex v = pushConstants.vertexBuffer.vertices[gl_VertexIndex];
-	vec4 position = v.position;
-	gl_Position = scene.proj * mat4(mat3(scene.view)) * position; 
+	vec4 position = skyboxVertexBuffer.vertices[gl_VertexIndex].position;
+	gl_Position = perspective.proj * mat4(mat3(perspective.view)) * position; 
 	gl_Position = gl_Position.xyww;
 
-	outUVW = v.position.xyz;
+	outUVW = position.xyz;
 } 

@@ -2,7 +2,7 @@
 
 #extension GL_GOOGLE_include_directive : require
 
-#include "mesh_inputs.glsl"
+#include "Mesh.h.glsl"
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
@@ -11,21 +11,18 @@ layout (location = 3) out uint outMaterialIndex;
 
 void main() 
 {
-	uint mainVertexIndex = gl_VertexIndex;
-	Vertex v = scenePushConstants.vertexBuffer.vertices[mainVertexIndex];
+	Vertex v = vertexBuffer.vertices[gl_VertexIndex];
 	vec4 position = vec4(v.position, 1.0f);
 
-	uint mainInstanceIndex = gl_InstanceIndex;
-	InstanceData instance = scenePushConstants.instancesBuffer.instances[mainInstanceIndex];
-	mat4 instanceTransformMatrix = instance.transformMatrix;
+	mat4 instanceTransformMatrix = instancesBuffer.instances[gl_InstanceIndex].transformMatrix;
 
-	uint mainNodeTransformIndex = scenePushConstants.visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].nodeTransformIndex;
-	mat4 nodeTransformMatrix = scenePushConstants.nodeTransformsBuffer.nodeTransforms[mainNodeTransformIndex];
+	uint mainNodeTransformIndex = visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].nodeTransformIndex;
+	mat4 nodeTransformMatrix = nodeTransformsBuffer.nodeTransforms[mainNodeTransformIndex];
 
-	gl_Position = scene.proj * scene.view * (instanceTransformMatrix * nodeTransformMatrix * position); 
+	gl_Position = perspective.proj * perspective.view * (instanceTransformMatrix * nodeTransformMatrix * position); 
 
-	uint mainMaterialIndex = scenePushConstants.visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].materialIndex;
-	MaterialConstant materialConstant = scenePushConstants.materialConstantsBuffer.materialConstants[mainMaterialIndex];
+	uint mainMaterialIndex = visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].materialIndex;
+	MaterialConstant materialConstant = materialConstantsBuffer.materialConstants[mainMaterialIndex];
 
 	outNormal = mat3(transpose(inverse(nodeTransformMatrix))) * v.normal;
 	outUV.x = v.uv_x;

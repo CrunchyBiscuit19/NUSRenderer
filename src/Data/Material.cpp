@@ -55,9 +55,9 @@ void PbrMaterial::getMaterialPipeline()
 void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions)
 {
 	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv");
+		std::filesystem::path(SHADERS_PATH) / "Mesh/Mesh.frag.spv");
 	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv");
+		std::filesystem::path(SHADERS_PATH) / "Mesh/Mesh.vert.spv");
 
 	vk::CullModeFlags cullMode;
 	(materialPipelineOptions.doubleSided)
