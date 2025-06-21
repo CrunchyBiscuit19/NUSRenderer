@@ -11,7 +11,7 @@ struct SkyboxVertex {
 	vec4 position;
 }; 
 layout (buffer_reference, std430) readonly buffer SkyboxVertexBuffer { 
-	SkyboxVertex vertices[];
+	SkyboxVertex d[];
 };
 
 layout( push_constant ) uniform SkyboxPushConstants

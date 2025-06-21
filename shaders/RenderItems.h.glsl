@@ -10,7 +10,7 @@ struct RenderItem {
 	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer RenderItemsBuffer { 
-	RenderItem renderItems[];
+	RenderItem d[];
 };
 
 struct VisibleRenderItem {
@@ -24,5 +24,5 @@ struct VisibleRenderItem {
 	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer { 
-	VisibleRenderItem visibleRenderItems[];
+	VisibleRenderItem d[];
 };

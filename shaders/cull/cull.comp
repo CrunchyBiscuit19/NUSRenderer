@@ -16,13 +16,13 @@ void main()
     if (true) { // TODO frustum / occulsion cull
         uint visibleRenderItemsBufferIndex = atomicAdd(countBuffer.count, 1);
         
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].indexCount = renderItemsBuffer.renderItems[renderItemsBufferIndex].indexCount; 
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].instanceCount = renderItemsBuffer.renderItems[renderItemsBufferIndex].instanceCount;
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].firstIndex = renderItemsBuffer.renderItems[renderItemsBufferIndex].firstIndex;
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].vertexOffset = renderItemsBuffer.renderItems[renderItemsBufferIndex].vertexOffset;
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].firstInstance = renderItemsBuffer.renderItems[renderItemsBufferIndex].firstInstance;
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].materialIndex = renderItemsBuffer.renderItems[renderItemsBufferIndex].materialIndex;
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].nodeTransformIndex = renderItemsBuffer.renderItems[renderItemsBufferIndex].nodeTransformIndex;
-        visibleRenderItemsBuffer.visibleRenderItems[visibleRenderItemsBufferIndex].modelIndex = renderItemsBuffer.renderItems[renderItemsBufferIndex].modelIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].indexCount = renderItemsBuffer.d[renderItemsBufferIndex].indexCount; 
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].instanceCount = renderItemsBuffer.d[renderItemsBufferIndex].instanceCount;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].firstIndex = renderItemsBuffer.d[renderItemsBufferIndex].firstIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].vertexOffset = renderItemsBuffer.d[renderItemsBufferIndex].vertexOffset;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].firstInstance = renderItemsBuffer.d[renderItemsBufferIndex].firstInstance;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].materialIndex = renderItemsBuffer.d[renderItemsBufferIndex].materialIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].nodeTransformIndex = renderItemsBuffer.d[renderItemsBufferIndex].nodeTransformIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].modelIndex = renderItemsBuffer.d[renderItemsBufferIndex].modelIndex;
     }
 }

@@ -6,5 +6,5 @@ struct MaterialConstant {
     float occlusionStrength;
 };
 layout (buffer_reference, std430) readonly buffer MaterialConstantsBuffer {
-	MaterialConstant materialConstants[];
+	MaterialConstant d[];
 };

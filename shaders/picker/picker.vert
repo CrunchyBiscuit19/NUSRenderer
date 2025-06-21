@@ -12,19 +12,19 @@ layout (location = 3) out uint outInstanceIndex;
 
 void main() 
 {
-	Vertex v = vertexBuffer.vertices[gl_VertexIndex];
+	Vertex v = vertexBuffer.d[gl_VertexIndex];
 	vec4 position = vec4(v.position, 1.0f);
 
-	mat4 instanceTransformMatrix = instancesBuffer.instances[gl_InstanceIndex].transformMatrix;
+	mat4 instanceTransformMatrix = instancesBuffer.d[gl_InstanceIndex].transformMatrix;
 
-	uint mainNodeTransformIndex = visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].nodeTransformIndex;
-	mat4 nodeTransformMatrix = nodeTransformsBuffer.nodeTransforms[mainNodeTransformIndex];
+	uint mainNodeTransformIndex = visibleRenderItemsBuffer.d[gl_DrawID].nodeTransformIndex;
+	mat4 nodeTransformMatrix = nodeTransformsBuffer.d[mainNodeTransformIndex];
 
 	gl_Position = perspective.proj * perspective.view * (instanceTransformMatrix * nodeTransformMatrix * position); 
 
 	outNormal = mat3(transpose(inverse(nodeTransformMatrix))) * v.normal;
 	outUV.x = v.uv_x;
 	outUV.y = v.uv_y;
-	outModelIndex = visibleRenderItemsBuffer.visibleRenderItems[gl_DrawID].modelIndex;
+	outModelIndex = visibleRenderItemsBuffer.d[gl_DrawID].modelIndex;
 	outInstanceIndex = gl_InstanceIndex;
-}
+} 
