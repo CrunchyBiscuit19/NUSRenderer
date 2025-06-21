@@ -19,14 +19,14 @@ RendererScene::RendererScene(Renderer* renderer) :
 
 void RendererScene::init()
 {
+	initBuffers();
+	initDescriptor();
+	initPushConstants();
+
 	mPerspective.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
 	mCuller.init();
 	mPicker.init();
-
-	initBuffers();
-	initDescriptor();
-	initPushConstants();
 }
 
 void RendererScene::initBuffers()
@@ -95,10 +95,10 @@ void RendererScene::initDescriptor()
 
 void RendererScene::initPushConstants()
 {
-	mScenePushConstants.vertexBuffer = mMainVertexBuffer.address;
-	mScenePushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
-	mScenePushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
-	mScenePushConstants.instancesBuffer = mMainInstancesBuffer.address;
+	mForwardPushConstants.vertexBuffer = mMainVertexBuffer.address;
+	mForwardPushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
+	mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
+	mForwardPushConstants.instancesBuffer = mMainInstancesBuffer.address;
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 

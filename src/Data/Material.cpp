@@ -21,10 +21,10 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer)
 {
 	vk::PushConstantRange materialPushConstantRange{};
 	materialPushConstantRange.offset = 0;
-	materialPushConstantRange.size = sizeof(ScenePushConstants);
+	materialPushConstantRange.size = sizeof(ForwardPushConstants);
 	materialPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
-	std::vector<vk::DescriptorSetLayout> materialDescriptorLayouts = {
+	std::vector materialDescriptorLayouts = {
 		*renderer->mRendererScene.mPerspective.mDescriptorSetLayout,
 		*renderer->mRendererScene.mMainMaterialResourcesDescriptorSetLayout
 	};

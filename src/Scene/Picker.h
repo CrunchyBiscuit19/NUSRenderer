@@ -4,6 +4,14 @@
 
 class Renderer;
 
+struct PickerPushConstants
+{
+	vk::DeviceAddress vertexBuffer;
+	vk::DeviceAddress nodeTransformsBuffer;
+	vk::DeviceAddress instancesBuffer;
+	vk::DeviceAddress visibleRenderItemsBuffer;
+};
+
 struct PickerData
 {
 	glm::vec2 uvData;
@@ -28,9 +36,12 @@ public:
 	PipelineBundle mPickPipelineBundle;
 	vk::raii::PipelineLayout mPickPipelineLayout;
 
+	PickerPushConstants mPushConstants;
+
 	Picker(Renderer* renderer);
 
 	void init();
+	void initPushConstants();
 	void initBuffer();
 	void initImage();
 	void initDescriptor();

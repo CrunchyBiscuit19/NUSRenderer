@@ -12,7 +12,7 @@ layout (set = 0, binding = 0) uniform PerspectiveBuffer {
 };
 layout (set = 1, binding = 0) uniform sampler2D materialResources[];
 
-layout( push_constant ) uniform MeshPushConstants
+layout( push_constant ) uniform ForwardPushConstants
 {
 	VertexBuffer vertexBuffer;
 	MaterialConstantsBuffer materialConstantsBuffer;

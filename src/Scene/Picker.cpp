@@ -22,6 +22,13 @@ void Picker::init()
 	initCallback();
 }
 
+void Picker::initPushConstants()
+{
+	mPushConstants.vertexBuffer = mRenderer->mRendererScene.mMainVertexBuffer.address;
+	mPushConstants.nodeTransformsBuffer = mRenderer->mRendererScene.mMainNodeTransformsBuffer.address;
+	mPushConstants.instancesBuffer = mRenderer->mRendererScene.mMainInstancesBuffer.address;
+}
+
 void Picker::initBuffer()
 {
 	mBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PickerData),
@@ -73,7 +80,7 @@ void Picker::initDrawPipeline()
 {
 	vk::PushConstantRange drawPushConstantRange{};
 	drawPushConstantRange.offset = 0;
-	drawPushConstantRange.size = sizeof(ScenePushConstants);
+	drawPushConstantRange.size = sizeof(ForwardPushConstants);
 	drawPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector drawDescriptorLayouts = {

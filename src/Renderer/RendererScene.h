@@ -10,7 +10,7 @@
 #include <vector>
 #include <filesystem>
 
-struct ScenePushConstants
+struct ForwardPushConstants
 {
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress materialConstantsBuffer;
@@ -47,7 +47,7 @@ public:
 	std::unordered_map<std::string, GLTFModel> mModels;
 
 	std::unordered_map<int, Batch> mBatches;
-	ScenePushConstants mScenePushConstants;
+	ForwardPushConstants mForwardPushConstants;
 
 	AddressedBuffer mMainVertexBuffer;
 	AllocatedBuffer mMainIndexBuffer;
