@@ -14,28 +14,24 @@ Picker::Picker(Renderer* renderer) :
 
 void Picker::init()
 {
-	initPushConstants();
 	initBuffer();
 	initImage();
 	initDescriptor();
 	initDrawPipeline();
 	initPickPipeline();
-	initCallback();
-}
-
-void Picker::initPushConstants()
-{
-	mPushConstants.vertexBuffer = mRenderer->mRendererScene.mMainVertexBuffer.address;
-	mPushConstants.nodeTransformsBuffer = mRenderer->mRendererScene.mMainNodeTransformsBuffer.address;
-	mPushConstants.instancesBuffer = mRenderer->mRendererScene.mMainInstancesBuffer.address;
+	initDrawPushConstants();
+	initPickPushConstants();
 }
 
 void Picker::initBuffer()
 {
 	mBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PickerData),
 		vk::BufferUsageFlagBits::eTransferDst |
-		vk::BufferUsageFlagBits::eUniformBuffer,
+		vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_CPU_TO_GPU);
+	mRenderer->mRendererCore.labelResourceDebug(mBuffer.buffer, "PickerBuffer");
+	LOG_INFO(mRenderer->mLogger, "Picker Buffer Created");
 }
 
 void Picker::initImage()
@@ -43,12 +39,13 @@ void Picker::initImage()
 	mImage = mRenderer->mRendererResources.createImage(
 		mRenderer->mRendererInfrastructure.mDrawImage.imageExtent,
 		vk::Format::eR32G32Uint, // Model Id / Instance Id
-		vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled
+		vk::ImageUsageFlagBits::eColorAttachment | 
+		vk::ImageUsageFlagBits::eStorage
 	);
-	mRenderer->mRendererCore.labelResourceDebug(mImage.image, "PickerObjectImage");
-	LOG_INFO(mRenderer->mLogger, "Picker Object Image Created");
-	mRenderer->mRendererCore.labelResourceDebug(mImage.imageView, "PickerObjectImageView");
-	LOG_INFO(mRenderer->mLogger, "Picker Object Image View Created");
+	mRenderer->mRendererCore.labelResourceDebug(mImage.image, "PickerDrawImage");
+	LOG_INFO(mRenderer->mLogger, "Picker Draw Image Created");
+	mRenderer->mRendererCore.labelResourceDebug(mImage.imageView, "PickerDrawImageView");
+	LOG_INFO(mRenderer->mLogger, "Picker Draw Image View Created");
 
 	mDepthImage = mRenderer->mRendererResources.createImage(
 		mImage.imageExtent,
@@ -59,29 +56,41 @@ void Picker::initImage()
 	LOG_INFO(mRenderer->mLogger, "Picker Depth Image Created");
 	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.imageView, "PickerDepthImageView");
 	LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
+
+	mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::transitionImage(cmd, *mImage.image,
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderRead,
+			vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+		vkhelper::transitionImage(cmd, *mDepthImage.image,
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+			vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+			vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
+	});
 }
 
 void Picker::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
-	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-	builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler);
+	builder.addBinding(0, vk::DescriptorType::eStorageImage);
 	mDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eCompute);
 	mDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
 	LOG_INFO(mRenderer->mLogger, "Picker Descriptor Set and Layout Created");
 
 	DescriptorSetBinder writer;
-	writer.bindBuffer(0, *mBuffer.buffer, sizeof(PickerData), 0, vk::DescriptorType::eUniformBuffer);
-	writer.bindImage(1, *mImage.imageView, mRenderer->mRendererResources.getSampler(), vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+	writer.bindImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
 	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mDescriptorSet);
 }
-
 
 void Picker::initDrawPipeline()
 {
 	vk::PushConstantRange drawPushConstantRange{};
 	drawPushConstantRange.offset = 0;
-	drawPushConstantRange.size = sizeof(ForwardPushConstants);
+	drawPushConstantRange.size = sizeof(PickerDrawPushConstants);
 	drawPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector drawDescriptorLayouts = {
@@ -98,9 +107,9 @@ void Picker::initDrawPipeline()
 	LOG_INFO(mRenderer->mLogger, "Picker Draw Pipeline Layout Created");
 
 	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Picker/Picker.frag.spv");
+		std::filesystem::path(SHADERS_PATH) / "Picker/PickerDraw.frag.spv");
 	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Picker/Picker.vert.spv");
+		std::filesystem::path(SHADERS_PATH) / "Picker/PickerDraw.vert.spv");
 
 	GraphicsPipelineBuilder pickerPipelineBuilder;
 	pickerPipelineBuilder.setShaders(vertexShader, fragShader);
@@ -126,20 +135,26 @@ void Picker::initDrawPipeline()
 
 void Picker::initPickPipeline()
 {
+	vk::PushConstantRange pickPushConstantRange{};
+	pickPushConstantRange.offset = 0;
+	pickPushConstantRange.size = sizeof(PickerPickPushConstants);
+	pickPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
 	std::vector pickDescriptorLayouts = {
 		*mDescriptorSetLayout
 	};
 	vk::PipelineLayoutCreateInfo pickPipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
 	pickPipelineLayoutCreateInfo.pSetLayouts = pickDescriptorLayouts.data();
 	pickPipelineLayoutCreateInfo.setLayoutCount = pickDescriptorLayouts.size();
-	pickPipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+	pickPipelineLayoutCreateInfo.pPushConstantRanges = &pickPushConstantRange;
+	pickPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
 	mPickPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pickPipelineLayoutCreateInfo);
 	mRenderer->mRendererCore.labelResourceDebug(mPickPipelineLayout, "PickerPickPipelineLayout");
 	LOG_INFO(mRenderer->mLogger, "Picker Pick Pipeline Layout Created");
 
 	vk::ShaderModule compShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Picker/Picker.comp.spv");
+		std::filesystem::path(SHADERS_PATH) / "Picker/PickerPick.comp.spv");
 
 	ComputePipelineBuilder cullPipelineBuilder;
 	cullPipelineBuilder.setShader(compShader);
@@ -154,45 +169,16 @@ void Picker::initPickPipeline()
 	LOG_INFO(mRenderer->mLogger, "Picker Pick Pipeline Created");
 }
 
-void Picker::initCallback()
+void Picker::initDrawPushConstants()
 {
-	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
-	{
-		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !mRenderer->mCamera.mRelativeMode && !ImGui::GetIO().WantCaptureMouse) {
-			mRenderer->mImmSubmit.mCallbacks.emplace_back([this](const Renderer* renderer, vk::CommandBuffer cmd) {
-				float mouseClickLocation[2];
-				mouseClickLocation[0] = ImGui::GetIO().MousePos.x / static_cast<float>(renderer->mRendererCore.mWindowExtent.width);
-				mouseClickLocation[1] = ImGui::GetIO().MousePos.y / static_cast<float>(renderer->mRendererCore.mWindowExtent.height);
+	mDrawPushConstants.vertexBuffer = mRenderer->mRendererScene.mMainVertexBuffer.address;
+	mDrawPushConstants.nodeTransformsBuffer = mRenderer->mRendererScene.mMainNodeTransformsBuffer.address;
+	mDrawPushConstants.instancesBuffer = mRenderer->mRendererScene.mMainInstancesBuffer.address;
+}
 
-				std::memcpy(mBuffer.info.pMappedData, &mouseClickLocation, 2 * sizeof(float));
-
-				cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mPickPipelineBundle.pipeline);
-
-				vkhelper::createBufferPipelineBarrier( // Wait for pick buffer to be written to
-					cmd,
-					*mBuffer.buffer,
-					vk::PipelineStageFlagBits2::eHost,
-					vk::AccessFlagBits2::eHostWrite,
-					vk::PipelineStageFlagBits2::eComputeShader,
-					vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
-
-				cmd.dispatch(1, 1, 1);
-
-				vkhelper::createBufferPipelineBarrier( // Wait for pick buffer to be written to
-					cmd,
-					*mBuffer.buffer,
-					vk::PipelineStageFlagBits2::eComputeShader,
-					vk::AccessFlagBits2::eShaderWrite,
-					vk::PipelineStageFlagBits2::eHost,
-					vk::AccessFlagBits2::eHostRead);
-
-				glm::uvec2 readData(0);
-				std::memcpy(&readData.x, static_cast<char*>(mBuffer.info.pMappedData) + sizeof(glm::vec2), 2 * sizeof(uint32_t));
-
-				LOG_DEBUG(renderer->mLogger, "Clicked into ({:.3f},{:.3f}) Got ({},{})", mouseClickLocation[0], mouseClickLocation[1], readData.x, readData.y);
-			});
-		}
-	});
+void Picker::initPickPushConstants()
+{
+	mPickPushConstants.pickerBuffer = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer));
 }
 
 void Picker::cleanup()

@@ -8,6 +8,7 @@
 #include <quill/LogMacros.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
+#include <glm/gtc/type_ptr.hpp>z
 
 #include <ranges>
 
@@ -15,13 +16,13 @@ Renderer* Pass::renderer = nullptr;
 
 Renderer::Renderer()
 	: mRendererCore(RendererCore(this))
-	  , mRendererInfrastructure(RendererInfrastructure(this))
-	  , mRendererResources(RendererResources(this))
-	  , mRendererScene(RendererScene(this))
-	  , mImmSubmit(ImmSubmit(this))
-	  , mGUI(Gui(this))
-	  , mCamera(Camera(this))
-	  , mRendererEvent(RendererEvent(this))
+	, mRendererInfrastructure(RendererInfrastructure(this))
+	, mRendererResources(RendererResources(this))
+	, mRendererScene(RendererScene(this))
+	, mImmSubmit(ImmSubmit(this))
+	, mGUI(Gui(this))
+	, mCamera(Camera(this))
+	, mRendererEvent(RendererEvent(this))
 {
 }
 
@@ -52,7 +53,7 @@ void Renderer::initLogger()
 		mLogger = quill::Frontend::create_or_get_logger("FileLogger", std::move(fileSink));
 	}
 	mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger",
-	                                                quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
+		quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
 	mLogger->set_log_level(quill::LogLevel::TraceL3);
 }
 
@@ -71,30 +72,29 @@ void Renderer::initComponents()
 	mImmSubmit.mCallbacks.clear();
 
 	mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
-	{
-		if (e.type == SDL_QUIT)
 		{
-			for (auto& model : mRendererScene.mModels | std::views::values)
+			if (e.type == SDL_QUIT)
 			{
-				model.markDelete();
+				for (auto& model : mRendererScene.mModels | std::views::values)
+				{
+					model.markDelete();
+				}
+				mRendererInfrastructure.mProgramEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
 			}
-			mRendererInfrastructure.mProgramEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
-		}
-		if (e.type == SDL_WINDOWEVENT)
-		{
-			if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
-				mStopRendering = true;
-			if (e.window.event == SDL_WINDOWEVENT_RESTORED)
-				mStopRendering = false;
-		}
-		ImGui_ImplSDL2_ProcessEvent(&e);
-	});
+			if (e.type == SDL_WINDOWEVENT)
+			{
+				if (e.window.event == SDL_WINDOWEVENT_MINIMIZED)
+					mStopRendering = true;
+				if (e.window.event == SDL_WINDOWEVENT_RESTORED)
+					mStopRendering = false;
+			}
+			ImGui_ImplSDL2_ProcessEvent(&e);
+		});
 }
 
 void Renderer::initPasses()
 {
-	mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd)
-	{
+	mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mCuller.mPipelineBundle.pipeline);
 
 		for (auto& batch : mRendererScene.mBatches | std::views::values)
@@ -115,8 +115,8 @@ void Renderer::initPasses()
 			mRendererScene.mCuller.mPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
 			mRendererScene.mCuller.mPushConstants.countBuffer = batch.countBuffer.address;
 			cmd.pushConstants<CullPushConstants>(mRendererScene.mCuller.mPipelineBundle.layout,
-			                                     vk::ShaderStageFlagBits::eCompute, 0,
-			                                     mRendererScene.mCuller.mPushConstants);
+				vk::ShaderStageFlagBits::eCompute, 0,
+				mRendererScene.mCuller.mPushConstants);
 
 			cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
@@ -138,8 +138,7 @@ void Renderer::initPasses()
 		}
 	});
 
-	mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd)
-	{
+	mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {
 		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
 			*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
 			vk::AttachmentLoadOp::eClear);
@@ -153,193 +152,255 @@ void Renderer::initPasses()
 		cmd.endRendering();
 	});
 
-	mPasses.try_emplace(PassType::Pick, [&](vk::CommandBuffer cmd) {
-	    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-	    vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-	    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
+	mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) || mCamera.mRelativeMode || ImGui::GetIO().WantCaptureMouse) {
+			return;
+		}
 
-	    cmd.beginRendering(renderInfo);
-
-	    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineBundle.pipeline);
-	    vkhelper::setViewportScissors(cmd, mRendererScene.mPicker.mImage.imageExtent);
-	    cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
-	    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineLayout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
-
-	    for (auto& batch : mRendererScene.mBatches | std::views::values) {
-	        if (batch.renderItems.empty()) { continue; }
-
-	        mRendererScene.mPicker.mPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-	        cmd.pushConstants<PickerPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPicker.mPushConstants);
-
-	        cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
-	    }
-
-	    cmd.endRendering();
-	});
-
-	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)
-	{
-		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-			*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-			*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-			vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare);
+		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
 
 		cmd.beginRendering(renderInfo);
 
-		for (auto& batch : mRendererScene.mBatches | std::views::values)
-		{
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineBundle.pipeline);
+		vkhelper::setViewportScissors(cmd, mRendererScene.mPicker.mImage.imageExtent);
+		cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mPicker.mDrawPipelineBundle.layout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
+
+		for (auto& batch : mRendererScene.mBatches | std::views::values) {
 			if (batch.renderItems.empty()) { continue; }
 
-			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
-
-			vkhelper::setViewportScissors(cmd, mRendererInfrastructure.mDrawImage.imageExtent);
-
-			cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
-
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0,
-			                       *mRendererScene.mPerspective.mDescriptorSet, nullptr);
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1,
-			                       *mRendererScene.mMainMaterialResourcesDescriptorSet, nullptr);
-
-			mRendererScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-			cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0,mRendererScene.mForwardPushConstants);
+			mRendererScene.mPicker.mDrawPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+			cmd.pushConstants<PickerDrawPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPicker.mDrawPushConstants);
 
 			cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
-
-			mStats.mDrawCallCount++;
 		}
 
 		cmd.endRendering();
 	});
 
-	mPasses.try_emplace(PassType::Skybox, [&](vk::CommandBuffer cmd)
-	{
-		if (!mRendererScene.mSkybox.mActive) { return; }
+	mPasses.try_emplace(PassType::PickPick, [&](vk::CommandBuffer cmd) {
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) || mCamera.mRelativeMode || ImGui::GetIO().WantCaptureMouse) {
+			return;
+		}
 
-		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-			*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-			*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal,
-			vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eDontCare);
-		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-			vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+		int32_t mouseClickLocation[2] = { static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y) };
+		std::memcpy(mRendererScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, 2 * sizeof(int32_t));
 
-		cmd.beginRendering(renderInfo);
+		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mPicker.mPickPipelineBundle.pipeline);
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mRendererScene.mPicker.mPickPipelineBundle.layout, 0, *mRendererScene.mPicker.mDescriptorSet, nullptr);
+		cmd.pushConstants<PickerPickPushConstants>(
+			mRendererScene.mPicker.mPickPipelineBundle.layout,
+			vk::ShaderStageFlagBits::eCompute, 0,
+			mRendererScene.mPicker.mPickPushConstants);
 
-		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mPipelineBundle.pipeline);
-		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mSkybox.mPipelineBundle.layout, 0,
-		                       std::vector<vk::DescriptorSet>{
-			                       *mRendererScene.mPerspective.mDescriptorSet, *mRendererScene.mSkybox.mDescriptorSet
-		                       }, nullptr);
-		vk::Viewport viewport = {
-			0,
-			0,
-			static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
-			static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
-			0.f,
-			1.f,
-		};
-		cmd.setViewport(0, viewport);
-		vk::Rect2D scissor = {
-			vk::Offset2D{0, 0},
-			vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent),
-		};
-		cmd.setScissor(0, scissor);
-		cmd.pushConstants<SkyBoxPushConstants>(mRendererScene.mSkybox.mPipelineBundle.layout,
-		                                       vk::ShaderStageFlagBits::eVertex, 0,
-		                                       mRendererScene.mSkybox.mPushConstants);
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mRendererScene.mPicker.mBuffer.buffer,
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
-		cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
-		mStats.mDrawCallCount++;
+		cmd.dispatch(1, 1, 1);
 
-		cmd.endRendering();
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mRendererScene.mPicker.mBuffer.buffer,
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderWrite,
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostRead);
+
+		glm::uvec2 read(0);
+		std::memcpy(glm::value_ptr(read), static_cast<char*>(mRendererScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
+
+		LOG_DEBUG(mLogger, "Clicked ({},{}) Got ({},{})", mouseClickLocation[0], mouseClickLocation[1], read.x, read.y);
 	});
+
+	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)
+		{
+			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
+				*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+			vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
+				*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
+				vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+
+			cmd.beginRendering(renderInfo);
+
+			for (auto& batch : mRendererScene.mBatches | std::views::values)
+			{
+				if (batch.renderItems.empty()) { continue; }
+
+				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
+
+				vkhelper::setViewportScissors(cmd, mRendererInfrastructure.mDrawImage.imageExtent);
+
+				cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+
+				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0,
+					*mRendererScene.mPerspective.mDescriptorSet, nullptr);
+				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1,
+					*mRendererScene.mMainMaterialResourcesDescriptorSet, nullptr);
+
+				mRendererScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+				cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mForwardPushConstants);
+
+				cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
+
+				mStats.mDrawCallCount++;
+			}
+
+			cmd.endRendering();
+		});
+
+	mPasses.try_emplace(PassType::Skybox, [&](vk::CommandBuffer cmd)
+		{
+			if (!mRendererScene.mSkybox.mActive) { return; }
+
+			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
+				*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+			vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
+				*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal,
+				vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eDontCare);
+			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
+				vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+
+			cmd.beginRendering(renderInfo);
+
+			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mPipelineBundle.pipeline);
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mSkybox.mPipelineBundle.layout, 0,
+				std::vector{
+					 *mRendererScene.mPerspective.mDescriptorSet,
+					 *mRendererScene.mSkybox.mDescriptorSet
+				}, nullptr);
+			vk::Viewport viewport = {
+				0,
+				0,
+				static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
+				static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
+				0.f,
+				1.f,
+			};
+			cmd.setViewport(0, viewport);
+			vk::Rect2D scissor = {
+				vk::Offset2D{0, 0},
+				vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent),
+			};
+			cmd.setScissor(0, scissor);
+			cmd.pushConstants<SkyBoxPushConstants>(mRendererScene.mSkybox.mPipelineBundle.layout,
+				vk::ShaderStageFlagBits::eVertex, 0,
+				mRendererScene.mSkybox.mPushConstants);
+
+			cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
+			mStats.mDrawCallCount++;
+
+			cmd.endRendering();
+		});
 
 	mPasses.try_emplace(PassType::ResolveMSAA, [&](vk::CommandBuffer cmd)
-	{
-		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-			*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
-			vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eDontCare,
-			*mRendererInfrastructure.mIntermediateImage.imageView);
-		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent,
-		                                                             &colorAttachment, nullptr);
+		{
+			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
+				*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
+				vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eDontCare,
+				*mRendererInfrastructure.mIntermediateImage.imageView);
+			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent,
+				&colorAttachment, nullptr);
 
-		cmd.beginRendering(renderInfo);
-		cmd.endRendering();
-	});
+			cmd.beginRendering(renderInfo);
+			cmd.endRendering();
+		});
 
 	mPasses.try_emplace(PassType::IntermediateToSwapchain, [&](vk::CommandBuffer cmd)
-	{
-		vkhelper::copyImage(
-			cmd,
-			*mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.getCurrentSwapchainImage().image,
-			vkhelper::extent3dTo2d(mRendererInfrastructure.mIntermediateImage.imageExtent),
-			mRendererInfrastructure.mSwapchainBundle.mExtent
-		);
-	});
+		{
+			vkhelper::copyImage(
+				cmd,
+				*mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.getCurrentSwapchainImage().image,
+				vkhelper::extent3dTo2d(mRendererInfrastructure.mIntermediateImage.imageExtent),
+				mRendererInfrastructure.mSwapchainBundle.mExtent
+			);
+		});
 
 	mPasses.try_emplace(PassType::ImGui, [&](vk::CommandBuffer cmd)
-	{
-		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-			*mRendererInfrastructure.getCurrentSwapchainImage().imageView, vk::ImageLayout::eColorAttachmentOptimal,
-			vk::AttachmentLoadOp::eDontCare);
-		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent,
-		                                                             &colorAttachment, nullptr);
+		{
+			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
+				*mRendererInfrastructure.getCurrentSwapchainImage().imageView, vk::ImageLayout::eColorAttachmentOptimal,
+				vk::AttachmentLoadOp::eDontCare);
+			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent,
+				&colorAttachment, nullptr);
 
-		cmd.beginRendering(renderInfo);
-		mGUI.imguiFrame();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-		cmd.endRendering();
-	});
+			cmd.beginRendering(renderInfo);
+			mGUI.imguiFrame();
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+			cmd.endRendering();
+		});
 }
 
 void Renderer::initTransitions()
 {
+	mTransitions.try_emplace(TransitionType::PickerGeneralIntoColorAttachment,
+		vk::PipelineStageFlagBits2::eComputeShader,
+		vk::AccessFlagBits2::eShaderRead,
+		vk::PipelineStageFlagBits2::eFragmentShader,
+		vk::AccessFlagBits2::eShaderWrite,
+		vk::ImageLayout::eGeneral,
+		vk::ImageLayout::eColorAttachmentOptimal
+	);
+
+	mTransitions.try_emplace(TransitionType::PickerColorAttachmentIntoGeneral,
+		vk::PipelineStageFlagBits2::eFragmentShader,
+		vk::AccessFlagBits2::eShaderWrite,
+		vk::PipelineStageFlagBits2::eComputeShader,
+		vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+		vk::ImageLayout::eColorAttachmentOptimal,
+		vk::ImageLayout::eGeneral
+	);
+
 	mTransitions.try_emplace(TransitionType::IntermediateTransferSrcIntoColorAttachment,
-	                         vk::PipelineStageFlagBits2::eTransfer,
-	                         vk::AccessFlagBits2::eTransferRead,
-	                         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                         vk::AccessFlagBits2::eColorAttachmentWrite,
-	                         vk::ImageLayout::eTransferSrcOptimal,
-	                         vk::ImageLayout::eColorAttachmentOptimal
+		vk::PipelineStageFlagBits2::eTransfer,
+		vk::AccessFlagBits2::eTransferRead,
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eColorAttachmentWrite,
+		vk::ImageLayout::eTransferSrcOptimal,
+		vk::ImageLayout::eColorAttachmentOptimal
 	);
 
 	mTransitions.try_emplace(TransitionType::IntermediateColorAttachmentIntoTransferSrc,
-	                         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                         vk::AccessFlagBits2::eColorAttachmentWrite,
-	                         vk::PipelineStageFlagBits2::eTransfer,
-	                         vk::AccessFlagBits2::eTransferRead,
-	                         vk::ImageLayout::eColorAttachmentOptimal,
-	                         vk::ImageLayout::eTransferSrcOptimal
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eColorAttachmentWrite,
+		vk::PipelineStageFlagBits2::eTransfer,
+		vk::AccessFlagBits2::eTransferRead,
+		vk::ImageLayout::eColorAttachmentOptimal,
+		vk::ImageLayout::eTransferSrcOptimal
 	);
 
 	mTransitions.try_emplace(TransitionType::SwapchainPresentIntoTransferDst,
-	                         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                         vk::AccessFlagBits2::eNone,
-	                         vk::PipelineStageFlagBits2::eTransfer,
-	                         vk::AccessFlagBits2::eTransferWrite,
-	                         vk::ImageLayout::ePresentSrcKHR,
-	                         vk::ImageLayout::eTransferDstOptimal
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eNone,
+		vk::PipelineStageFlagBits2::eTransfer,
+		vk::AccessFlagBits2::eTransferWrite,
+		vk::ImageLayout::ePresentSrcKHR,
+		vk::ImageLayout::eTransferDstOptimal
 	);
 
 	mTransitions.try_emplace(TransitionType::SwapchainTransferDstIntoColorAttachment,
-	                         vk::PipelineStageFlagBits2::eTransfer,
-	                         vk::AccessFlagBits2::eTransferWrite,
-	                         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                         vk::AccessFlagBits2::eColorAttachmentWrite,
-	                         vk::ImageLayout::eTransferDstOptimal,
-	                         vk::ImageLayout::eColorAttachmentOptimal
+		vk::PipelineStageFlagBits2::eTransfer,
+		vk::AccessFlagBits2::eTransferWrite,
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eColorAttachmentWrite,
+		vk::ImageLayout::eTransferDstOptimal,
+		vk::ImageLayout::eColorAttachmentOptimal
 	);
 
 	mTransitions.try_emplace(TransitionType::SwapchainColorAttachmentIntoPresent,
-	                         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                         vk::AccessFlagBits2::eColorAttachmentWrite,
-	                         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                         vk::AccessFlagBits2::eNone,
-	                         vk::ImageLayout::eColorAttachmentOptimal,
-	                         vk::ImageLayout::ePresentSrcKHR
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eColorAttachmentWrite,
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eNone,
+		vk::ImageLayout::eColorAttachmentOptimal,
+		vk::ImageLayout::ePresentSrcKHR
 	);
 }
 
@@ -460,7 +521,17 @@ void Renderer::draw()
 	mPasses.at(PassType::Cull).execute(cmd);
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
-	mPasses.at(PassType::Pick).execute(cmd);
+
+	mTransitions.at(TransitionType::PickerGeneralIntoColorAttachment).execute(
+		cmd, *mRendererScene.mPicker.mImage.image);
+
+	mPasses.at(PassType::PickDraw).execute(cmd);
+
+	mTransitions.at(TransitionType::PickerColorAttachmentIntoGeneral).execute(
+		cmd, *mRendererScene.mPicker.mImage.image);
+
+	mPasses.at(PassType::PickPick).execute(cmd);
+
 	mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);
 
@@ -488,8 +559,8 @@ void Renderer::draw()
 
 	vk::CommandBufferSubmitInfo cmdinfo = vkhelper::commandBufferSubmitInfo(cmd);
 	vk::SemaphoreSubmitInfo waitInfo = vkhelper::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-	                                                                 *mRendererInfrastructure.getCurrentFrame().
-	                                                                 mAvailableSemaphore);
+		*mRendererInfrastructure.getCurrentFrame().
+		mAvailableSemaphore);
 	vk::SemaphoreSubmitInfo signalInfo = vkhelper::semaphoreSubmitInfo(
 		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
 		*mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);

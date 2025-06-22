@@ -10,7 +10,7 @@ layout (set = 0, binding = 0) uniform PerspectiveBuffer {
 	PerspectiveData perspective;
 };
 
-layout( push_constant ) uniform PickerPushConstants
+layout( push_constant ) uniform PickerDrawPushConstants
 {
 	VertexBuffer vertexBuffer;
 	NodeTransformsBuffer nodeTransformsBuffer;

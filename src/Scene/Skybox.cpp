@@ -190,7 +190,7 @@ void Skybox::setBindings()
 
 void Skybox::loadImage(std::filesystem::path skyboxImageDir)
 {
-	std::vector<std::filesystem::path> skyboxImagePaths = {
+	std::vector skyboxImagePaths = {
 		skyboxImageDir / "px.png", skyboxImageDir / "nx.png", skyboxImageDir / "py.png", skyboxImageDir / "ny.png",
 		skyboxImageDir / "pz.png", skyboxImageDir / "nz.png"
 	};

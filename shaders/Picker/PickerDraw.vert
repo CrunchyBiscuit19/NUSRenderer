@@ -2,7 +2,7 @@
 
 #extension GL_GOOGLE_include_directive : require
 
-#include "Picker.h.glsl"
+#include "PickerDraw.h.glsl"
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;

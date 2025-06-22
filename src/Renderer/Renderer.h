@@ -29,7 +29,8 @@ enum class PassType
 {
 	Cull,
 	ClearScreen,
-	Pick,
+	PickDraw,
+	PickPick,
 	Geometry,
 	Skybox,
 	ResolveMSAA,
@@ -42,12 +43,12 @@ struct Pass
 	static Renderer* renderer;
 	std::function<void(vk::CommandBuffer)> function;
 
-	Pass(std::function<void(vk::CommandBuffer)> function) :
+	Pass(const std::function<void(vk::CommandBuffer)>& function) :
 		function(function)
 	{
 	}
 
-	void execute(vk::CommandBuffer cmd)
+	void execute(vk::CommandBuffer cmd) const
 	{
 		function(cmd);
 	}
@@ -55,6 +56,8 @@ struct Pass
 
 enum class TransitionType
 {
+	PickerGeneralIntoColorAttachment,
+	PickerColorAttachmentIntoGeneral,
 	IntermediateTransferSrcIntoColorAttachment,
 	IntermediateColorAttachmentIntoTransferSrc,
 	SwapchainPresentIntoTransferDst,

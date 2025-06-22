@@ -4,7 +4,7 @@
 
 class Renderer;
 
-struct PickerPushConstants
+struct PickerDrawPushConstants
 {
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;
@@ -12,10 +12,15 @@ struct PickerPushConstants
 	vk::DeviceAddress visibleRenderItemsBuffer;
 };
 
+struct PickerPickPushConstants
+{
+	vk::DeviceAddress pickerBuffer;
+};
+
 struct PickerData
 {
-	glm::vec2 uvData;
-	glm::uvec2 readData;
+	glm::ivec2 uv;
+	glm::uvec2 read;
 };
 
 class Picker
@@ -36,18 +41,19 @@ public:
 	PipelineBundle mPickPipelineBundle;
 	vk::raii::PipelineLayout mPickPipelineLayout;
 
-	PickerPushConstants mPushConstants;
+	PickerDrawPushConstants mDrawPushConstants;
+	PickerPickPushConstants mPickPushConstants;
 
 	Picker(Renderer* renderer);
 
 	void init();
-	void initPushConstants();
 	void initBuffer();
 	void initImage();
 	void initDescriptor();
 	void initDrawPipeline();
 	void initPickPipeline();
-	void initCallback();
+	void initDrawPushConstants();
+	void initPickPushConstants();
 
 	void cleanup();
 };

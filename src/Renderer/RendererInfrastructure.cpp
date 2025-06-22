@@ -27,8 +27,7 @@ void RendererInfrastructure::initDescriptors()
 {
 	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
 		{vk::DescriptorType::eUniformBuffer, 1}, // Scene UBO
-		{vk::DescriptorType::eUniformBuffer, 1}, // Picker UBO
-		{vk::DescriptorType::eCombinedImageSampler, 1}, // Picker Object Image
+		{vk::DescriptorType::eStorageImage, 1}, // Picker Draw Image
 		{vk::DescriptorType::eCombinedImageSampler, 1}, // Skybox Cubemap
 		{vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS}, // Material Textures
 	};
@@ -140,7 +139,7 @@ void RendererInfrastructure::initSwapchain()
 	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.image, "IntermediateImage");
 	mRenderer->mRendererCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd)
 	{
 		for (int i = 0; i < mSwapchainBundle.mImages.size(); i++)
 		{
