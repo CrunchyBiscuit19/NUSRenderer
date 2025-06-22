@@ -39,7 +39,8 @@ void Picker::initImage()
 	mImage = mRenderer->mRendererResources.createImage(
 		mRenderer->mRendererInfrastructure.mDrawImage.imageExtent,
 		vk::Format::eR32G32Uint, // Model Id / Instance Id
-		vk::ImageUsageFlagBits::eColorAttachment | 
+		vk::ImageUsageFlagBits::eColorAttachment |
+		vk::ImageUsageFlagBits::eTransferDst |
 		vk::ImageUsageFlagBits::eStorage
 	);
 	mRenderer->mRendererCore.labelResourceDebug(mImage.image, "PickerDrawImage");

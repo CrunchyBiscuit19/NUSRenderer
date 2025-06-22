@@ -75,7 +75,7 @@ void Renderer::initComponents()
 		{
 			if (e.type == SDL_QUIT)
 			{
-				for (auto& model : mRendererScene.mModels | std::views::values)
+				for (auto& model : mRendererScene.mModelsCache | std::views::values)
 				{
 					model.markDelete();
 				}
@@ -152,12 +152,32 @@ void Renderer::initPasses()
 		cmd.endRendering();
 	});
 
-	mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
+	mPasses.try_emplace(PassType::Pick, [&](vk::CommandBuffer cmd) {
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) || mCamera.mRelativeMode || ImGui::GetIO().WantCaptureMouse) {
 			return;
 		}
 
-		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+		mPasses.at(PassType::PickClear).execute(cmd);
+
+		mTransitions.at(TransitionType::PickerGeneralIntoColorAttachment).execute(
+			cmd, *mRendererScene.mPicker.mImage.image);
+
+		mPasses.at(PassType::PickDraw).execute(cmd);
+
+		mTransitions.at(TransitionType::PickerColorAttachmentIntoGeneral).execute(
+			cmd, *mRendererScene.mPicker.mImage.image);
+
+		mPasses.at(PassType::PickPick).execute(cmd);
+	});
+
+	mPasses.try_emplace(PassType::PickClear, [&](vk::CommandBuffer cmd) {
+		vk::ClearColorValue clearColor(UINT_MAX, UINT_MAX, static_cast<uint32_t>(0), static_cast<uint32_t>(0));
+		vk::ImageSubresourceRange range = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
+		cmd.clearColorImage(*mRendererScene.mPicker.mImage.image, vk::ImageLayout::eGeneral, clearColor,range);
+	});
+
+	mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
+		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare);
 		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
 
@@ -181,10 +201,6 @@ void Renderer::initPasses()
 	});
 
 	mPasses.try_emplace(PassType::PickPick, [&](vk::CommandBuffer cmd) {
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) || mCamera.mRelativeMode || ImGui::GetIO().WantCaptureMouse) {
-			return;
-		}
-
 		int32_t mouseClickLocation[2] = { static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y) };
 		std::memcpy(mRendererScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, 2 * sizeof(int32_t));
 
@@ -216,7 +232,18 @@ void Renderer::initPasses()
 		glm::uvec2 read(0);
 		std::memcpy(glm::value_ptr(read), static_cast<char*>(mRendererScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
 
-		LOG_DEBUG(mLogger, "Clicked ({},{}) Got ({},{})", mouseClickLocation[0], mouseClickLocation[1], read.x, read.y);
+		LOG_DEBUG(mLogger, "Clicked {},{}", read.x, read.y);
+
+		auto reverseIt = mRendererScene.mModelsReverse.find(read.x);
+		if (reverseIt == mRendererScene.mModelsReverse.end()) return; 
+		std::string& clickedModelName = reverseIt->second;
+
+		auto cacheIt = mRendererScene.mModelsCache.find(clickedModelName);
+		if (cacheIt == mRendererScene.mModelsCache.end()) return; 
+		GLTFModel& clickedModel = cacheIt->second;
+		clickedModel.mInstances[read.y - clickedModel.mMainFirstInstance];
+
+		LOG_DEBUG(mLogger, "Got {},{}", clickedModel.mName, read.y - clickedModel.mMainFirstInstance);
 	});
 
 	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)
@@ -459,7 +486,7 @@ void Renderer::perFrameUpdate()
 	mRendererScene.deleteModels();
 	mRendererScene.deleteInstances();
 
-	for (auto& model : mRendererScene.mModels | std::views::values)
+	for (auto& model : mRendererScene.mModelsCache | std::views::values)
 	{
 		if (model.mReloadLocalInstancesBuffer)
 		{
@@ -522,15 +549,7 @@ void Renderer::draw()
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
 
-	mTransitions.at(TransitionType::PickerGeneralIntoColorAttachment).execute(
-		cmd, *mRendererScene.mPicker.mImage.image);
-
-	mPasses.at(PassType::PickDraw).execute(cmd);
-
-	mTransitions.at(TransitionType::PickerColorAttachmentIntoGeneral).execute(
-		cmd, *mRendererScene.mPicker.mImage.image);
-
-	mPasses.at(PassType::PickPick).execute(cmd);
+	mPasses.at(PassType::Pick).execute(cmd);
 
 	mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);

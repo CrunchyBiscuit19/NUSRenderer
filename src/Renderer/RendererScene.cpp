@@ -108,14 +108,17 @@ void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
 	{
 		auto modelShortPath = modelPath.stem().string();
 		auto modelFullPath = MODELS_PATH / modelPath;
-		auto [_, inserted] = mModels.try_emplace(modelShortPath, mRenderer, modelFullPath);
-		if (inserted) { mFlags.modelAddedFlag = true; }
+		auto [_, inserted] = mModelsCache.try_emplace(modelShortPath, mRenderer, modelFullPath);
+		if (inserted) { 
+			mModelsReverse.try_emplace(mModelsCache.at(modelShortPath).mId, modelShortPath);
+			mFlags.modelAddedFlag = true;
+		}
 	}
 }
 
 void RendererScene::deleteModels()
 {
-	std::erase_if(mModels, [&](const std::pair<const std::string, GLTFModel>& pair)
+	std::erase_if(mModelsCache, [&](const std::pair<const std::string, GLTFModel>& pair)
 	{
 		if (pair.second.mDeleteSignal.has_value()) { mFlags.modelDestroyedFlag = true; }
 		return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->
@@ -125,7 +128,7 @@ void RendererScene::deleteModels()
 
 void RendererScene::deleteInstances()
 {
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		std::erase_if(model.mInstances, [&](const GLTFInstance& instance)
 		{
@@ -141,7 +144,7 @@ void RendererScene::regenerateRenderItems()
 		batch.renderItems.clear();
 	}
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -194,7 +197,7 @@ void RendererScene::realignVertexIndexOffset()
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -214,7 +217,7 @@ void RendererScene::realignMaterialOffset()
 {
 	int materialCumulative = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -229,7 +232,7 @@ void RendererScene::realignNodeTransformsOffset()
 {
 	int nodeTransformCumulative = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -244,7 +247,7 @@ void RendererScene::realignInstancesOffset()
 {
 	int instanceCumulative = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -267,7 +270,7 @@ void RendererScene::reloadMainVertexBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -306,7 +309,7 @@ void RendererScene::reloadMainIndexBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -345,7 +348,7 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -382,7 +385,7 @@ void RendererScene::reloadMainNodeTransformsBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 
@@ -419,7 +422,7 @@ void RendererScene::reloadMainInstancesBuffer()
 {
 	int dstOffset = 0;
 
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		if (model.mDeleteSignal.has_value()) { continue; }
 		if (model.mInstances.empty()) { continue; }
@@ -454,7 +457,7 @@ void RendererScene::reloadMainInstancesBuffer()
 
 void RendererScene::reloadMainMaterialResourcesArray()
 {
-	for (auto& model : mModels | std::views::values)
+	for (auto& model : mModelsCache | std::views::values)
 	{
 		for (auto& material : model.mMaterials)
 		{
@@ -513,7 +516,7 @@ void RendererScene::cleanup()
 	mCuller.cleanup();
 	mPicker.cleanup();
 
-	mModels.clear();
+	mModelsCache.clear();
 	mBatches.clear();
 	LOG_INFO(mRenderer->mLogger, "All Batches Destroyed");
 	mMainMaterialResourcesDescriptorSet.clear();

@@ -35,7 +35,7 @@ void Gui::SceneGuiComponent::elements()
 	{
 		mGui->mSelectModelFileBrowser.Open();
 	}
-	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values)
+	for (auto& model : mRenderer->mRendererScene.mModelsCache | std::views::values)
 	{
 		const auto name = model.mName;
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));

@@ -44,7 +44,8 @@ public:
 
 	Flags mFlags;
 
-	std::unordered_map<std::string, GLTFModel> mModels;
+	std::unordered_map<std::string, GLTFModel> mModelsCache;
+	std::unordered_map<int, std::string> mModelsReverse;
 
 	std::unordered_map<int, Batch> mBatches;
 	ForwardPushConstants mForwardPushConstants;

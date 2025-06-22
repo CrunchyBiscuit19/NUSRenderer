@@ -29,6 +29,8 @@ enum class PassType
 {
 	Cull,
 	ClearScreen,
+	Pick,
+	PickClear,
 	PickDraw,
 	PickPick,
 	Geometry,
