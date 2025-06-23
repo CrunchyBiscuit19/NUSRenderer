@@ -48,9 +48,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 
 	this->load();
 
-	createInstance(TransformData{
-		mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f
-	});
+	createInstanceAtCamera(mRenderer->mCamera);
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
@@ -305,7 +303,7 @@ void GLTFModel::initBuffers()
 	                                            fmt::format("{}NodeTransformsBuffer", mName).c_str());
 	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
 
-	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
+	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData),
 	                                                              vk::BufferUsageFlagBits::eTransferSrc |
 	                                                              vk::BufferUsageFlagBits::eTransferDst |
 	                                                              vk::BufferUsageFlagBits::eStorageBuffer |
@@ -743,7 +741,7 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	instancesCopy.srcOffset = 0;
 	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
-	mRenderer->mImmSubmit.individualSubmit([this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd)
+	mRenderer->mImmSubmit.individualSubmit([this, instancesCopy](const Renderer* renderer, vk::CommandBuffer cmd)
 	{
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
@@ -769,33 +767,40 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 }
 
-void GLTFModel::createInstance(TransformData initialTransform)
+void GLTFModel::createInstance(InstanceData initialData)
 {
-	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId, initialTransform);
-	mRenderer->mRendererScene.mLatestInstanceId++;
+	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId++, initialData);
+	mReloadLocalInstancesBuffer = true;
+	mRenderer->mRendererScene.mFlags.instanceAddedFlag = true;
 	LOG_INFO(mRenderer->mLogger, "{} Instance Created", mName);
+}
+
+void GLTFModel::createInstanceAtCamera(Camera& camera)
+{
+	glm::mat4 transformMatrix = glm::translate(glm::mat4(1.f), mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector());
+	glm::mat4 rotationMatrix = glm::mat4(1.f);
+	glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.f), glm::vec3(1.f));
+	createInstance(transformMatrix * rotationMatrix * scaleMatrix);
 }
 
 void GLTFModel::updateInstances()
 {
-	if (mInstances.empty()) { return; }
+	if (mInstances.empty()) {
+		mReloadLocalInstancesBuffer = false;
+		return;
+	}
 
 	std::vector<InstanceData> instanceDataVector;
 	instanceDataVector.reserve(mInstances.size());
-	for (auto& instance : mInstances)
-	{
-		const glm::mat4 tm = glm::translate(glm::mat4(1.f), instance.mTransformComponents.translation);
-		const glm::mat4 rm = glm::yawPitchRoll(instance.mTransformComponents.rotation.x,
-		                                       instance.mTransformComponents.rotation.y,
-		                                       instance.mTransformComponents.rotation.z);
-		const glm::mat4 sm = glm::scale(glm::mat4(1.f), glm::vec3(instance.mTransformComponents.scale));
-		InstanceData instanceData{tm * rm * sm};
-		instanceDataVector.push_back(instanceData);
+	for (auto& instance : mInstances) {
+		instanceDataVector.push_back(instance.mData);
 	}
 
 	LOG_INFO(mRenderer->mLogger, "{} Instances Updated", mName);
 
 	loadInstancesBuffer(instanceDataVector);
+
+	mReloadLocalInstancesBuffer = false;
 }
 
 void GLTFModel::markDelete()
@@ -814,6 +819,11 @@ void GLTFModel::load()
 	loadNodes();
 
 	LOG_INFO(mRenderer->mLogger, "{} Completely Loaded", mName);
+}
+
+Renderer* GLTFModel::getRenderer()
+{
+	return mRenderer;
 }
 
 void GLTFModel::generateRenderItems()

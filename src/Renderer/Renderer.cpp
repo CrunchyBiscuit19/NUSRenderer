@@ -232,19 +232,30 @@ void Renderer::initPasses()
 		glm::uvec2 read(0);
 		std::memcpy(glm::value_ptr(read), static_cast<char*>(mRendererScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
 
-		auto reverseIt = mRendererScene.mModelsReverse.find(read.x);
+		int modelId = read.x;
+
+		auto reverseIt = mRendererScene.mModelsReverse.find(modelId);
 		if (reverseIt == mRendererScene.mModelsReverse.end()) return; 
 		std::string& clickedModelName = reverseIt->second;
 
 		auto cacheIt = mRendererScene.mModelsCache.find(clickedModelName);
 		if (cacheIt == mRendererScene.mModelsCache.end()) return; 
 		GLTFModel& clickedModel = cacheIt->second;
-		clickedModel.mInstances[read.y - clickedModel.mMainFirstInstance];
 
-		LOG_DEBUG(mLogger, "Got {},{}", clickedModel.mName, read.y - clickedModel.mMainFirstInstance);
+		int localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
+		glm::mat4& clickedInstanceTransformMatrix = clickedModel.mInstances[localInstanceIndex].mData.transformMatrix;
+
+		LOG_DEBUG(mLogger, "Got {},{}", clickedModel.mName, localInstanceIndex);
 
 		mRendererScene.mPicker.imguizmoStart();
-		mRendererScene.mPicker.imguizmoManipulate(clickedModel);
+		mRendererScene.mPicker.imguizmoManipulate(clickedInstanceTransformMatrix);
+
+		for (int row = 0; row < 4; row++) {
+			LOG_DEBUG(mLogger, 
+				"{:6.2f} {:6.2f} {:6.2f} {:6.2f}",
+				clickedInstanceTransformMatrix[0][row], clickedInstanceTransformMatrix[1][row], clickedInstanceTransformMatrix[2][row], clickedInstanceTransformMatrix[3][row]
+			);
+		}
 	});
 
 	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)
@@ -487,12 +498,9 @@ void Renderer::perFrameUpdate()
 	mRendererScene.deleteModels();
 	mRendererScene.deleteInstances();
 
-	for (auto& model : mRendererScene.mModelsCache | std::views::values)
-	{
-		if (model.mReloadLocalInstancesBuffer)
-		{
+	for (auto& model : mRendererScene.mModelsCache | std::views::values) {
+		if (model.mReloadLocalInstancesBuffer) {
 			model.updateInstances();
-			model.mReloadLocalInstancesBuffer = false;
 		}
 	}
 

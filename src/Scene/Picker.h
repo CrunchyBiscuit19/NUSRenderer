@@ -56,7 +56,7 @@ public:
 	void initPickPushConstants();
 
 	void imguizmoStart();
-	void imguizmoManipulate(GLTFModel& clickedModel);
+	void imguizmoManipulate(glm::mat4& clickedInstanceTransformMatrix) const;
 
 	void cleanup();
 };

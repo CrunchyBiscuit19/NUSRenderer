@@ -2,6 +2,7 @@
 
 #include <Data/Mesh.h>
 #include <Data/Instance.h>
+#include <Data/Camera.h>
 #include <Utils/Descriptor.h>
 
 #include <fastgltf/parser.hpp>
@@ -19,8 +20,6 @@ public:
 	int mId{0};
 	std::optional<uint64_t> mDeleteSignal{std::nullopt};
 	bool mReloadLocalInstancesBuffer{true};
-
-	glm::mat4 mModelMatrix;
 
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
@@ -73,9 +72,12 @@ public:
 
 	void load();
 
+	Renderer* getRenderer();
+
 	void generateRenderItems();
 
-	void createInstance(TransformData initialTransform = TransformData());
+	void createInstance(InstanceData initialTransform = InstanceData());
+	void createInstanceAtCamera(Camera& camera);
 	void updateInstances();
 
 	void markDelete();

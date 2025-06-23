@@ -4,6 +4,8 @@
 
 #include <quill/LogMacros.h>
 #include <imguizmo.h>
+#include <Data/Camera.h>
+#include <Data/Camera.h>
 #include <glm/gtc/type_ptr.hpp>
 
 Picker::Picker(Renderer* renderer) :
@@ -186,12 +188,13 @@ void Picker::initPickPushConstants()
 
 void Picker::imguizmoStart()
 {
-	ImGuizmo::SetOrthographic(false);
 	ImGuizmo::BeginFrame();
+	ImGuizmo::SetOrthographic(false);
+	ImGuizmo::SetDrawlist();
 	ImGuizmo::SetGizmoSizeClipSpace(0.15f);
 }
 
-void Picker::imguizmoManipulate(GLTFModel& clickedModel)
+void Picker::imguizmoManipulate(glm::mat4& clickedInstanceTransformMatrix) const
 {
 	ImGuizmo::OPERATION imguizmoOperation = ImGuizmo::TRANSLATE;
 
@@ -206,7 +209,7 @@ void Picker::imguizmoManipulate(GLTFModel& clickedModel)
 		glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.proj),
 		imguizmoOperation,
 		ImGuizmo::WORLD,
-		glm::value_ptr(clickedModel.mModelMatrix)
+		glm::value_ptr(clickedInstanceTransformMatrix)
 	);
 }
 

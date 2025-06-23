@@ -43,11 +43,7 @@ void Gui::SceneGuiComponent::elements()
 		{
 			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str()))
 			{
-				model.createInstance(TransformData{
-					mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f
-					});
-				model.mReloadLocalInstancesBuffer = true;
-				mRenderer->mRendererScene.mFlags.instanceAddedFlag = true;
+				model.createInstanceAtCamera(mRenderer->mCamera);
 			}
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
@@ -63,30 +59,28 @@ void Gui::SceneGuiComponent::elements()
 				{
 					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
-					if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation)))
+					/*if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mData.translation)))
 					{
 						model.mReloadLocalInstancesBuffer = true;
 						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
 					}
 					if (ImGui::SliderFloat3("Pitch / Yaw / Roll",
-						glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(),
+						glm::value_ptr(instance.mData.rotation), -glm::pi<float>(),
 						glm::pi<float>()))
 					{
 						model.mReloadLocalInstancesBuffer = true;
 						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
 					}
-					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f))
+					if (ImGui::SliderFloat("Scale", &instance.mData.scale, 0.f, 100.f))
 					{
 						model.mReloadLocalInstancesBuffer = true;
 						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
-					}
+					}*/
 
 					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 					if (ImGui::Button("Delete Instance"))
 					{
-						instance.mDeleteSignal = true;
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.instanceDestroyedFlag = true;
+						instance.markDelete();
 					}
 					ImGui::PopStyleColor();
 
