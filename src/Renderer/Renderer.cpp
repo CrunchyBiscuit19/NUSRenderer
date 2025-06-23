@@ -15,16 +15,15 @@
 Renderer* Pass::renderer = nullptr;
 
 Renderer::Renderer()
-	: mRendererCore(RendererCore(this))
-	, mRendererInfrastructure(RendererInfrastructure(this))
-	, mRendererResources(RendererResources(this))
-	, mRendererScene(RendererScene(this))
+	: mCore(RendererCore(this))
+	, mInfrastructure(RendererInfrastructure(this))
+	, mResources(RendererResources(this))
+	, mScene(RendererScene(this))
 	, mImmSubmit(ImmSubmit(this))
 	, mGUI(Gui(this))
 	, mCamera(Camera(this))
-	, mRendererEvent(RendererEvent(this))
-{
-}
+	, mEventHandler(RendererEvent(this))
+{}
 
 void Renderer::init()
 {
@@ -59,11 +58,11 @@ void Renderer::initLogger()
 
 void Renderer::initComponents()
 {
-	mRendererCore.init();
+	mCore.init();
 	mImmSubmit.init();
-	mRendererResources.init();
-	mRendererInfrastructure.init();
-	mRendererScene.init();
+	mResources.init();
+	mInfrastructure.init();
+	mScene.init();
 	mGUI.init();
 	mCamera.init();
 
@@ -71,15 +70,15 @@ void Renderer::initComponents()
 	mImmSubmit.queuedSubmit();
 	mImmSubmit.mCallbacks.clear();
 
-	mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 		{
 			if (e.type == SDL_QUIT)
 			{
-				for (auto& model : mRendererScene.mModelsCache | std::views::values)
+				for (auto& model : mScene.mModelsCache | std::views::values)
 				{
 					model.markDelete();
 				}
-				mRendererInfrastructure.mProgramEndFrameNumber = mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
+				mInfrastructure.mProgramEndFrameNumber = mInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
 			}
 			if (e.type == SDL_WINDOWEVENT)
 			{
@@ -95,9 +94,9 @@ void Renderer::initComponents()
 void Renderer::initPasses()
 {
 	mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd) {
-		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mCuller.mPipelineBundle.pipeline);
+		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mPipelineBundle.pipeline);
 
-		for (auto& batch : mRendererScene.mBatches | std::views::values)
+		for (auto& batch : mScene.mBatches | std::views::values)
 		{
 			if (batch.renderItems.empty()) { continue; }
 
@@ -111,12 +110,12 @@ void Renderer::initPasses()
 				vk::PipelineStageFlagBits2::eComputeShader,
 				vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
-			mRendererScene.mCuller.mPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
-			mRendererScene.mCuller.mPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-			mRendererScene.mCuller.mPushConstants.countBuffer = batch.countBuffer.address;
-			cmd.pushConstants<CullPushConstants>(mRendererScene.mCuller.mPipelineBundle.layout,
+			mScene.mCuller.mPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+			mScene.mCuller.mPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+			mScene.mCuller.mPushConstants.countBuffer = batch.countBuffer.address;
+			cmd.pushConstants<CullPushConstants>(mScene.mCuller.mPipelineBundle.layout,
 				vk::ShaderStageFlagBits::eCompute, 0,
-				mRendererScene.mCuller.mPushConstants);
+				mScene.mCuller.mPushConstants);
 
 			cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
@@ -140,13 +139,13 @@ void Renderer::initPasses()
 
 	mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {
 		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-			*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
+			*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
 			vk::AttachmentLoadOp::eClear);
 		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-			*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal,
+			*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal,
 			vk::AttachmentLoadOp::eClear);
 		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-			vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+			vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
 
 		cmd.beginRendering(renderInfo);
 		cmd.endRendering();
@@ -160,12 +159,12 @@ void Renderer::initPasses()
 		mPasses.at(PassType::PickClear).execute(cmd);
 
 		mTransitions.at(TransitionType::PickerGeneralIntoColorAttachment).execute(
-			cmd, *mRendererScene.mPicker.mImage.image);
+			cmd, *mScene.mPicker.mImage.image);
 
 		mPasses.at(PassType::PickDraw).execute(cmd);
 
 		mTransitions.at(TransitionType::PickerColorAttachmentIntoGeneral).execute(
-			cmd, *mRendererScene.mPicker.mImage.image);
+			cmd, *mScene.mPicker.mImage.image);
 
 		mPasses.at(PassType::PickPick).execute(cmd);
 	});
@@ -173,26 +172,26 @@ void Renderer::initPasses()
 	mPasses.try_emplace(PassType::PickClear, [&](vk::CommandBuffer cmd) {
 		vk::ClearColorValue clearColor(UINT_MAX, UINT_MAX, static_cast<uint32_t>(0), static_cast<uint32_t>(0));
 		vk::ImageSubresourceRange range = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
-		cmd.clearColorImage(*mRendererScene.mPicker.mImage.image, vk::ImageLayout::eGeneral, clearColor,range);
+		cmd.clearColorImage(*mScene.mPicker.mImage.image, vk::ImageLayout::eGeneral, clearColor,range);
 	});
 
 	mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
-		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mRendererScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mRendererScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare);
-		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mRendererScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
+		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare);
+		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
 
 		cmd.beginRendering(renderInfo);
 
-		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mPicker.mDrawPipelineBundle.pipeline);
-		vkhelper::setViewportScissors(cmd, mRendererScene.mPicker.mImage.imageExtent);
-		cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
-		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mPicker.mDrawPipelineBundle.layout, 0, *mRendererScene.mPerspective.mDescriptorSet, nullptr);
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mPicker.mDrawPipelineBundle.pipeline);
+		vkhelper::setViewportScissors(cmd, mScene.mPicker.mImage.imageExtent);
+		cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mPicker.mDrawPipelineBundle.layout, 0, *mScene.mPerspective.mDescriptorSet, nullptr);
 
-		for (auto& batch : mRendererScene.mBatches | std::views::values) {
+		for (auto& batch : mScene.mBatches | std::views::values) {
 			if (batch.renderItems.empty()) { continue; }
 
-			mRendererScene.mPicker.mDrawPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-			cmd.pushConstants<PickerDrawPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mPicker.mDrawPushConstants);
+			mScene.mPicker.mDrawPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+			cmd.pushConstants<PickerDrawPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mPicker.mDrawPushConstants);
 
 			cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 		}
@@ -202,18 +201,18 @@ void Renderer::initPasses()
 
 	mPasses.try_emplace(PassType::PickPick, [&](vk::CommandBuffer cmd) {
 		int32_t mouseClickLocation[2] = { static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y) };
-		std::memcpy(mRendererScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, 2 * sizeof(int32_t));
+		std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, 2 * sizeof(int32_t));
 
-		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mRendererScene.mPicker.mPickPipelineBundle.pipeline);
-		cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mRendererScene.mPicker.mPickPipelineBundle.layout, 0, *mRendererScene.mPicker.mDescriptorSet, nullptr);
+		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mPicker.mPickPipelineBundle.pipeline);
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mScene.mPicker.mPickPipelineBundle.layout, 0, *mScene.mPicker.mDescriptorSet, nullptr);
 		cmd.pushConstants<PickerPickPushConstants>(
-			mRendererScene.mPicker.mPickPipelineBundle.layout,
+			mScene.mPicker.mPickPipelineBundle.layout,
 			vk::ShaderStageFlagBits::eCompute, 0,
-			mRendererScene.mPicker.mPickPushConstants);
+			mScene.mPicker.mPickPushConstants);
 
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
-			*mRendererScene.mPicker.mBuffer.buffer,
+			*mScene.mPicker.mBuffer.buffer,
 			vk::PipelineStageFlagBits2::eHost,
 			vk::AccessFlagBits2::eHostWrite,
 			vk::PipelineStageFlagBits2::eComputeShader,
@@ -223,69 +222,63 @@ void Renderer::initPasses()
 
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
-			*mRendererScene.mPicker.mBuffer.buffer,
+			*mScene.mPicker.mBuffer.buffer,
 			vk::PipelineStageFlagBits2::eComputeShader,
 			vk::AccessFlagBits2::eShaderWrite,
 			vk::PipelineStageFlagBits2::eHost,
 			vk::AccessFlagBits2::eHostRead);
 
 		glm::uvec2 read(0);
-		std::memcpy(glm::value_ptr(read), static_cast<char*>(mRendererScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
+		std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
 
-		int modelId = read.x;
+		uint32_t modelId = read.x;
 
-		auto reverseIt = mRendererScene.mModelsReverse.find(modelId);
-		if (reverseIt == mRendererScene.mModelsReverse.end()) return; 
+		auto reverseIt = mScene.mModelsReverse.find(static_cast<int>(modelId));
+		if (reverseIt == mScene.mModelsReverse.end()) {
+			mScene.mPicker.mClickedInstance = nullptr;
+			return;
+		}
 		std::string& clickedModelName = reverseIt->second;
 
-		auto cacheIt = mRendererScene.mModelsCache.find(clickedModelName);
-		if (cacheIt == mRendererScene.mModelsCache.end()) return; 
+		auto cacheIt = mScene.mModelsCache.find(clickedModelName);
+		if (cacheIt == mScene.mModelsCache.end()) {
+			mScene.mPicker.mClickedInstance = nullptr;
+			return;
+		}
 		GLTFModel& clickedModel = cacheIt->second;
 
-		int localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
-		glm::mat4& clickedInstanceTransformMatrix = clickedModel.mInstances[localInstanceIndex].mData.transformMatrix;
-
-		LOG_DEBUG(mLogger, "Got {},{}", clickedModel.mName, localInstanceIndex);
-
-		mRendererScene.mPicker.imguizmoStart();
-		mRendererScene.mPicker.imguizmoManipulate(clickedInstanceTransformMatrix);
-
-		for (int row = 0; row < 4; row++) {
-			LOG_DEBUG(mLogger, 
-				"{:6.2f} {:6.2f} {:6.2f} {:6.2f}",
-				clickedInstanceTransformMatrix[0][row], clickedInstanceTransformMatrix[1][row], clickedInstanceTransformMatrix[2][row], clickedInstanceTransformMatrix[3][row]
-			);
-		}
+		uint32_t localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
+		mScene.mPicker.mClickedInstance = &clickedModel.mInstances[localInstanceIndex];
 	});
 
 	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)
 		{
 			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-				*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+				*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 			vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-				*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+				*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
 			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-				vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+				vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
 
 			cmd.beginRendering(renderInfo);
 
-			for (auto& batch : mRendererScene.mBatches | std::views::values)
+			for (auto& batch : mScene.mBatches | std::views::values)
 			{
 				if (batch.renderItems.empty()) { continue; }
 
 				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
 
-				vkhelper::setViewportScissors(cmd, mRendererInfrastructure.mDrawImage.imageExtent);
+				vkhelper::setViewportScissors(cmd, mInfrastructure.mDrawImage.imageExtent);
 
-				cmd.bindIndexBuffer(*mRendererScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+				cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
 				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0,
-					*mRendererScene.mPerspective.mDescriptorSet, nullptr);
+					*mScene.mPerspective.mDescriptorSet, nullptr);
 				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1,
-					*mRendererScene.mMainMaterialResourcesDescriptorSet, nullptr);
+					*mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-				mRendererScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
-				cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mRendererScene.mForwardPushConstants);
+				mScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.visibleRenderItemsBuffer.address;
+				cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
 
 				cmd.drawIndexedIndirectCount(*batch.visibleRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
@@ -297,41 +290,41 @@ void Renderer::initPasses()
 
 	mPasses.try_emplace(PassType::Skybox, [&](vk::CommandBuffer cmd)
 		{
-			if (!mRendererScene.mSkybox.mActive) { return; }
+			if (!mScene.mSkybox.mActive) { return; }
 
 			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-				*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+				*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 			vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-				*mRendererInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal,
+				*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal,
 				vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eDontCare);
 			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-				vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+				vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
 
 			cmd.beginRendering(renderInfo);
 
-			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mRendererScene.mSkybox.mPipelineBundle.pipeline);
-			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mRendererScene.mSkybox.mPipelineBundle.layout, 0,
+			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mSkybox.mPipelineBundle.pipeline);
+			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mSkybox.mPipelineBundle.layout, 0,
 				std::vector{
-					 *mRendererScene.mPerspective.mDescriptorSet,
-					 *mRendererScene.mSkybox.mDescriptorSet
+					 *mScene.mPerspective.mDescriptorSet,
+					 *mScene.mSkybox.mDescriptorSet
 				}, nullptr);
 			vk::Viewport viewport = {
 				0,
 				0,
-				static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.width),
-				static_cast<float>(mRendererInfrastructure.mDrawImage.imageExtent.height),
+				static_cast<float>(mInfrastructure.mDrawImage.imageExtent.width),
+				static_cast<float>(mInfrastructure.mDrawImage.imageExtent.height),
 				0.f,
 				1.f,
 			};
 			cmd.setViewport(0, viewport);
 			vk::Rect2D scissor = {
 				vk::Offset2D{0, 0},
-				vkhelper::extent3dTo2d(mRendererInfrastructure.mDrawImage.imageExtent),
+				vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent),
 			};
 			cmd.setScissor(0, scissor);
-			cmd.pushConstants<SkyBoxPushConstants>(mRendererScene.mSkybox.mPipelineBundle.layout,
+			cmd.pushConstants<SkyBoxPushConstants>(mScene.mSkybox.mPipelineBundle.layout,
 				vk::ShaderStageFlagBits::eVertex, 0,
-				mRendererScene.mSkybox.mPushConstants);
+				mScene.mSkybox.mPushConstants);
 
 			cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
 			mStats.mDrawCallCount++;
@@ -342,10 +335,10 @@ void Renderer::initPasses()
 	mPasses.try_emplace(PassType::ResolveMSAA, [&](vk::CommandBuffer cmd)
 		{
 			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-				*mRendererInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
+				*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal,
 				vk::AttachmentLoadOp::eLoad, vk::AttachmentStoreOp::eDontCare,
-				*mRendererInfrastructure.mIntermediateImage.imageView);
-			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent,
+				*mInfrastructure.mIntermediateImage.imageView);
+			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent,
 				&colorAttachment, nullptr);
 
 			cmd.beginRendering(renderInfo);
@@ -356,18 +349,18 @@ void Renderer::initPasses()
 		{
 			vkhelper::copyImage(
 				cmd,
-				*mRendererInfrastructure.mIntermediateImage.image, mRendererInfrastructure.getCurrentSwapchainImage().image,
-				vkhelper::extent3dTo2d(mRendererInfrastructure.mIntermediateImage.imageExtent),
-				mRendererInfrastructure.mSwapchainBundle.mExtent
+				*mInfrastructure.mIntermediateImage.image, mInfrastructure.getCurrentSwapchainImage().image,
+				vkhelper::extent3dTo2d(mInfrastructure.mIntermediateImage.imageExtent),
+				mInfrastructure.mSwapchainBundle.mExtent
 			);
 		});
 
 	mPasses.try_emplace(PassType::ImGui, [&](vk::CommandBuffer cmd)
 		{
 			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-				*mRendererInfrastructure.getCurrentSwapchainImage().imageView, vk::ImageLayout::eColorAttachmentOptimal,
+				*mInfrastructure.getCurrentSwapchainImage().imageView, vk::ImageLayout::eColorAttachmentOptimal,
 				vk::AttachmentLoadOp::eDontCare);
-			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mRendererInfrastructure.mSwapchainBundle.mExtent,
+			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent,
 				&colorAttachment, nullptr);
 
 			cmd.beginRendering(renderInfo);
@@ -453,16 +446,16 @@ void Renderer::run()
 
 		mStats.reset();
 
-		if (mRendererInfrastructure.mProgramEndFrameNumber.has_value() && (mRendererInfrastructure.mFrameNumber <
-			mRendererInfrastructure.mProgramEndFrameNumber.value()))
+		if (mInfrastructure.mProgramEndFrameNumber.has_value() && (mInfrastructure.mFrameNumber <
+			mInfrastructure.mProgramEndFrameNumber.value()))
 		{
-			mRendererCore.mDevice.waitIdle();
+			mCore.mDevice.waitIdle();
 			break;
 		}
 
 		while (SDL_PollEvent(&e) != 0)
 		{
-			mRendererEvent.executeEventCallbacks(e);
+			mEventHandler.executeEventCallbacks(e);
 		}
 
 		if (mStopRendering)
@@ -473,15 +466,15 @@ void Renderer::run()
 		}
 
 		SDL_SetRelativeMouseMode(mCamera.mRelativeMode);
-		if (mRendererInfrastructure.mResizeRequested)
+		if (mInfrastructure.mResizeRequested)
 		{
-			mRendererInfrastructure.resizeSwapchain();
+			mInfrastructure.resizeSwapchain();
 		}
 
 		perFrameUpdate();
 		draw();
 
-		mRendererInfrastructure.mFrameNumber++;
+		mInfrastructure.mFrameNumber++;
 
 		auto end = std::chrono::system_clock::now();
 		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -493,35 +486,36 @@ void Renderer::perFrameUpdate()
 {
 	const auto start = std::chrono::system_clock::now();
 
-	mRendererScene.mPerspective.update();
+	mScene.mPerspective.update();
 
-	mRendererScene.deleteModels();
-	mRendererScene.deleteInstances();
+	mScene.deleteModels();
+	mScene.deleteInstances();
 
-	for (auto& model : mRendererScene.mModelsCache | std::views::values) {
+	for (auto& model : mScene.mModelsCache | std::views::values) {
 		if (model.mReloadLocalInstancesBuffer) {
 			model.updateInstances();
+			mScene.mFlags.reloadMainInstancesBuffer = true;
 		}
 	}
 
-	if (mRendererScene.mFlags.modelAddedFlag || mRendererScene.mFlags.modelDestroyedFlag)
+	if (mScene.mFlags.modelAddedFlag || mScene.mFlags.modelDestroyedFlag)
 	{
-		mRendererScene.realignOffsets();
-		mRendererScene.reloadMainBuffers();
-		mRendererScene.regenerateRenderItems();
+		mScene.realignOffsets();
+		mScene.reloadMainBuffers();
+		mScene.regenerateRenderItems();
 	}
-	else if (mRendererScene.mFlags.instanceAddedFlag || mRendererScene.mFlags.instanceDestroyedFlag)
+	else if (mScene.mFlags.instanceAddedFlag || mScene.mFlags.instanceDestroyedFlag)
 	{
-		mRendererScene.realignInstancesOffset();
-		mRendererScene.reloadMainInstancesBuffer();
-		mRendererScene.regenerateRenderItems();
+		mScene.realignInstancesOffset();
+		mScene.reloadMainInstancesBuffer();
+		mScene.regenerateRenderItems();
 	}
-	else if (mRendererScene.mFlags.reloadMainInstancesBuffer)
+	else if (mScene.mFlags.reloadMainInstancesBuffer)
 	{
-		mRendererScene.reloadMainInstancesBuffer();
+		mScene.reloadMainInstancesBuffer();
 	}
 
-	mRendererScene.resetFlags();
+	mScene.resetFlags();
 
 	mImmSubmit.queuedSubmit();
 	mImmSubmit.mCallbacks.clear();
@@ -535,20 +529,20 @@ void Renderer::draw()
 {
 	auto start = std::chrono::system_clock::now();
 
-	mRendererCore.mDevice.waitForFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
-	mRendererCore.mDevice.resetFences(*mRendererInfrastructure.getCurrentFrame().mRenderFence);
+	mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
+	mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
 	try
 	{
-		mRendererInfrastructure.mSwapchainIndex = mRendererInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(
-			1e9, *mRendererInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
+		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(
+			1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
 	}
 	catch (vk::OutOfDateKHRError e)
 	{
-		mRendererInfrastructure.mResizeRequested = true;
+		mInfrastructure.mResizeRequested = true;
 		return;
 	}
 
-	vk::CommandBuffer cmd = *mRendererInfrastructure.getCurrentFrame().mCommandBuffer;
+	vk::CommandBuffer cmd = *mInfrastructure.getCurrentFrame().mCommandBuffer;
 	cmd.reset();
 	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(
 		vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -564,54 +558,54 @@ void Renderer::draw()
 	mPasses.at(PassType::Skybox).execute(cmd);
 
 	mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(
-		cmd, *mRendererInfrastructure.mIntermediateImage.image);
+		cmd, *mInfrastructure.mIntermediateImage.image);
 
 	mPasses.at(PassType::ResolveMSAA).execute(cmd);
 
 	mTransitions.at(TransitionType::IntermediateColorAttachmentIntoTransferSrc).execute(
-		cmd, *mRendererInfrastructure.mIntermediateImage.image);
+		cmd, *mInfrastructure.mIntermediateImage.image);
 	mTransitions.at(TransitionType::SwapchainPresentIntoTransferDst).execute(
-		cmd, mRendererInfrastructure.getCurrentSwapchainImage().image);
+		cmd, mInfrastructure.getCurrentSwapchainImage().image);
 
 	mPasses.at(PassType::IntermediateToSwapchain).execute(cmd);
 
 	mTransitions.at(TransitionType::SwapchainTransferDstIntoColorAttachment).execute(
-		cmd, mRendererInfrastructure.getCurrentSwapchainImage().image);
+		cmd, mInfrastructure.getCurrentSwapchainImage().image);
 
 	mPasses.at(PassType::ImGui).execute(cmd);
 
 	mTransitions.at(TransitionType::SwapchainColorAttachmentIntoPresent).execute(
-		cmd, mRendererInfrastructure.getCurrentSwapchainImage().image);
+		cmd, mInfrastructure.getCurrentSwapchainImage().image);
 
 	cmd.end();
 
 	vk::CommandBufferSubmitInfo cmdinfo = vkhelper::commandBufferSubmitInfo(cmd);
 	vk::SemaphoreSubmitInfo waitInfo = vkhelper::semaphoreSubmitInfo(vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-		*mRendererInfrastructure.getCurrentFrame().
+		*mInfrastructure.getCurrentFrame().
 		mAvailableSemaphore);
 	vk::SemaphoreSubmitInfo signalInfo = vkhelper::semaphoreSubmitInfo(
 		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-		*mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
+		*mInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
 	const vk::SubmitInfo2 submit = vkhelper::submitInfo(&cmdinfo, &signalInfo, &waitInfo);
 
-	mRendererCore.mGraphicsQueue.submit2(submit, *mRendererInfrastructure.getCurrentFrame().mRenderFence);
+	mCore.mGraphicsQueue.submit2(submit, *mInfrastructure.getCurrentFrame().mRenderFence);
 
 	// Prepare present. Wait on the mRenderSemaphore for queue commands to finish before image is presented.
 	vk::PresentInfoKHR presentInfo = {};
 	presentInfo.pNext = nullptr;
-	presentInfo.pSwapchains = &(*mRendererInfrastructure.mSwapchainBundle.mSwapchain);
+	presentInfo.pSwapchains = &(*mInfrastructure.mSwapchainBundle.mSwapchain);
 	presentInfo.swapchainCount = 1;
-	presentInfo.pWaitSemaphores = &(*mRendererInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
+	presentInfo.pWaitSemaphores = &(*mInfrastructure.getCurrentSwapchainImage().renderedSemaphore);
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pImageIndices = &mRendererInfrastructure.mSwapchainIndex;
+	presentInfo.pImageIndices = &mInfrastructure.mSwapchainIndex;
 
 	try
 	{
-		mRendererCore.mGraphicsQueue.presentKHR(presentInfo);
+		mCore.mGraphicsQueue.presentKHR(presentInfo);
 	}
 	catch (vk::OutOfDateKHRError e)
 	{
-		mRendererInfrastructure.mResizeRequested = true;
+		mInfrastructure.mResizeRequested = true;
 	}
 
 	auto end = std::chrono::system_clock::now();
@@ -624,11 +618,11 @@ void Renderer::cleanup()
 	PbrMaterial::cleanup(this);
 
 	mGUI.cleanup();
-	mRendererScene.cleanup();
+	mScene.cleanup();
 	mImmSubmit.cleanup();
-	mRendererResources.cleanup();
-	mRendererInfrastructure.cleanup();
-	mRendererCore.cleanup();
+	mResources.cleanup();
+	mInfrastructure.cleanup();
+	mCore.cleanup();
 
 	LOG_INFO(mLogger, "Rendering Ended");
 }

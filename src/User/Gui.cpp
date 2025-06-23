@@ -35,7 +35,7 @@ void Gui::SceneGuiComponent::elements()
 	{
 		mGui->mSelectModelFileBrowser.Open();
 	}
-	for (auto& model : mRenderer->mRendererScene.mModelsCache | std::views::values)
+	for (auto& model : mRenderer->mScene.mModelsCache | std::views::values)
 	{
 		const auto name = model.mName;
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
@@ -59,23 +59,12 @@ void Gui::SceneGuiComponent::elements()
 				{
 					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
-					/*if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mData.translation)))
-					{
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
-					}
-					if (ImGui::SliderFloat3("Pitch / Yaw / Roll",
-						glm::value_ptr(instance.mData.rotation), -glm::pi<float>(),
-						glm::pi<float>()))
-					{
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
-					}
-					if (ImGui::SliderFloat("Scale", &instance.mData.scale, 0.f, 100.f))
-					{
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
-					}*/
+					ImGui::Text("");
+					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][0], instance.mData.transformMatrix[1][0], instance.mData.transformMatrix[2][0], instance.mData.transformMatrix[3][0]);
+					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][1], instance.mData.transformMatrix[1][1], instance.mData.transformMatrix[2][1], instance.mData.transformMatrix[3][1]);
+					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][2], instance.mData.transformMatrix[1][2], instance.mData.transformMatrix[2][2], instance.mData.transformMatrix[3][2]);
+					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][3], instance.mData.transformMatrix[1][3], instance.mData.transformMatrix[2][3], instance.mData.transformMatrix[3][3]);
+					ImGui::Text("");
 
 					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 					if (ImGui::Button("Delete Instance"))
@@ -94,11 +83,11 @@ void Gui::SceneGuiComponent::elements()
 
 	if (ImGui::CollapsingHeader("Sunlight", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.ambientColor));
-		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightColor));
+		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.ambientColor));
+		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightColor));
 		ImGui::SliderFloat3("Sunlight Direction",
-			glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
-		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mPerspective.mData.sunlightDirection[3]);
+			glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
+		ImGui::InputFloat("Sunlight Power", &mRenderer->mScene.mPerspective.mData.sunlightDirection[3]);
 	}
 	if (ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -109,7 +98,7 @@ void Gui::SceneGuiComponent::elements()
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Skybox"))
 		{
-			mRenderer->mRendererScene.mSkybox.mActive = !mRenderer->mRendererScene.mSkybox.mActive;
+			mRenderer->mScene.mSkybox.mActive = !mRenderer->mScene.mSkybox.mActive;
 		}
 	}
 
@@ -117,7 +106,7 @@ void Gui::SceneGuiComponent::elements()
 	if (mGui->mSelectSkyboxFileBrowser.HasSelected())
 	{
 		std::filesystem::path selectedSkyboxDir = mGui->mSelectSkyboxFileBrowser.GetSelected();
-		mRenderer->mRendererScene.mSkybox.updateImage(selectedSkyboxDir);
+		mRenderer->mScene.mSkybox.updateImage(selectedSkyboxDir);
 		mGui->mSelectSkyboxFileBrowser.ClearSelected();
 	}
 
@@ -125,7 +114,7 @@ void Gui::SceneGuiComponent::elements()
 	if (mGui->mSelectModelFileBrowser.HasSelected())
 	{
 		auto selectedFiles = mGui->mSelectModelFileBrowser.GetMultiSelected();
-		mRenderer->mRendererScene.loadModels(selectedFiles);
+		mRenderer->mScene.loadModels(selectedFiles);
 		mGui->mSelectModelFileBrowser.ClearSelected();
 	}
 }
@@ -142,10 +131,12 @@ void Gui::MiscGuiComponent::elements()
 	}
 	if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Text("[F11] Change Camera Mode");
-		ImGui::Text("[F10] Toggle Borderless Fullscreen");
-		ImGui::Text("[F9] Toggle GUI");
-		ImGui::Text("[Right Click] Change Mouse Mode");
+		ImGui::Text("[C] Change Camera Mode");
+		ImGui::Text("[Alt + Enter] Toggle Borderless Fullscreen");
+		ImGui::Text("[G] Toggle GUI");
+		ImGui::Text("[Left Click] Select / Deselect Object");
+		ImGui::Text("[Right Click] Enter / Leave Window");
+		ImGui::Text("[Mouse Scroll] Control Camera Speed");
 	}
 }
 
@@ -242,7 +233,7 @@ void Gui::initDescriptors()
 	poolInfo.maxSets = 100;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	mDescriptorPool = mRenderer->mRendererCore.mDevice.createDescriptorPool(poolInfo);
+	mDescriptorPool = mRenderer->mCore.mDevice.createDescriptorPool(poolInfo);
 
 	LOG_INFO(mRenderer->mLogger, "ImGui Descriptor Pool Created");
 }
@@ -250,20 +241,20 @@ void Gui::initDescriptors()
 void Gui::initBackend() const
 {
 	ImGui::CreateContext();
-	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
+	ImGui_ImplSDL2_InitForVulkan(mRenderer->mCore.mWindow);
 
 	LOG_INFO(mRenderer->mLogger, "ImGui SDL2 Vulkan Initialized");
 
 	vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
 	pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-	pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mSwapchainBundle.mFormat;
-	pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mRendererInfrastructure.mDepthImage.imageFormat;
+	pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mInfrastructure.mSwapchainBundle.mFormat;
+	pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mInfrastructure.mDepthImage.imageFormat;
 
 	ImGui_ImplVulkan_InitInfo initInfo = {};
-	initInfo.Instance = *mRenderer->mRendererCore.mInstance;
-	initInfo.PhysicalDevice = *mRenderer->mRendererCore.mChosenGPU;
-	initInfo.Device = *mRenderer->mRendererCore.mDevice;
-	initInfo.Queue = *mRenderer->mRendererCore.mGraphicsQueue;
+	initInfo.Instance = *mRenderer->mCore.mInstance;
+	initInfo.PhysicalDevice = *mRenderer->mCore.mChosenGPU;
+	initInfo.Device = *mRenderer->mCore.mDevice;
+	initInfo.Queue = *mRenderer->mCore.mGraphicsQueue;
 	initInfo.DescriptorPool = *mDescriptorPool;
 	initInfo.MinImageCount = NUMBER_OF_SWAPCHAIN_IMAGES;
 	initInfo.ImageCount = NUMBER_OF_SWAPCHAIN_IMAGES;
@@ -308,11 +299,11 @@ void Gui::initComponents()
 
 void Gui::initKeyBinding()
 {
-	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-		if (keyState[SDL_SCANCODE_F9] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+		if (keyState[SDL_SCANCODE_G] && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mCollapsed = !mCollapsed;
 		}
 	});
@@ -326,6 +317,7 @@ void Gui::imguiFrame()
 
 	createDockSpace();
 	createRendererOptionsWindow();
+	mRenderer->mScene.mPicker.imguizmoFrame();
 
 	ImGui::Render();
 }

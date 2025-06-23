@@ -111,14 +111,14 @@ public:
 
 	RendererStats mStats;
 
-	RendererCore mRendererCore;
-	RendererInfrastructure mRendererInfrastructure;
-	RendererResources mRendererResources;
-	RendererScene mRendererScene;
+	RendererCore mCore;
+	RendererInfrastructure mInfrastructure;
+	RendererResources mResources;
+	RendererScene mScene;
+	RendererEvent mEventHandler;
 	ImmSubmit mImmSubmit;
 	Gui mGUI;
 	Camera mCamera;
-	RendererEvent mRendererEvent;
 	quill::Logger* mLogger;
 
 	std::unordered_map<PassType, Pass> mPasses;

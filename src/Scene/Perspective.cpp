@@ -26,11 +26,11 @@ void Perspective::initData()
 
 void Perspective::initBuffer()
 {
-	mDataBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PerspectiveData),
+	mDataBuffer = mRenderer->mResources.createBuffer(sizeof(PerspectiveData),
 	                                                         vk::BufferUsageFlagBits::eTransferDst |
 	                                                         vk::BufferUsageFlagBits::eUniformBuffer,
 	                                                         VMA_MEMORY_USAGE_CPU_TO_GPU);
-	mRenderer->mRendererCore.labelResourceDebug(mDataBuffer.buffer, "PerspectiveBuffer");
+	mRenderer->mCore.labelResourceDebug(mDataBuffer.buffer, "PerspectiveBuffer");
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
 }
 
@@ -38,15 +38,15 @@ void Perspective::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eUniformBuffer);
-	mDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice,
+	mDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice,
 	                                     vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-	mRenderer->mRendererCore.labelResourceDebug(mDescriptorSetLayout, "PerspectiveDescriptorSetLayout");
-	mDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
-	mRenderer->mRendererCore.labelResourceDebug(mDescriptorSet, "PerspectiveDescriptorSet");
+	mRenderer->mCore.labelResourceDebug(mDescriptorSetLayout, "PerspectiveDescriptorSetLayout");
+	mDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
+	mRenderer->mCore.labelResourceDebug(mDescriptorSet, "PerspectiveDescriptorSet");
 
 	DescriptorSetBinder writer;
 	writer.bindBuffer(0, *mDataBuffer.buffer, sizeof(PerspectiveData), 0, vk::DescriptorType::eUniformBuffer);
-	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mDescriptorSet);
+	writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 	LOG_INFO(mRenderer->mLogger, "Perspective Descriptor Set and Layout Created");
 }
 
@@ -55,8 +55,8 @@ void Perspective::update()
 	mRenderer->mCamera.update(mRenderer->mStats.mFrameTime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
 	mData.view = mRenderer->mCamera.getViewMatrix();
 	mData.proj = glm::perspective(glm::radians(70.f),
-	                              static_cast<float>(mRenderer->mRendererCore.mWindowExtent.width) / static_cast<float>(
-		                              mRenderer->mRendererCore.mWindowExtent.height), 10000.f, 0.1f);
+	                              static_cast<float>(mRenderer->mCore.mWindowExtent.width) / static_cast<float>(
+		                              mRenderer->mCore.mWindowExtent.height), 10000.f, 0.1f);
 	mData.proj[1][1] *= -1;
 
 	auto* sceneBufferPtr = static_cast<PerspectiveData*>(mDataBuffer.info.pMappedData);

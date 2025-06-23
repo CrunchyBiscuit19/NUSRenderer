@@ -15,25 +15,25 @@ ImmSubmit::ImmSubmit(Renderer* renderer) :
 void ImmSubmit::init()
 {
 	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(
-		mRenderer->mRendererCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-	mCommandPool = mRenderer->mRendererCore.mDevice.createCommandPool(commandPoolInfo);
+		mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	mCommandPool = mRenderer->mCore.mDevice.createCommandPool(commandPoolInfo);
 
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Command Pool Created");
 
 	vk::CommandBufferAllocateInfo cmdAllocInfo = vkhelper::commandBufferAllocateInfo(*mCommandPool, 1);
-	mCommandBuffer = std::move(mRenderer->mRendererCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
+	mCommandBuffer = std::move(mRenderer->mCore.mDevice.allocateCommandBuffers(cmdAllocInfo)[0]);
 
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Command Buffer Created");
 
 	vk::FenceCreateInfo fenceCreateInfo = vkhelper::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-	mFence = mRenderer->mRendererCore.mDevice.createFence(fenceCreateInfo);
+	mFence = mRenderer->mCore.mDevice.createFence(fenceCreateInfo);
 
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Fence Created");
 }
 
 void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd)>&& function)
 {
-	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
+	mRenderer->mCore.mDevice.resetFences(*mFence);
 
 	mCommandBuffer.reset();
 
@@ -46,13 +46,13 @@ void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::Comm
 	vk::CommandBufferSubmitInfo cmdSubmitInfo = vkhelper::commandBufferSubmitInfo(*mCommandBuffer);
 	vk::SubmitInfo2 submitInfo = vkhelper::submitInfo(&cmdSubmitInfo, nullptr, nullptr);
 
-	mRenderer->mRendererCore.mGraphicsQueue.submit2(submitInfo, *mFence);
-	mRenderer->mRendererCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
+	mRenderer->mCore.mGraphicsQueue.submit2(submitInfo, *mFence);
+	mRenderer->mCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
 }
 
 void ImmSubmit::queuedSubmit()
 {
-	mRenderer->mRendererCore.mDevice.resetFences(*mFence);
+	mRenderer->mCore.mDevice.resetFences(*mFence);
 
 	mCommandBuffer.reset();
 
@@ -68,8 +68,8 @@ void ImmSubmit::queuedSubmit()
 	vk::CommandBufferSubmitInfo cmdSubmitInfo = vkhelper::commandBufferSubmitInfo(*mCommandBuffer);
 	vk::SubmitInfo2 submitInfo = vkhelper::submitInfo(&cmdSubmitInfo, nullptr, nullptr);
 
-	mRenderer->mRendererCore.mGraphicsQueue.submit2(submitInfo, *mFence);
-	mRenderer->mRendererCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
+	mRenderer->mCore.mGraphicsQueue.submit2(submitInfo, *mFence);
+	mRenderer->mCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
 }
 
 void ImmSubmit::cleanup()

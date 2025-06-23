@@ -4,8 +4,6 @@
 
 #include <quill/LogMacros.h>
 #include <imguizmo.h>
-#include <Data/Camera.h>
-#include <Data/Camera.h>
 #include <glm/gtc/type_ptr.hpp>
 
 Picker::Picker(Renderer* renderer) :
@@ -13,7 +11,8 @@ Picker::Picker(Renderer* renderer) :
 	mDrawPipelineLayout(nullptr),
 	mPickPipelineLayout(nullptr),
 	mDescriptorSet(nullptr),
-	mDescriptorSetLayout(nullptr)
+	mDescriptorSetLayout(nullptr),
+	mClickedInstance(nullptr)
 {}
 
 void Picker::init()
@@ -29,37 +28,37 @@ void Picker::init()
 
 void Picker::initBuffer()
 {
-	mBuffer = mRenderer->mRendererResources.createBuffer(sizeof(PickerData),
+	mBuffer = mRenderer->mResources.createBuffer(sizeof(PickerData),
 		vk::BufferUsageFlagBits::eTransferDst |
 		vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_CPU_TO_GPU);
-	mRenderer->mRendererCore.labelResourceDebug(mBuffer.buffer, "PickerBuffer");
+	mRenderer->mCore.labelResourceDebug(mBuffer.buffer, "PickerBuffer");
 	LOG_INFO(mRenderer->mLogger, "Picker Buffer Created");
 }
 
 void Picker::initImage()
 {
-	mImage = mRenderer->mRendererResources.createImage(
-		mRenderer->mRendererInfrastructure.mDrawImage.imageExtent,
+	mImage = mRenderer->mResources.createImage(
+		mRenderer->mInfrastructure.mDrawImage.imageExtent,
 		vk::Format::eR32G32Uint, // Model Id / Instance Id
 		vk::ImageUsageFlagBits::eColorAttachment |
 		vk::ImageUsageFlagBits::eTransferDst |
 		vk::ImageUsageFlagBits::eStorage
 	);
-	mRenderer->mRendererCore.labelResourceDebug(mImage.image, "PickerDrawImage");
+	mRenderer->mCore.labelResourceDebug(mImage.image, "PickerDrawImage");
 	LOG_INFO(mRenderer->mLogger, "Picker Draw Image Created");
-	mRenderer->mRendererCore.labelResourceDebug(mImage.imageView, "PickerDrawImageView");
+	mRenderer->mCore.labelResourceDebug(mImage.imageView, "PickerDrawImageView");
 	LOG_INFO(mRenderer->mLogger, "Picker Draw Image View Created");
 
-	mDepthImage = mRenderer->mRendererResources.createImage(
+	mDepthImage = mRenderer->mResources.createImage(
 		mImage.imageExtent,
 		vk::Format::eD32Sfloat,
 		vk::ImageUsageFlagBits::eDepthStencilAttachment
 	);
-	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
+	mRenderer->mCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
 	LOG_INFO(mRenderer->mLogger, "Picker Depth Image Created");
-	mRenderer->mRendererCore.labelResourceDebug(mDepthImage.imageView, "PickerDepthImageView");
+	mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "PickerDepthImageView");
 	LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
 
 	mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
@@ -82,13 +81,13 @@ void Picker::initDescriptor()
 {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eStorageImage);
-	mDescriptorSetLayout = builder.build(mRenderer->mRendererCore.mDevice, vk::ShaderStageFlagBits::eCompute);
-	mDescriptorSet = mRenderer->mRendererInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
+	mDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
+	mDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
 	LOG_INFO(mRenderer->mLogger, "Picker Descriptor Set and Layout Created");
 
 	DescriptorSetBinder writer;
 	writer.bindImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
-	writer.updateSetBindings(mRenderer->mRendererCore.mDevice, *mDescriptorSet);
+	writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
 
 void Picker::initDrawPipeline()
@@ -99,7 +98,7 @@ void Picker::initDrawPipeline()
 	drawPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
 	std::vector drawDescriptorLayouts = {
-		*mRenderer->mRendererScene.mPerspective.mDescriptorSetLayout
+		*mRenderer->mScene.mPerspective.mDescriptorSetLayout
 	};
 	vk::PipelineLayoutCreateInfo drawPipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
 	drawPipelineLayoutCreateInfo.pSetLayouts = drawDescriptorLayouts.data();
@@ -107,13 +106,13 @@ void Picker::initDrawPipeline()
 	drawPipelineLayoutCreateInfo.pPushConstantRanges = &drawPushConstantRange;
 	drawPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-	mDrawPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(drawPipelineLayoutCreateInfo);
-	mRenderer->mRendererCore.labelResourceDebug(mDrawPipelineLayout, "PickerDrawPipelineLayout");
+	mDrawPipelineLayout = mRenderer->mCore.mDevice.createPipelineLayout(drawPipelineLayoutCreateInfo);
+	mRenderer->mCore.labelResourceDebug(mDrawPipelineLayout, "PickerDrawPipelineLayout");
 	LOG_INFO(mRenderer->mLogger, "Picker Draw Pipeline Layout Created");
 
-	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(
+	vk::ShaderModule fragShader = mRenderer->mResources.getShader(
 		std::filesystem::path(SHADERS_PATH) / "Picker/PickerDraw.frag.spv");
-	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(
+	vk::ShaderModule vertexShader = mRenderer->mResources.getShader(
 		std::filesystem::path(SHADERS_PATH) / "Picker/PickerDraw.vert.spv");
 
 	GraphicsPipelineBuilder pickerPipelineBuilder;
@@ -130,11 +129,11 @@ void Picker::initDrawPipeline()
 	pickerPipelineBuilder.mPipelineLayout = *mDrawPipelineLayout;
 
 	mDrawPipelineBundle = PipelineBundle(
-		mRenderer->mRendererInfrastructure.mLatestPipelineId++,
-		pickerPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
+		mRenderer->mInfrastructure.mLatestPipelineId++,
+		pickerPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
 		*mDrawPipelineLayout
 	);
-	mRenderer->mRendererCore.labelResourceDebug(mDrawPipelineBundle.pipeline, "PickerDrawPipeline");
+	mRenderer->mCore.labelResourceDebug(mDrawPipelineBundle.pipeline, "PickerDrawPipeline");
 	LOG_INFO(mRenderer->mLogger, "Picker Draw Pipeline Created");
 }
 
@@ -154,11 +153,11 @@ void Picker::initPickPipeline()
 	pickPipelineLayoutCreateInfo.pPushConstantRanges = &pickPushConstantRange;
 	pickPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-	mPickPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(pickPipelineLayoutCreateInfo);
-	mRenderer->mRendererCore.labelResourceDebug(mPickPipelineLayout, "PickerPickPipelineLayout");
+	mPickPipelineLayout = mRenderer->mCore.mDevice.createPipelineLayout(pickPipelineLayoutCreateInfo);
+	mRenderer->mCore.labelResourceDebug(mPickPipelineLayout, "PickerPickPipelineLayout");
 	LOG_INFO(mRenderer->mLogger, "Picker Pick Pipeline Layout Created");
 
-	vk::ShaderModule compShader = mRenderer->mRendererResources.getShader(
+	vk::ShaderModule compShader = mRenderer->mResources.getShader(
 		std::filesystem::path(SHADERS_PATH) / "Picker/PickerPick.comp.spv");
 
 	ComputePipelineBuilder cullPipelineBuilder;
@@ -166,51 +165,54 @@ void Picker::initPickPipeline()
 	cullPipelineBuilder.mPipelineLayout = *mPickPipelineLayout;
 
 	mPickPipelineBundle = PipelineBundle(
-		mRenderer->mRendererInfrastructure.mLatestPipelineId++,
-		cullPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
+		mRenderer->mInfrastructure.mLatestPipelineId++,
+		cullPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
 		*mPickPipelineLayout
 	);
-	mRenderer->mRendererCore.labelResourceDebug(mPickPipelineBundle.pipeline, "PickerPickPipeline");
+	mRenderer->mCore.labelResourceDebug(mPickPipelineBundle.pipeline, "PickerPickPipeline");
 	LOG_INFO(mRenderer->mLogger, "Picker Pick Pipeline Created");
 }
 
 void Picker::initDrawPushConstants()
 {
-	mDrawPushConstants.vertexBuffer = mRenderer->mRendererScene.mMainVertexBuffer.address;
-	mDrawPushConstants.nodeTransformsBuffer = mRenderer->mRendererScene.mMainNodeTransformsBuffer.address;
-	mDrawPushConstants.instancesBuffer = mRenderer->mRendererScene.mMainInstancesBuffer.address;
+	mDrawPushConstants.vertexBuffer = mRenderer->mScene.mMainVertexBuffer.address;
+	mDrawPushConstants.nodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address;
+	mDrawPushConstants.instancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address;
 }
 
 void Picker::initPickPushConstants()
 {
-	mPickPushConstants.pickerBuffer = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer));
+	mPickPushConstants.pickerBuffer = mRenderer->mCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer));
 }
 
-void Picker::imguizmoStart()
+void Picker::imguizmoFrame() const
 {
+	if (mClickedInstance == nullptr) return;
+
 	ImGuizmo::BeginFrame();
 	ImGuizmo::SetOrthographic(false);
-	ImGuizmo::SetDrawlist();
 	ImGuizmo::SetGizmoSizeClipSpace(0.15f);
-}
 
-void Picker::imguizmoManipulate(glm::mat4& clickedInstanceTransformMatrix) const
-{
 	ImGuizmo::OPERATION imguizmoOperation = ImGuizmo::TRANSLATE;
 
 	ImGuizmo::SetRect(
-		0, 
-		0, 
-		static_cast<float>(mRenderer->mRendererInfrastructure.mDrawImage.imageExtent.width), 
-		static_cast<float>(mRenderer->mRendererInfrastructure.mDrawImage.imageExtent.height)
+		0,
+		0,
+		static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.width),
+		static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.height)
 	);
+	mRenderer->mScene.mPerspective.mData.proj[1][1] *= -1; // Flip Y-axis in projection for ImGui coordinate system
 	ImGuizmo::Manipulate(
-		glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.view),
-		glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.proj),
+		glm::value_ptr(mRenderer->mScene.mPerspective.mData.view),
+		glm::value_ptr(mRenderer->mScene.mPerspective.mData.proj),
 		imguizmoOperation,
 		ImGuizmo::WORLD,
-		glm::value_ptr(clickedInstanceTransformMatrix)
+		glm::value_ptr(mClickedInstance->mData.transformMatrix)
 	);
+
+	if (ImGuizmo::IsUsing()) {
+		mClickedInstance->mModel->mReloadLocalInstancesBuffer = true;
+	}
 }
 
 void Picker::cleanup()

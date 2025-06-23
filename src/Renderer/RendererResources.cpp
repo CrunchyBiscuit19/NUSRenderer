@@ -24,24 +24,24 @@ void RendererResources::init()
 void RendererResources::initStaging()
 {
 	mImageStagingBuffer = createStagingBuffer(MAX_IMAGE_SIZE);
-	mRenderer->mRendererCore.labelResourceDebug(mImageStagingBuffer.buffer, "ImageStagingBuffer");
+	mRenderer->mCore.labelResourceDebug(mImageStagingBuffer.buffer, "ImageStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Image Staging Buffer Created");
 
 	mMeshStagingBuffer = createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE);
-	mRenderer->mRendererCore.labelResourceDebug(mMeshStagingBuffer.buffer, "MeshStagingBuffer");
+	mRenderer->mCore.labelResourceDebug(mMeshStagingBuffer.buffer, "MeshStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Mesh Staging Buffer Created");
 
 	mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
-	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsStagingBuffer.buffer,
+	mRenderer->mCore.labelResourceDebug(mMaterialConstantsStagingBuffer.buffer,
 	                                            "MaterialConstantsStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Material Constants Staging Buffer Created");
 
 	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
-	mRenderer->mRendererCore.labelResourceDebug(mInstancesStagingBuffer.buffer, "InstancesStagingBuffer");
+	mRenderer->mCore.labelResourceDebug(mInstancesStagingBuffer.buffer, "InstancesStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Created");
 
 	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
-	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
+	mRenderer->mCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
 }
 
@@ -79,21 +79,21 @@ void RendererResources::initDefaultImages()
 	                           createImage(pixels.data(), vk::Extent3D{16, 16, 1}, vk::Format::eR8G8B8A8Unorm,
 	                                       vk::ImageUsageFlagBits::eSampled));
 
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).image, "DefaultWhiteImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).imageView,
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).image, "DefaultWhiteImage");
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).imageView,
 	                                            "DefaultWhiteImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).image, "DefaultGreyImage");
-	mRenderer->mRendererCore.
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).image, "DefaultGreyImage");
+	mRenderer->mCore.
 	           labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).imageView, "DefaultGreyImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).image, "DefaultBlackImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).imageView,
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).image, "DefaultBlackImage");
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).imageView,
 	                                            "DefaultBlackImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).image, "DefaultBlueImage");
-	mRenderer->mRendererCore.
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).image, "DefaultBlueImage");
+	mRenderer->mCore.
 	           labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).imageView, "DefaultBlueImageView");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).image,
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).image,
 	                                            "DefaultCheckboardImage");
-	mRenderer->mRendererCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).imageView,
+	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).imageView,
 	                                            "DefaultCheckboardImageView");
 
 	LOG_INFO(mRenderer->mLogger, "Default Images Created");
@@ -111,7 +111,7 @@ void RendererResources::initDefaultSampler()
 
 	SamplerOptions defaultSamplerOptions;
 	mSamplersCache.try_emplace(defaultSamplerOptions,
-	                           mRenderer->mRendererCore.mDevice.createSampler(defaultSamplerCreateInfo));
+	                           mRenderer->mCore.mDevice.createSampler(defaultSamplerCreateInfo));
 
 	LOG_INFO(mRenderer->mLogger, "Default Sampler Created");
 }
@@ -119,7 +119,7 @@ void RendererResources::initDefaultSampler()
 vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInfo)
 {
 	SamplerOptions samplerOptions(samplerCreateInfo);
-	mSamplersCache.try_emplace(samplerOptions, mRenderer->mRendererCore.mDevice, samplerCreateInfo);
+	mSamplersCache.try_emplace(samplerOptions, mRenderer->mCore.mDevice, samplerCreateInfo);
 	if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end())
 	{
 		return *it->second;
@@ -150,7 +150,7 @@ vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath)
 	shaderCreateInfo.codeSize = buffer.size() * sizeof(uint32_t);
 	shaderCreateInfo.pCode = buffer.data();
 
-	mShadersCache.try_emplace(shaderFileName, mRenderer->mRendererCore.mDevice, shaderCreateInfo);
+	mShadersCache.try_emplace(shaderFileName, mRenderer->mCore.mDevice, shaderCreateInfo);
 	return *mShadersCache.at(shaderFileName);
 }
 
@@ -169,10 +169,10 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
 
 	AllocatedBuffer newBuffer;
 	VkBuffer tempBuffer;
-	vmaCreateBuffer(mRenderer->mRendererCore.mVmaAllocator, &bufferInfo1, &vmaAllocInfo, &tempBuffer,
+	vmaCreateBuffer(mRenderer->mCore.mVmaAllocator, &bufferInfo1, &vmaAllocInfo, &tempBuffer,
 	                &newBuffer.allocation, &newBuffer.info);
-	newBuffer.buffer = vk::raii::Buffer(mRenderer->mRendererCore.mDevice, tempBuffer);
-	newBuffer.allocator = &mRenderer->mRendererCore.mVmaAllocator;
+	newBuffer.buffer = vk::raii::Buffer(mRenderer->mCore.mDevice, tempBuffer);
+	newBuffer.allocator = &mRenderer->mCore.mVmaAllocator;
 
 	return newBuffer;
 }
@@ -201,10 +201,10 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
 	newImage.imageFormat = format;
 	newImage.imageExtent = extent;
 	VkImage tempImage;
-	vmaCreateImage(mRenderer->mRendererCore.mVmaAllocator, &newImageCreateInfo1, &vmaAllocInfo, &tempImage,
+	vmaCreateImage(mRenderer->mCore.mVmaAllocator, &newImageCreateInfo1, &vmaAllocInfo, &tempImage,
 	               &newImage.allocation, nullptr);
-	newImage.image = vk::raii::Image(mRenderer->mRendererCore.mDevice, tempImage);
-	newImage.allocator = &mRenderer->mRendererCore.mVmaAllocator;
+	newImage.image = vk::raii::Image(mRenderer->mCore.mDevice, tempImage);
+	newImage.allocator = &mRenderer->mCore.mVmaAllocator;
 
 	auto aspectFlag = vk::ImageAspectFlagBits::eColor;
 	if (format == vk::Format::eD32Sfloat)
@@ -217,7 +217,7 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
 		newImageViewCreateInfo.viewType = vk::ImageViewType::eCube;
 	}
 
-	newImage.imageView = mRenderer->mRendererCore.mDevice.createImageView(newImageViewCreateInfo);
+	newImage.imageView = mRenderer->mCore.mDevice.createImageView(newImageViewCreateInfo);
 
 	return newImage;
 }

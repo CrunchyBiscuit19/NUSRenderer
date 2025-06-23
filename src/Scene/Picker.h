@@ -3,6 +3,7 @@
 #include <Renderer/RendererResources.h>
 
 class Renderer;
+class GLTFInstance;
 
 struct PickerDrawPushConstants
 {
@@ -44,6 +45,8 @@ public:
 	PickerDrawPushConstants mDrawPushConstants;
 	PickerPickPushConstants mPickPushConstants;
 
+	GLTFInstance* mClickedInstance;
+
 	Picker(Renderer* renderer);
 
 	void init();
@@ -55,8 +58,7 @@ public:
 	void initDrawPushConstants();
 	void initPickPushConstants();
 
-	void imguizmoStart();
-	void imguizmoManipulate(glm::mat4& clickedInstanceTransformMatrix) const;
+	void imguizmoFrame() const;
 
 	void cleanup();
 };
