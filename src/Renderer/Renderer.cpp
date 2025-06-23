@@ -232,8 +232,6 @@ void Renderer::initPasses()
 		glm::uvec2 read(0);
 		std::memcpy(glm::value_ptr(read), static_cast<char*>(mRendererScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
 
-		LOG_DEBUG(mLogger, "Clicked {},{}", read.x, read.y);
-
 		auto reverseIt = mRendererScene.mModelsReverse.find(read.x);
 		if (reverseIt == mRendererScene.mModelsReverse.end()) return; 
 		std::string& clickedModelName = reverseIt->second;
@@ -244,6 +242,9 @@ void Renderer::initPasses()
 		clickedModel.mInstances[read.y - clickedModel.mMainFirstInstance];
 
 		LOG_DEBUG(mLogger, "Got {},{}", clickedModel.mName, read.y - clickedModel.mMainFirstInstance);
+
+		mRendererScene.mPicker.imguizmoStart();
+		mRendererScene.mPicker.imguizmoManipulate(clickedModel);
 	});
 
 	mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd)

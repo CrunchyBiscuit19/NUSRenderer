@@ -1,5 +1,7 @@
 #pragma once
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
 #include <imgui.h>
 #define NOMINMAX // imfilebrowser.h contains windows.h
 #include <imfilebrowser.h>

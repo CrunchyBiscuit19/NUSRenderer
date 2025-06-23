@@ -55,5 +55,8 @@ public:
 	void initDrawPushConstants();
 	void initPickPushConstants();
 
+	void imguizmoStart();
+	void imguizmoManipulate(GLTFModel& clickedModel);
+
 	void cleanup();
 };

@@ -3,6 +3,8 @@
 #include <Utils/Helper.h>
 
 #include <quill/LogMacros.h>
+#include <imguizmo.h>
+#include <glm/gtc/type_ptr.hpp>
 
 Picker::Picker(Renderer* renderer) :
 	mRenderer(renderer),
@@ -180,6 +182,32 @@ void Picker::initDrawPushConstants()
 void Picker::initPickPushConstants()
 {
 	mPickPushConstants.pickerBuffer = mRenderer->mRendererCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer));
+}
+
+void Picker::imguizmoStart()
+{
+	ImGuizmo::SetOrthographic(false);
+	ImGuizmo::BeginFrame();
+	ImGuizmo::SetGizmoSizeClipSpace(0.15f);
+}
+
+void Picker::imguizmoManipulate(GLTFModel& clickedModel)
+{
+	ImGuizmo::OPERATION imguizmoOperation = ImGuizmo::TRANSLATE;
+
+	ImGuizmo::SetRect(
+		0, 
+		0, 
+		static_cast<float>(mRenderer->mRendererInfrastructure.mDrawImage.imageExtent.width), 
+		static_cast<float>(mRenderer->mRendererInfrastructure.mDrawImage.imageExtent.height)
+	);
+	ImGuizmo::Manipulate(
+		glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.view),
+		glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.proj),
+		imguizmoOperation,
+		ImGuizmo::WORLD,
+		glm::value_ptr(clickedModel.mModelMatrix)
+	);
 }
 
 void Picker::cleanup()

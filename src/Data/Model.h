@@ -20,6 +20,8 @@ public:
 	std::optional<uint64_t> mDeleteSignal{std::nullopt};
 	bool mReloadLocalInstancesBuffer{true};
 
+	glm::mat4 mModelMatrix;
+
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
 	fastgltf::Asset mAsset;
