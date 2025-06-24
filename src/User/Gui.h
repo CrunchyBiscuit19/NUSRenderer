@@ -64,7 +64,7 @@ class Gui
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
 	void createDockSpace();
-	void createRendererOptionsWindow();
+	void createRendererOptionsWindow() const;
 
 public:
 	Gui(Renderer* renderer);

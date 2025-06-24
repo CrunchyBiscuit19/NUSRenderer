@@ -6,6 +6,7 @@
 #include <imgui_internal.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
+#include <ImGuizmo.h>
 #include <vulkan/vulkan_raii.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <quill/LogMacros.h>
@@ -59,12 +60,11 @@ void Gui::SceneGuiComponent::elements()
 				{
 					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
-					ImGui::Text("");
-					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][0], instance.mData.transformMatrix[1][0], instance.mData.transformMatrix[2][0], instance.mData.transformMatrix[3][0]);
-					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][1], instance.mData.transformMatrix[1][1], instance.mData.transformMatrix[2][1], instance.mData.transformMatrix[3][1]);
-					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][2], instance.mData.transformMatrix[1][2], instance.mData.transformMatrix[2][2], instance.mData.transformMatrix[3][2]);
-					ImGui::Text("%6.2f %6.2f %6.2f %6.2f", instance.mData.transformMatrix[0][3], instance.mData.transformMatrix[1][3], instance.mData.transformMatrix[2][3], instance.mData.transformMatrix[3][3]);
-					ImGui::Text("");
+					glm::vec3 translation, rotation, scale;
+					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
+					ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.1f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Rotation", glm::value_ptr(rotation), "%.1f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Scale", glm::value_ptr(scale), "%.1f", ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
 					if (ImGui::Button("Delete Instance"))
@@ -171,7 +171,7 @@ void Gui::createDockSpace()
 	ImGui::PopStyleVar(3);
 }
 
-void Gui::createRendererOptionsWindow()
+void Gui::createRendererOptionsWindow() const
 {
 	if (mCollapsed) return;
 	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
