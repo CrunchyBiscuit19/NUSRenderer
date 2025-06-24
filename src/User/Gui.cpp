@@ -287,6 +287,7 @@ void Gui::initKeyBinding()
 {
 	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
+		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
 		if (keyState[SDL_SCANCODE_G] && e.type == SDL_KEYDOWN && !e.key.repeat) {
@@ -295,6 +296,10 @@ void Gui::initKeyBinding()
 
 		if (keyState[SDL_SCANCODE_T] && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mRenderer->mScene.mPicker.changeImguizmoOperation();
+		}
+
+		if ((modState & KMOD_CTRL) && keyState[SDL_SCANCODE_I] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mRenderer->mGui.mSelectModelFileBrowser.Open();
 		}
 	});
 }

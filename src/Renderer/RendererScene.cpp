@@ -107,12 +107,7 @@ void RendererScene::initKeyBinding() const
 {
 	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
-		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
-
-		if ((modState & KMOD_CTRL) && keyState[SDL_SCANCODE_I] && e.type == SDL_KEYDOWN && !e.key.repeat) {
-			mRenderer->mGui.mSelectModelFileBrowser.Open();
-		}
 
 		if (keyState[SDL_SCANCODE_DELETE] && mPicker.mClickedInstance != nullptr && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mPicker.mClickedInstance->markDelete();

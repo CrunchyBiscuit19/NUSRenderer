@@ -766,6 +766,9 @@ void GLTFModel::reloadInstances()
 void GLTFModel::markDelete()
 {
 	mDeleteSignal = mRenderer->mInfrastructure.mFrameNumber + FRAME_OVERLAP;
+	for (auto& instance: mInstances) {
+		instance.markDelete();
+	}
 	LOG_INFO(mRenderer->mLogger, "{} Marked to Delete", mName);
 }
 
