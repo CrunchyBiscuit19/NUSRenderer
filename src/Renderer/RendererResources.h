@@ -274,7 +274,6 @@ class RendererResources
 public:
 	AllocatedBuffer mMeshStagingBuffer;
 	AllocatedBuffer mMaterialConstantsStagingBuffer;
-	AllocatedBuffer mInstancesStagingBuffer;
 	AllocatedBuffer mNodeTransformsStagingBuffer;
 
 	std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
@@ -296,13 +295,13 @@ public:
 		                                                                vk::SamplerMipmapMode::eLinear));
 	vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
-	AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-	AllocatedBuffer createStagingBuffer(size_t allocSize);
+	AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
+	AllocatedBuffer createStagingBuffer(size_t allocSize) const;
 
 	AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
-	                           bool mipmapped = false, bool multisampling = false, bool cubemap = false);
+	                           bool mipmapped = false, bool multisampling = false, bool cubemap = false) const;
 	AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
-	                           bool mipmapped = false, bool multisampling = false, bool cubemap = false);
+	                           bool mipmapped = false, bool multisampling = false, bool cubemap = false) const;
 
 	void cleanup();
 

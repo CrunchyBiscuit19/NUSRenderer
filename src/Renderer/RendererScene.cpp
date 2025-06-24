@@ -103,7 +103,7 @@ void RendererScene::initPushConstants()
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
-void RendererScene::initKeyBinding()
+void RendererScene::initKeyBinding() const
 {
 	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
@@ -452,12 +452,12 @@ void RendererScene::reloadMainInstancesBuffer()
 
 		dstOffset += instancesCopy.size;
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
 		});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
+	mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd)
 	{
 		vkhelper::createBufferPipelineBarrier( // Wait for main instances buffer to finish uploading
 			cmd,

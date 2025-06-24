@@ -66,7 +66,7 @@ public:
 	void initBuffers();
 	void initDescriptor();
 	void initPushConstants();
-	void initKeyBinding();
+	void initKeyBinding() const;
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();

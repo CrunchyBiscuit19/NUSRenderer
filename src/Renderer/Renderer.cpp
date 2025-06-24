@@ -493,8 +493,8 @@ void Renderer::perFrameUpdate()
 	mScene.deleteInstances();
 
 	for (auto& model : mScene.mModelsCache | std::views::values) {
-		if (model.mReloadLocalInstancesBuffer) {
-			model.updateInstances();
+		if (model.mReloadInstances) {
+			model.reloadInstances();
 			mScene.mFlags.reloadMainInstancesBuffer = true;
 		}
 	}

@@ -36,10 +36,6 @@ void RendererResources::initStaging()
 	                                            "MaterialConstantsStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Material Constants Staging Buffer Created");
 
-	mInstancesStagingBuffer = createStagingBuffer(MAX_INSTANCES * sizeof(InstanceData));
-	mRenderer->mCore.labelResourceDebug(mInstancesStagingBuffer.buffer, "InstancesStagingBuffer");
-	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Created");
-
 	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
 	mRenderer->mCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
@@ -155,7 +151,7 @@ vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath)
 }
 
 AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage,
-                                                VmaMemoryUsage memoryUsage)
+                                                VmaMemoryUsage memoryUsage) const
 {
 	vk::BufferCreateInfo bufferInfo = {};
 	bufferInfo.pNext = nullptr;
@@ -178,7 +174,7 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
 }
 
 AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
-                                              bool mipmapped, bool multisampling, bool cubemap)
+                                              bool mipmapped, bool multisampling, bool cubemap) const
 {
 	vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);
 	if (mipmapped)
@@ -224,7 +220,7 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
 
 AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D extent, vk::Format format,
                                               vk::ImageUsageFlags usage, bool mipmapped, bool multisampling,
-                                              bool cubemap)
+                                              bool cubemap) const
 {
 	int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
 
@@ -278,7 +274,7 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 	return newImage;
 }
 
-AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize)
+AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize) const
 {
 	return createBuffer(allocSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
@@ -293,8 +289,6 @@ void RendererResources::cleanup()
 	LOG_INFO(mRenderer->mLogger, "Mesh Staging Buffer Destroyed");
 	mMaterialConstantsStagingBuffer.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Material Constants Staging Buffer Destroyed");
-	mInstancesStagingBuffer.cleanup();
-	LOG_INFO(mRenderer->mLogger, "Instances Staging Buffer Destroyed");
 	mDefaultImages.clear();
 	LOG_INFO(mRenderer->mLogger, "Default Images Destroyed");
 	mSamplersCache.clear();

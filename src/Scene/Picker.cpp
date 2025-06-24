@@ -227,7 +227,7 @@ void Picker::imguizmoFrame() const
 	);
 
 	if (ImGuizmo::IsUsing()) {
-		mClickedInstance->mModel->mReloadLocalInstancesBuffer = true;
+		mClickedInstance->mModel->mReloadInstances = true;
 	}
 }
 

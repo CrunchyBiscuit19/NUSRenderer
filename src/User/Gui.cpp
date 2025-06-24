@@ -25,7 +25,7 @@ void Gui::CameraGuiComponent::elements()
 	ImGui::Text("Mouse Mode: %s", (mRenderer->mCamera.mRelativeMode ? "RELATIVE" : "NORMAL"));
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.mPosition.x, mRenderer->mCamera.mPosition.y,
 		mRenderer->mCamera.mPosition.z);
-	ImGui::Text("Pitch / Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
+	ImGui::Text("Pitch & Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
 	ImGui::Text("Speed: %.1f / %.1f", mRenderer->mCamera.mSpeed, MAX_CAMERA_SPEED);
 }
 

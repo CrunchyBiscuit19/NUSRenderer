@@ -19,7 +19,7 @@ public:
 	std::string mName;
 	int mId{0};
 	std::optional<uint64_t> mDeleteSignal{std::nullopt};
-	bool mReloadLocalInstancesBuffer{true};
+	bool mReloadInstances{true};
 
 	DescriptorAllocatorGrowable mModelDescriptorAllocator;
 
@@ -48,12 +48,12 @@ private:
 
 	AllocatedImage loadImage(fastgltf::Image& image);
 
-	void assignBase(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+	void assignBase(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material);
 	void assignMetallicRoughness(MaterialConstants& constants, MaterialResources& resources,
-	                             fastgltf::Material& material);
-	void assignEmissive(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
-	void assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
-	void assignOcclusion(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material);
+	                             const fastgltf::Material& material);
+	void assignEmissive(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material);
+	void assignNormal(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material);
+	void assignOcclusion(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material);
 
 	void initBuffers();
 	void loadSamplerCreateInfos();
@@ -65,20 +65,19 @@ private:
 	void loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector);
 	void loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector);
 	void loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector);
-	void loadInstancesBuffer(std::span<InstanceData> instanceDataVector);
 
 public:
-	GLTFModel(Renderer* renderer, std::filesystem::path modelPath);
+	GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath);
 
 	void load();
 
-	Renderer* getRenderer();
+	Renderer* getRenderer() const;
 
 	void generateRenderItems();
 
 	void createInstance(InstanceData initialTransform = InstanceData());
 	void createInstanceAtCamera(Camera& camera);
-	void updateInstances();
+	void reloadInstances();
 
 	void markDelete();
 };

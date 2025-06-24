@@ -12,7 +12,7 @@ GLTFInstance::GLTFInstance(GLTFModel* model, int id, InstanceData data) :
 void GLTFInstance::markDelete()
 {
 	mDeleteSignal = true;
-	mModel->mReloadLocalInstancesBuffer = true;
+	mModel->mReloadInstances = true;
 	mModel->getRenderer()->mScene.mFlags.instanceDestroyedFlag = true;
 
 	if (this == mModel->getRenderer()->mScene.mPicker.mClickedInstance) {
