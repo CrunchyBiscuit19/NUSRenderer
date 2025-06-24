@@ -57,9 +57,12 @@ void Gui::SceneGuiComponent::elements()
 
 					glm::vec3 translation, rotation, scale;
 					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
-					ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.1f", ImGuiInputTextFlags_ReadOnly);
-					ImGui::InputFloat3("Rotation", glm::value_ptr(rotation), "%.1f", ImGuiInputTextFlags_ReadOnly);
-					ImGui::InputFloat3("Scale", glm::value_ptr(scale), "%.1f", ImGuiInputTextFlags_ReadOnly);
+					for (int i = 0; i < 3; i++) {
+						rotation[i] = glm::radians(rotation[i]);
+					}
+					ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Rotation", glm::value_ptr(rotation), "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Scale", glm::value_ptr(scale), "%.3f", ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PopID();
 					ImGui::TreePop();
