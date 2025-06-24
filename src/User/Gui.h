@@ -56,9 +56,6 @@ class Gui
 	vk::raii::DescriptorPool mDescriptorPool;
 	vk::raii::DescriptorSet mDescriptorSet;
 
-	ImGui::FileBrowser mSelectModelFileBrowser;
-	ImGui::FileBrowser mSelectSkyboxFileBrowser;
-
 	bool mCollapsed;
 
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
@@ -80,4 +77,6 @@ public:
 
 	void cleanup();
 
+	ImGui::FileBrowser mSelectModelFileBrowser;
+	ImGui::FileBrowser mSelectSkyboxFileBrowser;
 };

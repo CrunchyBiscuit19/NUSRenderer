@@ -3,6 +3,7 @@
 #include <Utils/Helper.h>
 
 #include <quill/LogMacros.h>
+#include <ImGuizmo.h>
 
 #include <ranges>
 
@@ -22,6 +23,7 @@ void RendererScene::init()
 	initBuffers();
 	initDescriptor();
 	initPushConstants();
+	initKeyBinding();
 
 	mPerspective.init();
 	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
@@ -100,6 +102,24 @@ void RendererScene::initPushConstants()
 	mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
 	mForwardPushConstants.instancesBuffer = mMainInstancesBuffer.address;
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
+}
+
+void RendererScene::initKeyBinding()
+{
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
+	{
+		const SDL_Keymod modState = SDL_GetModState();
+		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+
+		if ((modState & KMOD_CTRL) && keyState[SDL_SCANCODE_I] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mRenderer->mGui.mSelectModelFileBrowser.Open();
+		}
+
+		if (keyState[SDL_SCANCODE_DELETE] && mPicker.mClickedInstance != nullptr && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mPicker.mClickedInstance->markDelete();
+			mPicker.mClickedInstance = nullptr;
+		}
+	});
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)

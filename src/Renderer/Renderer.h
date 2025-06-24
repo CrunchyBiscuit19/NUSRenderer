@@ -117,7 +117,7 @@ public:
 	RendererScene mScene;
 	RendererEvent mEventHandler;
 	ImmSubmit mImmSubmit;
-	Gui mGUI;
+	Gui mGui;
 	Camera mCamera;
 	quill::Logger* mLogger;
 

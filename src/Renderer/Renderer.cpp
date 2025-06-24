@@ -20,7 +20,7 @@ Renderer::Renderer()
 	, mResources(RendererResources(this))
 	, mScene(RendererScene(this))
 	, mImmSubmit(ImmSubmit(this))
-	, mGUI(Gui(this))
+	, mGui(Gui(this))
 	, mCamera(Camera(this))
 	, mEventHandler(RendererEvent(this))
 {}
@@ -63,7 +63,7 @@ void Renderer::initComponents()
 	mResources.init();
 	mInfrastructure.init();
 	mScene.init();
-	mGUI.init();
+	mGui.init();
 	mCamera.init();
 
 	PbrMaterial::initMaterialPipelineLayout(this);
@@ -364,7 +364,7 @@ void Renderer::initPasses()
 				&colorAttachment, nullptr);
 
 			cmd.beginRendering(renderInfo);
-			mGUI.imguiFrame();
+			mGui.imguiFrame();
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 			cmd.endRendering();
 		});
@@ -617,7 +617,7 @@ void Renderer::cleanup()
 {
 	PbrMaterial::cleanup(this);
 
-	mGUI.cleanup();
+	mGui.cleanup();
 	mScene.cleanup();
 	mImmSubmit.cleanup();
 	mResources.cleanup();

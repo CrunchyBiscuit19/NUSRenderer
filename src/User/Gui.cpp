@@ -32,10 +32,6 @@ void Gui::CameraGuiComponent::elements()
 
 void Gui::SceneGuiComponent::elements()
 {
-	if (ImGui::Button("Add Model"))
-	{
-		mGui->mSelectModelFileBrowser.Open();
-	}
 	for (auto& model : mRenderer->mScene.mModelsCache | std::views::values)
 	{
 		const auto name = model.mName;
@@ -65,13 +61,6 @@ void Gui::SceneGuiComponent::elements()
 					ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.1f", ImGuiInputTextFlags_ReadOnly);
 					ImGui::InputFloat3("Rotation", glm::value_ptr(rotation), "%.1f", ImGuiInputTextFlags_ReadOnly);
 					ImGui::InputFloat3("Scale", glm::value_ptr(scale), "%.1f", ImGuiInputTextFlags_ReadOnly);
-
-					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-					if (ImGui::Button("Delete Instance"))
-					{
-						instance.markDelete();
-					}
-					ImGui::PopStyleColor();
 
 					ImGui::PopID();
 					ImGui::TreePop();
@@ -109,14 +98,6 @@ void Gui::SceneGuiComponent::elements()
 		mRenderer->mScene.mSkybox.updateImage(selectedSkyboxDir);
 		mGui->mSelectSkyboxFileBrowser.ClearSelected();
 	}
-
-	mGui->mSelectModelFileBrowser.Display();
-	if (mGui->mSelectModelFileBrowser.HasSelected())
-	{
-		auto selectedFiles = mGui->mSelectModelFileBrowser.GetMultiSelected();
-		mRenderer->mScene.loadModels(selectedFiles);
-		mGui->mSelectModelFileBrowser.ClearSelected();
-	}
 }
 
 void Gui::MiscGuiComponent::elements()
@@ -137,6 +118,8 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("[Mouse Scroll] Control Camera Speed");
 		ImGui::Text("[Left Click] Select / Deselect Object");
 		ImGui::Text("[Right Click] Enter / Leave Window");
+		ImGui::Text("[Ctrl + I] Import Model");
+		ImGui::Text("[Del] Delete Clicked Instance");
 	}
 }
 
@@ -318,6 +301,14 @@ void Gui::imguiFrame()
 	createDockSpace();
 	createRendererOptionsWindow();
 	mRenderer->mScene.mPicker.imguizmoFrame();
+
+	mSelectModelFileBrowser.Display();
+	if (mSelectModelFileBrowser.HasSelected())
+	{
+		auto selectedFiles = mSelectModelFileBrowser.GetMultiSelected();
+		mRenderer->mScene.loadModels(selectedFiles);
+		mSelectModelFileBrowser.ClearSelected();
+	}
 
 	ImGui::Render();
 }
