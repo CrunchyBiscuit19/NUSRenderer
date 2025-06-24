@@ -33,15 +33,15 @@ public:
 
 	Skybox(Renderer* renderer);
 
-	void init(std::optional<std::filesystem::path> skyboxImageDir = std::nullopt);
+	void init(const std::optional<std::filesystem::path>& skyboxImageDir = std::nullopt);
 	void initDescriptor();
 	void initPipelineLayout();
 	void initPipeline();
 	void initBuffer();
 
-	void setBindings();
-	void loadImage(std::filesystem::path skyboxImageDir);
-	void updateImage(std::filesystem::path skyboxImageDir);
+	void setBindings() const;
+	void loadImage(const std::filesystem::path& skyboxImageDir);
+	void updateImage(const std::filesystem::path& skyboxImageDir);
 
 	void cleanup();
 };

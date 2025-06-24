@@ -13,7 +13,7 @@ Skybox::Skybox(Renderer* renderer) :
 {
 }
 
-void Skybox::init(std::optional<std::filesystem::path> skyboxDir)
+void Skybox::init(const std::optional<std::filesystem::path>& skyboxDir)
 {
 	if (skyboxDir.has_value()) { loadImage(skyboxDir.value()); }
 	initDescriptor();
@@ -149,7 +149,7 @@ void Skybox::initBuffer()
 	skyboxVertexCopy.srcOffset = 0;
 	skyboxVertexCopy.size = skyboxVertexSize;
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this, skyboxVertexCopy](Renderer* renderer, vk::CommandBuffer cmd)
+	mRenderer->mImmSubmit.mCallbacks.push_back([this, skyboxVertexCopy](const Renderer* renderer, vk::CommandBuffer cmd)
 	{
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
@@ -180,7 +180,7 @@ void Skybox::initBuffer()
 	                                         getBufferAddress(skyboxVertexBufferDeviceAddressInfo);
 }
 
-void Skybox::setBindings()
+void Skybox::setBindings() const
 {
 	DescriptorSetBinder writer;
 	writer.bindImage(0, *mImage.imageView, mRenderer->mResources.getSampler(vk::SamplerCreateInfo()),
@@ -188,7 +188,7 @@ void Skybox::setBindings()
 	writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
 
-void Skybox::loadImage(std::filesystem::path skyboxImageDir)
+void Skybox::loadImage(const std::filesystem::path& skyboxImageDir)
 {
 	std::vector skyboxImagePaths = {
 		skyboxImageDir / "px.png", skyboxImageDir / "nx.png", skyboxImageDir / "py.png", skyboxImageDir / "ny.png",
@@ -220,7 +220,7 @@ void Skybox::loadImage(std::filesystem::path skyboxImageDir)
 	LOG_INFO(mRenderer->mLogger, "Skybox Loaded");
 }
 
-void Skybox::updateImage(std::filesystem::path skyboxDir)
+void Skybox::updateImage(const std::filesystem::path& skyboxDir)
 {
 	AllocatedImage oldSkyboxImage = std::move(mImage);
 	loadImage(skyboxDir);

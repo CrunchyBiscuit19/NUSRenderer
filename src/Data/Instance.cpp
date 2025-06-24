@@ -14,4 +14,8 @@ void GLTFInstance::markDelete()
 	mDeleteSignal = true;
 	mModel->mReloadLocalInstancesBuffer = true;
 	mModel->getRenderer()->mScene.mFlags.instanceDestroyedFlag = true;
+
+	if (this == mModel->getRenderer()->mScene.mPicker.mClickedInstance) {
+		mModel->getRenderer()->mScene.mPicker.mClickedInstance = nullptr;
+	}
 }

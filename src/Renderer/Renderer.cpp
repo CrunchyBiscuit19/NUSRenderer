@@ -364,7 +364,6 @@ void Renderer::initPasses()
 				&colorAttachment, nullptr);
 
 			cmd.beginRendering(renderInfo);
-			mGui.imguiFrame();
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 			cmd.endRendering();
 		});
@@ -471,7 +470,9 @@ void Renderer::run()
 			mInfrastructure.resizeSwapchain();
 		}
 
+		mGui.updateFrame();
 		perFrameUpdate();
+
 		draw();
 
 		mInfrastructure.mFrameNumber++;

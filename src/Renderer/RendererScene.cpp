@@ -116,7 +116,6 @@ void RendererScene::initKeyBinding()
 
 		if (keyState[SDL_SCANCODE_DELETE] && mPicker.mClickedInstance != nullptr && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mPicker.mClickedInstance->markDelete();
-			mPicker.mClickedInstance = nullptr;
 		}
 	});
 }

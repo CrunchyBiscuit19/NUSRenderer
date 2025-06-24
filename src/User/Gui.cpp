@@ -299,7 +299,7 @@ void Gui::initKeyBinding()
 	});
 }
 
-void Gui::imguiFrame()
+void Gui::updateFrame()
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplSDL2_NewFrame();

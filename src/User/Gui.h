@@ -73,7 +73,7 @@ public:
 	void initComponents();
 	void initKeyBinding();
 
-	void imguiFrame();
+	void updateFrame();
 
 	void cleanup();
 
