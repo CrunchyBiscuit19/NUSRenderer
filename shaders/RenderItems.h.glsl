@@ -1,5 +1,3 @@
-#extension GL_EXT_buffer_reference : require
-
 struct RenderItem {
 	uint indexCount;
 	uint instanceCount;
@@ -12,10 +10,10 @@ struct RenderItem {
 	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer RenderItemsBuffer { 
-	RenderItem renderItems[];
+	RenderItem d[];
 };
 
-struct visibleRenderItem {
+struct VisibleRenderItem {
 	uint indexCount;
 	uint instanceCount;
 	uint firstIndex;
@@ -26,16 +24,5 @@ struct visibleRenderItem {
 	uint modelIndex;
 };
 layout (buffer_reference, std430) buffer VisibleRenderItemsBuffer { 
-	visibleRenderItem vRenderItems[];
+	VisibleRenderItem d[];
 };
-
-layout (buffer_reference, std430) buffer CountBuffer { 
-	int count;
-};
-
-layout( push_constant ) uniform CullPushConstants 
-{
-	RenderItemsBuffer renderItemsBuffer;
-	VisibleRenderItemsBuffer vRenderItemsBuffer;
-	CountBuffer countBuffer;
-} cullPushConstants;

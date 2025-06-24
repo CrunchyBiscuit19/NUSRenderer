@@ -2,28 +2,69 @@
 
 #include <Renderer/RendererResources.h>
 
+#include <imgui.h>    
+#include <ImGuizmo.h>
+
 class Renderer;
+class GLTFInstance;
+
+struct PickerDrawPushConstants
+{
+	vk::DeviceAddress vertexBuffer;
+	vk::DeviceAddress nodeTransformsBuffer;
+	vk::DeviceAddress instancesBuffer;
+	vk::DeviceAddress visibleRenderItemsBuffer;
+};
+
+struct PickerPickPushConstants
+{
+	vk::DeviceAddress pickerBuffer;
+};
+
+struct PickerData
+{
+	glm::ivec2 uv;
+	glm::uvec2 read;
+};
 
 class Picker
 {
 	Renderer* mRenderer;
 
 public:
-	AllocatedImage mObjectImage;
+	AllocatedBuffer mBuffer;
+
+	AllocatedImage mImage;
 	AllocatedImage mDepthImage;
 
-	PipelineBundle mPipelineBundle;
-	vk::raii::PipelineLayout mPipelineLayout;
+	vk::raii::DescriptorSet mDescriptorSet;
+	vk::raii::DescriptorSetLayout mDescriptorSetLayout;
 
-	std::pair<int,int> mMouseClickLocation;
+	PipelineBundle mDrawPipelineBundle;
+	vk::raii::PipelineLayout mDrawPipelineLayout;
+	PipelineBundle mPickPipelineBundle;
+	vk::raii::PipelineLayout mPickPipelineLayout;
+
+	PickerDrawPushConstants mDrawPushConstants;
+	PickerPickPushConstants mPickPushConstants;
+
+	ImGuizmo::OPERATION mImguizmoOperation;
+	GLTFInstance* mClickedInstance;
 
 	Picker(Renderer* renderer);
 
 	void init();
+	void initBuffer();
 	void initImage();
-	void initPipelineLayout();
-	void initPipeline();
-	void initCallback();
+	void initDescriptor();
+	void initDrawPipeline();
+	void initPickPipeline();
+	void initDrawPushConstants();
+	void initPickPushConstants();
+
+	void changeImguizmoOperation();
+
+	void imguizmoFrame() const;
 
 	void cleanup();
 };

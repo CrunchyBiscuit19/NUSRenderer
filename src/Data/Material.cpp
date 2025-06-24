@@ -21,12 +21,12 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer)
 {
 	vk::PushConstantRange materialPushConstantRange{};
 	materialPushConstantRange.offset = 0;
-	materialPushConstantRange.size = sizeof(ScenePushConstants);
+	materialPushConstantRange.size = sizeof(ForwardPushConstants);
 	materialPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
-	std::vector<vk::DescriptorSetLayout> materialDescriptorLayouts = {
-		*renderer->mRendererScene.mPerspective.mDescriptorSetLayout,
-		*renderer->mRendererScene.mMainMaterialResourcesDescriptorSetLayout
+	std::vector materialDescriptorLayouts = {
+		*renderer->mScene.mPerspective.mDescriptorSetLayout,
+		*renderer->mScene.mMainMaterialResourcesDescriptorSetLayout
 	};
 
 	vk::PipelineLayoutCreateInfo materialPipelineLayoutCreateInfo = vkhelper::pipelineLayoutCreateInfo();
@@ -35,8 +35,8 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer)
 	materialPipelineLayoutCreateInfo.pPushConstantRanges = &materialPushConstantRange;
 	materialPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 
-	mPipelineLayout = renderer->mRendererCore.mDevice.createPipelineLayout(materialPipelineLayoutCreateInfo);
-	renderer->mRendererCore.labelResourceDebug(mPipelineLayout, "MaterialPipelineLayout");
+	mPipelineLayout = renderer->mCore.mDevice.createPipelineLayout(materialPipelineLayoutCreateInfo);
+	renderer->mCore.labelResourceDebug(mPipelineLayout, "MaterialPipelineLayout");
 	LOG_INFO(renderer->mLogger, "Material Pipeline Layout Created");
 }
 
@@ -54,10 +54,10 @@ void PbrMaterial::getMaterialPipeline()
 
 void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions)
 {
-	vk::ShaderModule fragShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "mesh/mesh.frag.spv");
-	vk::ShaderModule vertexShader = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "mesh/mesh.vert.spv");
+	vk::ShaderModule fragShader = mRenderer->mResources.getShader(
+		std::filesystem::path(SHADERS_PATH) / "Mesh/Mesh.frag.spv");
+	vk::ShaderModule vertexShader = mRenderer->mResources.getShader(
+		std::filesystem::path(SHADERS_PATH) / "Mesh/Mesh.vert.spv");
 
 	vk::CullModeFlags cullMode;
 	(materialPipelineOptions.doubleSided)
@@ -76,23 +76,23 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 	transparency ? materialPipelineBuilder.enableBlendingAlpha() : materialPipelineBuilder.disableBlending();
 	//materialPipelineBuilder.enableDepthtest(!transparency, vk::CompareOp::eGreaterOrEqual); // TODO transparency
 	materialPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
-	materialPipelineBuilder.setColorAttachmentFormat(mRenderer->mRendererInfrastructure.mDrawImage.imageFormat);
-	materialPipelineBuilder.setDepthFormat(mRenderer->mRendererInfrastructure.mDepthImage.imageFormat);
+	materialPipelineBuilder.setColorAttachmentFormat(mRenderer->mInfrastructure.mDrawImage.imageFormat);
+	materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
 	materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
 	auto [it, _] = mPipelinesCache.try_emplace(materialPipelineOptions,
-	                                           mRenderer->mRendererInfrastructure.mLatestPipelineId,
-	                                           materialPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
+	                                           mRenderer->mInfrastructure.mLatestPipelineId,
+	                                           materialPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
 	                                           *mPipelineLayout
 	);
-	mRenderer->mRendererCore.labelResourceDebug(it->second.pipeline,
+	mRenderer->mCore.labelResourceDebug(it->second.pipeline,
 	                                            fmt::format("MaterialPipeline{}",
-	                                                        mRenderer->mRendererInfrastructure.mLatestPipelineId).
+	                                                        mRenderer->mInfrastructure.mLatestPipelineId).
 	                                            c_str());
 	LOG_INFO(mRenderer->mLogger, "{}",
-	         fmt::format("Material Pipeline {} Created", mRenderer->mRendererInfrastructure.mLatestPipelineId).c_str());
+	         fmt::format("Material Pipeline {} Created", mRenderer->mInfrastructure.mLatestPipelineId).c_str());
 
-	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
+	mRenderer->mInfrastructure.mLatestPipelineId++;
 }
 
 void PbrMaterial::cleanup(Renderer* renderer)

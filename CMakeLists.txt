@@ -44,6 +44,11 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.frag"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.comp"
 )
+file(GLOB_RECURSE GLSL_EXTRA_FILES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.glsl"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.glsl")
+set(SHADER_SOURCES ${GLSL_SOURCE_FILES} ${GLSL_EXTRA_FILES})
+
 foreach(GLSL ${GLSL_SOURCE_FILES})
     message(STATUS "BUILDING SHADER: ${GLSL}")
     get_filename_component(FILE_NAME ${GLSL} NAME)
@@ -56,13 +61,10 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
     add_custom_command(
         OUTPUT ${SPIRV}
         COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV} -g
-        DEPENDS ${GLSL}
+        DEPENDS ${GLSL} ${GLSL_EXTRA_FILES}
     )
     list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach()
-
-file(GLOB_RECURSE GLSL_EXTRA_FILES "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.glsl")
-set(SHADER_SOURCES ${GLSL_SOURCE_FILES} ${GLSL_EXTRA_FILES})
 
 add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES} SOURCES ${SHADER_SOURCES})
 
@@ -85,6 +87,11 @@ target_sources(imgui PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_tables.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_impl_vulkan.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_impl_sdl2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImGuizmo.cpp"
+  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/GraphEditor.cpp"
+  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImCurveEdit.cpp"
+  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImGradient.cpp"
+  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImSequencer.cpp"
 )
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL2::SDL2)
 add_library(vkbootstrap STATIC)

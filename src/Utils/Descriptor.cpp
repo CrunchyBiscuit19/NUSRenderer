@@ -97,7 +97,7 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::Descript
 	std::vector<vk::raii::DescriptorSet> ds;
 	try
 	{
-		ds = mRenderer->mRendererCore.mDevice.allocateDescriptorSets(allocInfo);
+		ds = mRenderer->mCore.mDevice.allocateDescriptorSets(allocInfo);
 		mReadyPools.emplace_back(std::move(poolToUse));
 	}
 	catch (vk::SystemError e)
@@ -106,7 +106,7 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::Descript
 		mFullPools.emplace_back(std::move(poolToUse));
 		vk::raii::DescriptorPool poolToUse1 = getPool();
 		allocInfo.descriptorPool = *poolToUse1;
-		ds = mRenderer->mRendererCore.mDevice.allocateDescriptorSets(allocInfo);
+		ds = mRenderer->mCore.mDevice.allocateDescriptorSets(allocInfo);
 		mReadyPools.emplace_back(std::move(poolToUse1));
 	}
 	return std::move(ds[0]);
@@ -140,7 +140,7 @@ vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(uint32_t setCou
 	pool_info.maxSets = setCount;
 	pool_info.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	pool_info.pPoolSizes = poolSizes.data();
-	return mRenderer->mRendererCore.mDevice.createDescriptorPool(pool_info, nullptr);
+	return mRenderer->mCore.mDevice.createDescriptorPool(pool_info, nullptr);
 }
 
 void DescriptorAllocatorGrowable::cleanup()

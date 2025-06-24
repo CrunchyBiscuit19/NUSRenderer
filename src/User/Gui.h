@@ -1,5 +1,7 @@
 #pragma once
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
 #include <imgui.h>
 #define NOMINMAX // imfilebrowser.h contains windows.h
 #include <imfilebrowser.h>
@@ -54,15 +56,12 @@ class Gui
 	vk::raii::DescriptorPool mDescriptorPool;
 	vk::raii::DescriptorSet mDescriptorSet;
 
-	ImGui::FileBrowser mSelectModelFileBrowser;
-	ImGui::FileBrowser mSelectSkyboxFileBrowser;
-
 	bool mCollapsed;
 
 	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
 	void createDockSpace();
-	void createRendererOptionsWindow();
+	void createRendererOptionsWindow() const;
 
 public:
 	Gui(Renderer* renderer);
@@ -74,8 +73,10 @@ public:
 	void initComponents();
 	void initKeyBinding();
 
-	void imguiFrame();
+	void updateFrame();
 
 	void cleanup();
 
+	ImGui::FileBrowser mSelectModelFileBrowser;
+	ImGui::FileBrowser mSelectSkyboxFileBrowser;
 };

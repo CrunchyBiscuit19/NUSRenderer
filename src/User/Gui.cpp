@@ -26,16 +26,12 @@ void Gui::CameraGuiComponent::elements()
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.mPosition.x, mRenderer->mCamera.mPosition.y,
 		mRenderer->mCamera.mPosition.z);
 	ImGui::Text("Pitch / Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
-	ImGui::SliderFloat("Speed", &mRenderer->mCamera.mSpeed, 0.f, 100.f, "%.2f");
+	ImGui::Text("Speed: %.1f / %.1f", mRenderer->mCamera.mSpeed, MAX_CAMERA_SPEED);
 }
 
 void Gui::SceneGuiComponent::elements()
 {
-	if (ImGui::Button("Add Model"))
-	{
-		mGui->mSelectModelFileBrowser.Open();
-	}
-	for (auto& model : mRenderer->mRendererScene.mModels | std::views::values)
+	for (auto& model : mRenderer->mScene.mModelsCache | std::views::values)
 	{
 		const auto name = model.mName;
 		ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
@@ -43,11 +39,7 @@ void Gui::SceneGuiComponent::elements()
 		{
 			if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str()))
 			{
-				model.createInstance(TransformData{
-					mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f
-					});
-				model.mReloadLocalInstancesBuffer = true;
-				mRenderer->mRendererScene.mFlags.instanceAddedFlag = true;
+				model.createInstanceAtCamera(mRenderer->mCamera);
 			}
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
@@ -63,32 +55,14 @@ void Gui::SceneGuiComponent::elements()
 				{
 					ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
-					if (ImGui::InputFloat3("Translation", glm::value_ptr(instance.mTransformComponents.translation)))
-					{
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
+					glm::vec3 translation, rotation, scale;
+					ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
+					for (int i = 0; i < 3; i++) {
+						rotation[i] = glm::radians(rotation[i]);
 					}
-					if (ImGui::SliderFloat3("Pitch / Yaw / Roll",
-						glm::value_ptr(instance.mTransformComponents.rotation), -glm::pi<float>(),
-						glm::pi<float>()))
-					{
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
-					}
-					if (ImGui::SliderFloat("Scale", &instance.mTransformComponents.scale, 0.f, 100.f))
-					{
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.reloadMainInstancesBuffer = true;
-					}
-
-					ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-					if (ImGui::Button("Delete Instance"))
-					{
-						instance.mDeleteSignal = true;
-						model.mReloadLocalInstancesBuffer = true;
-						mRenderer->mRendererScene.mFlags.instanceDestroyedFlag = true;
-					}
-					ImGui::PopStyleColor();
+					ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Rotation", glm::value_ptr(rotation), "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Scale", glm::value_ptr(scale), "%.3f", ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PopID();
 					ImGui::TreePop();
@@ -100,11 +74,11 @@ void Gui::SceneGuiComponent::elements()
 
 	if (ImGui::CollapsingHeader("Sunlight", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.ambientColor));
-		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightColor));
+		ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.ambientColor));
+		ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightColor));
 		ImGui::SliderFloat3("Sunlight Direction",
-			glm::value_ptr(mRenderer->mRendererScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
-		ImGui::InputFloat("Sunlight Power", &mRenderer->mRendererScene.mPerspective.mData.sunlightDirection[3]);
+			glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
+		ImGui::InputFloat("Sunlight Power", &mRenderer->mScene.mPerspective.mData.sunlightDirection[3]);
 	}
 	if (ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -115,7 +89,7 @@ void Gui::SceneGuiComponent::elements()
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Skybox"))
 		{
-			mRenderer->mRendererScene.mSkybox.mActive = !mRenderer->mRendererScene.mSkybox.mActive;
+			mRenderer->mScene.mSkybox.mActive = !mRenderer->mScene.mSkybox.mActive;
 		}
 	}
 
@@ -123,16 +97,8 @@ void Gui::SceneGuiComponent::elements()
 	if (mGui->mSelectSkyboxFileBrowser.HasSelected())
 	{
 		std::filesystem::path selectedSkyboxDir = mGui->mSelectSkyboxFileBrowser.GetSelected();
-		mRenderer->mRendererScene.mSkybox.updateImage(selectedSkyboxDir);
+		mRenderer->mScene.mSkybox.updateImage(selectedSkyboxDir);
 		mGui->mSelectSkyboxFileBrowser.ClearSelected();
-	}
-
-	mGui->mSelectModelFileBrowser.Display();
-	if (mGui->mSelectModelFileBrowser.HasSelected())
-	{
-		auto selectedFiles = mGui->mSelectModelFileBrowser.GetMultiSelected();
-		mRenderer->mRendererScene.loadModels(selectedFiles);
-		mGui->mSelectModelFileBrowser.ClearSelected();
 	}
 }
 
@@ -148,14 +114,15 @@ void Gui::MiscGuiComponent::elements()
 	}
 	if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Text("[F11] Change Camera Mode");
-		ImGui::Text("[F10] Toggle Borderless Fullscreen");
-		ImGui::Text("[F9] Toggle GUI");
-		ImGui::Text("[Right Click] Change Mouse Mode");
-	}
-	if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
-	{
-		ImGui::Text("Mouse Last Clicked: (%d, %d)", mRenderer->mRendererScene.mPicker.mMouseClickLocation.first, mRenderer->mRendererScene.mPicker.mMouseClickLocation.second);
+		ImGui::Text("[G] Toggle GUI");
+		ImGui::Text("[Alt + Enter] Toggle Borderless Fullscreen");
+		ImGui::Text("[C] Change Camera Mode");
+		ImGui::Text("[Mouse Scroll] Control Camera Speed");
+		ImGui::Text("[Left Click] Select / Deselect Object");
+		ImGui::Text("[Right Click] Enter / Leave Window");
+		ImGui::Text("[Ctrl + I] Import Model");
+		ImGui::Text("[T] Switch Transform Mode");
+		ImGui::Text("[Del] Delete Clicked Instance");
 	}
 }
 
@@ -190,7 +157,7 @@ void Gui::createDockSpace()
 	ImGui::PopStyleVar(3);
 }
 
-void Gui::createRendererOptionsWindow()
+void Gui::createRendererOptionsWindow() const
 {
 	if (mCollapsed) return;
 	if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
@@ -252,7 +219,7 @@ void Gui::initDescriptors()
 	poolInfo.maxSets = 100;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	mDescriptorPool = mRenderer->mRendererCore.mDevice.createDescriptorPool(poolInfo);
+	mDescriptorPool = mRenderer->mCore.mDevice.createDescriptorPool(poolInfo);
 
 	LOG_INFO(mRenderer->mLogger, "ImGui Descriptor Pool Created");
 }
@@ -260,20 +227,20 @@ void Gui::initDescriptors()
 void Gui::initBackend() const
 {
 	ImGui::CreateContext();
-	ImGui_ImplSDL2_InitForVulkan(mRenderer->mRendererCore.mWindow);
+	ImGui_ImplSDL2_InitForVulkan(mRenderer->mCore.mWindow);
 
 	LOG_INFO(mRenderer->mLogger, "ImGui SDL2 Vulkan Initialized");
 
 	vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
 	pipelineRenderingCreateInfo.colorAttachmentCount = 1;
-	pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mRendererInfrastructure.mSwapchainBundle.mFormat;
-	pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mRendererInfrastructure.mDepthImage.imageFormat;
+	pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mInfrastructure.mSwapchainBundle.mFormat;
+	pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mInfrastructure.mDepthImage.imageFormat;
 
 	ImGui_ImplVulkan_InitInfo initInfo = {};
-	initInfo.Instance = *mRenderer->mRendererCore.mInstance;
-	initInfo.PhysicalDevice = *mRenderer->mRendererCore.mChosenGPU;
-	initInfo.Device = *mRenderer->mRendererCore.mDevice;
-	initInfo.Queue = *mRenderer->mRendererCore.mGraphicsQueue;
+	initInfo.Instance = *mRenderer->mCore.mInstance;
+	initInfo.PhysicalDevice = *mRenderer->mCore.mChosenGPU;
+	initInfo.Device = *mRenderer->mCore.mDevice;
+	initInfo.Queue = *mRenderer->mCore.mGraphicsQueue;
 	initInfo.DescriptorPool = *mDescriptorPool;
 	initInfo.MinImageCount = NUMBER_OF_SWAPCHAIN_IMAGES;
 	initInfo.ImageCount = NUMBER_OF_SWAPCHAIN_IMAGES;
@@ -318,17 +285,21 @@ void Gui::initComponents()
 
 void Gui::initKeyBinding()
 {
-	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-		if (keyState[SDL_SCANCODE_F9] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+		if (keyState[SDL_SCANCODE_G] && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mCollapsed = !mCollapsed;
+		}
+
+		if (keyState[SDL_SCANCODE_T] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mRenderer->mScene.mPicker.changeImguizmoOperation();
 		}
 	});
 }
 
-void Gui::imguiFrame()
+void Gui::updateFrame()
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
@@ -336,6 +307,15 @@ void Gui::imguiFrame()
 
 	createDockSpace();
 	createRendererOptionsWindow();
+	mRenderer->mScene.mPicker.imguizmoFrame();
+
+	mSelectModelFileBrowser.Display();
+	if (mSelectModelFileBrowser.HasSelected())
+	{
+		auto selectedFiles = mSelectModelFileBrowser.GetMultiSelected();
+		mRenderer->mScene.loadModels(selectedFiles);
+		mSelectModelFileBrowser.ClearSelected();
+	}
 
 	ImGui::Render();
 }

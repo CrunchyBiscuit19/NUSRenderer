@@ -11,6 +11,10 @@ constexpr bool USE_VALIDATION_LAYERS = true;
 
 constexpr bool LOG_TO_FILE = false;
 
+constexpr float MAX_CAMERA_SPEED = 100.f;
+
+constexpr float IMGUIZMO_SIZE = 0.15f;
+
 constexpr unsigned int EXPECTED_FRAME_RATE = 60;
 constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int NUMBER_OF_SWAPCHAIN_IMAGES = 3;

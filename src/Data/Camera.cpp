@@ -37,7 +37,6 @@ Camera::Camera(Renderer* renderer) :
 
 	mMovementFunctions[DRONE] = [this]() -> void
 	{
-		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 		if (keyState[SDL_SCANCODE_W])
 			mVelocity.z = -1;
@@ -53,19 +52,15 @@ Camera::Camera(Renderer* renderer) :
 
 void Camera::init()
 {
-	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
-		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
 		mVelocity = glm::vec3(0.f);
 
 		mMovementFunctions[mMovementMode]();
 
-		// F12 is a reserved, kernel-based key for the debugger, so it will crash while using VS debugger. 
-		// https://stackoverflow.com/questions/18997754/how-to-disable-f12-to-debug-application-in-visual-studio-2012
-		// If we have to test it, build and launch from output folder (ie. click on the actual exe).
-		if (keyState[SDL_SCANCODE_F11] && e.type == SDL_KEYDOWN && !e.key.repeat)
+		if (keyState[SDL_SCANCODE_C] && e.type == SDL_KEYDOWN && !e.key.repeat)
 		{
 			switch (mMovementMode)
 			{
@@ -85,6 +80,12 @@ void Camera::init()
 		{
 			mYaw += static_cast<float>(e.motion.xrel) / 200.f;
 			mPitch -= static_cast<float>(e.motion.yrel) / 200.f;
+		}
+
+		if (e.type == SDL_MOUSEWHEEL)
+		{
+			mSpeed += static_cast<float>(e.wheel.y);
+			mSpeed = std::clamp(mSpeed, 0.f, MAX_CAMERA_SPEED);
 		}
 	});
 }

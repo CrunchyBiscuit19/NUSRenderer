@@ -1,0 +1,28 @@
+#version 460
+
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_debug_printf : require
+
+#include "Cull.h.glsl"
+
+const int MAX_CULL_LOCAL_SIZE = 256;
+
+layout(local_size_x = MAX_CULL_LOCAL_SIZE) in;
+
+void main()
+{
+    uint renderItemsBufferIndex = gl_GlobalInvocationID.x;
+    if (true) { // TODO frustum / occulsion cull
+        uint visibleRenderItemsBufferIndex = atomicAdd(countBuffer.count, 1);
+        
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].indexCount = renderItemsBuffer.d[renderItemsBufferIndex].indexCount; 
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].instanceCount = renderItemsBuffer.d[renderItemsBufferIndex].instanceCount;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].firstIndex = renderItemsBuffer.d[renderItemsBufferIndex].firstIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].vertexOffset = renderItemsBuffer.d[renderItemsBufferIndex].vertexOffset;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].firstInstance = renderItemsBuffer.d[renderItemsBufferIndex].firstInstance;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].materialIndex = renderItemsBuffer.d[renderItemsBufferIndex].materialIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].nodeTransformIndex = renderItemsBuffer.d[renderItemsBufferIndex].nodeTransformIndex;
+        visibleRenderItemsBuffer.d[visibleRenderItemsBufferIndex].modelIndex = renderItemsBuffer.d[renderItemsBufferIndex].modelIndex;
+    }
+}

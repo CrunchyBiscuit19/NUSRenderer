@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_nonuniform_qualifier : require
 
-#include "skybox_inputs.glsl"
+#include "skybox.h.glsl"
 
 layout (location = 0) in vec3 inUVW;
 

@@ -29,29 +29,27 @@ void Culler::initPipelineLayout()
 	cullLayoutInfo.pPushConstantRanges = &cullPushConstantRange;
 	cullLayoutInfo.pushConstantRangeCount = 1;
 
-	mPipelineLayout = mRenderer->mRendererCore.mDevice.createPipelineLayout(cullLayoutInfo);
-	mRenderer->mRendererCore.labelResourceDebug(mPipelineLayout, "CullPipelineLayout");
+	mPipelineLayout = mRenderer->mCore.mDevice.createPipelineLayout(cullLayoutInfo);
+	mRenderer->mCore.labelResourceDebug(mPipelineLayout, "CullPipelineLayout");
 	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Layout Created");
 }
 
 void Culler::initPipeline()
 {
-	vk::ShaderModule computeShaderModule = mRenderer->mRendererResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "cull/cull.comp.spv");
+	vk::ShaderModule computeShaderModule = mRenderer->mResources.getShader(
+		std::filesystem::path(SHADERS_PATH) / "Cull/Cull.comp.spv");
 
 	ComputePipelineBuilder cullPipelineBuilder;
 	cullPipelineBuilder.setShader(computeShaderModule);
 	cullPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
 	mPipelineBundle = PipelineBundle(
-		mRenderer->mRendererInfrastructure.mLatestPipelineId,
-		cullPipelineBuilder.buildPipeline(mRenderer->mRendererCore.mDevice),
+		mRenderer->mInfrastructure.mLatestPipelineId++,
+		cullPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
 		*mPipelineLayout
 	);
-	mRenderer->mRendererCore.labelResourceDebug(mPipelineBundle.pipeline, "CullPipeline");
+	mRenderer->mCore.labelResourceDebug(mPipelineBundle.pipeline, "CullPipeline");
 	LOG_INFO(mRenderer->mLogger, "Cull Pipeline Created");
-
-	mRenderer->mRendererInfrastructure.mLatestPipelineId++;
 }
 
 void Culler::cleanup()

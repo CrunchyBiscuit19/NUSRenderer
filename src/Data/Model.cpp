@@ -16,7 +16,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 	mName = modelPath.stem().string();
 	LOG_INFO(mRenderer->mLogger, "{} Open GLTF / GLB File", mName);
 
-	mId = mRenderer->mRendererScene.mLatestModelId++;
+	mId = mRenderer->mScene.mLatestModelId++;
 
 	fastgltf::Parser parser{};
 	fastgltf::Asset gltf;
@@ -48,9 +48,7 @@ GLTFModel::GLTFModel(Renderer* renderer, std::filesystem::path modelPath) :
 
 	this->load();
 
-	createInstance(TransformData{
-		mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector(), glm::vec3(), 1.f
-	});
+	createInstanceAtCamera(mRenderer->mCamera);
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter)
@@ -118,7 +116,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 				           imagesize.width = width;
 				           imagesize.height = height;
 				           imagesize.depth = 1;
-				           newImage = mRenderer->mRendererResources.createImage(
+				           newImage = mRenderer->mResources.createImage(
 					           data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 				           stbi_image_free(data);
 			           }
@@ -134,7 +132,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 				           imagesize.width = width;
 				           imagesize.height = height;
 				           imagesize.depth = 1;
-				           newImage = mRenderer->mRendererResources.createImage(
+				           newImage = mRenderer->mResources.createImage(
 					           data, imagesize, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eSampled, true);
 				           stbi_image_free(data);
 			           }
@@ -155,7 +153,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image)
 						                      imagesize.width = width;
 						                      imagesize.height = height;
 						                      imagesize.depth = 1;
-						                      newImage = mRenderer->mRendererResources.createImage(
+						                      newImage = mRenderer->mResources.createImage(
 							                      data, imagesize, vk::Format::eR8G8B8A8Unorm,
 							                      vk::ImageUsageFlagBits::eSampled, true);
 						                      stbi_image_free(data);
@@ -184,8 +182,8 @@ void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& reso
 	                                 material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
 
 	resources.base = {
-		&mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White),
-		mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo())
+		&mRenderer->mResources.mDefaultImages.at(DefaultImage::White),
+		mRenderer->mResources.getSampler(vk::SamplerCreateInfo())
 	};
 	if (material.pbrData.baseColorTexture.has_value())
 	{
@@ -194,7 +192,7 @@ void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& reso
 		if (imageIndex.has_value())
 			resources.base.image = &mImages[imageIndex.value()];
 		if (samplerIndex.has_value())
-			resources.base.sampler = mRenderer->mRendererResources.
+			resources.base.sampler = mRenderer->mResources.
 			                                    getSampler(mSamplerCreateInfos[samplerIndex.value()]);
 	}
 }
@@ -205,8 +203,8 @@ void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialRe
 	constants.metallicRoughnessFactor = glm::vec2(material.pbrData.metallicFactor, material.pbrData.roughnessFactor);
 
 	resources.metallicRoughness = {
-		&mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White),
-		mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo())
+		&mRenderer->mResources.mDefaultImages.at(DefaultImage::White),
+		mRenderer->mResources.getSampler(vk::SamplerCreateInfo())
 	};
 	if (material.pbrData.metallicRoughnessTexture.has_value())
 	{
@@ -216,7 +214,7 @@ void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialRe
 		if (imageIndex.has_value())
 			resources.metallicRoughness.image = &mImages[imageIndex.value()];
 		if (samplerIndex.has_value())
-			resources.metallicRoughness.sampler = mRenderer->mRendererResources.getSampler(
+			resources.metallicRoughness.sampler = mRenderer->mResources.getSampler(
 				mSamplerCreateInfos[samplerIndex.value()]);
 	}
 }
@@ -227,8 +225,8 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
 	                                     material.emissiveFactor[2], 0);
 
 	resources.emissive = {
-		&mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White),
-		mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo())
+		&mRenderer->mResources.mDefaultImages.at(DefaultImage::White),
+		mRenderer->mResources.getSampler(vk::SamplerCreateInfo())
 	};
 	if (material.emissiveTexture.has_value())
 	{
@@ -237,7 +235,7 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
 		if (imageIndex.has_value())
 			resources.emissive.image = &mImages[imageIndex.value()];
 		if (samplerIndex.has_value())
-			resources.emissive.sampler = mRenderer->mRendererResources.getSampler(
+			resources.emissive.sampler = mRenderer->mResources.getSampler(
 				mSamplerCreateInfos[samplerIndex.value()]);
 	}
 }
@@ -245,8 +243,8 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
 void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& resources, fastgltf::Material& material)
 {
 	resources.normal = {
-		&mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White),
-		mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo())
+		&mRenderer->mResources.mDefaultImages.at(DefaultImage::White),
+		mRenderer->mResources.getSampler(vk::SamplerCreateInfo())
 	};
 	if (material.normalTexture.has_value())
 	{
@@ -255,7 +253,7 @@ void GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& re
 		if (imageIndex.has_value())
 			resources.normal.image = &mImages[imageIndex.value()];
 		if (samplerIndex.has_value())
-			resources.normal.sampler = mRenderer->mRendererResources.getSampler(
+			resources.normal.sampler = mRenderer->mResources.getSampler(
 				mSamplerCreateInfos[samplerIndex.value()]);
 
 		constants.normalScale = material.normalTexture.value().scale;
@@ -266,8 +264,8 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
                                 fastgltf::Material& material)
 {
 	resources.occlusion = {
-		&mRenderer->mRendererResources.mDefaultImages.at(DefaultImage::White),
-		mRenderer->mRendererResources.getSampler(vk::SamplerCreateInfo())
+		&mRenderer->mResources.mDefaultImages.at(DefaultImage::White),
+		mRenderer->mResources.getSampler(vk::SamplerCreateInfo())
 	};
 	if (material.occlusionTexture.has_value())
 	{
@@ -276,7 +274,7 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
 		if (imageIndex.has_value())
 			resources.occlusion.image = &mImages[imageIndex.value()];
 		if (samplerIndex.has_value())
-			resources.occlusion.sampler = mRenderer->mRendererResources.getSampler(
+			resources.occlusion.sampler = mRenderer->mResources.getSampler(
 				mSamplerCreateInfos[samplerIndex.value()]);
 
 		constants.occlusionStrength = material.occlusionTexture.value().strength;
@@ -285,33 +283,33 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
 
 void GLTFModel::initBuffers()
 {
-	mMaterialConstantsBuffer = mRenderer->mRendererResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
+	mMaterialConstantsBuffer = mRenderer->mResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants),
 	                                                                      vk::BufferUsageFlagBits::eTransferSrc |
 	                                                                      vk::BufferUsageFlagBits::eTransferDst |
 	                                                                      vk::BufferUsageFlagBits::eStorageBuffer |
 	                                                                      vk::BufferUsageFlagBits::eShaderDeviceAddress,
 	                                                                      VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mMaterialConstantsBuffer.buffer,
+	mRenderer->mCore.labelResourceDebug(mMaterialConstantsBuffer.buffer,
 	                                            fmt::format("{}MaterialConstantsBuffer", mName).c_str());
 	LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
 
-	mNodeTransformsBuffer = mRenderer->mRendererResources.createBuffer(MAX_NODES * sizeof(glm::mat4),
+	mNodeTransformsBuffer = mRenderer->mResources.createBuffer(MAX_NODES * sizeof(glm::mat4),
 	                                                                   vk::BufferUsageFlagBits::eTransferSrc |
 	                                                                   vk::BufferUsageFlagBits::eTransferDst |
 	                                                                   vk::BufferUsageFlagBits::eStorageBuffer |
 	                                                                   vk::BufferUsageFlagBits::eShaderDeviceAddress,
 	                                                                   VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mNodeTransformsBuffer.buffer,
+	mRenderer->mCore.labelResourceDebug(mNodeTransformsBuffer.buffer,
 	                                            fmt::format("{}NodeTransformsBuffer", mName).c_str());
 	LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
 
-	mInstancesBuffer = mRenderer->mRendererResources.createBuffer(MAX_INSTANCES * sizeof(TransformData),
+	mInstancesBuffer = mRenderer->mResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData),
 	                                                              vk::BufferUsageFlagBits::eTransferSrc |
 	                                                              vk::BufferUsageFlagBits::eTransferDst |
 	                                                              vk::BufferUsageFlagBits::eStorageBuffer |
 	                                                              vk::BufferUsageFlagBits::eShaderDeviceAddress,
 	                                                              VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mInstancesBuffer.buffer,
+	mRenderer->mCore.labelResourceDebug(mInstancesBuffer.buffer,
 	                                            fmt::format("{}InstancesBuffer", mName).c_str());
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 }
@@ -344,8 +342,8 @@ void GLTFModel::loadImages()
 	for (fastgltf::Image& image : mAsset.images)
 	{
 		AllocatedImage newImage = loadImage(image);
-		mRenderer->mRendererCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
-		mRenderer->mRendererCore.
+		mRenderer->mCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
+		mRenderer->mCore.
 		           labelResourceDebug(newImage.imageView, fmt::format("{}ImageView{}", mName, id).c_str());
 		mImages.emplace_back(std::move(newImage));
 		id++;
@@ -409,7 +407,7 @@ void GLTFModel::loadMeshes()
 		Mesh newMesh;
 
 		newMesh.mName = fmt::format("{}{}", mName, mesh.name);
-		newMesh.mId = mRenderer->mRendererScene.mLatestMeshId;
+		newMesh.mId = mRenderer->mScene.mLatestMeshId;
 
 		indices.clear();
 		vertices.clear();
@@ -504,7 +502,7 @@ void GLTFModel::loadMeshes()
 
 		loadMeshBuffers(mMeshes.back(), indices, vertices);
 
-		mRenderer->mRendererScene.mLatestMeshId++;
+		mRenderer->mScene.mLatestMeshId++;
 	}
 
 	LOG_INFO(mRenderer->mLogger, "{} Meshes Loaded", mName);
@@ -591,26 +589,26 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 	const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
 	const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-	mesh.mVertexBuffer = mRenderer->mRendererResources.createBuffer(srcVertexVectorSize,
+	mesh.mVertexBuffer = mRenderer->mResources.createBuffer(srcVertexVectorSize,
 	                                                                vk::BufferUsageFlagBits::eTransferSrc |
 	                                                                vk::BufferUsageFlagBits::eTransferDst |
 	                                                                vk::BufferUsageFlagBits::eStorageBuffer |
 	                                                                vk::BufferUsageFlagBits::eShaderDeviceAddress,
 	                                                                VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mesh.mVertexBuffer.buffer,
+	mRenderer->mCore.labelResourceDebug(mesh.mVertexBuffer.buffer,
 	                                            fmt::format("{}VertexBuffer", mesh.mName).c_str());
-	mesh.mIndexBuffer = mRenderer->mRendererResources.createBuffer(srcIndexVectorSize,
+	mesh.mIndexBuffer = mRenderer->mResources.createBuffer(srcIndexVectorSize,
 	                                                               vk::BufferUsageFlagBits::eTransferSrc |
 	                                                               vk::BufferUsageFlagBits::eTransferDst |
 	                                                               vk::BufferUsageFlagBits::eIndexBuffer,
 	                                                               VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mRendererCore.labelResourceDebug(mesh.mIndexBuffer.buffer,
+	mRenderer->mCore.labelResourceDebug(mesh.mIndexBuffer.buffer,
 	                                            fmt::format("{}IndexBuffer", mesh.mName).c_str());
 
-	std::memcpy(static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + 0,
+	std::memcpy(static_cast<char*>(mRenderer->mResources.mMeshStagingBuffer.info.pMappedData) + 0,
 	            srcVertexVector.data(), srcVertexVectorSize);
 	std::memcpy(
-		static_cast<char*>(mRenderer->mRendererResources.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize,
+		static_cast<char*>(mRenderer->mResources.mMeshStagingBuffer.info.pMappedData) + srcVertexVectorSize,
 		srcIndexVector.data(), srcIndexVectorSize);
 
 	vk::BufferCopy vertexCopy{};
@@ -626,15 +624,15 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 	{
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
-			*renderer->mRendererResources.mMeshStagingBuffer.buffer,
+			*renderer->mResources.mMeshStagingBuffer.buffer,
 			vk::PipelineStageFlagBits2::eHost,
 			vk::AccessFlagBits2::eHostWrite,
 			vk::PipelineStageFlagBits2::eTransfer,
 			vk::AccessFlagBits2::eTransferRead
 		);
 
-		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh.mVertexBuffer.buffer, vertexCopy);
-		cmd.copyBuffer(*renderer->mRendererResources.mMeshStagingBuffer.buffer, *mesh.mIndexBuffer.buffer, indexCopy);
+		cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mVertexBuffer.buffer, vertexCopy);
+		cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mIndexBuffer.buffer, indexCopy);
 
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
@@ -659,7 +657,7 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 
 void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector)
 {
-	std::memcpy(mRenderer->mRendererResources.mMaterialConstantsStagingBuffer.info.pMappedData,
+	std::memcpy(mRenderer->mResources.mMaterialConstantsStagingBuffer.info.pMappedData,
 	            materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
 
 	vk::BufferCopy materialConstantsCopy{};
@@ -671,14 +669,14 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 	{
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
-			*renderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer,
+			*renderer->mResources.mMaterialConstantsStagingBuffer.buffer,
 			vk::PipelineStageFlagBits2::eHost,
 			vk::AccessFlagBits2::eHostWrite,
 			vk::PipelineStageFlagBits2::eTransfer,
 			vk::AccessFlagBits2::eTransferRead
 		);
 
-		cmd.copyBuffer(*renderer->mRendererResources.mMaterialConstantsStagingBuffer.buffer,
+		cmd.copyBuffer(*renderer->mResources.mMaterialConstantsStagingBuffer.buffer,
 		               *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 
 		vkhelper::createBufferPipelineBarrier(
@@ -698,7 +696,7 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 	for (int i = 0; i < nodesVector.size(); i++)
 	{
 		std::memcpy(
-			static_cast<char*>(mRenderer->mRendererResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof
+			static_cast<char*>(mRenderer->mResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof
 			(glm::mat4), &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
 	}
 
@@ -711,14 +709,14 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 	{
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
-			*renderer->mRendererResources.mNodeTransformsStagingBuffer.buffer,
+			*renderer->mResources.mNodeTransformsStagingBuffer.buffer,
 			vk::PipelineStageFlagBits2::eHost,
 			vk::AccessFlagBits2::eHostWrite,
 			vk::PipelineStageFlagBits2::eTransfer,
 			vk::AccessFlagBits2::eTransferRead
 		);
 
-		cmd.copyBuffer(*renderer->mRendererResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer,
+		cmd.copyBuffer(*renderer->mResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer,
 		               nodeTransformsCopy);
 
 		vkhelper::createBufferPipelineBarrier(
@@ -735,7 +733,7 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 
 void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 {
-	std::memcpy(mRenderer->mRendererResources.mInstancesStagingBuffer.info.pMappedData, instanceDataVector.data(),
+	std::memcpy(mRenderer->mResources.mInstancesStagingBuffer.info.pMappedData, instanceDataVector.data(),
 	            instanceDataVector.size() * sizeof(InstanceData));
 
 	vk::BufferCopy instancesCopy{};
@@ -743,18 +741,18 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	instancesCopy.srcOffset = 0;
 	instancesCopy.size = instanceDataVector.size() * sizeof(InstanceData);
 
-	mRenderer->mImmSubmit.individualSubmit([this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd)
+	mRenderer->mImmSubmit.individualSubmit([this, instancesCopy](const Renderer* renderer, vk::CommandBuffer cmd)
 	{
 		vkhelper::createBufferPipelineBarrier(
 			cmd,
-			*renderer->mRendererResources.mInstancesStagingBuffer.buffer,
+			*renderer->mResources.mInstancesStagingBuffer.buffer,
 			vk::PipelineStageFlagBits2::eHost,
 			vk::AccessFlagBits2::eHostWrite,
 			vk::PipelineStageFlagBits2::eTransfer,
 			vk::AccessFlagBits2::eTransferRead
 		);
 
-		cmd.copyBuffer(*renderer->mRendererResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer,
+		cmd.copyBuffer(*renderer->mResources.mInstancesStagingBuffer.buffer, *mInstancesBuffer.buffer,
 		               instancesCopy);
 
 		vkhelper::createBufferPipelineBarrier(
@@ -769,38 +767,45 @@ void GLTFModel::loadInstancesBuffer(std::span<InstanceData> instanceDataVector)
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffers Uploading", mName);
 }
 
-void GLTFModel::createInstance(TransformData initialTransform)
+void GLTFModel::createInstance(InstanceData initialData)
 {
-	mInstances.emplace_back(this, mRenderer->mRendererScene.mLatestInstanceId, initialTransform);
-	mRenderer->mRendererScene.mLatestInstanceId++;
+	mInstances.emplace_back(this, mRenderer->mScene.mLatestInstanceId++, initialData);
+	mReloadLocalInstancesBuffer = true;
+	mRenderer->mScene.mFlags.instanceAddedFlag = true;
 	LOG_INFO(mRenderer->mLogger, "{} Instance Created", mName);
+}
+
+void GLTFModel::createInstanceAtCamera(Camera& camera)
+{
+	glm::mat4 transformMatrix = glm::translate(glm::mat4(1.f), mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector());
+	glm::mat4 rotationMatrix = glm::mat4(1.f);
+	glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.f), glm::vec3(1.f));
+	createInstance(transformMatrix * rotationMatrix * scaleMatrix);
 }
 
 void GLTFModel::updateInstances()
 {
-	if (mInstances.empty()) { return; }
+	if (mInstances.empty()) {
+		mReloadLocalInstancesBuffer = false;
+		return;
+	}
 
 	std::vector<InstanceData> instanceDataVector;
 	instanceDataVector.reserve(mInstances.size());
-	for (auto& instance : mInstances)
-	{
-		const glm::mat4 tm = glm::translate(glm::mat4(1.f), instance.mTransformComponents.translation);
-		const glm::mat4 rm = glm::yawPitchRoll(instance.mTransformComponents.rotation.x,
-		                                       instance.mTransformComponents.rotation.y,
-		                                       instance.mTransformComponents.rotation.z);
-		const glm::mat4 sm = glm::scale(glm::mat4(1.f), glm::vec3(instance.mTransformComponents.scale));
-		InstanceData instanceData{tm * rm * sm};
-		instanceDataVector.push_back(instanceData);
+	for (auto& instance : mInstances) {
+		instanceDataVector.push_back(instance.mData);
 	}
 
 	LOG_INFO(mRenderer->mLogger, "{} Instances Updated", mName);
 
 	loadInstancesBuffer(instanceDataVector);
+
+	mReloadLocalInstancesBuffer = false;
 }
 
 void GLTFModel::markDelete()
 {
-	mDeleteSignal = mRenderer->mRendererInfrastructure.mFrameNumber + FRAME_OVERLAP;
+	mDeleteSignal = mRenderer->mInfrastructure.mFrameNumber + FRAME_OVERLAP;
 	LOG_INFO(mRenderer->mLogger, "{} Marked to Delete", mName);
 }
 
@@ -814,6 +819,11 @@ void GLTFModel::load()
 	loadNodes();
 
 	LOG_INFO(mRenderer->mLogger, "{} Completely Loaded", mName);
+}
+
+Renderer* GLTFModel::getRenderer()
+{
+	return mRenderer;
 }
 
 void GLTFModel::generateRenderItems()

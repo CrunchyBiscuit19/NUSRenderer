@@ -36,7 +36,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 
 	std::string message = "\n";
 	message += fmt::format("{} <{}> Frame {}\n\n", severity, std::string(pCallbackData->pMessageIdName),
-	                       static_cast<Renderer*>(pUserData)->mRendererInfrastructure.mFrameNumber);
+	                       static_cast<Renderer*>(pUserData)->mInfrastructure.mFrameNumber);
 	message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
 	message += fmt::format("Queue Labels:\n");
@@ -201,12 +201,12 @@ void RendererCore::init()
 
 	LOG_INFO(mRenderer->mLogger, "VMA Allocator Created");
 
-	mRenderer->mRendererEvent.addEventCallback([this](SDL_Event& e) -> void
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
 	{
 		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-		if (keyState[SDL_SCANCODE_F10] && e.type == SDL_KEYDOWN && !e.key.repeat)
+		if ((modState & KMOD_ALT) && keyState[SDL_SCANCODE_RETURN] && e.type == SDL_KEYDOWN && !e.key.repeat)
 		{
 			mWindowFullScreen = !mWindowFullScreen;
 			SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);

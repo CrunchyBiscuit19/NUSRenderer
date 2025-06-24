@@ -10,7 +10,7 @@
 #include <vector>
 #include <filesystem>
 
-struct ScenePushConstants
+struct ForwardPushConstants
 {
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress materialConstantsBuffer;
@@ -44,10 +44,11 @@ public:
 
 	Flags mFlags;
 
-	std::unordered_map<std::string, GLTFModel> mModels;
+	std::unordered_map<std::string, GLTFModel> mModelsCache;
+	std::unordered_map<int, std::string> mModelsReverse;
 
 	std::unordered_map<int, Batch> mBatches;
-	ScenePushConstants mScenePushConstants;
+	ForwardPushConstants mForwardPushConstants;
 
 	AddressedBuffer mMainVertexBuffer;
 	AllocatedBuffer mMainIndexBuffer;
@@ -65,6 +66,7 @@ public:
 	void initBuffers();
 	void initDescriptor();
 	void initPushConstants();
+	void initKeyBinding();
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();
