@@ -26,7 +26,7 @@ void Gui::CameraGuiComponent::elements()
 	ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.mPosition.x, mRenderer->mCamera.mPosition.y,
 		mRenderer->mCamera.mPosition.z);
 	ImGui::Text("Pitch / Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
-	ImGui::SliderFloat("Speed", &mRenderer->mCamera.mSpeed, 0.f, 100.f, "%.2f");
+	ImGui::Text("Speed: %.1f / %.1f", mRenderer->mCamera.mSpeed, MAX_CAMERA_SPEED);
 }
 
 void Gui::SceneGuiComponent::elements()
@@ -131,12 +131,12 @@ void Gui::MiscGuiComponent::elements()
 	}
 	if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Text("[C] Change Camera Mode");
-		ImGui::Text("[Alt + Enter] Toggle Borderless Fullscreen");
 		ImGui::Text("[G] Toggle GUI");
+		ImGui::Text("[Alt + Enter] Toggle Borderless Fullscreen");
+		ImGui::Text("[C] Change Camera Mode");
+		ImGui::Text("[Mouse Scroll] Control Camera Speed");
 		ImGui::Text("[Left Click] Select / Deselect Object");
 		ImGui::Text("[Right Click] Enter / Leave Window");
-		ImGui::Text("[Mouse Scroll] Control Camera Speed");
 	}
 }
 

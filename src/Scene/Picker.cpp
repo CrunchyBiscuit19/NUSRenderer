@@ -191,7 +191,7 @@ void Picker::imguizmoFrame() const
 
 	ImGuizmo::BeginFrame();
 	ImGuizmo::SetOrthographic(false);
-	ImGuizmo::SetGizmoSizeClipSpace(0.15f);
+	ImGuizmo::SetGizmoSizeClipSpace(IMGUIZMO_SIZE);
 
 	ImGuizmo::OPERATION imguizmoOperation = ImGuizmo::TRANSLATE;
 
