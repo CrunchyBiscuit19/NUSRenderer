@@ -2,6 +2,9 @@
 
 #include <Renderer/RendererResources.h>
 
+#include <imgui.h>    
+#include <ImGuizmo.h>
+
 class Renderer;
 class GLTFInstance;
 
@@ -45,6 +48,7 @@ public:
 	PickerDrawPushConstants mDrawPushConstants;
 	PickerPickPushConstants mPickPushConstants;
 
+	ImGuizmo::OPERATION mImguizmoOperation;
 	GLTFInstance* mClickedInstance;
 
 	Picker(Renderer* renderer);
@@ -57,6 +61,8 @@ public:
 	void initPickPipeline();
 	void initDrawPushConstants();
 	void initPickPushConstants();
+
+	void changeImguizmoOperation();
 
 	void imguizmoFrame() const;
 

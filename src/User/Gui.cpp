@@ -6,7 +6,6 @@
 #include <imgui_internal.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
-#include <ImGuizmo.h>
 #include <vulkan/vulkan_raii.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <quill/LogMacros.h>
@@ -119,6 +118,7 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("[Left Click] Select / Deselect Object");
 		ImGui::Text("[Right Click] Enter / Leave Window");
 		ImGui::Text("[Ctrl + I] Import Model");
+		ImGui::Text("[T] Switch Transform Mode");
 		ImGui::Text("[Del] Delete Clicked Instance");
 	}
 }
@@ -288,6 +288,10 @@ void Gui::initKeyBinding()
 
 		if (keyState[SDL_SCANCODE_G] && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mCollapsed = !mCollapsed;
+		}
+
+		if (keyState[SDL_SCANCODE_T] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			mRenderer->mScene.mPicker.changeImguizmoOperation();
 		}
 	});
 }

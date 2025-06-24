@@ -3,7 +3,6 @@
 #include <Utils/Helper.h>
 
 #include <quill/LogMacros.h>
-#include <imguizmo.h>
 #include <glm/gtc/type_ptr.hpp>
 
 Picker::Picker(Renderer* renderer) :
@@ -12,6 +11,7 @@ Picker::Picker(Renderer* renderer) :
 	mPickPipelineLayout(nullptr),
 	mDescriptorSet(nullptr),
 	mDescriptorSetLayout(nullptr),
+	mImguizmoOperation(ImGuizmo::TRANSLATE),
 	mClickedInstance(nullptr)
 {}
 
@@ -185,6 +185,24 @@ void Picker::initPickPushConstants()
 	mPickPushConstants.pickerBuffer = mRenderer->mCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer));
 }
 
+void Picker::changeImguizmoOperation()
+{
+	switch (mImguizmoOperation)
+	{
+	case ImGuizmo::TRANSLATE:
+		mImguizmoOperation = ImGuizmo::ROTATE;
+		break;
+	case ImGuizmo::ROTATE:
+		mImguizmoOperation = ImGuizmo::SCALEU;
+		break;
+	case ImGuizmo::SCALEU:
+		mImguizmoOperation = ImGuizmo::TRANSLATE;
+		break;
+	default:
+		mImguizmoOperation = ImGuizmo::TRANSLATE;
+	}
+}
+
 void Picker::imguizmoFrame() const
 {
 	if (mClickedInstance == nullptr) return;
@@ -192,8 +210,6 @@ void Picker::imguizmoFrame() const
 	ImGuizmo::BeginFrame();
 	ImGuizmo::SetOrthographic(false);
 	ImGuizmo::SetGizmoSizeClipSpace(IMGUIZMO_SIZE);
-
-	ImGuizmo::OPERATION imguizmoOperation = ImGuizmo::TRANSLATE;
 
 	ImGuizmo::SetRect(
 		0,
@@ -205,7 +221,7 @@ void Picker::imguizmoFrame() const
 	ImGuizmo::Manipulate(
 		glm::value_ptr(mRenderer->mScene.mPerspective.mData.view),
 		glm::value_ptr(mRenderer->mScene.mPerspective.mData.proj),
-		imguizmoOperation,
+		mImguizmoOperation,
 		ImGuizmo::WORLD,
 		glm::value_ptr(mClickedInstance->mData.transformMatrix)
 	);
