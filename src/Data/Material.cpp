@@ -52,7 +52,7 @@ void PbrMaterial::getMaterialPipeline()
 	mPipelineBundle = &mPipelinesCache.at(materialPipelineOptions);
 }
 
-void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions)
+void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions) const
 {
 	vk::ShaderModule fragShader = mRenderer->mResources.getShader(
 		std::filesystem::path(SHADERS_PATH) / "Mesh/Mesh.frag.spv");

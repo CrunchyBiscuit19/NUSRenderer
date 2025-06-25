@@ -37,46 +37,58 @@ file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS
 add_executable(NUSRenderer ${CPP_SOURCES} ${HEADER_SOURCES})
 set_property(TARGET NUSRenderer PROPERTY CXX_STANDARD 23)
 
-# Get all GLSL shaders and build them
-find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
-file(GLOB_RECURSE GLSL_SOURCE_FILES
+# Get all Slang modules and build them
+find_program(SLANGC slangc HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
+file(GLOB_RECURSE SLANG_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/shaders/modules/*.slang")
+foreach(SLANG_MODULE ${SLANG_MODULES})
+    message(STATUS "BUILDING SLANG MODULE: ${SLANG_MODULE}")
+    get_filename_component(FILE_NAME ${SLANG_MODULE} NAME)
+    get_filename_component(FILE_PATH ${SLANG_MODULE} PATH)
+    set(SPIRV_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders/modules/${FILE_NAME}.spv")
+    add_custom_command(
+        OUTPUT ${SPIRV_PATH}
+        COMMAND "${SLANGC} ${SLANG_MODULE} -o ${SPIRV_PATH} -entry main -profile glsl_460 -target spirv -O3"
+        DEPENDS ${SLANG_MODULE}
+    )
+    list(APPEND SPIRV_BINARY_FILES ${SPIRV_PATH})
+endforeach()
+
+# Get all Slang shaders and build them
+file(GLOB_RECURSE SLANG_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.frag"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.comp"
 )
-file(GLOB_RECURSE GLSL_EXTRA_FILES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.glsl"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.glsl")
-set(SHADER_SOURCES ${GLSL_SOURCE_FILES} ${GLSL_EXTRA_FILES})
-
-foreach(GLSL ${GLSL_SOURCE_FILES})
-    message(STATUS "BUILDING SHADER: ${GLSL}")
-    get_filename_component(FILE_NAME ${GLSL} NAME)
-    get_filename_component(FILE_PATH ${GLSL} PATH)
+file(GLOB_RECURSE SLANG_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.slang")
+set(ALL_SLANG ${SLANG_SOURCES} ${SLANG_HEADERS})
+foreach(SLANG_SOURCE ${SLANG_SOURCES})
+    message(STATUS "BUILDING SLANG SOURCE: ${SLANG_SOURCE}")
+    get_filename_component(FILE_NAME ${SLANG_SOURCE} NAME)
+    get_filename_component(FILE_PATH ${SLANG_SOURCE} PATH)
+    
     file(RELATIVE_PATH REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${FILE_PATH}")
-    set(SPIRV "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${REL_PATH}/${FILE_NAME}.spv")
-
+    set(SPIRV_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${REL_PATH}/${FILE_NAME}.spv")
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${REL_PATH}")
 
     add_custom_command(
-        OUTPUT ${SPIRV}
-        COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV} -g
-        DEPENDS ${GLSL} ${GLSL_EXTRA_FILES}
+        OUTPUT ${SPIRV_PATH}
+        COMMAND "${SLANGC} ${SLANG_SOURCE} -o ${SPIRV_PATH} -entry main -profile glsl_460 -target spirv -O3"
+        DEPENDS ${SLANG_SOURCE} ${SLANG_HEADERS}
     )
-    list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+    list(APPEND SPIRV_BINARY_FILES ${SPIRV_PATH})
 endforeach()
 
-add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES} SOURCES ${SHADER_SOURCES})
+add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES} SOURCES ${ALL_SLANG})
 
 # Vulkan
 find_package(Vulkan REQUIRED)
 
-# Third party .dll libraries
+# .dll libraries
 add_subdirectory(thirdParty/fastgltf)
 add_subdirectory(thirdParty/fmt)
 add_subdirectory(thirdParty/SDL)
 
-# Third party .lib libraries
+# Libraries with source code
 add_library(imgui STATIC)
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui")
 target_sources(imgui PRIVATE
@@ -103,7 +115,7 @@ target_sources(vkbootstrap PRIVATE
 target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 set_property(TARGET vkbootstrap PROPERTY CXX_STANDARD 23)
 
-# Header-only libraries 
+# Libraries header-only
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/glm)
 add_library(magic_enum INTERFACE)
