@@ -553,9 +553,9 @@ void Renderer::draw()
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
 
-	mPasses.at(PassType::Pick).execute(cmd);
+	//mPasses.at(PassType::Pick).execute(cmd);
 
-	mPasses.at(PassType::Geometry).execute(cmd);
+	//mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);
 
 	mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(

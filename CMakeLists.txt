@@ -37,48 +37,72 @@ file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS
 add_executable(NUSRenderer ${CPP_SOURCES} ${HEADER_SOURCES})
 set_property(TARGET NUSRenderer PROPERTY CXX_STANDARD 23)
 
-# Get all Slang modules and build them
-find_program(SLANGC slangc HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
-file(GLOB_RECURSE SLANG_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/shaders/modules/*.slang")
-foreach(SLANG_MODULE ${SLANG_MODULES})
-    message(STATUS "BUILDING SLANG MODULE: ${SLANG_MODULE}")
-    get_filename_component(FILE_NAME ${SLANG_MODULE} NAME)
-    get_filename_component(FILE_PATH ${SLANG_MODULE} PATH)
-    set(SPIRV_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders/modules/${FILE_NAME}.spv")
+# Build all Shaders
+find_program(SLANGC slangc HINTS "/usr/bin" "/usr/local/bin" "$ENV{VULKAN_SDK}/Bin/" "$ENV{VULKAN_SDK}/Bin32/")
+set(CMAKE_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+file(MAKE_DIRECTORY "${CMAKE_SHADER_DIR}/out")
+
+# Get all common Slang modules and build them
+set(SLANG_COMMON_MODULE_OUTPUTS)
+file(GLOB_RECURSE SLANG_COMMON_MODULES "${CMAKE_SHADER_DIR}/common/*.mod.slang")
+foreach(SLANG_COMMON_MODULE ${SLANG_COMMON_MODULES})
+    message(STATUS "BUILDING SLANG MODULE: ${SLANG_COMMON_MODULE}")
+    get_filename_component(SLANG_COMMON_MODULE_NAME ${SLANG_COMMON_MODULE} NAME_WE)
+    set(SLANG_COMMON_MODULE_PATH "${CMAKE_SHADER_DIR}/out/${SLANG_COMMON_MODULE_NAME}.slang-module")
     add_custom_command(
-        OUTPUT ${SPIRV_PATH}
-        COMMAND "${SLANGC} ${SLANG_MODULE} -o ${SPIRV_PATH} -entry main -profile glsl_460 -target spirv -O3"
-        DEPENDS ${SLANG_MODULE}
+        OUTPUT "${SLANG_COMMON_MODULE_PATH}"
+        COMMAND "${SLANGC}" "${SLANG_COMMON_MODULE}" -o "${SLANG_COMMON_MODULE_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -module-name "${SLANG_COMMON_MODULE_NAME}" -O3
+        DEPENDS "${SLANG_COMMON_MODULE}"
     )
-    list(APPEND SPIRV_BINARY_FILES ${SPIRV_PATH})
+    list(APPEND SLANG_COMMON_MODULE_OUTPUTS "${SLANG_COMMON_MODULE_PATH}")
+endforeach()
+
+# Get all other Slang modules and build them
+set(SLANG_OTHER_MODULE_OUTPUTS)
+file(GLOB_RECURSE SLANG_OTHER_MODULES "${CMAKE_SHADER_DIR}/source/**/*.mod.slang")
+foreach(SLANG_OTHER_MODULE ${SLANG_OTHER_MODULES})
+    message(STATUS "BUILDING SLANG MODULE: ${SLANG_OTHER_MODULE}")
+    get_filename_component(SLANG_OTHER_MODULE_NAME ${SLANG_OTHER_MODULE} NAME_WE)
+    string(REPLACE ".module" "" SLANG_OTHER_MODULE_NAME "${SLANG_OTHER_MODULE_NAME}")
+    set(SLANG_OTHER_MODULE_PATH "${CMAKE_SHADER_DIR}/out/${SLANG_OTHER_MODULE_NAME}.slang-module")
+    add_custom_command(
+        OUTPUT "${SLANG_OTHER_MODULE_PATH}"
+        COMMAND "${SLANGC}" "${SLANG_OTHER_MODULE}" -o "${SLANG_OTHER_MODULE_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -module-name "${SLANG_OTHER_MODULE_NAME}" -O3
+        DEPENDS "${SLANG_OTHER_MODULE}" "${SLANG_COMMON_MODULE_OUTPUTS}"
+    )
+    list(APPEND SLANG_OTHER_MODULE_OUTPUTS "${SLANG_OTHER_MODULE_PATH}")
 endforeach()
 
 # Get all Slang shaders and build them
+set(SLANG_SOURCE_OUTPUTS)
 file(GLOB_RECURSE SLANG_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.vert"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.frag"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.comp"
+    "${CMAKE_SHADER_DIR}/**/*.vert.slang"
+    "${CMAKE_SHADER_DIR}/**/*.frag.slang"
+    "${CMAKE_SHADER_DIR}/**/*.comp.slang"
 )
-file(GLOB_RECURSE SLANG_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/**/*.slang")
-set(ALL_SLANG ${SLANG_SOURCES} ${SLANG_HEADERS})
 foreach(SLANG_SOURCE ${SLANG_SOURCES})
     message(STATUS "BUILDING SLANG SOURCE: ${SLANG_SOURCE}")
-    get_filename_component(FILE_NAME ${SLANG_SOURCE} NAME)
-    get_filename_component(FILE_PATH ${SLANG_SOURCE} PATH)
-    
-    file(RELATIVE_PATH REL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${FILE_PATH}")
-    set(SPIRV_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${REL_PATH}/${FILE_NAME}.spv")
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${REL_PATH}")
-
+    get_filename_component(SLANG_SOURCE_NAME ${SLANG_SOURCE} NAME) # ${CMAKE_SHADER_DIR}/source/Cull/Cull.comp.slang -> Cull.comp.slang
+    string(REPLACE ".slang" "" SLANG_SOURCE_NAME "${SLANG_SOURCE_NAME}") # Cull.comp.slang -> Cull.comp
+    get_filename_component(SLANG_STAGE_SHORT ${SLANG_SOURCE_NAME} LAST_EXT) # Cull.comp -> .comp
+    set(SLANG_STAGE_LONG "nostage")
+    if(SLANG_STAGE_SHORT STREQUAL ".vert")
+        set(SLANG_STAGE_LONG "vertex")
+    elseif(SLANG_STAGE_SHORT STREQUAL ".frag")
+        set(SLANG_STAGE_LONG "fragment")
+    elseif(SLANG_STAGE_SHORT STREQUAL ".comp")
+        set(SLANG_STAGE_LONG "compute")
+    endif()
+    set(SLANG_SOURCE_OUTPUT_PATH "${CMAKE_SHADER_DIR}/out/${SLANG_SOURCE_NAME}.spv")
     add_custom_command(
-        OUTPUT ${SPIRV_PATH}
-        COMMAND "${SLANGC} ${SLANG_SOURCE} -o ${SPIRV_PATH} -entry main -profile glsl_460 -target spirv -O3"
-        DEPENDS ${SLANG_SOURCE} ${SLANG_HEADERS}
+        OUTPUT "${SLANG_SOURCE_OUTPUT_PATH}"
+        COMMAND "${SLANGC}" "${SLANG_SOURCE}" -o "${SLANG_SOURCE_OUTPUT_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -stage "${SLANG_STAGE_LONG}" -profile glsl_460 -target spirv -O3
+        DEPENDS "${SLANG_SOURCE}" "${SLANG_OTHER_MODULE_OUTPUTS}"
     )
-    list(APPEND SPIRV_BINARY_FILES ${SPIRV_PATH})
+    list(APPEND SLANG_SOURCE_OUTPUTS ${SLANG_SOURCE_OUTPUT_PATH})
 endforeach()
 
-add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES} SOURCES ${ALL_SLANG})
+add_custom_target(Shaders DEPENDS ${SLANG_COMMON_MODULE_OUTPUTS} ${SLANG_OTHER_MODULE_OUTPUTS} ${SLANG_SOURCE_OUTPUTS} SOURCES ${SLANG_COMMON_MODULES} ${SLANG_OTHER_MODULES} ${SLANG_SOURCES})
 
 # Vulkan
 find_package(Vulkan REQUIRED)
@@ -117,17 +141,17 @@ set_property(TARGET vkbootstrap PROPERTY CXX_STANDARD 23)
 
 # Libraries header-only
 add_library(glm INTERFACE)
-target_include_directories(glm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/glm)
+target_include_directories(glm INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/glm")
 add_library(magic_enum INTERFACE)
-target_include_directories(magic_enum INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/magic_enum)
+target_include_directories(magic_enum INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/magic_enum")
 add_library(stb_image INTERFACE)
-target_include_directories(stb_image INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/stb_image)
+target_include_directories(stb_image INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/stb_image")
 add_library(imgui-filebrowser INTERFACE)
-target_include_directories(imgui-filebrowser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui-filebrowser)
+target_include_directories(imgui-filebrowser INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui-filebrowser")
 add_library(vma INTERFACE)
-target_include_directories(vma INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vma)
+target_include_directories(vma INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vma")
 add_library(quill INTERFACE)
-target_include_directories(quill INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdParty)
+target_include_directories(quill INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty")
 
 # Source include directory
 target_include_directories(NUSRenderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/")
@@ -141,7 +165,7 @@ target_compile_definitions(NUSRenderer PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC LOGS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/logs/")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC MODELS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/models/")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SKYBOXES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/skyboxes/")
-target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SHADERS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/shaders/")
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SHADERS_PATH="${CMAKE_SHADER_DIR}/out")
 target_compile_definitions(NUSRenderer PRIVATE $<$<CONFIG:Release>:RELEASE>)
 #target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/") # Uncomment this line to setup the ASSETS_PATH macro to the final assets directory when you share the project
 

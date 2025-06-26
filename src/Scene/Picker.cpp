@@ -111,9 +111,9 @@ void Picker::initDrawPipeline()
 	LOG_INFO(mRenderer->mLogger, "Picker Draw Pipeline Layout Created");
 
 	vk::ShaderModule fragShader = mRenderer->mResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Picker/PickerDraw.frag.spv");
+		std::filesystem::path(SHADERS_PATH) / "PickerDraw.frag.spv");
 	vk::ShaderModule vertexShader = mRenderer->mResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Picker/PickerDraw.vert.spv");
+		std::filesystem::path(SHADERS_PATH) / "PickerDraw.vert.spv");
 
 	GraphicsPipelineBuilder pickerPipelineBuilder;
 	pickerPipelineBuilder.setShaders(vertexShader, fragShader);
@@ -158,7 +158,7 @@ void Picker::initPickPipeline()
 	LOG_INFO(mRenderer->mLogger, "Picker Pick Pipeline Layout Created");
 
 	vk::ShaderModule compShader = mRenderer->mResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Picker/PickerPick.comp.spv");
+		std::filesystem::path(SHADERS_PATH) / "PickerPick.comp.spv");
 
 	ComputePipelineBuilder cullPipelineBuilder;
 	cullPipelineBuilder.setShader(compShader);

@@ -23,7 +23,7 @@ struct PickerPickPushConstants
 
 struct PickerData
 {
-	glm::ivec2 uv;
+	glm::ivec2 coords;
 	glm::uvec2 read;
 };
 
