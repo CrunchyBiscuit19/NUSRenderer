@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for NUSRenderer, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.25.2-msvc1)
+cmake_minimum_required (VERSION 4.1.0-rc1)
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -116,51 +116,51 @@ add_subdirectory(thirdParty/fmt)
 add_subdirectory(thirdParty/SDL)
 
 # Libraries with source code
+set(CMAKE_THIRD_PARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty")
 add_library(imgui STATIC)
-target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui")
+target_include_directories(imgui PUBLIC "${CMAKE_THIRD_PARTY_DIR}/imgui")
 target_sources(imgui PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_demo.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_draw.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_widgets.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_tables.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_impl_vulkan.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/imgui_impl_sdl2.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImGuizmo.cpp"
-  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/GraphEditor.cpp"
-  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImCurveEdit.cpp"
-  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImGradient.cpp"
-  #"${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui/ImSequencer.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui_demo.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui_draw.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui_widgets.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui_tables.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui_impl_vulkan.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/imgui_impl_sdl2.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/imgui/ImGuizmo.cpp"
+  #"${CMAKE_THIRD_PARTY_DIR}/imgui/GraphEditor.cpp"
+  #"${CMAKE_THIRD_PARTY_DIR}/imgui/ImCurveEdit.cpp"
+  #"${CMAKE_THIRD_PARTY_DIR}/imgui/ImGradient.cpp"
+  #"${CMAKE_THIRD_PARTY_DIR}/imgui/ImSequencer.cpp"
 )
 target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL2::SDL2)
 add_library(vkbootstrap STATIC)
-target_include_directories(vkbootstrap PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vkbootstrap")
+target_include_directories(vkbootstrap PUBLIC "${CMAKE_THIRD_PARTY_DIR}/vkbootstrap")
 target_sources(vkbootstrap PRIVATE 
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vkbootstrap/VkBootstrap.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vkbootstrap/VkBootstrap.cpp"
+  "${CMAKE_THIRD_PARTY_DIR}/vkbootstrap/VkBootstrap.h"
+  "${CMAKE_THIRD_PARTY_DIR}/vkbootstrap/VkBootstrap.cpp"
 )
 target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 set_property(TARGET vkbootstrap PROPERTY CXX_STANDARD 23)
 
 # Libraries header-only
 add_library(glm INTERFACE)
-target_include_directories(glm INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/glm")
+target_include_directories(glm INTERFACE "${CMAKE_THIRD_PARTY_DIR}/glm")
 add_library(magic_enum INTERFACE)
-target_include_directories(magic_enum INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/magic_enum")
+target_include_directories(magic_enum INTERFACE "${CMAKE_THIRD_PARTY_DIR}/magic_enum")
 add_library(stb_image INTERFACE)
-target_include_directories(stb_image INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/stb_image")
+target_include_directories(stb_image INTERFACE "${CMAKE_THIRD_PARTY_DIR}/stb_image")
 add_library(imgui-filebrowser INTERFACE)
-target_include_directories(imgui-filebrowser INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/imgui-filebrowser")
+target_include_directories(imgui-filebrowser INTERFACE "${CMAKE_THIRD_PARTY_DIR}/imgui-filebrowser")
 add_library(vma INTERFACE)
-target_include_directories(vma INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty/vma")
+target_include_directories(vma INTERFACE "${CMAKE_THIRD_PARTY_DIR}/vma")
 add_library(quill INTERFACE)
-target_include_directories(quill INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/thirdParty")
+target_include_directories(quill INTERFACE "${CMAKE_THIRD_PARTY_DIR}")
 
-# Source include directory
+# Include directory + Link libraries + Shaders compilation
 target_include_directories(NUSRenderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/")
-
-# Link libraries
 target_link_libraries(NUSRenderer PUBLIC vkbootstrap imgui glm magic_enum stb_image imgui-filebrowser vma quill fmt Vulkan::Vulkan SDL2::SDL2 fastgltf::fastgltf)
+add_dependencies(NUSRenderer Shaders)
 
 # Compilation
 target_precompile_headers(NUSRenderer PUBLIC <optional> <vector> <memory> <string> <vector> <unordered_map> <glm/mat4x4.hpp>  <glm/vec4.hpp> <vulkan/vulkan.hpp> <vulkan/vulkan_raii.hpp>)

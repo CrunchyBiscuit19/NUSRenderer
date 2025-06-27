@@ -1,9 +1,7 @@
 import Skybox;
 
-struct VSOutput {
-    float3 uvw;
-};
-
-float4 main(VSOutput in) : SV_TARGET {
+float4 main(VSOutput in) : SV_TARGET
+{
     return skyboxCubemap.Sample(in.uvw);
+    //return float4(1, 1, 1, 0);
 }
