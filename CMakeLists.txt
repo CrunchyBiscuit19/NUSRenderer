@@ -17,26 +17,6 @@ endif()
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-# Set C++ Standard, and grab all source files
-project(NUSRenderer)
-file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Scene/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Data/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/User/*.cpp"
-)
-file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Scene/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Data/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/User/*.h"
-)
-add_executable(NUSRenderer ${CPP_SOURCES} ${HEADER_SOURCES})
-set_property(TARGET NUSRenderer PROPERTY CXX_STANDARD 23)
-
 # Build all Shaders
 find_program(SLANGC slangc HINTS "/usr/bin" "/usr/local/bin" "$ENV{VULKAN_SDK}/Bin/" "$ENV{VULKAN_SDK}/Bin32/")
 set(CMAKE_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
@@ -56,6 +36,7 @@ foreach(SLANG_COMMON_MODULE ${SLANG_COMMON_MODULES})
     )
     list(APPEND SLANG_COMMON_MODULE_OUTPUTS "${SLANG_COMMON_MODULE_PATH}")
 endforeach()
+add_custom_target(SlangCommonModules ALL DEPENDS ${SLANG_COMMON_MODULE_OUTPUTS})
 
 # Get all other Slang modules and build them
 set(SLANG_OTHER_MODULE_OUTPUTS)
@@ -68,10 +49,12 @@ foreach(SLANG_OTHER_MODULE ${SLANG_OTHER_MODULES})
     add_custom_command(
         OUTPUT "${SLANG_OTHER_MODULE_PATH}"
         COMMAND "${SLANGC}" "${SLANG_OTHER_MODULE}" -o "${SLANG_OTHER_MODULE_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -module-name "${SLANG_OTHER_MODULE_NAME}" -O3
-        DEPENDS "${SLANG_OTHER_MODULE}" "${SLANG_COMMON_MODULE_OUTPUTS}"
+        DEPENDS "${SLANG_OTHER_MODULE}"
     )
     list(APPEND SLANG_OTHER_MODULE_OUTPUTS "${SLANG_OTHER_MODULE_PATH}")
 endforeach()
+add_custom_target(SlangOtherModules ALL DEPENDS ${SLANG_OTHER_MODULE_OUTPUTS})
+add_dependencies(SlangOtherModules SlangCommonModules)
 
 # Get all Slang shaders and build them
 set(SLANG_SOURCE_OUTPUTS)
@@ -97,12 +80,32 @@ foreach(SLANG_SOURCE ${SLANG_SOURCES})
     add_custom_command(
         OUTPUT "${SLANG_SOURCE_OUTPUT_PATH}"
         COMMAND "${SLANGC}" "${SLANG_SOURCE}" -o "${SLANG_SOURCE_OUTPUT_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -stage "${SLANG_STAGE_LONG}" -profile glsl_460 -target spirv -O3
-        DEPENDS "${SLANG_SOURCE}" "${SLANG_OTHER_MODULE_OUTPUTS}"
+        DEPENDS "${SLANG_SOURCE}"
     )
     list(APPEND SLANG_SOURCE_OUTPUTS ${SLANG_SOURCE_OUTPUT_PATH})
 endforeach()
+add_custom_target(Shaders DEPENDS ${SLANG_SOURCE_OUTPUTS} SOURCES ${SLANG_COMMON_MODULES} ${SLANG_OTHER_MODULES} ${SLANG_SOURCES})
+add_dependencies(Shaders SlangOtherModules)
 
-add_custom_target(Shaders DEPENDS ${SLANG_COMMON_MODULE_OUTPUTS} ${SLANG_OTHER_MODULE_OUTPUTS} ${SLANG_SOURCE_OUTPUTS} SOURCES ${SLANG_COMMON_MODULES} ${SLANG_OTHER_MODULES} ${SLANG_SOURCES})
+# Set C++ Standard, and grab all source files
+project(NUSRenderer)
+file(GLOB_RECURSE CPP_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Scene/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Data/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/User/*.cpp"
+)
+file(GLOB_RECURSE HEADER_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Scene/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Data/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Utils/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/User/*.h"
+)
+add_executable(NUSRenderer ${CPP_SOURCES} ${HEADER_SOURCES})
+set_property(TARGET NUSRenderer PROPERTY CXX_STANDARD 23)
 
 # Vulkan
 find_package(Vulkan REQUIRED)
