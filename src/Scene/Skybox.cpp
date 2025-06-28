@@ -58,9 +58,9 @@ void Skybox::initPipelineLayout()
 void Skybox::initPipeline()
 {
 	vk::ShaderModule fragShader = mRenderer->mResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Skybox/Skybox.frag.spv");
+		std::filesystem::path(SHADERS_PATH) / "Skybox.frag.spv");
 	vk::ShaderModule vertexShader = mRenderer->mResources.getShader(
-		std::filesystem::path(SHADERS_PATH) / "Skybox/Skybox.vert.spv");
+		std::filesystem::path(SHADERS_PATH) / "Skybox.vert.spv");
 
 	GraphicsPipelineBuilder skyboxPipelineBuilder;
 	skyboxPipelineBuilder.setShaders(vertexShader, fragShader);

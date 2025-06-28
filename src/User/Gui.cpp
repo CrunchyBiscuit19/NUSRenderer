@@ -300,6 +300,7 @@ void Gui::initKeyBinding()
 
 		if ((modState & KMOD_CTRL) && keyState[SDL_SCANCODE_I] && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mRenderer->mGui.mSelectModelFileBrowser.Open();
+			mRenderer->mCamera.mRelativeMode = SDL_FALSE;
 		}
 	});
 }

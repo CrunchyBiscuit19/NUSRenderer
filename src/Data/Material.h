@@ -70,7 +70,7 @@ public:
 
 	static void initMaterialPipelineLayout(Renderer* renderer);
 	void getMaterialPipeline();
-	void createMaterialPipeline(PipelineOptions materialPipelineOptions);
+	void createMaterialPipeline(PipelineOptions materialPipelineOptions) const;
 
 	static void cleanup(Renderer* renderer);
 };
