@@ -5,8 +5,10 @@ import RenderItem;
 public struct CullPushConstants {
     public RenderItem* renderItemsBuffer;
     public VisibleRenderItem* visibleRenderItemsBuffer;
-    public uint* countBuffer;
+    public uint *countBuffer;
 };
 
-[[vk::push_constant]]
-public CullPushConstants cullPushConstants;
+public struct CSInput
+{
+    public uint3 dispatchThreadID : SV_DispatchThreadID;
+};

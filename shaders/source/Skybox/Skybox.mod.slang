@@ -13,7 +13,7 @@ public struct SkyboxVertex
 };
 public struct SkyboxPushConstants
 {
-    public ConstBufferPointer<SkyboxVertex> skyboxVertexBuffer;
+    public SkyboxVertex* skyboxVertexBuffer;
 };
 
 public struct VSInput

@@ -4,9 +4,10 @@ static const int MAX_CULL_LOCAL_SIZE = 256;
 
 [numthreads(MAX_CULL_LOCAL_SIZE)]
 
-void main(uint3 dispatchThreadID: SV_DispatchThreadID)
+void main(CSInput in, uniform CullPushConstants cullPushConstants)
 {
-    uint renderItemsBufferIndex = dispatchThreadID.x;
+    uint renderItemsBufferIndex = in.dispatchThreadID.x;
+
     if (true) { // TODO frustum / occulsion cull
         uint visibleRenderItemsBufferIndex;
         InterlockedAdd(cullPushConstants.countBuffer[0], 1, visibleRenderItemsBufferIndex);
