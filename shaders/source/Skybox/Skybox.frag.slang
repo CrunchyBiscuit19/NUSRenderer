@@ -1,6 +1,6 @@
 import Skybox;
 
-float4 main(VSOutput in) : SV_TARGET
+float4 main(FSInput in) : SV_Target
 {
     return skyboxCubemap.Sample(in.uvw);
 }

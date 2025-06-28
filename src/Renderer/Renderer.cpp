@@ -170,7 +170,7 @@ void Renderer::initPasses()
 	});
 
 	mPasses.try_emplace(PassType::PickClear, [&](vk::CommandBuffer cmd) {
-		vk::ClearColorValue clearColor(UINT_MAX, UINT_MAX, static_cast<uint32_t>(0), static_cast<uint32_t>(0));
+		vk::ClearColorValue clearColor(0, 0, 0, 0);
 		vk::ImageSubresourceRange range = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
 		cmd.clearColorImage(*mScene.mPicker.mImage.image, vk::ImageLayout::eGeneral, clearColor,range);
 	});
@@ -201,7 +201,7 @@ void Renderer::initPasses()
 
 	mPasses.try_emplace(PassType::PickPick, [&](vk::CommandBuffer cmd) {
 		int32_t mouseClickLocation[2] = { static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y) };
-		std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, 2 * sizeof(int32_t));
+		std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, sizeof(glm::ivec2));
 
 		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mPicker.mPickPipelineBundle.pipeline);
 		cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mScene.mPicker.mPickPipelineBundle.layout, 0, *mScene.mPicker.mDescriptorSet, nullptr);
@@ -229,7 +229,7 @@ void Renderer::initPasses()
 			vk::AccessFlagBits2::eHostRead);
 
 		glm::uvec2 read(0);
-		std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), 2 * sizeof(uint32_t));
+		std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), sizeof(glm::uvec2));
 
 		uint32_t modelId = read.x;
 
@@ -530,7 +530,8 @@ void Renderer::draw()
 {
 	auto start = std::chrono::system_clock::now();
 
-	mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
+	
+	auto _ = mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 	mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
 	try
 	{
@@ -553,9 +554,9 @@ void Renderer::draw()
 
 	mPasses.at(PassType::ClearScreen).execute(cmd);
 
-	//mPasses.at(PassType::Pick).execute(cmd);
+	mPasses.at(PassType::Pick).execute(cmd);
 
-	//mPasses.at(PassType::Geometry).execute(cmd);
+	mPasses.at(PassType::Geometry).execute(cmd);
 	mPasses.at(PassType::Skybox).execute(cmd);
 
 	mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(

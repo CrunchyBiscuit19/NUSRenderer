@@ -170,7 +170,6 @@ target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC MODELS_PATH="${CMAKE_C
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SKYBOXES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/skyboxes/")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SHADERS_PATH="${CMAKE_SHADER_DIR}/out")
 target_compile_definitions(NUSRenderer PRIVATE $<$<CONFIG:Release>:RELEASE>)
-#target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/") # Uncomment this line to setup the ASSETS_PATH macro to the final assets directory when you share the project
 
 # After compilation, copy SDL DLL
 add_custom_command(TARGET NUSRenderer POST_BUILD

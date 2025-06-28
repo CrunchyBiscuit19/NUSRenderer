@@ -14,11 +14,11 @@ public uniform Sampler2D materialResources[];
 
 public struct ForwardPushConstants
 {
-    public Vertex* verticesBuffer;
-    public MaterialConstant* materialConstantsBuffer;
-    public NodeTransform* nodeTransformsBuffer;
-    public Instance* instancesBuffer;
-    public VisibleRenderItem* visibleRenderItemsBuffer;
+    public Vertex *verticesBuffer;
+    public MaterialConstant *materialConstantsBuffer;
+    public NodeTransform *nodeTransformsBuffer;
+    public Instance *instancesBuffer;
+    public VisibleRenderItem *visibleRenderItemsBuffer;
 };
 
 public struct VSInput
@@ -36,3 +36,5 @@ public struct VSOutput
     public float3 color : COLOR0;
     public nointerpolation uint materialIndex;
 };
+
+public typedef VSOutput FSInput;

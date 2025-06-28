@@ -13,7 +13,7 @@ public struct SkyboxVertex
 };
 public struct SkyboxPushConstants
 {
-    public SkyboxVertex* skyboxVertexBuffer;
+    public SkyboxVertex *skyboxVertexBuffer;
 };
 
 public struct VSInput
@@ -22,6 +22,8 @@ public struct VSInput
 }
 public struct VSOutput
 {
-    public float4 position : SV_POSITION;
+    public float4 position : SV_Position;
     public float3 uvw : TEXCOORD0;
 };
+
+public typedef VSOutput FSInput;

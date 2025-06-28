@@ -1,27 +1,24 @@
 import PickerDraw;
 import Vertex;
 
-struct VSOutput {
-    float4 position : SV_Position;
-    nointerpolation uint modelIndex;
-    nointerpolation uint instanceIndex;
-};
-
-VSOutput main(uint vertexIndex: SV_VertexID, uint instanceIndex: SV_InstanceID, uint drawIndex: SV_DrawIndex) 
+VSOutput main(VSInput in, uniform PickerDrawPushConstants pickerDrawPushConstants)
 {
-	Vertex v = pickerDrawPushConstants.verticesBuffer[vertexIndex];
-	float4 position = float4(v.position, 1.0f);
+    VSOutput out;
 
+    Vertex v = pickerDrawPushConstants.verticesBuffer[in.vertexIndex];
+    float4 position = float4(v.position, 1.0f);
+
+    uint firstInstance = pickerDrawPushConstants.visibleRenderItemsBuffer[in.drawIndex].firstInstance;
+    uint instanceIndex = in.instanceIndex + firstInstance;
     float4x4 instanceTransformMatrix = pickerDrawPushConstants.instancesBuffer[instanceIndex].transformMatrix;
 
-    uint mainNodeTransformIndex = pickerDrawPushConstants.visibleRenderItemsBuffer[drawIndex].nodeTransformIndex;
+    uint mainNodeTransformIndex = pickerDrawPushConstants.visibleRenderItemsBuffer[in.drawIndex].nodeTransformIndex;
     float4x4 nodeTransformMatrix = pickerDrawPushConstants.nodeTransformsBuffer[mainNodeTransformIndex];
 
-    position = mul(mul(position, nodeTransformMatrix * instanceTransformMatrix), perspectiveBuffer.view * perspectiveBuffer.proj);
-
-    VSOutput out;
-    out.position = position;
-    out.modelIndex = pickerDrawPushConstants.visibleRenderItemsBuffer[drawIndex].modelIndex;
+    out.position =
+        mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix),
+            position);
+    out.modelIndex = pickerDrawPushConstants.visibleRenderItemsBuffer[in.drawIndex].modelIndex;
     out.instanceIndex = instanceIndex;
     return out;
 }
