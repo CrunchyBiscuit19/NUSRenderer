@@ -154,7 +154,7 @@ void RendererScene::regenerateRenderItems()
 {
 	for (auto& batch : mBatches | std::views::values)
 	{
-		batch.renderItems.clear();
+		batch.preCullRenderItems.clear();
 	}
 
 	for (auto& model : mModelsCache | std::views::values)
@@ -168,33 +168,33 @@ void RendererScene::regenerateRenderItems()
 
 	for (auto& batch : mBatches | std::views::values)
 	{
-		if (batch.renderItems.empty()) { continue; }
+		if (batch.preCullRenderItems.empty()) { continue; }
 
-		std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(),
-		            batch.renderItems.size() * sizeof(RenderItem));
+		std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
+		            batch.preCullRenderItems.size() * sizeof(RenderItem));
 
 		vk::BufferCopy renderItemsCopy{};
 		renderItemsCopy.dstOffset = 0;
 		renderItemsCopy.srcOffset = 0;
-		renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
+		renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
 
 		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)
 		{
-			cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+			cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 
 			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
 				cmd,
-				*batch.renderItemsBuffer.buffer,
+				*batch.preCullRenderItemsBuffer.buffer,
 				vk::PipelineStageFlagBits2::eTransfer,
 				vk::AccessFlagBits2::eTransferWrite,
 				vk::PipelineStageFlagBits2::eTransfer,
 				vk::AccessFlagBits2::eTransferWrite);
 
-			cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
+			cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
 
 			vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
 				cmd,
-				*batch.renderItemsBuffer.buffer,
+				*batch.preCullRenderItemsBuffer.buffer,
 				vk::PipelineStageFlagBits2::eTransfer,
 				vk::AccessFlagBits2::eTransferWrite,
 				vk::PipelineStageFlagBits2::eComputeShader,

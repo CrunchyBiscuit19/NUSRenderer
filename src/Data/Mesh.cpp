@@ -23,7 +23,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 
 		renderer->mScene.mBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
 
-		renderer->mScene.mBatches.at(pipelineId).renderItems.emplace_back(
+		renderer->mScene.mBatches.at(pipelineId).preCullRenderItems.emplace_back(
 			primitive.mIndexCount,
 			model->mInstances.size(),
 			mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,

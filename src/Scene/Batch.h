@@ -20,11 +20,11 @@ struct RenderItem
 struct Batch
 {
 	PipelineBundle* pipelineBundle;
-	std::vector<RenderItem> renderItems;
-	AddressedBuffer renderItemsBuffer;
-	AddressedBuffer visibleRenderItemsBuffer;
+	std::vector<RenderItem> preCullRenderItems;
+	AddressedBuffer preCullRenderItemsBuffer;
+	AddressedBuffer postCullRenderItemsBuffer;
 	AddressedBuffer countBuffer;
-	AllocatedBuffer renderItemsStagingBuffer;
+	AllocatedBuffer preCullRenderItemsStagingBuffer;
 
 	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
 	~Batch();

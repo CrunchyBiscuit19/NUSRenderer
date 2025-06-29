@@ -263,7 +263,7 @@ void Gui::initBackend() const
 
 void Gui::initFileBrowsers()
 {
-	mSelectModelFileBrowser = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_MultipleSelection, MODELS_PATH);
+	mSelectModelFileBrowser = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_MultipleSelection | ImGuiFileBrowserFlags_ConfirmOnEnter, MODELS_PATH);
 	mSelectModelFileBrowser.SetTitle("Select GLTF / GLB File");
 	mSelectModelFileBrowser.SetTypeFilters({ ".glb", ".gltf" });
 

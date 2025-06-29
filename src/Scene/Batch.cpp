@@ -7,26 +7,26 @@
 Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 {
 	pipelineBundle = primitive.mMaterial->mPipelineBundle;
-	renderItemsBuffer = renderer->mResources.createBuffer(
+	preCullRenderItemsBuffer = renderer->mResources.createBuffer(
 		MAX_RENDER_ITEMS * sizeof(RenderItem),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
-	renderer->mCore.labelResourceDebug(renderItemsBuffer.buffer,
+	renderer->mCore.labelResourceDebug(preCullRenderItemsBuffer.buffer,
 	                                           fmt::format("RenderItemsBuffer{}", pipelineId).c_str());
-	renderItemsBuffer.address = renderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*renderItemsBuffer.buffer));
+	preCullRenderItemsBuffer.address = renderer->mCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*preCullRenderItemsBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Render Items Buffer Created", pipelineId);
 
-	visibleRenderItemsBuffer = renderer->mResources.createBuffer(
+	postCullRenderItemsBuffer = renderer->mResources.createBuffer(
 		MAX_RENDER_ITEMS * sizeof(RenderItem),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
-	renderer->mCore.labelResourceDebug(visibleRenderItemsBuffer.buffer,
+	renderer->mCore.labelResourceDebug(postCullRenderItemsBuffer.buffer,
 	                                           fmt::format("VisibleRenderItemsBuffer{}", pipelineId).c_str());
-	visibleRenderItemsBuffer.address = renderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*visibleRenderItemsBuffer.buffer));
+	postCullRenderItemsBuffer.address = renderer->mCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*postCullRenderItemsBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Visible Render Items Buffer Created", pipelineId);
 
 	countBuffer = renderer->mResources.createBuffer(
@@ -39,15 +39,15 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		vk::BufferDeviceAddressInfo(*countBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Count Buffer Created", pipelineId);
 
-	renderItemsStagingBuffer = renderer->mResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
+	preCullRenderItemsStagingBuffer = renderer->mResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
 	LOG_INFO(renderer->mLogger, "Batch {} Render Items Staging Buffer Created", pipelineId);
 }
 
 Batch::~Batch()
 {
-	renderItemsStagingBuffer.cleanup();
+	preCullRenderItemsStagingBuffer.cleanup();
 	countBuffer.cleanup();
-	visibleRenderItemsBuffer.cleanup();
-	renderItemsBuffer.cleanup();
-	renderItems.clear();
+	postCullRenderItemsBuffer.cleanup();
+	preCullRenderItemsBuffer.cleanup();
+	preCullRenderItems.clear();
 }

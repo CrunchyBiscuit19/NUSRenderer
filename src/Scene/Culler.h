@@ -6,8 +6,8 @@ class Renderer;
 
 struct CullPushConstants
 {
-	vk::DeviceAddress renderItemsBuffer;
-	vk::DeviceAddress visibleRenderItemsBuffer;
+	vk::DeviceAddress preCullRenderItemsBuffer;
+	vk::DeviceAddress postCullRenderItemsBuffer;
 	// vk::DeviceAddress boundsBuffer;
 	// Frustum as a GPU_ONLY uniform buffer, passed as DS? (vec4 planes[6]; vec4 corners[8];) -> 224 bytes
 	vk::DeviceAddress countBuffer;
