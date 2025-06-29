@@ -31,7 +31,8 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 			model->mMainFirstInstance,
 			model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
 			model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
-			model->mId
+			model->mId,
+			0
 		);
 	}
 

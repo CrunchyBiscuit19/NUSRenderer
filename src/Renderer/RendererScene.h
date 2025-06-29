@@ -16,7 +16,7 @@ struct ForwardPushConstants
 	vk::DeviceAddress materialConstantsBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;
 	vk::DeviceAddress instancesBuffer;
-	vk::DeviceAddress visibleRenderItemsBuffer;
+	vk::DeviceAddress postCullRenderItemsBuffer;
 };
 
 class RendererScene

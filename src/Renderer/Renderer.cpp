@@ -190,7 +190,7 @@ void Renderer::initPasses()
 		for (auto& batch : mScene.mBatches | std::views::values) {
 			if (batch.preCullRenderItems.empty()) { continue; }
 
-			mScene.mPicker.mDrawPushConstants.visibleRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+			mScene.mPicker.mDrawPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
 			cmd.pushConstants<PickerDrawPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mPicker.mDrawPushConstants);
 
 			cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
@@ -277,7 +277,7 @@ void Renderer::initPasses()
 				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1,
 					*mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-				mScene.mForwardPushConstants.visibleRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+				mScene.mForwardPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
 				cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
 
 				cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));

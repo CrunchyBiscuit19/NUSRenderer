@@ -14,7 +14,7 @@ struct RenderItem
 	uint32_t materialIndex;
 	uint32_t nodeTransformIndex;
 	uint32_t modelIndex;
-	// uint32_t boundsIndex;
+	uint32_t boundsIndex;
 };
 
 struct Batch

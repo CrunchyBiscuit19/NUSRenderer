@@ -9,14 +9,14 @@ VSOutput main(VSInput in, uniform ForwardPushConstants forwardPushConstants)
     Vertex v = forwardPushConstants.verticesBuffer[in.vertexIndex];
     float4 position = float4(v.position, 1.0f);
 
-    uint firstInstance = forwardPushConstants.visibleRenderItemsBuffer[in.drawIndex].firstInstance;
+    uint firstInstance = forwardPushConstants.postCullRenderItemsBuffer[in.drawIndex].firstInstance;
     float4x4 instanceTransformMatrix =
         forwardPushConstants.instancesBuffer[in.instanceIndex + firstInstance].transformMatrix;
 
-    uint mainNodeTransformIndex = forwardPushConstants.visibleRenderItemsBuffer[in.drawIndex].nodeTransformIndex;
+    uint mainNodeTransformIndex = forwardPushConstants.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;
     float4x4 nodeTransformMatrix = forwardPushConstants.nodeTransformsBuffer[mainNodeTransformIndex];
 
-    uint mainMaterialIndex = forwardPushConstants.visibleRenderItemsBuffer[in.drawIndex].materialIndex;
+    uint mainMaterialIndex = forwardPushConstants.postCullRenderItemsBuffer[in.drawIndex].materialIndex;
     MaterialConstant materialConstant = forwardPushConstants.materialConstantsBuffer[mainMaterialIndex];
 
     out.position =

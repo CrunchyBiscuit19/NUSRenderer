@@ -4,8 +4,8 @@ import RenderItem;
 
 public struct CullPushConstants
 {
-    public RenderItem *renderItemsBuffer;
-    public VisibleRenderItem *visibleRenderItemsBuffer;
+    public RenderItem *preCullRenderItemsBuffer;
+    public RenderItem *postCullRenderItemsBuffer;
     public uint *countBuffer;
 };
 
