@@ -33,7 +33,7 @@ public struct VSOutput
     public float4 position : SV_Position;
     public float3 normal : NORMAL;
     public float2 uv : TEXCOORD0;
-    public float3 color : COLOR0;
+    public float4 color : COLOR0;
     public nointerpolation uint materialIndex;
 };
 

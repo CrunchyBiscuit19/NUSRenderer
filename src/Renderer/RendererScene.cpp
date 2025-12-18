@@ -152,7 +152,12 @@ void RendererScene::deleteInstances()
 
 void RendererScene::regenerateRenderItems()
 {
-	for (auto& batch : mBatches | std::views::values)
+	for (auto& batch : mOpaqueBatches | std::views::values)
+	{
+		batch.preCullRenderItems.clear();
+	}
+
+	for (auto& batch : mTransparentBatches | std::views::values)
 	{
 		batch.preCullRenderItems.clear();
 	}
@@ -166,7 +171,7 @@ void RendererScene::regenerateRenderItems()
 
 	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
 
-	for (auto& batch : mBatches | std::views::values)
+	for (auto& batch : mOpaqueBatches | std::views::values)
 	{
 		if (batch.preCullRenderItems.empty()) { continue; }
 
@@ -200,6 +205,44 @@ void RendererScene::regenerateRenderItems()
 				vk::PipelineStageFlagBits2::eComputeShader,
 				vk::AccessFlagBits2::eShaderRead);
 		});
+
+		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
+	}
+
+	for (auto& batch : mTransparentBatches | std::views::values)
+	{
+		if (batch.preCullRenderItems.empty()) { continue; }
+
+		std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
+			batch.preCullRenderItems.size() * sizeof(RenderItem));
+
+		vk::BufferCopy renderItemsCopy{};
+		renderItemsCopy.dstOffset = 0;
+		renderItemsCopy.srcOffset = 0;
+		renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
+
+		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)
+			{
+				cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+
+				vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
+					cmd,
+					*batch.preCullRenderItemsBuffer.buffer,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite);
+
+				cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
+
+				vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
+					cmd,
+					*batch.preCullRenderItemsBuffer.buffer,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite,
+					vk::PipelineStageFlagBits2::eComputeShader,
+					vk::AccessFlagBits2::eShaderRead);
+			});
 
 		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
 	}
@@ -528,7 +571,8 @@ void RendererScene::cleanup()
 	mPicker.cleanup();
 
 	mModelsCache.clear();
-	mBatches.clear();
+	mOpaqueBatches.clear();
+	mTransparentBatches.clear();
 	LOG_INFO(mRenderer->mLogger, "All Batches Destroyed");
 	mMainMaterialResourcesDescriptorSet.clear();
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");

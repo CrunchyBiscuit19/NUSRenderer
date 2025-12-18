@@ -47,7 +47,8 @@ public:
 	std::unordered_map<std::string, GLTFModel> mModelsCache;
 	std::unordered_map<int, std::string> mModelsReverse;
 
-	std::unordered_map<int, Batch> mBatches;
+	std::unordered_map<int, Batch> mOpaqueBatches;
+	std::unordered_map<int, Batch> mTransparentBatches;
 	ForwardPushConstants mForwardPushConstants;
 
 	AddressedBuffer mMainVertexBuffer;

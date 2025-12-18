@@ -24,7 +24,7 @@ VSOutput main(VSInput in, uniform ForwardPushConstants forwardPushConstants)
             position);
     out.normal = v.normal;
     out.uv = float2(v.uv_x, v.uv_y);
-    out.color = v.color.xyz * materialConstant.baseFactor.xyz;
+    out.color = v.color * materialConstant.baseFactor;
     out.materialIndex = mainMaterialIndex;
     return out;
 }

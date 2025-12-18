@@ -6,13 +6,13 @@ float4 main(FSInput in) : SV_Target
     float3 sunlightDir = normalize(perspectiveBuffer.sunlightDirection.xyz);
     float sunlightPower = perspectiveBuffer.sunlightDirection.w;
 
-    float3 color = in.color * materialResources[NonUniformResourceIndex(in.materialIndex * 5 + 0)].Sample(in.uv).rgb;
+    float4 color = in.color * materialResources[NonUniformResourceIndex(in.materialIndex * 5 + 0)].Sample(in.uv);
     float diffuse = max(dot(normal, sunlightDir), 0.0);
-    float3 sunlight = perspectiveBuffer.sunlightColor.rgb * sunlightPower;
+    float4 sunlight = perspectiveBuffer.sunlightColor * sunlightPower;
 
-    float3 lightColor = color * diffuse * sunlight;
-    float3 ambient = color * perspectiveBuffer.ambientColor.rgb;
+    float4 lightColor = color * diffuse * sunlight;
+    float4 ambient = color * perspectiveBuffer.ambientColor;
 
-    float3 finalColor = lightColor + ambient;
-    return float4(finalColor, 1.0);
+    float4 finalColor = lightColor + ambient;
+    return finalColor;
 }

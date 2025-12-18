@@ -63,8 +63,7 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 	(materialPipelineOptions.doubleSided)
 		? (cullMode = vk::CullModeFlagBits::eNone)
 		: (cullMode = vk::CullModeFlagBits::eBack);
-	bool transparency;
-	(materialPipelineOptions.alphaMode == fastgltf::AlphaMode::Blend) ? (transparency = true) : (transparency = false);
+	bool transparency = materialPipelineOptions.alphaMode == fastgltf::AlphaMode::Blend;
 
 	GraphicsPipelineBuilder materialPipelineBuilder;
 	materialPipelineBuilder.setShaders(vertexShader, fragShader);
@@ -73,9 +72,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
 	materialPipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
 	materialPipelineBuilder.enableMultisampling();
 	materialPipelineBuilder.enableSampleShading();
-	transparency ? materialPipelineBuilder.enableBlendingAlpha() : materialPipelineBuilder.disableBlending();
-	//materialPipelineBuilder.enableDepthtest(!transparency, vk::CompareOp::eGreaterOrEqual); // TODO transparency
-	materialPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
+	transparency ? materialPipelineBuilder.enableBlendingAdditive() : materialPipelineBuilder.disableBlending();
+	materialPipelineBuilder.enableDepthTest(!transparency, vk::CompareOp::eGreaterOrEqual); // TODO transparency
 	materialPipelineBuilder.setColorAttachmentFormat(mRenderer->mInfrastructure.mDrawImage.imageFormat);
 	materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
 	materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
