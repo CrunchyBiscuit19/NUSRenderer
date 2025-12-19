@@ -15,8 +15,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
 	VkDebugUtilsMessageTypeFlagsEXT messageTypes,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData
-)
-{
+) {
 	std::string severity;
 	switch (messageSeverity)
 	{
@@ -85,12 +84,10 @@ RendererCore::RendererCore(Renderer* renderer) :
 	mChosenGPU(nullptr),
 	mSurface(nullptr),
 	mComputeQueue(nullptr),
-	mGraphicsQueue(nullptr)
-{
+	mGraphicsQueue(nullptr) {
 }
 
-void RendererCore::init()
-{
+void RendererCore::init() {
 	SDL_Init(SDL_INIT_VIDEO);
 	mWindow = SDL_CreateWindow(
 		"NUSRenderer",
@@ -201,13 +198,11 @@ void RendererCore::init()
 
 	LOG_INFO(mRenderer->mLogger, "VMA Allocator Created");
 
-	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
-	{
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void {
 		const SDL_Keymod modState = SDL_GetModState();
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-		if ((modState & KMOD_ALT) && keyState[SDL_SCANCODE_RETURN] && e.type == SDL_KEYDOWN && !e.key.repeat)
-		{
+		if ((modState & KMOD_ALT) && keyState[SDL_SCANCODE_RETURN] && e.type == SDL_KEYDOWN && !e.key.repeat) {
 			mWindowFullScreen = !mWindowFullScreen;
 			SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 			SDL_SetWindowBordered(mWindow, mWindowFullScreen ? SDL_FALSE : SDL_TRUE);
@@ -215,8 +210,7 @@ void RendererCore::init()
 	});
 }
 
-void RendererCore::cleanup()
-{
+void RendererCore::cleanup() {
 	mGraphicsQueue.clear();
 	mComputeQueue.clear();
 	LOG_INFO(mRenderer->mLogger, "Vulkan Compute and Graphics Queues Destroyed");

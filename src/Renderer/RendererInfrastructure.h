@@ -64,8 +64,6 @@ public:
 
 	RendererInfrastructure(Renderer* renderer);
 
-	void init();
-
 	void initDescriptors();
 	void initFrames();
 	void initSwapchain();

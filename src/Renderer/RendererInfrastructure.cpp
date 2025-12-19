@@ -15,12 +15,6 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer) :
 	mFrames.resize(FRAME_OVERLAP);
 }
 
-void RendererInfrastructure::init() {
-	initSwapchain();
-	initDescriptors();
-	//initFrames();
-}
-
 void RendererInfrastructure::initDescriptors() {
 	std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
 		{vk::DescriptorType::eUniformBuffer, 1}, // Scene UBO

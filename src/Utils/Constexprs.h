@@ -46,5 +46,5 @@ constexpr auto IMGUI_BUTTON_RED = ImColor(0.66f, 0.16f, 0.16f);
 constexpr auto CLEAR_COLOR = vk::ClearColorValue(.463f, .616f, .859f, 0.f);
 
 constexpr float FOVY = 70.f;
-constexpr float NEAR_PLANE = 0.5f;
+constexpr float NEAR_PLANE = 0.1f;
 constexpr float FAR_PLANE = 10000.f;

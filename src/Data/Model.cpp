@@ -400,8 +400,7 @@ void GLTFModel::loadMeshes()
 	std::vector<Vertex> vertices;
 
 	mMeshes.reserve(mAsset.meshes.size());
-	for (fastgltf::Mesh& mesh : mAsset.meshes)
-	{
+	for (fastgltf::Mesh& mesh : mAsset.meshes) {
 		Mesh newMesh;
 
 		newMesh.mName = fmt::format("{}{}", mName, mesh.name);
@@ -410,8 +409,7 @@ void GLTFModel::loadMeshes()
 		indices.clear();
 		vertices.clear();
 
-		for (auto&& p : mesh.primitives)
-		{
+		for (auto&& p : mesh.primitives) {
 			Primitive newPrimitive;
 			newPrimitive.mRelativeFirstIndex = static_cast<uint32_t>(indices.size());
 			newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
@@ -422,59 +420,46 @@ void GLTFModel::loadMeshes()
 			// Load indexes
 			fastgltf::Accessor& indexAccessor = mAsset.accessors[p.indicesAccessor.value()];
 			indices.reserve(indices.size() + indexAccessor.count);
-			fastgltf::iterateAccessor<std::uint32_t>(mAsset, indexAccessor,
-			                                         [&](std::uint32_t index)
-			                                         {
-				                                         indices.push_back(index);
-			                                         });
+			fastgltf::iterateAccessor<std::uint32_t>(mAsset, indexAccessor, [&](std::uint32_t index) {
+				indices.push_back(index);
+			});
 
 			// Load vertex positions           
 			fastgltf::Accessor& posAccessor = mAsset.accessors[p.findAttribute("POSITION")->second];
 			vertices.resize(vertices.size() + posAccessor.count);
-			fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, posAccessor, // Default all the params
-			                                              [&](glm::vec3 v, size_t pos)
-			                                              {
-				                                              Vertex newVertex;
-				                                              newVertex.position = v;
-				                                              newVertex.normal = {1, 0, 0};
-				                                              newVertex.color = glm::vec4{1.f};
-				                                              newVertex.uv_x = 0;
-				                                              newVertex.uv_y = 0;
-				                                              vertices[vertexStartOffset + pos] = newVertex;
-			                                              });
+			fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, posAccessor, [&](glm::vec3 v, size_t pos) {
+				Vertex newVertex;
+				newVertex.position = v;
+				newVertex.normal = {1, 0, 0};
+				newVertex.color = glm::vec4{1.f};
+				newVertex.uv_x = 0;
+				newVertex.uv_y = 0;
+				vertices[vertexStartOffset + pos] = newVertex;
+			});
 
 			// Load vertex normals
 			auto normals = p.findAttribute("NORMAL");
-			if (normals != p.attributes.end())
-			{
-				fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second],
-				                                              [&](glm::vec3 n, size_t pos)
-				                                              {
-					                                              vertices[vertexStartOffset + pos].normal = n;
-				                                              });
+			if (normals != p.attributes.end()) {
+				fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second], [&](glm::vec3 n, size_t pos) {
+					vertices[vertexStartOffset + pos].normal = n;
+				});
 			}
 
 			// Load UVs
 			auto uv = p.findAttribute("TEXCOORD_0");
-			if (uv != p.attributes.end())
-			{
-				fastgltf::iterateAccessorWithIndex<glm::vec2>(mAsset, mAsset.accessors[uv->second],
-				                                              [&](glm::vec2 uv, size_t pos)
-				                                              {
-					                                              vertices[vertexStartOffset + pos].uv_x = uv.x;
-					                                              vertices[vertexStartOffset + pos].uv_y = uv.y;
-				                                              });
+			if (uv != p.attributes.end()) {
+				fastgltf::iterateAccessorWithIndex<glm::vec2>(mAsset, mAsset.accessors[uv->second], [&](glm::vec2 uv, size_t pos) {
+					vertices[vertexStartOffset + pos].uv_x = uv.x;
+					vertices[vertexStartOffset + pos].uv_y = uv.y;
+				});
 			}
 
 			// Load vertex colors
 			auto colors = p.findAttribute("COLOR_0");
-			if (colors != p.attributes.end())
-			{
-				fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[colors->second],
-				                                              [&](glm::vec4 c, size_t pos)
-				                                              {
-					                                              vertices[vertexStartOffset + pos].color = c;
-				                                              });
+			if (colors != p.attributes.end()) {
+				fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[colors->second], [&](glm::vec4 c, size_t pos) {
+					vertices[vertexStartOffset + pos].color = c;
+				});
 			}
 
 			if (p.materialIndex.has_value())
@@ -490,8 +475,7 @@ void GLTFModel::loadMeshes()
 
 		newMesh.mBounds.min = glm::vec4(vertices[0].position, 0.f);
 		newMesh.mBounds.max = glm::vec4(vertices[0].position, 0.f);
-		for (auto& vertex : vertices)
-		{
+		for (auto& vertex : vertices) {
 			newMesh.mBounds.min = glm::min(newMesh.mBounds.min, glm::vec4(vertex.position, 0.f));
 			newMesh.mBounds.max = glm::max(newMesh.mBounds.max, glm::vec4(vertex.position, 0.f));
 		}

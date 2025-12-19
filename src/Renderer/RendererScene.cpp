@@ -16,18 +16,6 @@ RendererScene::RendererScene(Renderer* renderer) :
 	mMainMaterialResourcesDescriptorSetLayout(nullptr)
 {}
 
-void RendererScene::init() {
-	initBuffers();
-	initDescriptor();
-	initPushConstants();
-	initKeyBinding();
-
-	mPerspective.init();
-	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
-	mCuller.init();
-	mPicker.init();
-}
-
 void RendererScene::initBuffers() {
 	mMainVertexBuffer = mRenderer->mResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE,
 		vk::BufferUsageFlagBits::eTransferDst |
@@ -96,6 +84,13 @@ void RendererScene::initPushConstants() {
 	mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
 	mForwardPushConstants.instancesBuffer = mMainInstancesBuffer.address;
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
+}
+
+void RendererScene::initComponents() {
+	mPerspective.init();
+	mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
+	mCuller.init();
+	mPicker.init();
 }
 
 void RendererScene::initKeyBinding() const {

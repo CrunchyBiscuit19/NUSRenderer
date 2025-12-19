@@ -190,15 +190,6 @@ Gui::Gui(Renderer* renderer) :
 {
 }
 
-void Gui::init()
-{
-	initDescriptors();
-	initBackend();
-	initFileBrowsers();
-	initComponents();
-	initKeyBinding();
-}
-
 void Gui::initDescriptors()
 {
 	std::vector<vk::DescriptorPoolSize> poolSizes = {

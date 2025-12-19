@@ -8,12 +8,10 @@ ImmSubmit::ImmSubmit(Renderer* renderer) :
 	mRenderer(renderer),
 	mCommandPool(nullptr),
 	mCommandBuffer(nullptr),
-	mFence(nullptr)
-{
+	mFence(nullptr) {
 }
 
-void ImmSubmit::init()
-{
+void ImmSubmit::init() {
 	vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(
 		mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	mCommandPool = mRenderer->mCore.mDevice.createCommandPool(commandPoolInfo);
@@ -31,8 +29,7 @@ void ImmSubmit::init()
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Fence Created");
 }
 
-void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd)>&& function)
-{
+void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::CommandBuffer cmd)>&& function) {
 	mRenderer->mCore.mDevice.resetFences(*mFence);
 
 	mCommandBuffer.reset();
@@ -50,8 +47,7 @@ void ImmSubmit::individualSubmit(std::function<void(Renderer* renderer, vk::Comm
 	mRenderer->mCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
 }
 
-void ImmSubmit::queuedSubmit()
-{
+void ImmSubmit::queuedSubmit() {
 	mRenderer->mCore.mDevice.resetFences(*mFence);
 
 	mCommandBuffer.reset();
@@ -59,8 +55,7 @@ void ImmSubmit::queuedSubmit()
 	vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(
 		vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	mCommandBuffer.begin(cmdBeginInfo);
-	for (auto& callback : mCallbacks)
-	{
+	for (auto& callback : mCallbacks) {
 		callback(mRenderer, *mCommandBuffer);
 	}
 	mCommandBuffer.end();
@@ -72,8 +67,7 @@ void ImmSubmit::queuedSubmit()
 	mRenderer->mCore.mDevice.waitForFences(*mFence, true, 1e9); // DO NOT MOVE THIS TO THE TOP
 }
 
-void ImmSubmit::cleanup()
-{
+void ImmSubmit::cleanup() {
 	mFence.clear();
 	LOG_INFO(mRenderer->mLogger, "ImmSubmit Fence Destroyed");
 	mCommandBuffer.clear();

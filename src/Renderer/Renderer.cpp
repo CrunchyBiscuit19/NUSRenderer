@@ -61,11 +61,22 @@ void Renderer::initComponents()
 {
 	mCore.init();
 	mImmSubmit.init();
-	mResources.init();
-	mInfrastructure.init();
-	mScene.init();
+	mResources.initStaging();
+	mResources.initDefaultImages();
+	mResources.initDefaultSampler();
+	mInfrastructure.initSwapchain();
+	mInfrastructure.initDescriptors();
+	mScene.initBuffers();
+	mScene.initDescriptor();
+	mScene.initPushConstants();
+	mScene.initKeyBinding();
+	mScene.initComponents();
 	mInfrastructure.initFrames();
-	mGui.init();
+	mGui.initDescriptors();
+	mGui.initBackend();
+	mGui.initFileBrowsers();
+	mGui.initComponents();
+	mGui.initKeyBinding();
 	mCamera.init();
 
 	PbrMaterial::initMaterialPipelineLayout(this);

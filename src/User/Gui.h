@@ -66,7 +66,6 @@ class Gui
 public:
 	Gui(Renderer* renderer);
 
-	void init();
 	void initDescriptors();
 	void initBackend() const;
 	void initFileBrowsers();

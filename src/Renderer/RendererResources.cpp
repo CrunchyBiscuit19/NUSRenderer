@@ -14,15 +14,7 @@ RendererResources::RendererResources(Renderer* renderer) :
 {
 }
 
-void RendererResources::init()
-{
-	initStaging();
-	initDefaultImages();
-	initDefaultSampler();
-}
-
-void RendererResources::initStaging()
-{
+void RendererResources::initStaging() {
 	mImageStagingBuffer = createStagingBuffer(MAX_IMAGE_SIZE);
 	mRenderer->mCore.labelResourceDebug(mImageStagingBuffer.buffer, "ImageStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Image Staging Buffer Created");
@@ -41,8 +33,7 @@ void RendererResources::initStaging()
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
 }
 
-void RendererResources::initDefaultImages()
-{
+void RendererResources::initDefaultImages() {
 	// Colour data interpreted as little endian
 	constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
 	mDefaultImages.try_emplace(DefaultImage::White,
@@ -95,8 +86,7 @@ void RendererResources::initDefaultImages()
 	LOG_INFO(mRenderer->mLogger, "Default Images Created");
 }
 
-void RendererResources::initDefaultSampler()
-{
+void RendererResources::initDefaultSampler() {
 	vk::SamplerCreateInfo defaultSamplerCreateInfo;
 	defaultSamplerCreateInfo.magFilter = vk::Filter::eLinear;
 	defaultSamplerCreateInfo.minFilter = vk::Filter::eLinear;
@@ -174,8 +164,7 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
 }
 
 AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
-                                              bool mipmapped, bool multisampling, bool cubemap) const
-{
+                                              bool mipmapped, bool multisampling, bool cubemap) const {
 	vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);
 	if (mipmapped)
 	{

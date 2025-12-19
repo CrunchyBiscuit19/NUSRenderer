@@ -284,8 +284,6 @@ public:
 
 	RendererResources(Renderer* renderer);
 
-	void init();
-
 	void initStaging();
 	void initDefaultImages();
 	void initDefaultSampler();

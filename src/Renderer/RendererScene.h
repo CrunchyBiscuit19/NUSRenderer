@@ -63,11 +63,11 @@ public:
 
 	RendererScene(Renderer* renderer);
 
-	void init();
 	void initBuffers();
 	void initDescriptor();
 	void initPushConstants();
 	void initKeyBinding() const;
+	void initComponents();
 
 	void loadModels(const std::vector<std::filesystem::path>& files);
 	void deleteModels();
