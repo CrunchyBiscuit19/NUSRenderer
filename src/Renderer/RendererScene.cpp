@@ -14,11 +14,9 @@ RendererScene::RendererScene(Renderer* renderer) :
 	mPicker(Picker(renderer)),
 	mMainMaterialResourcesDescriptorSet(nullptr),
 	mMainMaterialResourcesDescriptorSetLayout(nullptr)
-{
-}
+{}
 
-void RendererScene::init()
-{
+void RendererScene::init() {
 	initBuffers();
 	initDescriptor();
 	initPushConstants();
@@ -30,22 +28,21 @@ void RendererScene::init()
 	mPicker.init();
 }
 
-void RendererScene::initBuffers()
-{
+void RendererScene::initBuffers() {
 	mMainVertexBuffer = mRenderer->mResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE,
-	                                                               vk::BufferUsageFlagBits::eTransferDst |
-	                                                               vk::BufferUsageFlagBits::eStorageBuffer |
-	                                                               vk::BufferUsageFlagBits::eShaderDeviceAddress,
-	                                                               VMA_MEMORY_USAGE_GPU_ONLY);
+		vk::BufferUsageFlagBits::eTransferDst |
+		vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
 	mMainVertexBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
 		vk::BufferDeviceAddressInfo(*mMainVertexBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Created");
 
 	mMainIndexBuffer = mRenderer->mResources.createBuffer(MAIN_INDEX_BUFFER_SIZE,
-	                                                              vk::BufferUsageFlagBits::eTransferDst |
-	                                                              vk::BufferUsageFlagBits::eIndexBuffer,
-	                                                              VMA_MEMORY_USAGE_GPU_ONLY);
+		vk::BufferUsageFlagBits::eTransferDst |
+		vk::BufferUsageFlagBits::eIndexBuffer,
+		VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
@@ -68,34 +65,32 @@ void RendererScene::initBuffers()
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
 	mMainInstancesBuffer = mRenderer->mResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData),
-	                                                                  vk::BufferUsageFlagBits::eTransferDst |
-	                                                                  vk::BufferUsageFlagBits::eStorageBuffer |
-	                                                                  vk::BufferUsageFlagBits::eShaderDeviceAddress,
-	                                                                  VMA_MEMORY_USAGE_GPU_ONLY);
+		vk::BufferUsageFlagBits::eTransferDst |
+		vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
 	mMainInstancesBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
 		vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 }
 
-void RendererScene::initDescriptor()
-{
+void RendererScene::initDescriptor() {
 	DescriptorLayoutBuilder builder;
 	builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
 	mMainMaterialResourcesDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice,
-	                                                          vk::ShaderStageFlagBits::eVertex |
-	                                                          vk::ShaderStageFlagBits::eFragment, true);
+		vk::ShaderStageFlagBits::eVertex |
+		vk::ShaderStageFlagBits::eFragment, true);
 	mRenderer->mCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout,
-	                                            "MainMaterialResourcesDescriptorSetLayout");
+		"MainMaterialResourcesDescriptorSetLayout");
 	mMainMaterialResourcesDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(
 		mMainMaterialResourcesDescriptorSetLayout, true);
 	mRenderer->mCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet,
-	                                            "MainMaterialResourcesDescriptorSet");
+		"MainMaterialResourcesDescriptorSet");
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources and Descriptor Set Created");
 }
 
-void RendererScene::initPushConstants()
-{
+void RendererScene::initPushConstants() {
 	mForwardPushConstants.vertexBuffer = mMainVertexBuffer.address;
 	mForwardPushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
 	mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
@@ -103,10 +98,8 @@ void RendererScene::initPushConstants()
 	LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
-void RendererScene::initKeyBinding() const
-{
-	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
-	{
+void RendererScene::initKeyBinding() const {
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void {
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
 		if (keyState[SDL_SCANCODE_DELETE] && mPicker.mClickedInstance != nullptr && e.type == SDL_KEYDOWN && !e.key.repeat) {
@@ -115,55 +108,44 @@ void RendererScene::initKeyBinding() const
 	});
 }
 
-void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths)
-{
-	for (const auto& modelPath : paths)
-	{
+void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths) {
+	for (const auto& modelPath : paths) {
 		auto modelShortPath = modelPath.stem().string();
 		auto modelFullPath = MODELS_PATH / modelPath;
 		auto [_, inserted] = mModelsCache.try_emplace(modelShortPath, mRenderer, modelFullPath);
-		if (inserted) { 
+		if (inserted) {
 			mModelsReverse.try_emplace(mModelsCache.at(modelShortPath).mId, modelShortPath);
 			mFlags.modelAddedFlag = true;
 		}
 	}
 }
 
-void RendererScene::deleteModels()
-{
-	std::erase_if(mModelsCache, [&](const std::pair<const std::string, GLTFModel>& pair)
-	{
+void RendererScene::deleteModels() {
+	std::erase_if(mModelsCache, [&](const std::pair<const std::string, GLTFModel>& pair) {
 		if (pair.second.mDeleteSignal.has_value()) { mFlags.modelDestroyedFlag = true; }
 		return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->
 			mInfrastructure.mFrameNumber);
 	});
 }
 
-void RendererScene::deleteInstances()
-{
-	for (auto& model : mModelsCache | std::views::values)
-	{
-		std::erase_if(model.mInstances, [&](const GLTFInstance& instance)
-		{
+void RendererScene::deleteInstances() {
+	for (auto& model : mModelsCache | std::views::values) {
+		std::erase_if(model.mInstances, [&](const GLTFInstance& instance) {
 			return instance.mDeleteSignal;
 		});
 	}
 }
 
-void RendererScene::regenerateRenderItems()
-{
-	for (auto& batch : mOpaqueBatches | std::views::values)
-	{
+void RendererScene::regenerateRenderItems() {
+	for (auto& batch : mOpaqueBatches | std::views::values) {
 		batch.preCullRenderItems.clear();
 	}
 
-	for (auto& batch : mTransparentBatches | std::views::values)
-	{
+	for (auto& batch : mTransparentBatches | std::views::values) {
 		batch.preCullRenderItems.clear();
 	}
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.generateRenderItems();
@@ -171,20 +153,18 @@ void RendererScene::regenerateRenderItems()
 
 	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
 
-	for (auto& batch : mOpaqueBatches | std::views::values)
-	{
+	for (auto& batch : mOpaqueBatches | std::views::values) {
 		if (batch.preCullRenderItems.empty()) { continue; }
 
 		std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
-		            batch.preCullRenderItems.size() * sizeof(RenderItem));
+			batch.preCullRenderItems.size() * sizeof(RenderItem));
 
 		vk::BufferCopy renderItemsCopy{};
 		renderItemsCopy.dstOffset = 0;
 		renderItemsCopy.srcOffset = 0;
 		renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)
-		{
+		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 
 			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
@@ -209,8 +189,7 @@ void RendererScene::regenerateRenderItems()
 		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
 	}
 
-	for (auto& batch : mTransparentBatches | std::views::values)
-	{
+	for (auto& batch : mTransparentBatches | std::views::values) {
 		if (batch.preCullRenderItems.empty()) { continue; }
 
 		std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
@@ -221,44 +200,40 @@ void RendererScene::regenerateRenderItems()
 		renderItemsCopy.srcOffset = 0;
 		renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)
-			{
-				cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)	{
+			cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 
-				vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
-					cmd,
-					*batch.preCullRenderItemsBuffer.buffer,
-					vk::PipelineStageFlagBits2::eTransfer,
-					vk::AccessFlagBits2::eTransferWrite,
-					vk::PipelineStageFlagBits2::eTransfer,
-					vk::AccessFlagBits2::eTransferWrite);
+			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
+				cmd,
+				*batch.preCullRenderItemsBuffer.buffer,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite);
 
-				cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
+			cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
 
-				vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
-					cmd,
-					*batch.preCullRenderItemsBuffer.buffer,
-					vk::PipelineStageFlagBits2::eTransfer,
-					vk::AccessFlagBits2::eTransferWrite,
-					vk::PipelineStageFlagBits2::eComputeShader,
-					vk::AccessFlagBits2::eShaderRead);
-			});
+			vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
+				cmd,
+				*batch.preCullRenderItemsBuffer.buffer,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eComputeShader,
+				vk::AccessFlagBits2::eShaderRead);
+		});
 
 		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
 	}
 }
 
-void RendererScene::realignVertexIndexOffset()
-{
+void RendererScene::realignVertexIndexOffset() {
 	int vertexCumulative = 0;
 	int indexCumulative = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-		for (auto& mesh : model.mMeshes)
-		{
+		for (auto& mesh : model.mMeshes) {
 			mesh.mMainVertexOffset = vertexCumulative;
 			mesh.mMainFirstIndex = indexCumulative;
 			vertexCumulative += mesh.mNumVertices;
@@ -269,12 +244,10 @@ void RendererScene::realignVertexIndexOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Vertex / Index Buffers Offsets Realigned");
 }
 
-void RendererScene::realignMaterialOffset()
-{
+void RendererScene::realignMaterialOffset() {
 	int materialCumulative = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.mMainFirstMaterial = materialCumulative;
@@ -284,12 +257,10 @@ void RendererScene::realignMaterialOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Material Constants Buffer / Resources Descriptor Set Offsets Realigned");
 }
 
-void RendererScene::realignNodeTransformsOffset()
-{
+void RendererScene::realignNodeTransformsOffset() {
 	int nodeTransformCumulative = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.mMainFirstNodeTransform = nodeTransformCumulative;
@@ -299,12 +270,10 @@ void RendererScene::realignNodeTransformsOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Node Transforms Buffer Offsets Realigned");
 }
 
-void RendererScene::realignInstancesOffset()
-{
+void RendererScene::realignInstancesOffset() {
 	int instanceCumulative = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		model.mMainFirstInstance = instanceCumulative;
@@ -314,24 +283,20 @@ void RendererScene::realignInstancesOffset()
 	LOG_INFO(mRenderer->mLogger, "Models Instances Buffers Offsets Realigned");
 }
 
-void RendererScene::realignOffsets()
-{
+void RendererScene::realignOffsets() {
 	realignVertexIndexOffset();
 	realignMaterialOffset();
 	realignNodeTransformsOffset();
 	realignInstancesOffset();
 }
 
-void RendererScene::reloadMainVertexBuffer()
-{
+void RendererScene::reloadMainVertexBuffer() {
 	int dstOffset = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-		for (auto& mesh : model.mMeshes)
-		{
+		for (auto& mesh : model.mMeshes) {
 			vk::BufferCopy meshVertexCopy{};
 			meshVertexCopy.dstOffset = dstOffset;
 			meshVertexCopy.srcOffset = 0;
@@ -340,15 +305,14 @@ void RendererScene::reloadMainVertexBuffer()
 			dstOffset += meshVertexCopy.size;
 
 			mRenderer->mImmSubmit.mCallbacks.push_back(
-				[&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd)
-				{
+				[&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 					cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
-				});
+				}
+			);
 		}
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
-	{
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
 		vkhelper::createBufferPipelineBarrier( // Wait for main vertex buffer to finish uploading
 			cmd,
 			*mMainVertexBuffer.buffer,
@@ -361,16 +325,13 @@ void RendererScene::reloadMainVertexBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Reloading");
 }
 
-void RendererScene::reloadMainIndexBuffer()
-{
+void RendererScene::reloadMainIndexBuffer() {
 	int dstOffset = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
-		for (auto& mesh : model.mMeshes)
-		{
+		for (auto& mesh : model.mMeshes) {
 			vk::BufferCopy meshIndexCopy{};
 			meshIndexCopy.dstOffset = dstOffset;
 			meshIndexCopy.srcOffset = 0;
@@ -379,15 +340,14 @@ void RendererScene::reloadMainIndexBuffer()
 			dstOffset += meshIndexCopy.size;
 
 			mRenderer->mImmSubmit.mCallbacks.push_back(
-				[&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd)
-				{
+				[&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 					cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
-				});
+				}
+			);
 		}
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
-	{
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
 		vkhelper::createBufferPipelineBarrier( // Wait for main index buffer to finish uploading
 			cmd,
 			*mMainIndexBuffer.buffer,
@@ -400,12 +360,10 @@ void RendererScene::reloadMainIndexBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Reloading");
 }
 
-void RendererScene::reloadMainMaterialConstantsBuffer()
-{
+void RendererScene::reloadMainMaterialConstantsBuffer() {
 	int dstOffset = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		vk::BufferCopy materialConstantCopy{};
@@ -419,12 +377,11 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 			[&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd)
 			{
 				cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer,
-				               materialConstantCopy);
+					materialConstantCopy);
 			});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
-	{
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
 		vkhelper::createBufferPipelineBarrier( // Wait for main material constants buffer to finish uploading
 			cmd,
 			*mMainMaterialConstantsBuffer.buffer,
@@ -437,12 +394,10 @@ void RendererScene::reloadMainMaterialConstantsBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Reloading");
 }
 
-void RendererScene::reloadMainNodeTransformsBuffer()
-{
+void RendererScene::reloadMainNodeTransformsBuffer() {
 	int dstOffset = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 
 		vk::BufferCopy nodeTransformsCopy{};
@@ -456,12 +411,11 @@ void RendererScene::reloadMainNodeTransformsBuffer()
 			[&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd)
 			{
 				cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer,
-				               nodeTransformsCopy);
+					nodeTransformsCopy);
 			});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd)
-	{
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
 		vkhelper::createBufferPipelineBarrier( // Wait for main node transforms buffer to finish uploading
 			cmd,
 			*mMainNodeTransformsBuffer.buffer,
@@ -474,12 +428,10 @@ void RendererScene::reloadMainNodeTransformsBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
 }
 
-void RendererScene::reloadMainInstancesBuffer()
-{
+void RendererScene::reloadMainInstancesBuffer() {
 	int dstOffset = 0;
 
-	for (auto& model : mModelsCache | std::views::values)
-	{
+	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
 		if (model.mInstances.empty()) { continue; }
 
@@ -492,11 +444,10 @@ void RendererScene::reloadMainInstancesBuffer()
 
 		mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
 			cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
-		});
+			});
 	}
 
-	mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd)
-	{
+	mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
 		vkhelper::createBufferPipelineBarrier( // Wait for main instances buffer to finish uploading
 			cmd,
 			*mMainInstancesBuffer.buffer,
@@ -509,34 +460,31 @@ void RendererScene::reloadMainInstancesBuffer()
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Reloading");
 }
 
-void RendererScene::reloadMainMaterialResourcesArray()
-{
-	for (auto& model : mModelsCache | std::views::values)
-	{
-		for (auto& material : model.mMaterials)
-		{
+void RendererScene::reloadMainMaterialResourcesArray() {
+	for (auto& model : mModelsCache | std::views::values) {
+		for (auto& material : model.mMaterials) {
 			int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
 
 			DescriptorSetBinder writer;
 			writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView,
-			                      material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
-			                      vk::DescriptorType::eCombinedImageSampler);
+				material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+				vk::DescriptorType::eCombinedImageSampler);
 			writer.bindImageArray(0, materialTextureArrayIndex + 1,
-			                      *material.mPbrData.resources.metallicRoughness.image->imageView,
-			                      material.mPbrData.resources.metallicRoughness.sampler,
-			                      vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+				*material.mPbrData.resources.metallicRoughness.image->imageView,
+				material.mPbrData.resources.metallicRoughness.sampler,
+				vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
 			writer.bindImageArray(0, materialTextureArrayIndex + 2,
-			                      *material.mPbrData.resources.emissive.image->imageView,
-			                      material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
-			                      vk::DescriptorType::eCombinedImageSampler);
+				*material.mPbrData.resources.emissive.image->imageView,
+				material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+				vk::DescriptorType::eCombinedImageSampler);
 			writer.bindImageArray(0, materialTextureArrayIndex + 3,
-			                      *material.mPbrData.resources.normal.image->imageView,
-			                      material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
-			                      vk::DescriptorType::eCombinedImageSampler);
+				*material.mPbrData.resources.normal.image->imageView,
+				material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+				vk::DescriptorType::eCombinedImageSampler);
 			writer.bindImageArray(0, materialTextureArrayIndex + 4,
-			                      *material.mPbrData.resources.occlusion.image->imageView,
-			                      material.mPbrData.resources.occlusion.sampler,
-			                      vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+				*material.mPbrData.resources.occlusion.image->imageView,
+				material.mPbrData.resources.occlusion.sampler,
+				vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
 			writer.updateSetBindings(mRenderer->mCore.mDevice, *mMainMaterialResourcesDescriptorSet);
 		}
 	}
@@ -544,8 +492,7 @@ void RendererScene::reloadMainMaterialResourcesArray()
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Reloaded");
 }
 
-void RendererScene::reloadMainBuffers()
-{
+void RendererScene::reloadMainBuffers() {
 	reloadMainVertexBuffer();
 	reloadMainIndexBuffer();
 	reloadMainMaterialConstantsBuffer();
@@ -554,8 +501,7 @@ void RendererScene::reloadMainBuffers()
 	reloadMainMaterialResourcesArray();
 }
 
-void RendererScene::resetFlags()
-{
+void RendererScene::resetFlags() {
 	mFlags.modelAddedFlag = false;
 	mFlags.modelDestroyedFlag = false;
 	mFlags.instanceAddedFlag = false;
@@ -563,8 +509,7 @@ void RendererScene::resetFlags()
 	mFlags.reloadMainInstancesBuffer = false;
 }
 
-void RendererScene::cleanup()
-{
+void RendererScene::cleanup() {
 	mPerspective.cleanup();
 	mSkybox.cleanup();
 	mCuller.cleanup();

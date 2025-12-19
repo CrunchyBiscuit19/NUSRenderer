@@ -64,6 +64,7 @@ void Renderer::initComponents()
 	mResources.init();
 	mInfrastructure.init();
 	mScene.init();
+	mInfrastructure.initFrames();
 	mGui.init();
 	mCamera.init();
 
@@ -226,7 +227,7 @@ void Renderer::initPasses()
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mPicker.mDrawPipelineBundle.pipeline);
 		vkhelper::setViewportScissors(cmd, mScene.mPicker.mImage.imageExtent);
 		cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
-		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mPicker.mDrawPipelineBundle.layout, 0, *mScene.mPerspective.mDescriptorSet, nullptr);
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mPicker.mDrawPipelineBundle.layout, 0, *mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr);
 
 		for (auto& batch : mScene.mOpaqueBatches | std::views::values) {
 			if (batch.preCullRenderItems.empty()) { continue; }
@@ -318,7 +319,7 @@ void Renderer::initPasses()
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mSkybox.mPipelineBundle.pipeline);
 		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mSkybox.mPipelineBundle.layout, 0,
 			std::vector{
-					*mScene.mPerspective.mDescriptorSet,
+					*mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet,
 					*mScene.mSkybox.mDescriptorSet
 			}, nullptr);
 		vk::Viewport viewport = {
@@ -367,7 +368,7 @@ void Renderer::initPasses()
 			cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
 			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0,
-				*mScene.mPerspective.mDescriptorSet, nullptr);
+				*mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr);
 			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1,
 				*mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
@@ -404,7 +405,7 @@ void Renderer::initPasses()
 			cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
 			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0,
-				*mScene.mPerspective.mDescriptorSet, nullptr);
+				*mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr);
 			cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1,
 				*mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
@@ -526,34 +527,29 @@ void Renderer::run()
 {
 	SDL_Event e;
 
-	while (true)
-	{
+	while (true) {
 		auto start = std::chrono::system_clock::now();
 
 		mStats.reset();
 
 		if (mInfrastructure.mProgramEndFrameNumber.has_value() && (mInfrastructure.mFrameNumber <
-			mInfrastructure.mProgramEndFrameNumber.value()))
-		{
+			mInfrastructure.mProgramEndFrameNumber.value())) {
 			mCore.mDevice.waitIdle();
 			break;
 		}
 
-		while (SDL_PollEvent(&e) != 0)
-		{
+		while (SDL_PollEvent(&e) != 0) {
 			mEventHandler.executeEventCallbacks(e);
 		}
 
-		if (mStopRendering)
-		{
+		if (mStopRendering) {
 			// Do not draw if minimized
 			std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Throttle the speed to avoid endless spinning
 			continue;
 		}
 
 		SDL_SetRelativeMouseMode(mCamera.mRelativeMode);
-		if (mInfrastructure.mResizeRequested)
-		{
+		if (mInfrastructure.mResizeRequested) {
 			mInfrastructure.resizeSwapchain();
 		}
 
@@ -586,20 +582,17 @@ void Renderer::perFrameUpdate()
 		}
 	}
 
-	if (mScene.mFlags.modelAddedFlag || mScene.mFlags.modelDestroyedFlag)
-	{
+	if (mScene.mFlags.modelAddedFlag || mScene.mFlags.modelDestroyedFlag) {
 		mScene.realignOffsets();
 		mScene.reloadMainBuffers();
 		mScene.regenerateRenderItems();
 	}
-	else if (mScene.mFlags.instanceAddedFlag || mScene.mFlags.instanceDestroyedFlag)
-	{
+	else if (mScene.mFlags.instanceAddedFlag || mScene.mFlags.instanceDestroyedFlag) {
 		mScene.realignInstancesOffset();
 		mScene.reloadMainInstancesBuffer();
 		mScene.regenerateRenderItems();
 	}
-	else if (mScene.mFlags.reloadMainInstancesBuffer)
-	{
+	else if (mScene.mFlags.reloadMainInstancesBuffer) {
 		mScene.reloadMainInstancesBuffer();
 	}
 
@@ -613,20 +606,15 @@ void Renderer::perFrameUpdate()
 	mStats.mSceneUpdateTime = static_cast<float>(elapsed.count()) / ONE_SECOND_IN_MS;
 }
 
-void Renderer::draw()
-{
+void Renderer::draw() {
 	auto start = std::chrono::system_clock::now();
-
 
 	auto _ = mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 	mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
-	try
-	{
+	try {
 		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(
 			1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
-	}
-	catch (vk::OutOfDateKHRError e)
-	{
+	} catch (vk::OutOfDateKHRError e) {
 		mInfrastructure.mResizeRequested = true;
 		return;
 	}
@@ -689,12 +677,9 @@ void Renderer::draw()
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pImageIndices = &mInfrastructure.mSwapchainIndex;
 
-	try
-	{
+	try {
 		mCore.mGraphicsQueue.presentKHR(presentInfo);
-	}
-	catch (vk::OutOfDateKHRError e)
-	{
+	} catch (vk::OutOfDateKHRError e) {
 		mInfrastructure.mResizeRequested = true;
 	}
 

@@ -13,6 +13,9 @@ struct Frame
 	vk::raii::Fence mRenderFence;
 	vk::raii::Semaphore mAvailableSemaphore;
 
+	AllocatedBuffer mPerspectiveBuffer;
+	vk::raii::DescriptorSet mPerspectiveDescriptorSet;
+
 	Frame();
 
 	void cleanup();

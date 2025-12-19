@@ -21,16 +21,12 @@ class Perspective
 public:
 	PerspectiveData mData;
 
-	AllocatedBuffer mDataBuffer;
-
-	vk::raii::DescriptorSet mDescriptorSet;
 	vk::raii::DescriptorSetLayout mDescriptorSetLayout;
 
 	Perspective(Renderer* renderer);
 
 	void init();
 	void initData();
-	void initBuffer();
 	void initDescriptor();
 
 	void update();
