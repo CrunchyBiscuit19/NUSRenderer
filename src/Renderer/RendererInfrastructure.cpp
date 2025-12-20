@@ -72,7 +72,8 @@ void RendererInfrastructure::initFrames() {
 
 void RendererInfrastructure::initSwapchain() {
 	mSwapchainIndex = 0;
-	mSwapchainBundle.mFormat = vk::Format::eB8G8R8A8Unorm;
+	mSwapchainBundle.mFormat = vk::Format::eB8G8R8A8Srgb;
+	mSwapchainBundle.mUnormFormat = vk::Format::eB8G8R8A8Unorm;
 
 	vkb::SwapchainBuilder swapchainBuilder{
 		*mRenderer->mCore.mChosenGPU, *mRenderer->mCore.mDevice, *mRenderer->mCore.mSurface
@@ -81,7 +82,7 @@ void RendererInfrastructure::initSwapchain() {
 		.set_desired_format(VkSurfaceFormatKHR{
 			.format = static_cast<VkFormat>(mSwapchainBundle.mFormat),
 			.colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)
-			})
+		})
 		.set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
 		.set_desired_extent(mRenderer->mCore.mWindowExtent.width,
 			mRenderer->mCore.mWindowExtent.height)
@@ -99,8 +100,8 @@ void RendererInfrastructure::initSwapchain() {
 	for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
 		mSwapchainBundle.mImages.emplace_back(
 			vkbSwapchain.get_images().value()[i],
-			mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(
-				mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
+			mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
+			mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mUnormFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
 			mRenderer->mCore.mDevice.createSemaphore(semaphoreCreateInfo)
 		);
 	}
@@ -111,6 +112,8 @@ void RendererInfrastructure::initSwapchain() {
 			fmt::format("SwapchainImage{}", i).c_str());
 		mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].imageView,
 			fmt::format("SwapchainImageView{}", i).c_str());
+		mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].uNormImageView,
+			fmt::format("SwapchainUnormImageView{}", i).c_str());
 		mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].renderedSemaphore,
 			fmt::format("SwapchainRenderedSemaphore{}", i).c_str());
 	}

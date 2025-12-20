@@ -21,24 +21,23 @@ struct Frame
 	void cleanup();
 };
 
-class SwapchainBundle
-{
+class SwapchainBundle {
 public:
-	struct SwapchainImage
-	{
+	struct SwapchainImage {
 		vk::Image image;
 		vk::raii::ImageView imageView;
+		vk::raii::ImageView uNormImageView;
 		vk::raii::Semaphore renderedSemaphore;
 	};
 
 	vk::raii::SwapchainKHR mSwapchain;
 	vk::Extent2D mExtent;
 	vk::Format mFormat;
+	vk::Format mUnormFormat;
 	std::vector<SwapchainImage> mImages;
 };
 
-class RendererInfrastructure
-{
+class RendererInfrastructure {
 	Renderer* mRenderer;
 
 public:
@@ -46,9 +45,9 @@ public:
 	// Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
 	std::optional<uint64_t> mProgramEndFrameNumber{std::nullopt};
 	std::vector<Frame> mFrames;
-	Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
-	Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
-	SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
+	inline Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
+	inline Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
+	inline SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
 
 	bool mResizeRequested{false};
 	SwapchainBundle mSwapchainBundle;

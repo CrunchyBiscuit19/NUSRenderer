@@ -20,21 +20,21 @@ constexpr unsigned int FRAME_OVERLAP = 2;
 constexpr unsigned int NUMBER_OF_SWAPCHAIN_IMAGES = 3;
 constexpr auto MSAA_LEVEL = vk::SampleCountFlagBits::e8;
 
-constexpr unsigned int ONE_MEBIBYTE_IN_BYTES = 1048576;
-constexpr unsigned int ONE_SECOND_IN_MS = 1000;
+constexpr unsigned long ONE_MEBIBYTE_IN_BYTES = 1 << 20;
+constexpr unsigned long ONE_SECOND_IN_MS = 1e3;
 
-constexpr unsigned int MESH_VERTEX_BUFFER_SIZE = 10 * ONE_MEBIBYTE_IN_BYTES;
-constexpr unsigned int MESH_INDEX_BUFFER_SIZE = 10 * ONE_MEBIBYTE_IN_BYTES;
+constexpr unsigned long MESH_VERTEX_BUFFER_SIZE = 1e3 * ONE_MEBIBYTE_IN_BYTES;
+constexpr unsigned long MESH_INDEX_BUFFER_SIZE = 1e3 * ONE_MEBIBYTE_IN_BYTES;
 
-constexpr unsigned int MAIN_VERTEX_BUFFER_SIZE = 10 * MESH_VERTEX_BUFFER_SIZE;
-constexpr unsigned int MAIN_INDEX_BUFFER_SIZE = 10 * MESH_INDEX_BUFFER_SIZE;
+constexpr unsigned long MAIN_VERTEX_BUFFER_SIZE = 1e3 * MESH_VERTEX_BUFFER_SIZE;
+constexpr unsigned long MAIN_INDEX_BUFFER_SIZE = 1e3 * MESH_INDEX_BUFFER_SIZE;
 
-constexpr unsigned int MAX_IMAGE_SIZE = 100 * ONE_MEBIBYTE_IN_BYTES;
-constexpr unsigned int MAX_INSTANCES = 1000;
-constexpr unsigned int MAX_MATERIALS = 1000;
-constexpr unsigned int MAX_NODES = 2000;
-constexpr unsigned int MAX_RENDER_ITEMS = 2500;
-constexpr unsigned int MAX_TEXTURE_ARRAY_SLOTS = 10000;
+constexpr unsigned long MAX_IMAGE_SIZE = 1e4 * ONE_MEBIBYTE_IN_BYTES;
+constexpr unsigned int MAX_INSTANCES = 1e5;
+constexpr unsigned int MAX_MATERIALS = 1e5;
+constexpr unsigned int MAX_NODES = 2e5;
+constexpr unsigned int MAX_RENDER_ITEMS = 2e5;
+constexpr unsigned int MAX_TEXTURE_ARRAY_SLOTS = 1e6;
 
 constexpr unsigned int MAX_CULL_LOCAL_SIZE = 256;
 

@@ -37,19 +37,19 @@ void RendererResources::initDefaultImages() {
 	// Colour data interpreted as little endian
 	constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
 	mDefaultImages.try_emplace(DefaultImage::White,
-	                           createImage(&white, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Unorm,
+	                           createImage(&white, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb,
 	                                       vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t grey = std::byteswap(0xAAAAAAFF);
 	mDefaultImages.try_emplace(DefaultImage::Grey,
-	                           createImage(&grey, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Unorm,
+	                           createImage(&grey, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb,
 	                                       vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t black = std::byteswap(0x000000FF);
 	mDefaultImages.try_emplace(DefaultImage::Black,
-	                           createImage(&black, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Unorm,
+	                           createImage(&black, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb,
 	                                       vk::ImageUsageFlagBits::eSampled));
 	constexpr uint32_t blue = std::byteswap(0x769DDBFF);
 	mDefaultImages.try_emplace(DefaultImage::Blue,
-	                           createImage(&blue, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Unorm,
+	                           createImage(&blue, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb,
 	                                       vk::ImageUsageFlagBits::eSampled));
 	std::array<uint32_t, 16 * 16> pixels;
 	for (int x = 0; x < 16; x++)
@@ -63,7 +63,7 @@ void RendererResources::initDefaultImages() {
 		}
 	}
 	mDefaultImages.try_emplace(DefaultImage::Checkerboard,
-	                           createImage(pixels.data(), vk::Extent3D{16, 16, 1}, vk::Format::eR8G8B8A8Unorm,
+	                           createImage(pixels.data(), vk::Extent3D{16, 16, 1}, vk::Format::eR8G8B8A8Srgb,
 	                                       vk::ImageUsageFlagBits::eSampled));
 
 	mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).image, "DefaultWhiteImage");

@@ -383,16 +383,15 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
 	                vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
-int vkhelper::getFormatTexelSize(vk::Format format)
-{
+int vkhelper::getFormatTexelSize(vk::Format format) {
 	int bytesPerTexel = 0;
-	switch (format)
-	{
-	case vk::Format::eR8G8B8A8Unorm:
-		bytesPerTexel = 4;
-		break;
-	default:
-		break;
+	switch (format) {
+		case vk::Format::eR8G8B8A8Srgb:
+		case vk::Format::eR8G8B8A8Unorm:
+			bytesPerTexel = 4;
+			break;
+		default:
+			break;
 	}
 
 	return bytesPerTexel;

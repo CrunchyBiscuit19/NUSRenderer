@@ -454,18 +454,14 @@ void Renderer::initPasses()
 			);
 		});
 
-	mPasses.try_emplace(PassType::ImGui, [&](vk::CommandBuffer cmd)
-		{
-			vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
-				*mInfrastructure.getCurrentSwapchainImage().imageView, vk::ImageLayout::eColorAttachmentOptimal,
-				vk::AttachmentLoadOp::eDontCare);
-			const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent,
-				&colorAttachment, nullptr);
+	mPasses.try_emplace(PassType::ImGui, [&](vk::CommandBuffer cmd) {
+		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mInfrastructure.getCurrentSwapchainImage().uNormImageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eDontCare);
+		const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
-			cmd.beginRendering(renderInfo);
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-			cmd.endRendering();
-		});
+		cmd.beginRendering(renderInfo);
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+		cmd.endRendering();
+	});
 }
 
 void Renderer::initTransitions()

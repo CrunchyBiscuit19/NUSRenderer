@@ -213,7 +213,7 @@ void Skybox::loadImage(const std::filesystem::path& skyboxImageDir)
 	mImage = mRenderer->mResources.createImage(
 		skyboxImageData.data(),
 		vk::Extent3D{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1},
-		vk::Format::eR8G8B8A8Unorm,
+		vk::Format::eR8G8B8A8Srgb,
 		vk::ImageUsageFlagBits::eSampled,
 		true, false, true);
 
