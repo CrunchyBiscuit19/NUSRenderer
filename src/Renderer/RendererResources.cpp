@@ -31,6 +31,10 @@ void RendererResources::initStaging() {
 	mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
 	mRenderer->mCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
+
+	mBoundsStagingBuffer = createStagingBuffer(MAX_MESHES * sizeof(AABB));
+	mRenderer->mCore.labelResourceDebug(mBoundsStagingBuffer.buffer, "BoundsStagingBuffer");
+	LOG_INFO(mRenderer->mLogger, "Bounds Staging Buffer Created");
 }
 
 void RendererResources::initDefaultImages() {
@@ -268,8 +272,9 @@ AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize) const
 	return createBuffer(allocSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
-void RendererResources::cleanup()
-{
+void RendererResources::cleanup() {
+	mBoundsStagingBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Bounds Staging Buffer Destroyed");
 	mNodeTransformsStagingBuffer.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Destroyed");
 	mImageStagingBuffer.cleanup();

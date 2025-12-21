@@ -41,6 +41,9 @@ public:
 	AllocatedBuffer mInstancesBuffer;
 	uint32_t mMainFirstInstance{0};
 
+	AllocatedBuffer mBoundsBuffer;
+	uint32_t mMainFirstBounds{0};
+
 private:
 	vk::Filter extractFilter(fastgltf::Filter filter);
 	vk::SamplerMipmapMode extractMipmapMode(fastgltf::Filter filter);
@@ -61,6 +64,7 @@ private:
 	void loadMaterials();
 	void loadMeshes();
 	void loadNodes();
+	void loadBoundsBuffer();
 
 	void loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector);
 	void loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector);

@@ -275,6 +275,7 @@ public:
 	AllocatedBuffer mMeshStagingBuffer;
 	AllocatedBuffer mMaterialConstantsStagingBuffer;
 	AllocatedBuffer mNodeTransformsStagingBuffer;
+	AllocatedBuffer mBoundsStagingBuffer;
 
 	std::unordered_map<DefaultImage, AllocatedImage> mDefaultImages;
 	std::optional<vk::ClearValue> mColorClearValue;

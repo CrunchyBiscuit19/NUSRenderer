@@ -310,6 +310,15 @@ void GLTFModel::initBuffers()
 	mRenderer->mCore.labelResourceDebug(mInstancesBuffer.buffer,
 	                                            fmt::format("{}InstancesBuffer", mName).c_str());
 	LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
+
+	mBoundsBuffer = mRenderer->mResources.createBuffer(MAX_MESHES * sizeof(AABB),
+		vk::BufferUsageFlagBits::eTransferSrc |
+		vk::BufferUsageFlagBits::eTransferDst |
+		vk::BufferUsageFlagBits::eStorageBuffer,
+		VMA_MEMORY_USAGE_CPU_TO_GPU);
+	mRenderer->mCore.labelResourceDebug(mBoundsBuffer.buffer, fmt::format("{}BoundsBuffer", mName).c_str());
+	LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Created", mName);
+
 }
 
 void GLTFModel::loadSamplerCreateInfos()
@@ -487,6 +496,8 @@ void GLTFModel::loadMeshes()
 		mRenderer->mScene.mLatestMeshId++;
 	}
 
+	loadBoundsBuffer();
+
 	LOG_INFO(mRenderer->mLogger, "{} Meshes Loaded", mName);
 }
 
@@ -564,6 +575,45 @@ void GLTFModel::loadNodes()
 	LOG_INFO(mRenderer->mLogger, "{} Materials Loaded", mName);
 
 	loadNodeTransformsBuffer(mNodes);
+}
+
+void GLTFModel::loadBoundsBuffer() {
+	const vk::DeviceSize boundsSize = mMeshes.size() * sizeof(AABB);
+	std::vector<AABB> boundsVector;
+	for (const auto& mesh : mMeshes) {
+		boundsVector.emplace_back(mesh.mBounds);
+	}
+
+	std::memcpy(static_cast<char*>(mRenderer->mResources.mBoundsStagingBuffer.info.pMappedData), boundsVector.data(), boundsSize);
+
+	vk::BufferCopy boundsCopy{};
+	boundsCopy.dstOffset = 0;
+	boundsCopy.srcOffset = 0;
+	boundsCopy.size = boundsSize;
+
+	mRenderer->mImmSubmit.individualSubmit([this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*renderer->mResources.mBoundsStagingBuffer.buffer,
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+		
+		cmd.copyBuffer(*renderer->mResources.mBoundsStagingBuffer.buffer, *mBoundsBuffer.buffer, boundsCopy);
+
+		vkhelper::createBufferPipelineBarrier(
+			cmd,
+			*mBoundsBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead
+		);
+	});
+
+	LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Uploading", mName);
 }
 
 void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector)

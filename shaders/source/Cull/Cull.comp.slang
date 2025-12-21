@@ -6,8 +6,9 @@ static const int MAX_CULL_LOCAL_SIZE = 256;
 
 void main(CSInput in, uniform CullPushConstants cullPushConstants) {
     uint preCullIndex = in.dispatchThreadID.x;
+    if(cullPushConstants.preCullRenderItemsBuffer[preCullIndex].indexCount == 0) return;
 
-    if (true) { // TODO frustum / occulsion cull
+    if(true) {  // TODO frustum / occulsion cull
         uint postCullIndex;
         InterlockedAdd(cullPushConstants.countBuffer[0], 1, postCullIndex);
 
