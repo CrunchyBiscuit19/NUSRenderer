@@ -77,6 +77,7 @@ public:
 	void realignVertexIndexOffset();
 	void realignMaterialOffset();
 	void realignNodeTransformsOffset();
+	void realignBoundsOffset();
 	void realignInstancesOffset();
 
 	void realignOffsets();
@@ -85,6 +86,7 @@ public:
 	void reloadMainIndexBuffer();
 	void reloadMainMaterialConstantsBuffer();
 	void reloadMainNodeTransformsBuffer();
+	void reloadMainBoundsBuffer();	
 	void reloadMainInstancesBuffer();
 	void reloadMainMaterialResourcesArray();
 

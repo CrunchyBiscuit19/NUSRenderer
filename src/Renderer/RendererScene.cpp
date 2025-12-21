@@ -275,6 +275,19 @@ void RendererScene::realignNodeTransformsOffset() {
 	LOG_INFO(mRenderer->mLogger, "Models Node Transforms Buffer Offsets Realigned");
 }
 
+void RendererScene::realignBoundsOffset() {
+	int boundsCumulative = 0;
+
+	for (auto& model : mModelsCache | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
+		model.mMainFirstBounds = boundsCumulative;
+		boundsCumulative += model.mMeshes.size();
+	}
+
+	LOG_INFO(mRenderer->mLogger, "Models Bounds Buffer Offsets Realigned");
+}
+
 void RendererScene::realignInstancesOffset() {
 	int instanceCumulative = 0;
 
@@ -292,6 +305,7 @@ void RendererScene::realignOffsets() {
 	realignVertexIndexOffset();
 	realignMaterialOffset();
 	realignNodeTransformsOffset();
+	realignBoundsOffset();
 	realignInstancesOffset();
 }
 
@@ -433,6 +447,37 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
 }
 
+void RendererScene::reloadMainBoundsBuffer() {
+	int dstOffset = 0;
+
+	for (auto& model : mModelsCache | std::views::values) {
+		if (model.mDeleteSignal.has_value()) { continue; }
+
+		vk::BufferCopy boundsCopy{};
+		boundsCopy.dstOffset = dstOffset;
+		boundsCopy.srcOffset = 0;
+		boundsCopy.size = model.mMeshes.size() * sizeof(AABB);
+
+		dstOffset += boundsCopy.size;
+
+		mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+			cmd.copyBuffer(*model.mBoundsBuffer.buffer, *mMainBoundsBuffer.buffer, boundsCopy);
+		});
+	}
+
+	mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+		vkhelper::createBufferPipelineBarrier( // Wait for main bounds buffer to finish uploading
+			cmd,
+			*mMainBoundsBuffer.buffer,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderRead);
+		});
+
+	LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Reloading");
+}
+
 void RendererScene::reloadMainInstancesBuffer() {
 	int dstOffset = 0;
 
@@ -503,6 +548,7 @@ void RendererScene::reloadMainBuffers() {
 	reloadMainMaterialConstantsBuffer();
 	reloadMainInstancesBuffer();
 	reloadMainNodeTransformsBuffer();
+	reloadMainBoundsBuffer();
 	reloadMainMaterialResourcesArray();
 }
 
