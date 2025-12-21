@@ -15,10 +15,8 @@ void Node::generateRenderItems(Renderer* renderer, GLTFModel* model)
 		child->generateRenderItems(renderer, model);
 }
 
-void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
-{
-	for (auto& primitive : mMesh->mPrimitives)
-	{
+void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
+	for (auto& primitive : mMesh->mPrimitives) {
 		int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
 		if (primitive.mMaterial->mPbrData.alphaMode == fastgltf::AlphaMode::Opaque) {
@@ -48,7 +46,6 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model)
 				0
 			);
 		}
-
 	}
 
 	Node::generateRenderItems(renderer, model);

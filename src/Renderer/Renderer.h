@@ -12,21 +12,46 @@
 
 #include <quill/Logger.h>
 
-struct RendererStats
-{
+class Renderer;
+
+struct RendererStats {
+	Renderer* mRenderer;
+
 	float mFrameTime;
 	float mDrawTime;
-	int mDrawCallCount;
+	uint32_t mDrawCallCount;
+	uint32_t mPreCullMeshesCount;
+	uint32_t mPostCullMeshesCount;
 	float mSceneUpdateTime;
 
-	void reset()
-	{
+	AllocatedBuffer mPostCullMeshesCountStagingBuffer;
+
+	RendererStats(Renderer* renderer) :
+		mRenderer(renderer),
+		mFrameTime(0.0f),
+		mDrawTime(0.0f),
+		mDrawCallCount(0),
+		mPreCullMeshesCount(0),
+		mPostCullMeshesCount(0),
+		mSceneUpdateTime(0.0f) {
+	}
+
+	void init(RendererResources* resources) {
+		mPostCullMeshesCountStagingBuffer = resources->createStagingBuffer(1 * sizeof(uint32_t));
+	}
+
+	void reset() {
 		mDrawCallCount = 0;
+		mPreCullMeshesCount = 0;
+		mPostCullMeshesCount = 0;
+	}
+
+	void cleanup() {
+		mPostCullMeshesCountStagingBuffer.cleanup();
 	}
 };
 
-enum class PassType
-{
+enum class PassType {
 	Cull,
 	ClearScreen,
 	Pick,
@@ -41,24 +66,20 @@ enum class PassType
 	ImGui
 };
 
-struct Pass
-{
+struct Pass {
 	static Renderer* renderer;
 	std::function<void(vk::CommandBuffer)> function;
 
 	Pass(const std::function<void(vk::CommandBuffer)>& function) :
 		function(function)
-	{
-	}
+	{}
 
-	void execute(vk::CommandBuffer cmd) const
-	{
+	void execute(vk::CommandBuffer cmd) const {
 		function(cmd);
 	}
 };
 
-enum class TransitionType
-{
+enum class TransitionType {
 	PickerGeneralIntoColorAttachment,
 	PickerColorAttachmentIntoGeneral,
 	IntermediateTransferSrcIntoColorAttachment,
@@ -68,8 +89,7 @@ enum class TransitionType
 	SwapchainColorAttachmentIntoPresent,
 };
 
-struct Transition
-{
+struct Transition {
 	vk::PipelineStageFlags2 srcStageMask;
 	vk::AccessFlags2 srcAccessMask;
 	vk::PipelineStageFlags2 dstStageMask;
@@ -86,11 +106,9 @@ struct Transition
 		dstAccessMask(dstAccessMask),
 		currentLayout(currentLayout),
 		newLayout(newLayout)
-	{
-	}
+	{}
 
-	void execute(vk::CommandBuffer cmd, vk::Image image)
-	{
+	void execute(vk::CommandBuffer cmd, vk::Image image) {
 		vkhelper::transitionImage(
 			cmd,
 			image,
@@ -104,14 +122,12 @@ struct Transition
 	}
 };
 
-class Renderer
-{
+class Renderer {
 public:
 	bool mIsInitialized{false};
 	bool mStopRendering{false};
 
 	RendererStats mStats;
-
 	RendererCore mCore;
 	RendererInfrastructure mInfrastructure;
 	RendererResources mResources;

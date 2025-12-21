@@ -61,6 +61,16 @@ void RendererScene::initBuffers() {
 	mMainInstancesBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
 		vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
+
+	mMainBoundsBuffer = mRenderer->mResources.createBuffer(MAX_RENDER_ITEMS * sizeof(AABB),
+		vk::BufferUsageFlagBits::eTransferDst |
+		vk::BufferUsageFlagBits::eStorageBuffer |
+		vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
+	mMainBoundsBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*mMainBoundsBuffer.buffer));
+	LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 }
 
 void RendererScene::initDescriptor() {
@@ -518,6 +528,8 @@ void RendererScene::cleanup() {
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");
 	mMainMaterialResourcesDescriptorSetLayout.clear();
 	LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Layout Destroyed");
+	mMainBoundsBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Destroyed");
 	mMainInstancesBuffer.cleanup();
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Destroyed");
 	mMainNodeTransformsBuffer.cleanup();

@@ -13,7 +13,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	renderer->mCore.labelResourceDebug(preCullRenderItemsBuffer.buffer,
-	                                           fmt::format("PreCullRenderItemsBuffer{}", pipelineId).c_str());
+		fmt::format("PreCullRenderItemsBuffer{}", pipelineId).c_str());
 	preCullRenderItemsBuffer.address = renderer->mCore.mDevice.getBufferAddress(
 		vk::BufferDeviceAddressInfo(*preCullRenderItemsBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Pre-Cull Render Items Buffer Created", pipelineId);
@@ -24,7 +24,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	renderer->mCore.labelResourceDebug(postCullRenderItemsBuffer.buffer,
-	                                           fmt::format("PostCullRenderItemsBuffer{}", pipelineId).c_str());
+		fmt::format("PostCullRenderItemsBuffer{}", pipelineId).c_str());
 	postCullRenderItemsBuffer.address = renderer->mCore.mDevice.getBufferAddress(
 		vk::BufferDeviceAddressInfo(*postCullRenderItemsBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Buffer Created", pipelineId);
@@ -43,8 +43,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 	LOG_INFO(renderer->mLogger, "Batch {} Render Items Staging Buffer Created", pipelineId);
 }
 
-Batch::~Batch()
-{
+Batch::~Batch() {
 	preCullRenderItemsStagingBuffer.cleanup();
 	countBuffer.cleanup();
 	postCullRenderItemsBuffer.cleanup();

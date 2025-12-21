@@ -10,8 +10,7 @@
 #include <vector>
 #include <filesystem>
 
-struct ForwardPushConstants
-{
+struct ForwardPushConstants {
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress materialConstantsBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;
@@ -19,8 +18,7 @@ struct ForwardPushConstants
 	vk::DeviceAddress postCullRenderItemsBuffer;
 };
 
-class RendererScene
-{
+class RendererScene {
 	Renderer* mRenderer;
 
 public:
@@ -60,6 +58,7 @@ public:
 
 	AddressedBuffer mMainNodeTransformsBuffer;
 	AddressedBuffer mMainInstancesBuffer;
+	AddressedBuffer mMainBoundsBuffer;
 
 	RendererScene(Renderer* renderer);
 

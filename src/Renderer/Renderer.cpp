@@ -23,6 +23,7 @@ Renderer::Renderer()
 	, mGui(Gui(this))
 	, mCamera(Camera(this))
 	, mEventHandler(RendererEvent(this))
+	, mStats(RendererStats(this))
 {
 }
 
@@ -77,7 +78,9 @@ void Renderer::initComponents()
 	mGui.initFileBrowsers();
 	mGui.initComponents();
 	mGui.initKeyBinding();
+	mStats.init(&mResources);
 	mCamera.init();
+
 
 	PbrMaterial::initMaterialPipelineLayout(this);
 	mImmSubmit.queuedSubmit();
@@ -357,8 +360,7 @@ void Renderer::initPasses()
 		cmd.endRendering();
 	});
 
-	mPasses.try_emplace(PassType::OpaqueGeometry, [&](vk::CommandBuffer cmd)
-	{
+	mPasses.try_emplace(PassType::OpaqueGeometry, [&](vk::CommandBuffer cmd) {
 		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
 			*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
@@ -368,8 +370,7 @@ void Renderer::initPasses()
 
 		cmd.beginRendering(renderInfo);
 
-		for (auto& batch : mScene.mOpaqueBatches | std::views::values)
-		{
+		for (auto& batch : mScene.mOpaqueBatches | std::views::values) {
 			if (batch.preCullRenderItems.empty()) { continue; }
 
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
@@ -389,13 +390,19 @@ void Renderer::initPasses()
 			cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
 			mStats.mDrawCallCount++;
+			mStats.mPreCullMeshesCount += batch.preCullRenderItems.size();
+			vk::BufferCopy countBufferCopy{};
+			countBufferCopy.dstOffset = 0;
+			countBufferCopy.srcOffset = 0;
+			countBufferCopy.size = 1 * sizeof(uint32_t);
+			cmd.copyBuffer(*batch.countBuffer.buffer, *mStats.mPostCullMeshesCountStagingBuffer.buffer, countBufferCopy);
+			mStats.mPostCullMeshesCount += *static_cast<uint32_t*>(mStats.mPostCullMeshesCountStagingBuffer.info.pMappedData);
 		}
 
 		cmd.endRendering();
 	});
 
-	mPasses.try_emplace(PassType::TransparentGeometry, [&](vk::CommandBuffer cmd)
-	{
+	mPasses.try_emplace(PassType::TransparentGeometry, [&](vk::CommandBuffer cmd) {
 		vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
 			*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
 		vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
@@ -405,8 +412,7 @@ void Renderer::initPasses()
 
 		cmd.beginRendering(renderInfo);
 
-		for (auto& batch : mScene.mTransparentBatches | std::views::values)
-		{
+		for (auto& batch : mScene.mTransparentBatches | std::views::values) {
 			if (batch.preCullRenderItems.empty()) { continue; }
 
 			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
@@ -426,6 +432,8 @@ void Renderer::initPasses()
 			cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.countBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
 
 			mStats.mDrawCallCount++;
+			mStats.mPreCullMeshesCount += batch.preCullRenderItems.size();
+			mStats.mPostCullMeshesCount += *static_cast<uint32_t*>(mStats.mPostCullMeshesCountStagingBuffer.info.pMappedData);
 		}
 
 		cmd.endRendering();
@@ -537,8 +545,6 @@ void Renderer::run()
 	while (true) {
 		auto start = std::chrono::system_clock::now();
 
-		mStats.reset();
-
 		if (mInfrastructure.mProgramEndFrameNumber.has_value() && (mInfrastructure.mFrameNumber <
 			mInfrastructure.mProgramEndFrameNumber.value())) {
 			mCore.mDevice.waitIdle();
@@ -561,6 +567,7 @@ void Renderer::run()
 		}
 
 		mGui.updateFrame();
+		mStats.reset();
 		perFrameUpdate();
 
 		draw();
@@ -702,6 +709,7 @@ void Renderer::cleanup()
 	mGui.cleanup();
 	mScene.cleanup();
 	mImmSubmit.cleanup();
+	mStats.cleanup();
 	mResources.cleanup();
 	mInfrastructure.cleanup();
 	mCore.cleanup();
