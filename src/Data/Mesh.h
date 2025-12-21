@@ -34,6 +34,7 @@ public:
 	std::vector<Primitive> mPrimitives;
 
 	AABB mBounds;
+	uint32_t mRelativeFirstBounds;
 
 	AllocatedBuffer mVertexBuffer;
 	uint32_t mNumVertices{0};

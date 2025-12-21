@@ -408,6 +408,7 @@ void GLTFModel::loadMeshes()
 	std::vector<uint32_t> indices;
 	std::vector<Vertex> vertices;
 
+	uint32_t boundsOffset = 0;
 	mMeshes.reserve(mAsset.meshes.size());
 	for (fastgltf::Mesh& mesh : mAsset.meshes) {
 		Mesh newMesh;
@@ -488,6 +489,8 @@ void GLTFModel::loadMeshes()
 			newMesh.mBounds.min = glm::min(newMesh.mBounds.min, glm::vec4(vertex.position, 0.f));
 			newMesh.mBounds.max = glm::max(newMesh.mBounds.max, glm::vec4(vertex.position, 0.f));
 		}
+		newMesh.mRelativeFirstBounds = boundsOffset;
+		boundsOffset++;
 
 		mMeshes.push_back(std::move(newMesh));
 

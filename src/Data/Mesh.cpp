@@ -2,6 +2,8 @@
 #include <Renderer/Renderer.h>
 
 #include <fmt/core.h>
+#include <quill/LogMacros.h>
+
 void Node::refreshTransform(const glm::mat4& parentTransform)
 {
 	mWorldTransform = parentTransform * mLocalTransform;
@@ -30,7 +32,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
 				model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
 				model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
 				model->mId,
-				0
+				model->mMainFirstBounds + mMesh->mRelativeFirstBounds
 			);
 		} else {
 			renderer->mScene.mTransparentBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
@@ -43,7 +45,7 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
 				model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
 				model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
 				model->mId,
-				0
+				model->mMainFirstBounds + mMesh->mRelativeFirstBounds
 			);
 		}
 	}
