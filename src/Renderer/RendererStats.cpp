@@ -1,6 +1,8 @@
 #include <Renderer/Renderer.h>
 #include <Renderer/RendererStats.h>
 
+#include <quill/LogMacros.h>
+
 RendererStats::RendererStats(Renderer* renderer) :
 	mRenderer(renderer),
 	mFrameTime(0.0f),
@@ -12,11 +14,12 @@ RendererStats::RendererStats(Renderer* renderer) :
 }
 
 void RendererStats::initTotalPostCullCountBuffer() {
-	mTotalPostCullCountBuffer = mRenderer->mResources.createBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | 
+	mTotalPostCullCountBuffer = mRenderer->mResources.createAddressedBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | 
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_CPU_TO_GPU
 	);
-	mTotalPostCullCountBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mTotalPostCullCountBuffer.buffer));
+	mRenderer->mCore.labelResourceDebug(mTotalPostCullCountBuffer.buffer, "TotalPostCullCountBuffer");
+	LOG_INFO(mRenderer->mLogger, "Total Post Cull Count Buffer Created");
 }
 
 void RendererStats::reset() {
@@ -27,4 +30,5 @@ void RendererStats::reset() {
 
 void RendererStats::cleanup() {
 	mTotalPostCullCountBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Total Post Cull Count Buffer Destroyed");
 }

@@ -17,14 +17,12 @@ RendererScene::RendererScene(Renderer* renderer) :
 {}
 
 void RendererScene::initBuffers() {
-	mMainVertexBuffer = mRenderer->mResources.createBuffer(MAIN_VERTEX_BUFFER_SIZE,
+	mMainVertexBuffer = mRenderer->mResources.createAddressedBuffer(MAIN_VERTEX_BUFFER_SIZE,
 		vk::BufferUsageFlagBits::eTransferDst |
 		vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
-	mMainVertexBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*mMainVertexBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Created");
 
 	mMainIndexBuffer = mRenderer->mResources.createBuffer(MAIN_INDEX_BUFFER_SIZE,
@@ -34,42 +32,34 @@ void RendererScene::initBuffers() {
 	mRenderer->mCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
 	LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
-	mMainMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
+	mMainMaterialConstantsBuffer = mRenderer->mResources.createAddressedBuffer(
 		MAX_MATERIALS * sizeof(MaterialConstants),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
-	mMainMaterialConstantsBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*mMainMaterialConstantsBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Created");
 
-	mMainNodeTransformsBuffer = mRenderer->mResources.createBuffer(
+	mMainNodeTransformsBuffer = mRenderer->mResources.createAddressedBuffer(
 		MAX_NODES * sizeof(glm::mat4),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
-	mMainNodeTransformsBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*mMainNodeTransformsBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
-	mMainInstancesBuffer = mRenderer->mResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData),
+	mMainInstancesBuffer = mRenderer->mResources.createAddressedBuffer(MAX_INSTANCES * sizeof(InstanceData),
 		vk::BufferUsageFlagBits::eTransferDst |
 		vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
-	mMainInstancesBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*mMainInstancesBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 
-	mMainBoundsBuffer = mRenderer->mResources.createBuffer(MAX_RENDER_ITEMS * sizeof(AABB),
+	mMainBoundsBuffer = mRenderer->mResources.createAddressedBuffer(MAX_RENDER_ITEMS * sizeof(AABB),
 		vk::BufferUsageFlagBits::eTransferDst |
 		vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
-	mMainBoundsBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*mMainBoundsBuffer.buffer));
 	LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 }
 

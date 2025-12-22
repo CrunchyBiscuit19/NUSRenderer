@@ -167,6 +167,12 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
 	return newBuffer;
 }
 
+AddressedBuffer RendererResources::createAddressedBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const
+{
+	AddressedBuffer tmp = createBuffer(allocSize, usage, memoryUsage);
+	return tmp;
+}
+
 AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
                                               bool mipmapped, bool multisampling, bool cubemap) const {
 	vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);

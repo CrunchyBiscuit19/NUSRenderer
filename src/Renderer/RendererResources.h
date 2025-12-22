@@ -181,18 +181,33 @@ struct AllocatedBuffer
 
 struct AddressedBuffer : AllocatedBuffer
 {
-	vk::DeviceAddress address{};
+	vk::DeviceAddress address;
 
 	AddressedBuffer() = default;
 
 	AddressedBuffer(AllocatedBuffer&& other) noexcept
-		: AllocatedBuffer(std::move(other))
-	{
+		: AllocatedBuffer(std::move(other)) {
+		address = buffer.getDevice().getBufferAddress(vk::BufferDeviceAddressInfo(*buffer));
 	}
 
-	AddressedBuffer& operator=(AllocatedBuffer&& other) noexcept
-	{
-		static_cast<AllocatedBuffer&>(*this) = std::move(other);
+	AddressedBuffer(AddressedBuffer&& other) noexcept
+		: AllocatedBuffer(std::move(other))
+		, address(other.address) {
+		other.address = 0;
+	}
+
+	AddressedBuffer& operator=(AllocatedBuffer&& other) noexcept {
+		AllocatedBuffer::operator=(std::move(other));
+		address = 0;
+		return *this;
+	}
+
+	AddressedBuffer& operator=(AddressedBuffer&& other) noexcept {
+		if (this != &other) {
+			AllocatedBuffer::operator=(std::move(other));
+			address = other.address;
+			other.address = 0;
+		}
 		return *this;
 	}
 
@@ -295,6 +310,7 @@ public:
 	vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
 	AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
+	AddressedBuffer createAddressedBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
 	AllocatedBuffer createStagingBuffer(size_t allocSize) const;
 
 	AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage,
