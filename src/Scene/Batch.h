@@ -22,9 +22,9 @@ struct Batch
 	PipelineBundle* pipelineBundle;
 	std::vector<RenderItem> preCullRenderItems;
 	AddressedBuffer preCullRenderItemsBuffer;
-	AddressedBuffer postCullRenderItemsBuffer;
-	AddressedBuffer countBuffer;
 	AllocatedBuffer preCullRenderItemsStagingBuffer;
+	AddressedBuffer postCullRenderItemsBuffer;
+	AddressedBuffer postCullCountBuffer;
 
 	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
 	~Batch();

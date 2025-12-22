@@ -6,7 +6,8 @@ public struct CullPushConstants
 {
     public RenderItem *preCullRenderItemsBuffer;
     public RenderItem *postCullRenderItemsBuffer;
-    public uint *countBuffer;
+    public uint *postCullCountBuffer;
+    public uint *totalPostCullCountBuffer;
     public uint preCullRenderItemsCount;
 };
 

@@ -10,7 +10,8 @@ struct CullPushConstants
 	vk::DeviceAddress postCullRenderItemsBuffer;
 	// vk::DeviceAddress boundsBuffer;
 	// Frustum as a GPU_ONLY uniform buffer, passed as DS? (vec4 planes[6]; vec4 corners[8];) -> 224 bytes
-	vk::DeviceAddress countBuffer;
+	vk::DeviceAddress postCullCountBuffer;
+	vk::DeviceAddress totalPostCullCountBuffer;
 	uint32_t preCullRenderItemsCount;
 };
 

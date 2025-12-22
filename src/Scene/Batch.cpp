@@ -29,14 +29,14 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		vk::BufferDeviceAddressInfo(*postCullRenderItemsBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Buffer Created", pipelineId);
 
-	countBuffer = renderer->mResources.createBuffer(
+	postCullCountBuffer = renderer->mResources.createBuffer(
 		sizeof(uint32_t),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
-	renderer->mCore.labelResourceDebug(countBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
-	countBuffer.address = renderer->mCore.mDevice.getBufferAddress(
-		vk::BufferDeviceAddressInfo(*countBuffer.buffer));
+	renderer->mCore.labelResourceDebug(postCullCountBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
+	postCullCountBuffer.address = renderer->mCore.mDevice.getBufferAddress(
+		vk::BufferDeviceAddressInfo(*postCullCountBuffer.buffer));
 	LOG_INFO(renderer->mLogger, "Batch {} Count Buffer Created", pipelineId);
 
 	preCullRenderItemsStagingBuffer = renderer->mResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
@@ -45,7 +45,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 
 Batch::~Batch() {
 	preCullRenderItemsStagingBuffer.cleanup();
-	countBuffer.cleanup();
+	postCullCountBuffer.cleanup();
 	postCullRenderItemsBuffer.cleanup();
 	preCullRenderItemsBuffer.cleanup();
 	preCullRenderItems.clear();

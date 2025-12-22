@@ -5,41 +5,13 @@
 #include <Renderer/RendererResources.h>
 #include <Renderer/RendererScene.h>
 #include <Renderer/RendererEvent.h>
+#include <Renderer/RendererStats.h>
 #include <Utils/ImmSubmit.h>
 #include <User/Gui.h>
 #include <Data/Camera.h>
 #include <Utils/Helper.h>
 
 #include <quill/Logger.h>
-
-class Renderer;
-
-struct RendererStats {
-	Renderer* mRenderer;
-
-	float mFrameTime;
-	float mDrawTime;
-	uint32_t mDrawCallCount;
-	uint32_t mPreCullMeshesCount;
-	uint32_t mPostCullMeshesCount;
-	float mSceneUpdateTime;
-
-	RendererStats(Renderer* renderer) :
-		mRenderer(renderer),
-		mFrameTime(0.0f),
-		mDrawTime(0.0f),
-		mDrawCallCount(0),
-		mPreCullMeshesCount(0),
-		mPostCullMeshesCount(0),
-		mSceneUpdateTime(0.0f) {
-	}
-
-	void reset() {
-		mDrawCallCount = 0;
-		mPreCullMeshesCount = 0;
-		mPostCullMeshesCount = 0;
-	}
-};
 
 enum class PassType {
 	Cull,

@@ -9,8 +9,9 @@ void main(CSInput in, uniform CullPushConstants cullPushConstants) {
     if (preCullIndex >= cullPushConstants.preCullRenderItemsCount) return;
 
     if (true) {  // TODO frustum / occulsion cull
-        uint postCullIndex;
-        InterlockedAdd(cullPushConstants.countBuffer[0], 1, postCullIndex);
+        uint postCullIndex; uint _;
+        InterlockedAdd(cullPushConstants.postCullCountBuffer[0], 1, postCullIndex);
+        InterlockedAdd(cullPushConstants.totalPostCullCountBuffer[0], 1, _);
 
         cullPushConstants.postCullRenderItemsBuffer[postCullIndex] = cullPushConstants.preCullRenderItemsBuffer[preCullIndex];
     }
