@@ -573,7 +573,6 @@ void Renderer::run()
 			mInfrastructure.resizeSwapchain();
 		}
 
-		mStats.mPostCullMeshesCount = *static_cast<uint32_t*>(mStats.mTotalPostCullCountBuffer.info.pMappedData);
 		mGui.updateFrame();
 		mStats.reset();
 		perFrameUpdate();
