@@ -78,7 +78,6 @@ void Renderer::initComponents()
 	mGui.initFileBrowsers();
 	mGui.initComponents();
 	mGui.initKeyBinding();
-	mStats.init(&mResources);
 	mCamera.init();
 
 
@@ -129,6 +128,7 @@ void Renderer::initPasses()
 			mScene.mCuller.mPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
 			mScene.mCuller.mPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
 			mScene.mCuller.mPushConstants.countBuffer = batch.countBuffer.address;
+			mScene.mCuller.mPushConstants.preCullRenderItemsCount = batch.preCullRenderItems.size();
 			cmd.pushConstants<CullPushConstants>(mScene.mCuller.mPipelineBundle.layout,
 				vk::ShaderStageFlagBits::eCompute, 0,
 				mScene.mCuller.mPushConstants);
@@ -146,8 +146,8 @@ void Renderer::initPasses()
 			vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be written to
 				cmd,
 				*batch.countBuffer.buffer,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eComputeShader,
+				vk::AccessFlagBits2::eShaderWrite,
 				vk::PipelineStageFlagBits2::eDrawIndirect,
 				vk::AccessFlagBits2::eIndirectCommandRead);
 		}
@@ -169,6 +169,7 @@ void Renderer::initPasses()
 			mScene.mCuller.mPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
 			mScene.mCuller.mPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
 			mScene.mCuller.mPushConstants.countBuffer = batch.countBuffer.address;
+			mScene.mCuller.mPushConstants.preCullRenderItemsCount = batch.preCullRenderItems.size();
 			cmd.pushConstants<CullPushConstants>(mScene.mCuller.mPipelineBundle.layout,
 				vk::ShaderStageFlagBits::eCompute, 0,
 				mScene.mCuller.mPushConstants);
@@ -186,8 +187,8 @@ void Renderer::initPasses()
 			vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be written to
 				cmd,
 				*batch.countBuffer.buffer,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eComputeShader,
+				vk::AccessFlagBits2::eShaderWrite,
 				vk::PipelineStageFlagBits2::eDrawIndirect,
 				vk::AccessFlagBits2::eIndirectCommandRead);
 		}
@@ -391,12 +392,6 @@ void Renderer::initPasses()
 
 			mStats.mDrawCallCount++;
 			mStats.mPreCullMeshesCount += batch.preCullRenderItems.size();
-			vk::BufferCopy countBufferCopy{};
-			countBufferCopy.dstOffset = 0;
-			countBufferCopy.srcOffset = 0;
-			countBufferCopy.size = 1 * sizeof(uint32_t);
-			cmd.copyBuffer(*batch.countBuffer.buffer, *mStats.mPostCullMeshesCountStagingBuffer.buffer, countBufferCopy);
-			mStats.mPostCullMeshesCount += *static_cast<uint32_t*>(mStats.mPostCullMeshesCountStagingBuffer.info.pMappedData);
 		}
 
 		cmd.endRendering();
@@ -433,7 +428,6 @@ void Renderer::initPasses()
 
 			mStats.mDrawCallCount++;
 			mStats.mPreCullMeshesCount += batch.preCullRenderItems.size();
-			mStats.mPostCullMeshesCount += *static_cast<uint32_t*>(mStats.mPostCullMeshesCountStagingBuffer.info.pMappedData);
 		}
 
 		cmd.endRendering();
@@ -709,7 +703,6 @@ void Renderer::cleanup()
 	mGui.cleanup();
 	mScene.cleanup();
 	mImmSubmit.cleanup();
-	mStats.cleanup();
 	mResources.cleanup();
 	mInfrastructure.cleanup();
 	mCore.cleanup();

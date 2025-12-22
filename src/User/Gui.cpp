@@ -143,8 +143,7 @@ void Gui::createDockSpace()
 		ImGuiWindowFlags_NoNavFocus |
 		ImGuiWindowFlags_NoBackground;
 
-	static ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-	static ImGuiID mainDockSpace = ImGui::DockSpaceOverViewport(0, mainViewport, dockSpaceFlags);
+	ImGuiViewport* mainViewport = ImGui::GetMainViewport();
 
 	ImGui::SetNextWindowPos(mainViewport->WorkPos);
 	ImGui::SetNextWindowSize(mainViewport->WorkSize);
@@ -154,6 +153,7 @@ void Gui::createDockSpace()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
 	ImGui::Begin("DockSpace Window", &mCollapsed, windowFlags);
+	static ImGuiID mainDockSpace = ImGui::GetID("MainDockSpace");
 	ImGui::DockSpace(mainDockSpace, ImVec2(0.0f, 0.0f), dockSpaceFlags);
 	ImGui::End();
 	ImGui::PopStyleVar(3);

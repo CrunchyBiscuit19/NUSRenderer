@@ -24,8 +24,6 @@ struct RendererStats {
 	uint32_t mPostCullMeshesCount;
 	float mSceneUpdateTime;
 
-	AllocatedBuffer mPostCullMeshesCountStagingBuffer;
-
 	RendererStats(Renderer* renderer) :
 		mRenderer(renderer),
 		mFrameTime(0.0f),
@@ -36,18 +34,10 @@ struct RendererStats {
 		mSceneUpdateTime(0.0f) {
 	}
 
-	void init(RendererResources* resources) {
-		mPostCullMeshesCountStagingBuffer = resources->createStagingBuffer(1 * sizeof(uint32_t));
-	}
-
 	void reset() {
 		mDrawCallCount = 0;
 		mPreCullMeshesCount = 0;
 		mPostCullMeshesCount = 0;
-	}
-
-	void cleanup() {
-		mPostCullMeshesCountStagingBuffer.cleanup();
 	}
 };
 
