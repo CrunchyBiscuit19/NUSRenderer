@@ -44,7 +44,6 @@ public:
 	glm::vec3 getDirectionVector() const;
 
 	void uploadFrameFrustum() const;
-
 	void update(float deltaTime, float expectedDeltaTime);
 
 	void cleanup();
