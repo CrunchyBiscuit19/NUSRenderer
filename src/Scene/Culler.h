@@ -4,19 +4,25 @@
 
 class Renderer;
 
-struct CullPushConstants
-{
+struct Plane {
+	glm::vec3 normal;
+	float d;
+};
+
+struct CullPushConstants {
 	vk::DeviceAddress preCullRenderItemsBuffer;
 	vk::DeviceAddress postCullRenderItemsBuffer;
-	// vk::DeviceAddress boundsBuffer;
-	// Frustum as a GPU_ONLY uniform buffer, passed as DS? (vec4 planes[6]; vec4 corners[8];) -> 224 bytes
 	vk::DeviceAddress postCullCountBuffer;
 	vk::DeviceAddress totalPostCullCountBuffer;
+	vk::DeviceAddress boundsBuffer;
+	vk::DeviceAddress frustumBuffer;
+	vk::DeviceAddress nodeTransformsBuffer;
+	vk::DeviceAddress instancesBuffer;
+	vk::DeviceAddress perspectiveBuffer; 
 	uint32_t preCullRenderItemsCount;
 };
 
-class Culler
-{
+class Culler {
 	Renderer* mRenderer;
 
 public:

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Renderer/RendererResources.h>
+
 #include <SDL_events.h>
 #include <glm/gtx/quaternion.hpp>
 
@@ -28,9 +30,12 @@ public:
 	MovementMode mMovementMode;
 	std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
 
+	AddressedBuffer mFrustumBuffer;
+
 	Camera(Renderer* renderer);
 
-	void init();
+	void initControls();
+	void initBuffers();
 
 	glm::mat4 getViewMatrix() const;
 	glm::quat getPitchMatrix() const;
@@ -38,5 +43,9 @@ public:
 	glm::mat4 getRotationMatrix() const;
 	glm::vec3 getDirectionVector() const;
 
+	void uploadFrameFrustum() const;
+
 	void update(float deltaTime, float expectedDeltaTime);
+
+	void cleanup();
 };

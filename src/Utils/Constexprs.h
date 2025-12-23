@@ -49,3 +49,11 @@ constexpr auto CLEAR_COLOR = vk::ClearColorValue(.463f, .616f, .859f, 0.f);
 constexpr float FOVY = 70.f;
 constexpr float NEAR_PLANE = 0.1f;
 constexpr float FAR_PLANE = 10000.f;
+
+constexpr int FRUSTUM_NEAR_FACE = 0;
+constexpr int FRUSTUM_FAR_FACE = 1;
+constexpr int FRUSTUM_LEFT_FACE = 2;
+constexpr int FRUSTUM_RIGHT_FACE = 3;
+constexpr int FRUSTUM_TOP_FACE = 4;
+constexpr int FRUSTUM_BOTTOM_FACE = 5;
+

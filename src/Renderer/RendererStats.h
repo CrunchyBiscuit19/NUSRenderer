@@ -19,7 +19,7 @@ public:
 
 	RendererStats(Renderer* renderer);
 
-	void initTotalPostCullCountBuffer();
+	void initBuffers();
 	void reset();
 	void cleanup();
 };

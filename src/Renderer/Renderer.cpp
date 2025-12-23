@@ -78,9 +78,9 @@ void Renderer::initComponents()
 	mGui.initFileBrowsers();
 	mGui.initComponents();
 	mGui.initKeyBinding();
-	mStats.initTotalPostCullCountBuffer();
-	mCamera.init();
-
+	mStats.initBuffers();
+	mCamera.initControls();
+	mCamera.initBuffers();
 
 	PbrMaterial::initMaterialPipelineLayout(this);
 	mImmSubmit.queuedSubmit();
@@ -123,6 +123,11 @@ void Renderer::initPasses()
 			vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
 		mScene.mCuller.mPushConstants.totalPostCullCountBuffer = mStats.mTotalPostCullCountBuffer.address;
+		mScene.mCuller.mPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
+		mScene.mCuller.mPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
+		mScene.mCuller.mPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
+		mScene.mCuller.mPushConstants.instancesBuffer = mScene.mMainInstancesBuffer.address;
+		mScene.mCuller.mPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
 
 		for (auto batchType : mScene.mBatchTypes) {
 			for (auto& batch : *batchType | std::views::values) {
@@ -514,6 +519,7 @@ void Renderer::perFrameUpdate()
 	const auto start = std::chrono::system_clock::now();
 
 	mScene.mPerspective.update();
+	mCamera.uploadFrameFrustum();
 
 	mScene.deleteModels();
 	mScene.deleteInstances();
@@ -634,6 +640,7 @@ void Renderer::cleanup()
 {
 	PbrMaterial::cleanup(this);
 
+	mCamera.cleanup();
 	mGui.cleanup();
 	mStats.cleanup();
 	mScene.cleanup();

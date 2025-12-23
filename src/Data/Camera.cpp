@@ -2,8 +2,7 @@
 #include <Renderer/Renderer.h>
 
 Camera::Camera(Renderer* renderer) :
-	mRenderer(renderer)
-{
+	mRenderer(renderer) {
 	mVelocity = glm::vec3(0.f);
 	mPosition = glm::vec3(0, 0, 5);
 	mPitch = 0;
@@ -50,77 +49,102 @@ Camera::Camera(Renderer* renderer) :
 	};
 }
 
-void Camera::init()
-{
-	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void
-	{
+void Camera::initControls() {
+	mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void {
 		const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
 		mVelocity = glm::vec3(0.f);
 
 		mMovementFunctions[mMovementMode]();
 
-		if (keyState[SDL_SCANCODE_C] && e.type == SDL_KEYDOWN && !e.key.repeat)
-		{
-			switch (mMovementMode)
-			{
-			case FREEFLY:
-				mMovementMode = DRONE;
-				break;
-			case DRONE:
-				mMovementMode = FREEFLY;
-				break;
+		if (keyState[SDL_SCANCODE_C] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+			switch (mMovementMode) {
+				case FREEFLY:
+					mMovementMode = DRONE;
+					break;
+				case DRONE:
+					mMovementMode = FREEFLY;
+					break;
 			}
 		}
 
 		if (e.button.button == SDL_BUTTON_RIGHT && e.type == SDL_MOUSEBUTTONDOWN)
 			mRelativeMode = static_cast<SDL_bool>(!mRelativeMode);
 
-		if (e.type == SDL_MOUSEMOTION && mRelativeMode)
-		{
+		if (e.type == SDL_MOUSEMOTION && mRelativeMode) {
 			mYaw += static_cast<float>(e.motion.xrel) / 200.f;
 			mPitch -= static_cast<float>(e.motion.yrel) / 200.f;
 		}
 
-		if (e.type == SDL_MOUSEWHEEL)
-		{
+		if (e.type == SDL_MOUSEWHEEL) {
 			mSpeed += static_cast<float>(e.wheel.y);
 			mSpeed = std::clamp(mSpeed, 0.f, MAX_CAMERA_SPEED);
 		}
 	});
 }
 
-glm::mat4 Camera::getViewMatrix() const
-{
+void Camera::initBuffers() {
+	const vk::DeviceSize frustumBufferSize = sizeof(Plane) * 6;
+	mFrustumBuffer = mRenderer->mResources.createAddressedBuffer(frustumBufferSize, 
+		vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+		VMA_MEMORY_USAGE_CPU_TO_GPU);
+}
+
+glm::mat4 Camera::getViewMatrix() const {
 	const glm::mat4 cameraTranslation = glm::translate(glm::mat4(1.f), mPosition);
 	const glm::mat4 cameraRotation = getRotationMatrix();
 	return glm::inverse(cameraTranslation * cameraRotation);
 }
 
-glm::quat Camera::getPitchMatrix() const
-{
+glm::quat Camera::getPitchMatrix() const {
 	return glm::angleAxis(mPitch, glm::vec3{1.f, 0.f, 0.f});
 }
 
-glm::quat Camera::getYawMatrix() const
-{
+glm::quat Camera::getYawMatrix() const {
 	return glm::angleAxis(mYaw, glm::vec3{0.f, -1.f, 0.f}); // Negative Y to flip OpenGL rotation?;
 }
 
-glm::mat4 Camera::getRotationMatrix() const
-{
+glm::mat4 Camera::getRotationMatrix() const {
 	const glm::quat pitchRotation = getPitchMatrix();
 	const glm::quat yawRotation = getYawMatrix();
 	return glm::toMat4(yawRotation) * glm::toMat4(pitchRotation);
 }
 
-glm::vec3 Camera::getDirectionVector() const
-{
+glm::vec3 Camera::getDirectionVector() const {
 	glm::vec3 direction;
-	direction.x = std::cos(mPitch) * std::sin(mYaw);
+	direction.x = std::cos(mPitch) * std::cos(mYaw);
 	direction.y = std::sin(mPitch);
-	direction.z = -std::cos(mPitch) * std::cos(mYaw);
+	direction.z = std::cos(mPitch) * std::sin(mYaw);
 	return -glm::normalize(direction);
+}
+
+void Camera::uploadFrameFrustum() const {
+	glm::mat4 rot = getRotationMatrix();
+	glm::vec3 forward = glm::vec3(rot * glm::vec4(0, 0, -1, 0));
+	glm::vec3 right = glm::vec3(rot * glm::vec4(1, 0, 0, 0));
+	glm::vec3 up = glm::vec3(rot * glm::vec4(0, 1, 0, 0));
+
+	const float halfVSide = NEAR_PLANE * std::tanf(FOVY * .5f);
+	const float halfHSide = halfVSide * static_cast<float>(mRenderer->mCore.mWindowExtent.width) / static_cast<float>(mRenderer->mCore.mWindowExtent.height);
+
+	std::array<Plane, 6> planes;
+	planes[FRUSTUM_NEAR_FACE] = { forward, glm::length(mPosition + forward * NEAR_PLANE) };
+	planes[FRUSTUM_FAR_FACE] = { forward, glm::length(mPosition + forward * FAR_PLANE) };
+	planes[FRUSTUM_LEFT_FACE] = { glm::cross(up, forward * FAR_PLANE + right * halfHSide), glm::length(mPosition) };
+	planes[FRUSTUM_RIGHT_FACE] = { glm::cross(forward * FAR_PLANE - right * halfHSide, up), glm::length(mPosition) };
+	planes[FRUSTUM_TOP_FACE] = { glm::cross(right, forward * FAR_PLANE - up * halfVSide), glm::length(mPosition) };
+	planes[FRUSTUM_BOTTOM_FACE] = { glm::cross(forward * FAR_PLANE + up * halfVSide, right), glm::length(mPosition) };
+
+	std::memcpy(mFrustumBuffer.info.pMappedData, planes.data(), planes.max_size() * sizeof(Plane));
+	
+	/*frustum.leftFace = {cam.Position,
+							glm::cross(cam.Up,frontMultFar + cam.Right * halfHSide) };
+	frustum.topFace = { cam.Position,
+							glm::cross(cam.Right, frontMultFar - cam.Up * halfVSide) };
+	frustum.bottomFace = { cam.Position,
+							glm::cross(frontMultFar + cam.Up * halfVSide, cam.Right) };
+
+	return frustum;*/
 }
 
 void Camera::update(float deltaTime, float expectedDeltaTime)
@@ -135,4 +159,8 @@ void Camera::update(float deltaTime, float expectedDeltaTime)
 			getRotationMatrix() * glm::vec4(mVelocity * mSpeed * (deltaTime / expectedDeltaTime), 0.f));
 		break;
 	}
+}
+
+void Camera::cleanup() {
+	mFrustumBuffer.cleanup();
 }

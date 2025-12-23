@@ -13,7 +13,7 @@ struct Frame
 	vk::raii::Fence mRenderFence;
 	vk::raii::Semaphore mAvailableSemaphore;
 
-	AllocatedBuffer mPerspectiveBuffer;
+	AddressedBuffer mPerspectiveBuffer;
 	vk::raii::DescriptorSet mPerspectiveDescriptorSet;
 
 	Frame();
