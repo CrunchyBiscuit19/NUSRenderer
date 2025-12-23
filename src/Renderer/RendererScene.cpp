@@ -13,8 +13,10 @@ RendererScene::RendererScene(Renderer* renderer) :
 	mCuller(Culler(renderer)),
 	mPicker(Picker(renderer)),
 	mMainMaterialResourcesDescriptorSet(nullptr),
-	mMainMaterialResourcesDescriptorSetLayout(nullptr)
-{}
+	mMainMaterialResourcesDescriptorSetLayout(nullptr) {
+	mBatchTypes[static_cast<uint32_t>(BatchType::Opaque)] = &mOpaqueBatches;
+	mBatchTypes[static_cast<uint32_t>(BatchType::Transparent)] = &mTransparentBatches;
+}
 
 void RendererScene::initBuffers() {
 	mMainVertexBuffer = mRenderer->mResources.createAddressedBuffer(MAIN_VERTEX_BUFFER_SIZE,
@@ -132,12 +134,10 @@ void RendererScene::deleteInstances() {
 }
 
 void RendererScene::regenerateRenderItems() {
-	for (auto& batch : mOpaqueBatches | std::views::values) {
-		batch.preCullRenderItems.clear();
-	}
-
-	for (auto& batch : mTransparentBatches | std::views::values) {
-		batch.preCullRenderItems.clear();
+	for (auto batchType : mBatchTypes) {
+		for (auto& batch : *batchType | std::views::values) {
+			batch.preCullRenderItems.clear();
+		}
 	}
 
 	for (auto& model : mModelsCache | std::views::values) {
@@ -147,77 +147,43 @@ void RendererScene::regenerateRenderItems() {
 	}
 
 	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
+	
+	for (auto batchType : mBatchTypes) {
+		for (auto& batch : *batchType | std::views::values) {
+			if (batch.preCullRenderItems.empty()) { continue; }
 
-	for (auto& batch : mOpaqueBatches | std::views::values) {
-		if (batch.preCullRenderItems.empty()) { continue; }
+			std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
+				batch.preCullRenderItems.size() * sizeof(RenderItem));
 
-		std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
-			batch.preCullRenderItems.size() * sizeof(RenderItem));
+			vk::BufferCopy renderItemsCopy{};
+			renderItemsCopy.dstOffset = 0;
+			renderItemsCopy.srcOffset = 0;
+			renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
 
-		vk::BufferCopy renderItemsCopy{};
-		renderItemsCopy.dstOffset = 0;
-		renderItemsCopy.srcOffset = 0;
-		renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
+			mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+				cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 
-		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-			cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+				vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
+					cmd,
+					*batch.preCullRenderItemsBuffer.buffer,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite);
 
-			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
-				cmd,
-				*batch.preCullRenderItemsBuffer.buffer,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite);
+				cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
 
-			cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
+				vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
+					cmd,
+					*batch.preCullRenderItemsBuffer.buffer,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite,
+					vk::PipelineStageFlagBits2::eComputeShader,
+					vk::AccessFlagBits2::eShaderRead);
+				});
 
-			vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
-				cmd,
-				*batch.preCullRenderItemsBuffer.buffer,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite,
-				vk::PipelineStageFlagBits2::eComputeShader,
-				vk::AccessFlagBits2::eShaderRead);
-		});
-
-		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
-	}
-
-	for (auto& batch : mTransparentBatches | std::views::values) {
-		if (batch.preCullRenderItems.empty()) { continue; }
-
-		std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
-			batch.preCullRenderItems.size() * sizeof(RenderItem));
-
-		vk::BufferCopy renderItemsCopy{};
-		renderItemsCopy.dstOffset = 0;
-		renderItemsCopy.srcOffset = 0;
-		renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
-
-		mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd)	{
-			cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-
-			vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
-				cmd,
-				*batch.preCullRenderItemsBuffer.buffer,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite);
-
-			cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
-
-			vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
-				cmd,
-				*batch.preCullRenderItemsBuffer.buffer,
-				vk::PipelineStageFlagBits2::eTransfer,
-				vk::AccessFlagBits2::eTransferWrite,
-				vk::PipelineStageFlagBits2::eComputeShader,
-				vk::AccessFlagBits2::eShaderRead);
-		});
-
-		LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
+			LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
+		}
 	}
 }
 

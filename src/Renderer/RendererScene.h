@@ -47,6 +47,7 @@ public:
 
 	std::unordered_map<int, Batch> mOpaqueBatches;
 	std::unordered_map<int, Batch> mTransparentBatches;
+	std::array<std::unordered_map<int, Batch>*, 2> mBatchTypes;
 	ForwardPushConstants mForwardPushConstants;
 
 	AddressedBuffer mMainVertexBuffer;

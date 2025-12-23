@@ -17,6 +17,11 @@ struct RenderItem
 	uint32_t boundsIndex;
 };
 
+enum class BatchType {
+	Opaque = 0,
+	Transparent = 1
+};
+
 struct Batch
 {
 	PipelineBundle* pipelineBundle;

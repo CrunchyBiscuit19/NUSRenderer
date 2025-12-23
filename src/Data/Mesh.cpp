@@ -21,33 +21,20 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
 	for (auto& primitive : mMesh->mPrimitives) {
 		int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
-		if (primitive.mMaterial->mPbrData.alphaMode == fastgltf::AlphaMode::Opaque) {
-			renderer->mScene.mOpaqueBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
-			renderer->mScene.mOpaqueBatches.at(pipelineId).preCullRenderItems.emplace_back(
-				primitive.mIndexCount,
-				model->mInstances.size(),
-				mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
-				mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
-				model->mMainFirstInstance,
-				model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
-				model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
-				model->mId,
-				model->mMainFirstBounds + mMesh->mRelativeFirstBounds
-			);
-		} else {
-			renderer->mScene.mTransparentBatches.try_emplace(pipelineId, renderer, primitive, pipelineId);
-			renderer->mScene.mTransparentBatches.at(pipelineId).preCullRenderItems.emplace_back(
-				primitive.mIndexCount,
-				model->mInstances.size(),
-				mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
-				mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
-				model->mMainFirstInstance,
-				model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
-				model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
-				model->mId,
-				model->mMainFirstBounds + mMesh->mRelativeFirstBounds
-			);
-		}
+		int batchType = static_cast<uint32_t>((primitive.mMaterial->mPbrData.alphaMode == fastgltf::AlphaMode::Opaque) ? BatchType::Opaque : BatchType::Transparent);
+
+		renderer->mScene.mBatchTypes[batchType]->try_emplace(pipelineId, renderer, primitive, pipelineId);
+		renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderItems.emplace_back(
+			primitive.mIndexCount,
+			model->mInstances.size(),
+			mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
+			mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
+			model->mMainFirstInstance,
+			model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
+			model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
+			model->mId,
+			model->mMainFirstBounds + mMesh->mRelativeFirstBounds
+		);
 	}
 
 	Node::generateRenderItems(renderer, model);
