@@ -19,7 +19,8 @@ struct RenderItem
 
 enum class BatchType {
 	Opaque = 0,
-	Transparent = 1
+	Mask = 1,
+	Transparent = 2
 };
 
 struct Batch

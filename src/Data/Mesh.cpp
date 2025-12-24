@@ -21,8 +21,19 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
 	for (auto& primitive : mMesh->mPrimitives) {
 		int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
-		int batchType = static_cast<uint32_t>((primitive.mMaterial->mPbrData.alphaMode == fastgltf::AlphaMode::Opaque) ? BatchType::Opaque : BatchType::Transparent);
-
+		int batchType = static_cast<uint32_t>(BatchType::Opaque);
+		switch (primitive.mMaterial->mPbrData.alphaMode) {
+			case fastgltf::AlphaMode::Opaque:
+					batchType = static_cast<uint32_t>(BatchType::Opaque);
+					break;
+			case fastgltf::AlphaMode::Mask:
+				batchType = static_cast<uint32_t>(BatchType::Mask);
+				break;
+			case fastgltf::AlphaMode::Blend:
+				batchType = static_cast<uint32_t>(BatchType::Transparent);
+				break;
+		}
+		
 		renderer->mScene.mBatchTypes[batchType]->try_emplace(pipelineId, renderer, primitive, pipelineId);
 		renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderItems.emplace_back(
 			primitive.mIndexCount,

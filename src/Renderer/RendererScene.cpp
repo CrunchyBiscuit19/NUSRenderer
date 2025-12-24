@@ -15,6 +15,7 @@ RendererScene::RendererScene(Renderer* renderer) :
 	mMainMaterialResourcesDescriptorSet(nullptr),
 	mMainMaterialResourcesDescriptorSetLayout(nullptr) {
 	mBatchTypes[static_cast<uint32_t>(BatchType::Opaque)] = &mOpaqueBatches;
+	mBatchTypes[static_cast<uint32_t>(BatchType::Mask)] = &mMaskBatches;
 	mBatchTypes[static_cast<uint32_t>(BatchType::Transparent)] = &mTransparentBatches;
 }
 
@@ -524,6 +525,7 @@ void RendererScene::cleanup() {
 
 	mModelsCache.clear();
 	mOpaqueBatches.clear();
+	mMaskBatches.clear();
 	mTransparentBatches.clear();
 	LOG_INFO(mRenderer->mLogger, "All Batches Destroyed");
 	mMainMaterialResourcesDescriptorSet.clear();

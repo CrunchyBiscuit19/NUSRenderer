@@ -46,8 +46,9 @@ public:
 	std::unordered_map<int, std::string> mModelsReverse;
 
 	std::unordered_map<int, Batch> mOpaqueBatches;
+	std::unordered_map<int, Batch> mMaskBatches;
 	std::unordered_map<int, Batch> mTransparentBatches;
-	std::array<std::unordered_map<int, Batch>*, 2> mBatchTypes;
+	std::array<std::unordered_map<int, Batch>*, 3> mBatchTypes;
 	ForwardPushConstants mForwardPushConstants;
 
 	AddressedBuffer mMainVertexBuffer;
