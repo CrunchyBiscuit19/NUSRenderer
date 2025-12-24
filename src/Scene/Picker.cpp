@@ -160,13 +160,13 @@ void Picker::initPickPipeline()
 	vk::ShaderModule compShader = mRenderer->mResources.getShader(
 		std::filesystem::path(SHADERS_PATH) / "PickerPick.comp.spv");
 
-	ComputePipelineBuilder cullPipelineBuilder;
-	cullPipelineBuilder.setShader(compShader);
-	cullPipelineBuilder.mPipelineLayout = *mPickPipelineLayout;
+	ComputePipelineBuilder pickPipelineBuilder;
+	pickPipelineBuilder.setShader(compShader);
+	pickPipelineBuilder.mPipelineLayout = *mPickPipelineLayout;
 
 	mPickPipelineBundle = PipelineBundle(
 		mRenderer->mInfrastructure.mLatestPipelineId++,
-		cullPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
+		pickPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
 		*mPickPipelineLayout
 	);
 	mRenderer->mCore.labelResourceDebug(mPickPipelineBundle.pipeline, "PickerPickPipeline");

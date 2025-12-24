@@ -35,7 +35,7 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
 		}
 		
 		renderer->mScene.mBatchTypes[batchType]->try_emplace(pipelineId, renderer, primitive, pipelineId);
-		renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderItems.emplace_back(
+		renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.emplace_back(
 			primitive.mIndexCount,
 			model->mInstances.size(),
 			mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
@@ -47,10 +47,10 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
 			model->mMainFirstBounds + mMesh->mRelativeFirstBounds
 		);
 
-		uint32_t renderItemIndex = static_cast<uint32_t>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderItems.size() - 1); 
+		uint32_t renderItemIndex = static_cast<uint32_t>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1); 
 		uint32_t instanceIndex = model->mMainFirstInstance; 
 		for (int i = 0; i < model->mInstances.size(); i++) {
-			renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderInstances.emplace_back(
+			renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderInstances.emplace_back(
 				renderItemIndex,
 				instanceIndex + i
 			);

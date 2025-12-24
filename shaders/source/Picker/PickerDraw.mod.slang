@@ -14,7 +14,7 @@ public struct PickerDrawPushConstants
     public Vertex *verticesBuffer;
     public NodeTransform *nodeTransformsBuffer;
     public Instance *instancesBuffer;
-    public RenderItem *postCullRenderItemsBuffer;
+    public RenderItem *renderItemsBuffer;
 };
 
 public struct VSInput

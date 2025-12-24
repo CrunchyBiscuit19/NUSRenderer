@@ -137,8 +137,8 @@ void RendererScene::deleteInstances() {
 void RendererScene::regenerateRenderItemsInstances() {
 	for (auto batchType : mBatchTypes) {
 		for (auto& batch : *batchType | std::views::values) {
-			batch.preCullRenderItems.clear();
-			batch.preCullRenderInstances.clear();
+			batch.renderItems.clear();
+			batch.renderInstances.clear();
 		}
 	}
 
@@ -151,50 +151,50 @@ void RendererScene::regenerateRenderItemsInstances() {
 	
 	for (auto batchType : mBatchTypes) {
 		for (auto& batch : *batchType | std::views::values) {
-			if (batch.preCullRenderItems.empty()) { continue; }
+			if (batch.renderItems.empty()) { continue; }
 
-			std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(), batch.preCullRenderItems.size() * sizeof(RenderItem));
+			std::memcpy(batch.renderItemsStagingBuffer.info.pMappedData, batch.renderItems.data(), batch.renderItems.size() * sizeof(RenderItem));
 			vk::BufferCopy renderItemsCopy{};
 			renderItemsCopy.dstOffset = 0;
 			renderItemsCopy.srcOffset = 0;
-			renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
+			renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
 
-			std::memcpy(batch.preCullRenderInstancesStagingBuffer.info.pMappedData, batch.preCullRenderInstances.data(), batch.preCullRenderInstances.size() * sizeof(RenderInstance));
+			std::memcpy(batch.renderInstancesStagingBuffer.info.pMappedData, batch.renderInstances.data(), batch.renderInstances.size() * sizeof(RenderInstance));
 			vk::BufferCopy renderInstancesCopy{};
 			renderInstancesCopy.dstOffset = 0;
 			renderInstancesCopy.srcOffset = 0;
-			renderInstancesCopy.size = batch.preCullRenderInstances.size() * sizeof(RenderInstance);
+			renderInstancesCopy.size = batch.renderInstances.size() * sizeof(RenderInstance);
 
 			mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-				cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+				cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 				vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
 					cmd,
-					*batch.preCullRenderItemsBuffer.buffer,
+					*batch.renderItemsBuffer.buffer,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite);
-				cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
+				cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
 				vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
 					cmd,
-					*batch.preCullRenderItemsBuffer.buffer,
+					*batch.renderItemsBuffer.buffer,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite,
 					vk::PipelineStageFlagBits2::eComputeShader,
 					vk::AccessFlagBits2::eShaderRead);
 
-				cmd.fillBuffer(*batch.preCullRenderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
+				cmd.fillBuffer(*batch.renderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
 				vkhelper::createBufferPipelineBarrier( 
 					cmd,
-					*batch.preCullRenderInstancesBuffer.buffer,
+					*batch.renderInstancesBuffer.buffer,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite);
-				cmd.copyBuffer(*batch.preCullRenderInstancesStagingBuffer.buffer, *batch.preCullRenderInstancesBuffer.buffer, renderInstancesCopy);
+				cmd.copyBuffer(*batch.renderInstancesStagingBuffer.buffer, *batch.renderInstancesBuffer.buffer, renderInstancesCopy);
 				vkhelper::createBufferPipelineBarrier( 
 					cmd,
-					*batch.preCullRenderInstancesBuffer.buffer,
+					*batch.renderInstancesBuffer.buffer,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite,
 					vk::PipelineStageFlagBits2::eComputeShader,

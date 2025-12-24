@@ -9,26 +9,26 @@ RendererStats::RendererStats(Renderer* renderer) :
 	mDrawTime(0.0f),
 	mDrawCallCount(0),
 	mPreCullRenderInstancesCount(0),
-	mPostCullMeshesCount(0),
 	mSceneUpdateTime(0.0f) {
 }
 
 void RendererStats::initBuffers() {
-	mTotalPostCullRenderInstancesCountBuffer = mRenderer->mResources.createAddressedBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | 
+	mPostCullRenderInstancesCountBuffer = mRenderer->mResources.createAddressedBuffer(sizeof(uint32_t), vk::BufferUsageFlagBits::eStorageBuffer | 
 		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_CPU_TO_GPU
 	);
-	mRenderer->mCore.labelResourceDebug(mTotalPostCullRenderInstancesCountBuffer.buffer, "TotalPostCullCountBuffer");
-	LOG_INFO(mRenderer->mLogger, "Total Post Cull Count Buffer Created");
+	mRenderer->mCore.labelResourceDebug(mPostCullRenderInstancesCountBuffer.buffer, "PostCullRenderInstancesCountBuffer");
+	LOG_INFO(mRenderer->mLogger, "Post Cull Render Instances Count Buffer Created");
 }
 
 void RendererStats::reset() {
 	mDrawCallCount = 0;
 	mPreCullRenderInstancesCount = 0;
-	mPostCullMeshesCount = 0;
+	uint32_t zero = 0;
+	std::memcpy(mPostCullRenderInstancesCountBuffer.info.pMappedData, &zero, sizeof(uint32_t));
 }
 
 void RendererStats::cleanup() {
-	mTotalPostCullRenderInstancesCountBuffer.cleanup();
-	LOG_INFO(mRenderer->mLogger, "Total Post Cull Count Buffer Destroyed");
+	mPostCullRenderInstancesCountBuffer.cleanup();
+	LOG_INFO(mRenderer->mLogger, "Post Cull Render Instances Count Buffer Destroyed");
 }

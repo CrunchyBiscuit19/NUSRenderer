@@ -10,17 +10,15 @@ struct Plane {
 };
 
 struct CullPushConstants {
-	vk::DeviceAddress preCullRenderItemsBuffer;
-	vk::DeviceAddress postCullRenderItemsBuffer;
-	vk::DeviceAddress preCullRenderInstancesBuffer;
+	vk::DeviceAddress renderItemsBuffer;
+	vk::DeviceAddress renderInstancesBuffer;
 	vk::DeviceAddress postCullRenderInstancesCountBuffer;
-	vk::DeviceAddress totalPostCullRenderInstancesCountBuffer;
 	vk::DeviceAddress boundsBuffer;
 	vk::DeviceAddress frustumBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;
 	vk::DeviceAddress instancesBuffer;
 	vk::DeviceAddress perspectiveBuffer; 
-	uint32_t preCullRenderInstancesCount;
+	uint32_t renderInstancesCount;
 };
 
 class Culler {

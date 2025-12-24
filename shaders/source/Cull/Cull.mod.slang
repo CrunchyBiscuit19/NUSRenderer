@@ -25,17 +25,15 @@ public struct Bounds {
 }
 
 public struct CullPushConstants {
-    public RenderItem* preCullRenderItemsBuffer;
-    public RenderItem* postCullRenderItemsBuffer;
-    public uint* preCullRenderInstancesBuffer;
+    public RenderItem* renderItemsBuffer;
+    public RenderInstance* renderInstancesBuffer;
     public uint* postCullRenderInstancesCountBuffer;
-    public uint* totalPostCullRenderInstancesCountBuffer;
     public Bounds* boundsBuffer;
     public Frustum* frustumBuffer;
     public NodeTransform* nodeTransformsBuffer;
     public Instance* instancesBuffer;
     public Perspective* perspectiveBuffer;
-    public uint preCullRenderInstancesCount;
+    public uint renderInstancesCount;
 };
 
 public struct CSInput {

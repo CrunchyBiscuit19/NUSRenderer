@@ -112,7 +112,7 @@ void Gui::MiscGuiComponent::elements()
 		ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
 		ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
 		ImGui::Text("Pre-Cull Render Instances: %i", mRenderer->mStats.mPreCullRenderInstancesCount);
-		ImGui::Text("Post-Cull Render Instances: %i", *static_cast<uint32_t*>(mRenderer->mStats.mTotalPostCullRenderInstancesCountBuffer.info.pMappedData));
+		ImGui::Text("Post-Cull Render Instances: %i", *static_cast<uint32_t*>(mRenderer->mStats.mPostCullRenderInstancesCountBuffer.info.pMappedData));
 	}
 	if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen))
 	{

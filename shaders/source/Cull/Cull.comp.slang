@@ -9,8 +9,8 @@ static const int MAX_CULL_LOCAL_SIZE = 256;
 [numthreads(MAX_CULL_LOCAL_SIZE,1,1)]
 
 void main(CSInput in, uniform CullPushConstants cullPushConstants) {
-    uint preCullRenderInstancesIndex = in.dispatchThreadID.x;
-    if(preCullRenderInstancesIndex >= cullPushConstants.preCullRenderInstancesCount) return;
+    uint renderInstancesIndex = in.dispatchThreadID.x;
+    if(renderInstancesIndex >= cullPushConstants.renderInstancesCount) return;
 
     bool visible = true;
 
@@ -22,8 +22,11 @@ void main(CSInput in, uniform CullPushConstants cullPushConstants) {
     Frustum frustum = *cullPushConstants.frustumBuffer;*/
 
     if(!visible) return;
-    uint postCullRenderInstancesIndex; uint _;
-    InterlockedAdd(cullPushConstants.postCullRenderInstancesCountBuffer[0], 1, postCullRenderInstancesIndex);
-    InterlockedAdd(cullPushConstants.totalPostCullRenderInstancesCountBuffer[0], 1, _);
+
+    uint _;
+    InterlockedAdd(cullPushConstants.postCullRenderInstancesCountBuffer[0], 1, _);
+
+    uint writeInstanceIndex;
+
     /*cullPushConstants.postCullRenderItemsBuffer[postCullIndex] = cullPushConstants.preCullRenderItemsBuffer[preCullIndex];*/
 }

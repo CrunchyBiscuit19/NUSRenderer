@@ -12,10 +12,8 @@ public:
 	float mDrawTime;
 	uint32_t mDrawCallCount;
 	uint32_t mPreCullRenderInstancesCount;
-	uint32_t mPostCullMeshesCount;
+	AddressedBuffer mPostCullRenderInstancesCountBuffer;
 	float mSceneUpdateTime;
-
-	AddressedBuffer mTotalPostCullRenderInstancesCountBuffer;
 
 	RendererStats(Renderer* renderer);
 
