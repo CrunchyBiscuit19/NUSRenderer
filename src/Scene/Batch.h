@@ -39,10 +39,9 @@ struct Batch
 	std::vector<RenderInstance> preCullRenderInstances;
 	AddressedBuffer preCullRenderInstancesBuffer;
 	AllocatedBuffer preCullRenderInstancesStagingBuffer;
+	AddressedBuffer postCullRenderInstancesCountBuffer;
 
 	AddressedBuffer postCullRenderItemsBuffer;
-	AddressedBuffer postCullCountBuffer;
-
 	Batch(Renderer* renderer, Primitive& primitive, int pipelineId);
 	~Batch();
 

@@ -13,7 +13,7 @@ struct PickerDrawPushConstants
 	vk::DeviceAddress vertexBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;
 	vk::DeviceAddress instancesBuffer;
-	vk::DeviceAddress postCullRenderItemsBuffer;
+	vk::DeviceAddress preCullRenderItemsBuffer;
 };
 
 struct PickerPickPushConstants

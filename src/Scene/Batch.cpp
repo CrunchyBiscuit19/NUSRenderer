@@ -41,17 +41,17 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId)
 		fmt::format("PostCullRenderItemsBuffer{}", pipelineId).c_str());
 	LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Buffer Created", pipelineId);
 
-	postCullCountBuffer = renderer->mResources.createAddressedBuffer(
+	postCullRenderInstancesCountBuffer = renderer->mResources.createAddressedBuffer(
 		sizeof(uint32_t),
 		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
 		vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
 		VMA_MEMORY_USAGE_GPU_ONLY);
-	renderer->mCore.labelResourceDebug(postCullCountBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
+	renderer->mCore.labelResourceDebug(postCullRenderInstancesCountBuffer.buffer, fmt::format("CountBuffer{}", pipelineId).c_str());
 	LOG_INFO(renderer->mLogger, "Batch {} Count Buffer Created", pipelineId);
 }
 
 Batch::~Batch() {
-	postCullCountBuffer.cleanup();
+	postCullRenderInstancesCountBuffer.cleanup();
 	postCullRenderItemsBuffer.cleanup();
 	preCullRenderInstancesStagingBuffer.cleanup();
 	preCullRenderInstancesBuffer.cleanup();
