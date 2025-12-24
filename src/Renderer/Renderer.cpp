@@ -147,11 +147,12 @@ void Renderer::initPasses()
 				mScene.mCuller.mPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
 				mScene.mCuller.mPushConstants.postCullCountBuffer = batch.postCullCountBuffer.address;
 				mScene.mCuller.mPushConstants.preCullRenderItemsCount = batch.preCullRenderItems.size();
+				mScene.mCuller.mPushConstants.preCullRenderInstancesBuffer = batch.preCullRenderInstancesBuffer.address;
 				cmd.pushConstants<CullPushConstants>(mScene.mCuller.mPipelineBundle.layout,
 					vk::ShaderStageFlagBits::eCompute, 0,
 					mScene.mCuller.mPushConstants);
 
-				cmd.dispatch(std::ceil(batch.preCullRenderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
+				cmd.dispatch(std::ceil(batch.preCullRenderInstances.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
 				vkhelper::createBufferPipelineBarrier( // Wait for culling to write finish all visible render items
 					cmd,
@@ -534,12 +535,12 @@ void Renderer::perFrameUpdate()
 	if (mScene.mFlags.modelAddedFlag || mScene.mFlags.modelDestroyedFlag) {
 		mScene.realignOffsets();
 		mScene.reloadMainBuffers();
-		mScene.regenerateRenderItems();
+		mScene.regenerateRenderItemsInstances();
 	}
 	else if (mScene.mFlags.instanceAddedFlag || mScene.mFlags.instanceDestroyedFlag) {
 		mScene.realignInstancesOffset();
 		mScene.reloadMainInstancesBuffer();
-		mScene.regenerateRenderItems();
+		mScene.regenerateRenderItemsInstances();
 	}
 	else if (mScene.mFlags.reloadMainInstancesBuffer) {
 		mScene.reloadMainInstancesBuffer();

@@ -56,7 +56,7 @@ public:
 	glm::mat4 mWorldTransform;
 
 	void refreshTransform(const glm::mat4& parentTransform);
-	virtual void generateRenderItems(Renderer* renderer, GLTFModel* model);
+	virtual void generateRenderItemsInstances(Renderer* renderer, GLTFModel* model);
 
 	virtual ~Node() = default;
 };
@@ -66,5 +66,5 @@ class MeshNode : public Node
 public:
 	Mesh* mMesh;
 
-	void generateRenderItems(Renderer* renderer, GLTFModel* model) override;
+	void generateRenderItemsInstances(Renderer* renderer, GLTFModel* model) override;
 };

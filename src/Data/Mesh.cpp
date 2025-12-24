@@ -11,13 +11,13 @@ void Node::refreshTransform(const glm::mat4& parentTransform)
 		child->refreshTransform(mWorldTransform);
 }
 
-void Node::generateRenderItems(Renderer* renderer, GLTFModel* model)
+void Node::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model)
 {
 	for (const auto& child : mChildren)
-		child->generateRenderItems(renderer, model);
+		child->generateRenderItemsInstances(renderer, model);
 }
 
-void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
+void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model) {
 	for (auto& primitive : mMesh->mPrimitives) {
 		int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
@@ -46,7 +46,16 @@ void MeshNode::generateRenderItems(Renderer* renderer, GLTFModel* model) {
 			model->mId,
 			model->mMainFirstBounds + mMesh->mRelativeFirstBounds
 		);
+
+		uint32_t renderItemIndex = static_cast<uint32_t>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderItems.size() - 1); 
+		uint32_t instanceIndex = model->mMainFirstInstance; 
+		for (int i = 0; i < model->mInstances.size(); i++) {
+			renderer->mScene.mBatchTypes[batchType]->at(pipelineId).preCullRenderInstances.emplace_back(
+				renderItemIndex,
+				instanceIndex + i
+			);
+		}
 	}
 
-	Node::generateRenderItems(renderer, model);
+	Node::generateRenderItemsInstances(renderer, model);
 }

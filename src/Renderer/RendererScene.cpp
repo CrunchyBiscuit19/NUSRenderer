@@ -134,36 +134,39 @@ void RendererScene::deleteInstances() {
 	}
 }
 
-void RendererScene::regenerateRenderItems() {
+void RendererScene::regenerateRenderItemsInstances() {
 	for (auto batchType : mBatchTypes) {
 		for (auto& batch : *batchType | std::views::values) {
 			batch.preCullRenderItems.clear();
+			batch.preCullRenderInstances.clear();
 		}
 	}
 
 	for (auto& model : mModelsCache | std::views::values) {
 		if (model.mDeleteSignal.has_value()) { continue; }
-
-		model.generateRenderItems();
+		model.generateRenderItemsInstances();
 	}
 
-	LOG_INFO(mRenderer->mLogger, "Render Items Regenerated");
+	LOG_INFO(mRenderer->mLogger, "Render Items and Instances Regenerated");
 	
 	for (auto batchType : mBatchTypes) {
 		for (auto& batch : *batchType | std::views::values) {
 			if (batch.preCullRenderItems.empty()) { continue; }
 
-			std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(),
-				batch.preCullRenderItems.size() * sizeof(RenderItem));
-
+			std::memcpy(batch.preCullRenderItemsStagingBuffer.info.pMappedData, batch.preCullRenderItems.data(), batch.preCullRenderItems.size() * sizeof(RenderItem));
 			vk::BufferCopy renderItemsCopy{};
 			renderItemsCopy.dstOffset = 0;
 			renderItemsCopy.srcOffset = 0;
 			renderItemsCopy.size = batch.preCullRenderItems.size() * sizeof(RenderItem);
 
-			mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-				cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+			std::memcpy(batch.preCullRenderInstancesStagingBuffer.info.pMappedData, batch.preCullRenderInstances.data(), batch.preCullRenderInstances.size() * sizeof(RenderInstance));
+			vk::BufferCopy renderInstancesCopy{};
+			renderInstancesCopy.dstOffset = 0;
+			renderInstancesCopy.srcOffset = 0;
+			renderInstancesCopy.size = batch.preCullRenderInstances.size() * sizeof(RenderInstance);
 
+			mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+				cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 				vkhelper::createBufferPipelineBarrier( // Wait for render items buffer to be flushed
 					cmd,
 					*batch.preCullRenderItemsBuffer.buffer,
@@ -171,9 +174,7 @@ void RendererScene::regenerateRenderItems() {
 					vk::AccessFlagBits2::eTransferWrite,
 					vk::PipelineStageFlagBits2::eTransfer,
 					vk::AccessFlagBits2::eTransferWrite);
-
 				cmd.copyBuffer(*batch.preCullRenderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
-
 				vkhelper::createBufferPipelineBarrier( // Wait for render items to finish uploading 
 					cmd,
 					*batch.preCullRenderItemsBuffer.buffer,
@@ -181,9 +182,26 @@ void RendererScene::regenerateRenderItems() {
 					vk::AccessFlagBits2::eTransferWrite,
 					vk::PipelineStageFlagBits2::eComputeShader,
 					vk::AccessFlagBits2::eShaderRead);
-				});
 
-			LOG_INFO(mRenderer->mLogger, "Batch {} Render Items Uploading", batch.pipelineBundle->id);
+				cmd.fillBuffer(*batch.preCullRenderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
+				vkhelper::createBufferPipelineBarrier( 
+					cmd,
+					*batch.preCullRenderInstancesBuffer.buffer,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite);
+				cmd.copyBuffer(*batch.preCullRenderInstancesStagingBuffer.buffer, *batch.preCullRenderInstancesBuffer.buffer, renderInstancesCopy);
+				vkhelper::createBufferPipelineBarrier( 
+					cmd,
+					*batch.preCullRenderInstancesBuffer.buffer,
+					vk::PipelineStageFlagBits2::eTransfer,
+					vk::AccessFlagBits2::eTransferWrite,
+					vk::PipelineStageFlagBits2::eComputeShader,
+					vk::AccessFlagBits2::eShaderRead);
+			});
+
+			LOG_INFO(mRenderer->mLogger, "Batch {} Render Items and Render Instances Uploading", batch.pipelineBundle->id);
 		}
 	}
 }

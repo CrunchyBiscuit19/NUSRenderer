@@ -14,6 +14,7 @@ struct CullPushConstants {
 	vk::DeviceAddress postCullRenderItemsBuffer;
 	vk::DeviceAddress postCullCountBuffer;
 	vk::DeviceAddress totalPostCullCountBuffer;
+	vk::DeviceAddress preCullRenderInstancesBuffer;
 	vk::DeviceAddress boundsBuffer;
 	vk::DeviceAddress frustumBuffer;
 	vk::DeviceAddress nodeTransformsBuffer;

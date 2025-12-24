@@ -1,5 +1,10 @@
 module RenderItem;
 
+public struct RenderInstance {
+    public uint renderItemIndex;
+    public uint instanceIndex;
+}
+
 public struct RenderItem
 {
     public uint indexCount;

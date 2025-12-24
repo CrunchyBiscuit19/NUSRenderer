@@ -826,13 +826,13 @@ Renderer* GLTFModel::getRenderer() const
 	return mRenderer;
 }
 
-void GLTFModel::generateRenderItems()
+void GLTFModel::generateRenderItemsInstances()
 {
 	if (!mDeleteSignal.has_value())
 	{
 		for (auto& n : mTopNodes)
 		{
-			n->generateRenderItems(mRenderer, this);
+			n->generateRenderItemsInstances(mRenderer, this);
 		}
 		LOG_INFO(mRenderer->mLogger, "{} Render Items Generated", mName);
 	}

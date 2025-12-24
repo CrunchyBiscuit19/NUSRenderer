@@ -77,7 +77,7 @@ public:
 
 	Renderer* getRenderer() const;
 
-	void generateRenderItems();
+	void generateRenderItemsInstances();
 
 	void createInstance(InstanceData initialTransform = InstanceData());
 	void createInstanceAtCamera(Camera& camera);

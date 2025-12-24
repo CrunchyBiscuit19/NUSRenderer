@@ -25,12 +25,13 @@ public struct Bounds {
 }
 
 public struct CullPushConstants {
-    public RenderItem *preCullRenderItemsBuffer;
-    public RenderItem *postCullRenderItemsBuffer;
-    public uint *postCullCountBuffer;
-    public uint *totalPostCullCountBuffer;
+    public RenderItem* preCullRenderItemsBuffer;
+    public RenderItem* postCullRenderItemsBuffer;
+    public uint* postCullCountBuffer;
+    public uint* totalPostCullCountBuffer;
+    public uint* preCullRenderInstancesBuffer;
     public Bounds* boundsBuffer;
-    public Frustum* frustumBuffer;  // (vec4 planes[6]) -> 96 bytes
+    public Frustum* frustumBuffer;
     public NodeTransform* nodeTransformsBuffer;
     public Instance* instancesBuffer;
     public Perspective* perspectiveBuffer;

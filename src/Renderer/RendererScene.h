@@ -74,7 +74,7 @@ public:
 	void deleteModels();
 	void deleteInstances();
 
-	void regenerateRenderItems();
+	void regenerateRenderItemsInstances();
 
 	void realignVertexIndexOffset();
 	void realignMaterialOffset();

@@ -17,6 +17,11 @@ struct RenderItem
 	uint32_t boundsIndex;
 };
 
+struct RenderInstance {
+	uint32_t renderItemIndex; // Per batch render items index
+	uint32_t instanceIndex; // Global main instances buffer index
+};
+
 enum class BatchType {
 	Opaque = 0,
 	Mask = 1,
@@ -26,9 +31,15 @@ enum class BatchType {
 struct Batch
 {
 	PipelineBundle* pipelineBundle;
+
 	std::vector<RenderItem> preCullRenderItems;
 	AddressedBuffer preCullRenderItemsBuffer;
 	AllocatedBuffer preCullRenderItemsStagingBuffer;
+	
+	std::vector<RenderInstance> preCullRenderInstances;
+	AddressedBuffer preCullRenderInstancesBuffer;
+	AllocatedBuffer preCullRenderInstancesStagingBuffer;
+
 	AddressedBuffer postCullRenderItemsBuffer;
 	AddressedBuffer postCullCountBuffer;
 
