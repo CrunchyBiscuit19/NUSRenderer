@@ -75,6 +75,11 @@ void RendererInfrastructure::initSwapchain() {
 	mSwapchainBundle.mFormat = vk::Format::eB8G8R8A8Srgb;
 	mSwapchainBundle.mUnormFormat = vk::Format::eB8G8R8A8Unorm;
 
+	vk::ImageFormatListCreateInfo formatListCreateInfo{};
+	std::array<vk::Format, 2> formats = { mSwapchainBundle.mFormat , mSwapchainBundle.mUnormFormat };
+	formatListCreateInfo.pViewFormats = formats.data();
+	formatListCreateInfo.viewFormatCount = formats.size();
+
 	vkb::SwapchainBuilder swapchainBuilder{
 		*mRenderer->mCore.mChosenGPU, *mRenderer->mCore.mDevice, *mRenderer->mCore.mSurface
 	};
@@ -89,6 +94,8 @@ void RendererInfrastructure::initSwapchain() {
 		.add_image_usage_flags(
 			static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
 		.set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
+		.set_create_flags(static_cast<VkSwapchainCreateFlagBitsKHR>(vk::SwapchainCreateFlagBitsKHR::eMutableFormat))
+		.add_pNext(&formatListCreateInfo)
 		.build()
 		.value();
 

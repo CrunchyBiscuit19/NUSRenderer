@@ -215,9 +215,10 @@ void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 
 vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device)
 {
-	vk::ComputePipelineCreateInfo computePipelineInfo = {};
+	vk::ComputePipelineCreateInfo computePipelineInfo{};
 	computePipelineInfo.layout = mPipelineLayout;
 	computePipelineInfo.stage = mComputeShaderStageCreateInfo;
+	computePipelineInfo.pNext = nullptr;
 
 	return vk::raii::Pipeline(device, nullptr, computePipelineInfo);
 }

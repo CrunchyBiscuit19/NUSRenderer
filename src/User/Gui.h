@@ -68,6 +68,7 @@ public:
 
 	void initDescriptors();
 	void initBackend() const;
+	void initLinearColors();
 	void initFileBrowsers();
 	void initComponents();
 	void initKeyBinding();

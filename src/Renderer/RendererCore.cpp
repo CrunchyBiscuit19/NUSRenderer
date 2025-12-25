@@ -103,24 +103,32 @@ void RendererCore::init() {
 
 	vkb::InstanceBuilder builder;
 	auto instResult = builder
-	                  .set_app_name("Vulkan renderer")
-	                  .request_validation_layers(USE_VALIDATION_LAYERS)
-	                  .add_validation_feature_enable(
-		                  static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
-	                  .set_debug_messenger_severity(
-		                  static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
-							  vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-			                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-			                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
-	                  .set_debug_messenger_type(
-		                  static_cast<VkDebugUtilsMessageTypeFlagsEXT>(
-							  vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-			                  vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-			                  vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
-	                  .set_debug_callback(debugMessageFunc)
-	                  .set_debug_callback_user_data_pointer(mRenderer)
-	                  .require_api_version(1, 3, 0)
-	                  .build();
+		.set_app_name("Vulkan renderer")
+		.request_validation_layers(USE_VALIDATION_LAYERS)
+		.add_validation_feature_enable(
+			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
+		.add_validation_feature_enable(
+			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
+		.add_validation_feature_enable(
+			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
+		.add_validation_feature_enable(
+			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))
+		.add_validation_feature_enable(
+			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices))
+		.set_debug_messenger_severity(
+			static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
+				vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+				vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+				vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
+		.set_debug_messenger_type(
+			static_cast<VkDebugUtilsMessageTypeFlagsEXT>(
+				vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+				vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+				vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
+		.set_debug_callback(debugMessageFunc)
+		.set_debug_callback_user_data_pointer(mRenderer)
+		.require_api_version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
+		.build();
 	const vkb::Instance vkbInst = instResult.value();
 	mInstance = vk::raii::Instance(mContext, vkbInst.instance);
 	vk::raii::DebugUtilsMessengerEXT debugMessenger(mInstance, vkbInst.debug_messenger);
@@ -156,20 +164,26 @@ void RendererCore::init() {
 	features.multiDrawIndirect = true;
 	features.samplerAnisotropy = true;
 	features.sampleRateShading = true;
+	features.drawIndirectFirstInstance = true;
 	features.fragmentStoresAndAtomics = true;
 	features.vertexPipelineStoresAndAtomics = true;
 	features.shaderInt64 = true;
+	vk::PhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusedAttachmentsFeatures{};
+	unusedAttachmentsFeatures.dynamicRenderingUnusedAttachments = vk::True;
 
 	vkb::PhysicalDeviceSelector selector{vkbInst};
 	vkb::PhysicalDevice physicalDevice = selector
-	                                     .set_minimum_version(1, 3)
-	                                     .set_required_features_13(features13)
-	                                     .set_required_features_12(features12)
-	                                     .set_required_features_11(features11)
-	                                     .set_required_features(features)
-	                                     .set_surface(*mSurface)
-	                                     .select()
-	                                     .value();
+	    .set_minimum_version(MAJOR_VERSION, MINOR_VERSION)
+		.add_required_extension(vk::KHRSwapchainMutableFormatExtensionName)
+		.add_required_extension(vk::EXTDynamicRenderingUnusedAttachmentsExtensionName)
+		.add_required_extension_features(unusedAttachmentsFeatures)
+	    .set_required_features_13(features13)
+	    .set_required_features_12(features12)
+	    .set_required_features_11(features11)
+	    .set_required_features(features)
+	    .set_surface(*mSurface)
+	    .select()
+	    .value();
 	vkb::DeviceBuilder deviceBuilder{physicalDevice};
 	vkb::Device vkbDevice = deviceBuilder.build().value();
 	vk::raii::PhysicalDevice chosenGPU(mInstance, vkbDevice.physical_device);

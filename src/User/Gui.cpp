@@ -254,6 +254,23 @@ void Gui::initBackend() const
 	LOG_INFO(mRenderer->mLogger, "ImGui Configured");
 }
 
+void Gui::initLinearColors() {
+	// Go through every colour and convert it to linear
+	// Hack solution to not make it double gamma corrected
+	ImGuiStyle& style = ImGui::GetStyle();
+	for (int i = 0; i < ImGuiCol_COUNT; i++) {
+		/*float linear = (srgb <= 0.04045f) ? srgb / 12.92f : pow((srgb + 0.055f)
+		 * / 1.055f, 2.4f);*/
+		ImVec4& col = style.Colors[i];
+		col.x = col.x <= 0.04045f ? col.x / 12.92f
+			: pow((col.x + 0.055f) / 1.055f, 2.4f);
+		col.y = col.y <= 0.04045f ? col.y / 12.92f
+			: pow((col.y + 0.055f) / 1.055f, 2.4f);
+		col.z = col.z <= 0.04045f ? col.z / 12.92f
+			: pow((col.z + 0.055f) / 1.055f, 2.4f);
+	}
+}
+
 void Gui::initFileBrowsers()
 {
 	mSelectModelFileBrowser = ImGui::FileBrowser::FileBrowser(ImGuiFileBrowserFlags_MultipleSelection | ImGuiFileBrowserFlags_ConfirmOnEnter, MODELS_PATH);

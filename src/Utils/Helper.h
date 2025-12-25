@@ -23,7 +23,7 @@ namespace vkhelper
 	                                                vk::AttachmentLoadOp load = vk::AttachmentLoadOp::eLoad,
 	                                                vk::AttachmentStoreOp store = vk::AttachmentStoreOp::eStore);
 	vk::RenderingInfo renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment,
-	                                vk::RenderingAttachmentInfo* depthAttachment);
+	                                vk::RenderingAttachmentInfo* depthAttachment, uint32_t count = 1);
 
 	vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding(vk::DescriptorType type, vk::ShaderStageFlags stageFlags,
 	                                                          uint32_t binding);

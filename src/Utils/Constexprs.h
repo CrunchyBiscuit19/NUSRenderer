@@ -11,6 +11,10 @@ constexpr bool USE_VALIDATION_LAYERS = true;
 
 constexpr bool LOG_TO_FILE = false;
 
+constexpr uint32_t MAJOR_VERSION = 1;
+constexpr uint32_t MINOR_VERSION = 3;
+constexpr uint32_t PATCH_VERSION = 0;
+
 constexpr float MAX_CAMERA_SPEED = 100.f;
 
 constexpr float IMGUIZMO_SIZE = 0.15f;

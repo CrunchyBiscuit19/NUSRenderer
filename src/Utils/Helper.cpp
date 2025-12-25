@@ -128,13 +128,13 @@ vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk
 }
 
 vk::RenderingInfo vkhelper::renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment,
-                                          vk::RenderingAttachmentInfo* depthAttachment)
+                                          vk::RenderingAttachmentInfo* depthAttachment, uint32_t count)
 {
 	vk::RenderingInfo renderInfo{};
 	renderInfo.pNext = nullptr;
 	renderInfo.renderArea = vk::Rect2D{vk::Offset2D{0, 0}, renderExtent};
 	renderInfo.layerCount = 1;
-	renderInfo.colorAttachmentCount = 1;
+	renderInfo.colorAttachmentCount = count;
 	renderInfo.pColorAttachments = colorAttachment;
 	renderInfo.pDepthAttachment = depthAttachment;
 	renderInfo.pStencilAttachment = nullptr;
