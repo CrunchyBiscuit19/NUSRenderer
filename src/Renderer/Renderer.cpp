@@ -111,11 +111,13 @@ void Renderer::initPasses() {
 	mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd) {
 		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mPipelineBundle.pipeline);
 
-		vkhelper::createBufferPipelineBarrier( // Wait for stats total count buffer to be reset to zero (memcpy'd in stats reset)
+		cmd.fillBuffer(*mStats.mPostCullRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
+
+		vkhelper::createBufferPipelineBarrier( // Wait for stats total count buffer to be reset to zero
 			cmd,
 			*mStats.mPostCullRenderInstancesCountBuffer.buffer,
-			vk::PipelineStageFlagBits2::eHost,
-			vk::AccessFlagBits2::eHostWrite,
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
 			vk::PipelineStageFlagBits2::eComputeShader,
 			vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
@@ -129,16 +131,6 @@ void Renderer::initPasses() {
 		for (auto batchType : mScene.mBatchTypes) {
 			for (auto& batch : *batchType | std::views::values) {
 				if (batch.renderItems.empty()) { continue; }
-
-				/*cmd.fillBuffer(*batch.postCullRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
-
-				vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be reset to zero
-					cmd,
-					*batch.postCullRenderInstancesCountBuffer.buffer,
-					vk::PipelineStageFlagBits2::eTransfer,
-					vk::AccessFlagBits2::eTransferWrite,
-					vk::PipelineStageFlagBits2::eComputeShader,
-					vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);*/
 
 				mScene.mCuller.mPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
 				mScene.mCuller.mPushConstants.renderInstancesCount = batch.renderInstances.size();
@@ -156,14 +148,6 @@ void Renderer::initPasses() {
 					vk::AccessFlagBits2::eShaderWrite,
 					vk::PipelineStageFlagBits2::eVertexShader,
 					vk::AccessFlagBits2::eShaderRead);
-
-				/*vkhelper::createBufferPipelineBarrier( // Wait for count buffers to be written to
-					cmd,
-					*batch.postCullRenderInstancesCountBuffer.buffer,
-					vk::PipelineStageFlagBits2::eComputeShader,
-					vk::AccessFlagBits2::eShaderWrite,
-					vk::PipelineStageFlagBits2::eDrawIndirect,
-					vk::AccessFlagBits2::eIndirectCommandRead);*/
 			}
 		}
 	});
@@ -551,8 +535,7 @@ void Renderer::draw() {
 	auto _ = mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 	mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
 	try {
-		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(
-			1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
+		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).value;
 	} catch (vk::OutOfDateKHRError e) {
 		mInfrastructure.mResizeRequested = true;
 		return;

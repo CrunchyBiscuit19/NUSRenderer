@@ -24,8 +24,6 @@ void RendererStats::initBuffers() {
 void RendererStats::reset() {
 	mDrawCallCount = 0;
 	mPreCullRenderInstancesCount = 0;
-	uint32_t zero = 0;
-	std::memcpy(mPostCullRenderInstancesCountBuffer.info.pMappedData, &zero, sizeof(uint32_t));
 }
 
 void RendererStats::cleanup() {

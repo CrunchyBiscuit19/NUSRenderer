@@ -629,15 +629,13 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
 	                                                                vk::BufferUsageFlagBits::eTransferDst |
 	                                                                vk::BufferUsageFlagBits::eStorageBuffer,
 																	VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mCore.labelResourceDebug(mesh.mVertexBuffer.buffer,
-	                                            fmt::format("{}VertexBuffer", mesh.mName).c_str());
+	mRenderer->mCore.labelResourceDebug(mesh.mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh.mName).c_str());
 	mesh.mIndexBuffer = mRenderer->mResources.createBuffer(srcIndexVectorSize,
 	                                                               vk::BufferUsageFlagBits::eTransferSrc |
 	                                                               vk::BufferUsageFlagBits::eTransferDst |
 	                                                               vk::BufferUsageFlagBits::eIndexBuffer,
 	                                                               VMA_MEMORY_USAGE_GPU_ONLY);
-	mRenderer->mCore.labelResourceDebug(mesh.mIndexBuffer.buffer,
-	                                            fmt::format("{}IndexBuffer", mesh.mName).c_str());
+	mRenderer->mCore.labelResourceDebug(mesh.mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh.mName).c_str());
 
 	std::memcpy(static_cast<char*>(mRenderer->mResources.mMeshStagingBuffer.info.pMappedData) + 0,
 	            srcVertexVector.data(), srcVertexVectorSize);
