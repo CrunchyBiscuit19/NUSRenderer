@@ -105,16 +105,11 @@ void RendererCore::init() {
 	auto instResult = builder
 		.set_app_name("Vulkan renderer")
 		.request_validation_layers(USE_VALIDATION_LAYERS)
-		.add_validation_feature_enable(
-			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
-		.add_validation_feature_enable(
-			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
-		.add_validation_feature_enable(
-			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
-		.add_validation_feature_enable(
-			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))
-		.add_validation_feature_enable(
-			static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices))
+		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
+		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
+		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
+		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))
+		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices))
 		.set_debug_messenger_severity(
 			static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
 				vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |

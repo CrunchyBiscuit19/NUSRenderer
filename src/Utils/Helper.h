@@ -57,6 +57,9 @@ namespace vkhelper
 	void createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buffer, vk::PipelineStageFlags2 srcStageMask,
 	                                 vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
 	                                 vk::AccessFlags2 dstAccessMask);
+	void createImagePipelineBarrier(vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask,
+		vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
+		vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout);
 
 	vk::Extent2D extent3dTo2d(vk::Extent3D extent3d);
 }

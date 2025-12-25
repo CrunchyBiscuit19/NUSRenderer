@@ -22,7 +22,7 @@ void RendererInfrastructure::initDescriptors() {
 		{vk::DescriptorType::eCombinedImageSampler, 1}, // Skybox Cubemap
 		{vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS}, // Material Textures
 	};
-	mMainDescriptorAllocator.init(1, sizes);
+	mMainDescriptorAllocator.init(MAX_DESCRIPTOR_SETS_PER_POOL, sizes);
 
 	LOG_INFO(mRenderer->mLogger, "Descriptor Allocator Created");
 }

@@ -218,8 +218,8 @@ void Renderer::initPasses() {
 	});
 
 	mPasses.try_emplace(PassType::PickPick, [&](vk::CommandBuffer cmd) {
-		int32_t mouseClickLocation[2] = { static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y) };
-		std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, &mouseClickLocation, sizeof(glm::ivec2));
+		std::array<int32_t, 2> mouseClickLocation = { static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y) };
+		std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, mouseClickLocation.data(), sizeof(glm::ivec2));
 
 		cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mPicker.mPickPipelineBundle.pipeline);
 		cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mScene.mPicker.mPickPipelineBundle.layout, 0, *mScene.mPicker.mDescriptorSet, nullptr);
@@ -235,6 +235,16 @@ void Renderer::initPasses() {
 			vk::AccessFlagBits2::eHostWrite,
 			vk::PipelineStageFlagBits2::eComputeShader,
 			vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
+
+		vkhelper::createImagePipelineBarrier(
+			cmd,
+			*mScene.mPicker.mImage.image,
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+			vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderRead,
+			vk::ImageLayout::eGeneral
+		);
 
 		cmd.dispatch(1, 1, 1);
 
@@ -387,17 +397,17 @@ void Renderer::initPasses() {
 
 void Renderer::initTransitions() {
 	mTransitions.try_emplace(TransitionType::PickerGeneralIntoColorAttachment,
-		vk::PipelineStageFlagBits2::eComputeShader,
-		vk::AccessFlagBits2::eShaderRead,
-		vk::PipelineStageFlagBits2::eFragmentShader,
-		vk::AccessFlagBits2::eShaderWrite,
+		vk::PipelineStageFlagBits2::eClear,
+		vk::AccessFlagBits2::eTransferWrite,
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
 		vk::ImageLayout::eGeneral,
 		vk::ImageLayout::eColorAttachmentOptimal
 	);
 
 	mTransitions.try_emplace(TransitionType::PickerColorAttachmentIntoGeneral,
-		vk::PipelineStageFlagBits2::eFragmentShader,
-		vk::AccessFlagBits2::eShaderWrite,
+		vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
 		vk::PipelineStageFlagBits2::eComputeShader,
 		vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
 		vk::ImageLayout::eColorAttachmentOptimal,
@@ -539,7 +549,7 @@ void Renderer::draw() {
 	auto _ = mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 	mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
 	try {
-		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).value;
+		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
 	} catch (vk::OutOfDateKHRError e) {
 		mInfrastructure.mResizeRequested = true;
 		return;

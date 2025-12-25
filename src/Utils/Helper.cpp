@@ -464,6 +464,33 @@ void vkhelper::createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buf
 	cmd.pipelineBarrier2(depInfo);
 }
 
+void vkhelper::createImagePipelineBarrier(vk::CommandBuffer cmd, vk::Image image, 
+	vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, 
+	vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask,
+	vk::ImageLayout currentLayout) {
+	vk::ImageMemoryBarrier2 imageBarrier{};
+	imageBarrier.pNext = nullptr;
+	imageBarrier.srcStageMask = srcStageMask;
+	imageBarrier.srcAccessMask = srcAccessMask;
+	imageBarrier.dstStageMask = dstStageMask;
+	imageBarrier.dstAccessMask = dstAccessMask;
+	imageBarrier.oldLayout = currentLayout;
+	imageBarrier.newLayout = currentLayout;
+
+	const vk::ImageAspectFlagBits aspectMask = (currentLayout == vk::ImageLayout::eDepthAttachmentOptimal)
+		? vk::ImageAspectFlagBits::eDepth
+		: vk::ImageAspectFlagBits::eColor;
+	imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
+	imageBarrier.image = image;
+
+	vk::DependencyInfo depInfo{};
+	depInfo.pNext = nullptr;
+	depInfo.pImageMemoryBarriers = &imageBarrier;
+	depInfo.imageMemoryBarrierCount = 1;
+
+	cmd.pipelineBarrier2(depInfo);
+}
+
 vk::Extent2D vkhelper::extent3dTo2d(vk::Extent3D extent3d)
 {
 	return vk::Extent2D(extent3d.width, extent3d.height);
