@@ -6,11 +6,14 @@ import RenderItem;
 
 static const int MAX_CULL_LOCAL_SIZE = 256;
 
+[[vk::push_constant]]
+CullPushConstants cullPc;
+
 [numthreads(MAX_CULL_LOCAL_SIZE,1,1)]
 
-void main(CSInput in, uniform CullPushConstants cullPushConstants) {
+void main(CSInput in) {
     uint renderInstancesIndex = in.dispatchThreadID.x;
-    if(renderInstancesIndex >= cullPushConstants.renderInstancesCount) return;
+    if(renderInstancesIndex >= cullPc.renderInstancesCount) return;
 
     bool visible = true;
 
@@ -24,7 +27,7 @@ void main(CSInput in, uniform CullPushConstants cullPushConstants) {
     if(!visible) return;
 
     uint _;
-    InterlockedAdd(cullPushConstants.postCullRenderInstancesCountBuffer[0], 1, _);
+    InterlockedAdd(cullPc.postCullRenderInstancesCountBuffer[0], 1, _);
 
     uint writeInstanceIndex;
 

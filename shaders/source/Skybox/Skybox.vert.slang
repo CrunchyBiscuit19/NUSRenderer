@@ -1,10 +1,13 @@
 import Skybox;
 
-VSOutput main(VSInput in, uniform SkyboxPushConstants skyboxPushConstants)
+[[vk::push_constant]]
+SkyboxPushConstants skyboxPc;
+
+VSOutput main(VSInput in)
 {
     VSOutput out;
 
-    float4 position = skyboxPushConstants.skyboxVertexBuffer[in.vertexIndex].position;
+    float4 position = skyboxPc.skyboxVertexBuffer[in.vertexIndex].position;
     float4x4 viewWithoutTranslation =
         float4x4(float4(perspectiveBuffer.view[0].xyz, 0), float4(perspectiveBuffer.view[1].xyz, 0),
                  float4(perspectiveBuffer.view[2].xyz, 0), float4(0, 0, 0, 1));
