@@ -5,35 +5,35 @@
 class Renderer;
 
 struct Plane {
-	glm::vec3 normal;
-	float d;
+    glm::vec3 normal;
+    float d;
 };
 
 struct CullPushConstants {
-	vk::DeviceAddress renderItemsBuffer;
-	vk::DeviceAddress renderInstancesBuffer;
-	vk::DeviceAddress postCullRenderInstancesCountBuffer;
-	vk::DeviceAddress boundsBuffer;
-	vk::DeviceAddress frustumBuffer;
-	vk::DeviceAddress nodeTransformsBuffer;
-	vk::DeviceAddress instancesBuffer;
-	vk::DeviceAddress perspectiveBuffer; 
-	uint32_t renderInstancesCount;
+    vk::DeviceAddress renderItemsBuffer;
+    vk::DeviceAddress renderInstancesBuffer;
+    vk::DeviceAddress postCullRenderInstancesCountBuffer;
+    vk::DeviceAddress boundsBuffer;
+    vk::DeviceAddress frustumBuffer;
+    vk::DeviceAddress nodeTransformsBuffer;
+    vk::DeviceAddress instancesBuffer;
+    vk::DeviceAddress perspectiveBuffer;
+    uint32_t renderInstancesCount;
 };
 
 class Culler {
-	Renderer* mRenderer;
+    Renderer* mRenderer;
 
-public:
-	PipelineBundle mPipelineBundle;
-	vk::raii::PipelineLayout mPipelineLayout;
-	CullPushConstants mPushConstants;
+   public:
+    PipelineBundle mPipelineBundle;
+    vk::raii::PipelineLayout mPipelineLayout;
+    CullPushConstants mPushConstants;
 
-	Culler(Renderer* renderer);
+    Culler(Renderer* renderer);
 
-	void init();
-	void initPipelineLayout();
-	void initPipeline();
+    void init();
+    void initPipelineLayout();
+    void initPipeline();
 
-	void cleanup();
+    void cleanup();
 };

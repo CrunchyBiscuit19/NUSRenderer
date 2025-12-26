@@ -1,11 +1,10 @@
 ﻿#include <Renderer/Renderer.h>
 
-int main()
-{
-	Renderer renderer;
-	renderer.init();
-	renderer.run();
-	renderer.cleanup();
+int main() {
+    Renderer renderer;
+    renderer.init();
+    renderer.run();
+    renderer.cleanup();
 
-	return 0;
+    return 0;
 }

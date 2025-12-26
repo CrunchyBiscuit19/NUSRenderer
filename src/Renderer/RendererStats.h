@@ -5,19 +5,19 @@
 class Renderer;
 
 class RendererStats {
-	Renderer* mRenderer;
+    Renderer* mRenderer;
 
-public:
-	float mFrameTime;
-	float mDrawTime;
-	uint32_t mDrawCallCount;
-	uint32_t mPreCullRenderInstancesCount;
-	AddressedBuffer mPostCullRenderInstancesCountBuffer;
-	float mSceneUpdateTime;
+   public:
+    float mFrameTime;
+    float mDrawTime;
+    uint32_t mDrawCallCount;
+    uint32_t mPreCullRenderInstancesCount;
+    AddressedBuffer mPostCullRenderInstancesCountBuffer;
+    float mSceneUpdateTime;
 
-	RendererStats(Renderer* renderer);
+    RendererStats(Renderer* renderer);
 
-	void initBuffers();
-	void reset();
-	void cleanup();
+    void initBuffers();
+    void reset();
+    void cleanup();
 };

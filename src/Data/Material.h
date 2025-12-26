@@ -7,70 +7,57 @@
 class Renderer;
 class AllocatedImage;
 
-struct MaterialTexture
-{
-	AllocatedImage* image;
-	vk::Sampler sampler;
+struct MaterialTexture {
+    AllocatedImage* image;
+    vk::Sampler sampler;
 
-	MaterialTexture() :
-		image(nullptr),
-		sampler(nullptr)
-	{
-	}
+    MaterialTexture() : image(nullptr), sampler(nullptr) {}
 
-	MaterialTexture(AllocatedImage* image, vk::Sampler sampler) :
-		image(image),
-		sampler(sampler)
-	{
-	}
+    MaterialTexture(AllocatedImage* image, vk::Sampler sampler) : image(image), sampler(sampler) {}
 };
 
-struct MaterialConstants
-{
-	glm::vec4 baseFactor;
-	glm::vec4 emissiveFactor;
-	glm::vec2 metallicRoughnessFactor;
-	float normalScale;
-	float occlusionStrength;
+struct MaterialConstants {
+    glm::vec4 baseFactor;
+    glm::vec4 emissiveFactor;
+    glm::vec2 metallicRoughnessFactor;
+    float normalScale;
+    float occlusionStrength;
 };
 
-struct MaterialResources
-{
-	MaterialTexture base;
-	MaterialTexture metallicRoughness;
-	MaterialTexture normal;
-	MaterialTexture occlusion;
-	MaterialTexture emissive;
+struct MaterialResources {
+    MaterialTexture base;
+    MaterialTexture metallicRoughness;
+    MaterialTexture normal;
+    MaterialTexture occlusion;
+    MaterialTexture emissive;
 };
 
-struct PbrData
-{
-	bool doubleSided;
-	fastgltf::AlphaMode alphaMode;
-	MaterialConstants constants;
-	MaterialResources resources;
+struct PbrData {
+    bool doubleSided;
+    fastgltf::AlphaMode alphaMode;
+    MaterialConstants constants;
+    MaterialResources resources;
 };
 
-class PbrMaterial
-{
-	Renderer* mRenderer;
+class PbrMaterial {
+    Renderer* mRenderer;
 
-public:
-	std::string mName;
-	uint32_t mRelativeMaterialIndex;
-	PipelineBundle* mPipelineBundle;
-	PbrData mPbrData;
-	vk::Buffer mConstantsBuffer;
-	uint32_t mConstantsBufferOffset;
+   public:
+    std::string mName;
+    uint32_t mRelativeMaterialIndex;
+    PipelineBundle* mPipelineBundle;
+    PbrData mPbrData;
+    vk::Buffer mConstantsBuffer;
+    uint32_t mConstantsBufferOffset;
 
-	static std::unordered_map<PipelineOptions, PipelineBundle> mPipelinesCache;
-	static vk::raii::PipelineLayout mPipelineLayout;
+    static std::unordered_map<PipelineOptions, PipelineBundle> mPipelinesCache;
+    static vk::raii::PipelineLayout mPipelineLayout;
 
-	PbrMaterial(Renderer* renderer);
+    PbrMaterial(Renderer* renderer);
 
-	static void initMaterialPipelineLayout(Renderer* renderer);
-	void getMaterialPipeline();
-	void createMaterialPipeline(PipelineOptions materialPipelineOptions) const;
+    static void initMaterialPipelineLayout(Renderer* renderer);
+    void getMaterialPipeline();
+    void createMaterialPipeline(PipelineOptions materialPipelineOptions) const;
 
-	static void cleanup(Renderer* renderer);
+    static void cleanup(Renderer* renderer);
 };

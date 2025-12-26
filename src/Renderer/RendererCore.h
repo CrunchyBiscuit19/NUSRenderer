@@ -9,21 +9,19 @@
 template <typename T>
 struct VulkanResourceInfo;
 
-#define DEFINE_VULKAN_RESOURCE_INFO(HppType, VkType, resourceTypeEnum)              \
-template<> struct VulkanResourceInfo<HppType> {                                   \
-	static constexpr vk::ObjectType resourceType = resourceTypeEnum; \
-	static uint64_t getHandle(const HppType& resource) {                             \
-		return reinterpret_cast<uint64_t>(static_cast<VkType>(resource));         \
-	}                                                                        \
-};
+#define DEFINE_VULKAN_RESOURCE_INFO(HppType, VkType, resourceTypeEnum)                                                           \
+    template <>                                                                                                                  \
+    struct VulkanResourceInfo<HppType> {                                                                                         \
+        static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                         \
+        static uint64_t getHandle(const HppType& resource) { return reinterpret_cast<uint64_t>(static_cast<VkType>(resource)); } \
+    };
 
-#define DEFINE_VULKAN_RAII_RESOURCE_INFO(RaiiType, VkType, resourceTypeEnum)          \
-template<> struct VulkanResourceInfo<RaiiType> {                          \
-	static constexpr vk::ObjectType resourceType = resourceTypeEnum; \
-	static uint64_t getHandle(const RaiiType& resource) {                   \
-		return reinterpret_cast<uint64_t>(static_cast<VkType>(*resource));        \
-	}                                                                        \
-};
+#define DEFINE_VULKAN_RAII_RESOURCE_INFO(RaiiType, VkType, resourceTypeEnum)                                                       \
+    template <>                                                                                                                    \
+    struct VulkanResourceInfo<RaiiType> {                                                                                          \
+        static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                           \
+        static uint64_t getHandle(const RaiiType& resource) { return reinterpret_cast<uint64_t>(static_cast<VkType>(*resource)); } \
+    };
 
 DEFINE_VULKAN_RESOURCE_INFO(vk::Buffer, VkBuffer, vk::ObjectType::eBuffer)
 
@@ -61,8 +59,7 @@ DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Pipeline, VkPipeline, vk::ObjectType:
 
 DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::PipelineLayout, VkPipelineLayout, vk::ObjectType::ePipelineLayout)
 
-DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::DescriptorSetLayout, VkDescriptorSetLayout,
-                                 vk::ObjectType::eDescriptorSetLayout)
+DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::DescriptorSetLayout, VkDescriptorSetLayout, vk::ObjectType::eDescriptorSetLayout)
 
 DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::DescriptorSet, VkDescriptorSet, vk::ObjectType::eDescriptorSet)
 
@@ -74,58 +71,46 @@ DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Fence, VkFence, vk::ObjectType::eFenc
 
 DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Semaphore, VkSemaphore, vk::ObjectType::eSemaphore)
 
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void* pUserData
-);
+VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
 class Renderer;
 
-class RendererCore
-{
-	Renderer* mRenderer;
+class RendererCore {
+    Renderer* mRenderer;
 
-	vk::raii::Context mContext;
-	vk::raii::DebugUtilsMessengerEXT mDebugMessenger;
+    vk::raii::Context mContext;
+    vk::raii::DebugUtilsMessengerEXT mDebugMessenger;
 
-	vk::PhysicalDeviceProperties mChosenGPUProperties;
+    vk::PhysicalDeviceProperties mChosenGPUProperties;
 
-public:
-	vk::raii::Instance mInstance;
+   public:
+    vk::raii::Instance mInstance;
 
-	vk::raii::Device mDevice;
-	vk::raii::PhysicalDevice mChosenGPU;
+    vk::raii::Device mDevice;
+    vk::raii::PhysicalDevice mChosenGPU;
 
-	vk::raii::SurfaceKHR mSurface;
+    vk::raii::SurfaceKHR mSurface;
 
-	SDL_Window* mWindow{nullptr};
-	vk::Extent2D mWindowExtent{1700, 900};
-	bool mWindowFullScreen{false};
+    SDL_Window* mWindow{nullptr};
+    vk::Extent2D mWindowExtent{1700, 900};
+    bool mWindowFullScreen{false};
 
-	vk::raii::Queue mComputeQueue;
-	uint32_t mComputeQueueFamily;
-	vk::raii::Queue mGraphicsQueue;
-	uint32_t mGraphicsQueueFamily;
+    vk::raii::Queue mComputeQueue;
+    uint32_t mComputeQueueFamily;
+    vk::raii::Queue mGraphicsQueue;
+    uint32_t mGraphicsQueueFamily;
 
-	VmaAllocator mVmaAllocator;
+    VmaAllocator mVmaAllocator;
 
-	RendererCore(Renderer* renderer);
+    RendererCore(Renderer* renderer);
 
-	void init();
+    void init();
 
-	template <typename T>
-	void labelResourceDebug(T& resource, const char* name)
-	{
-		vk::DebugUtilsObjectNameInfoEXT nameInfo{
-			VulkanResourceInfo<T>::resourceType,
-			VulkanResourceInfo<T>::getHandle(resource),
-			name
-		};
-		mDevice.setDebugUtilsObjectNameEXT(nameInfo);
-	};
+    template <typename T>
+    void labelResourceDebug(T& resource, const char* name) {
+        vk::DebugUtilsObjectNameInfoEXT nameInfo{VulkanResourceInfo<T>::resourceType, VulkanResourceInfo<T>::getHandle(resource), name};
+        mDevice.setDebugUtilsObjectNameEXT(nameInfo);
+    };
 
-	void cleanup();
+    void cleanup();
 };

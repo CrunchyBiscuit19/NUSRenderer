@@ -4,29 +4,23 @@
 
 class GLTFModel;
 
-struct InstanceData
-{
-	glm::mat4 transformMatrix;
+struct InstanceData {
+    glm::mat4 transformMatrix;
 
-	InstanceData() :
-		transformMatrix(glm::mat4(1.f))
-	{}
+    InstanceData() : transformMatrix(glm::mat4(1.f)) {}
 
-	InstanceData(glm::mat4&& transform) :
-		transformMatrix(transform)
-	{}
+    InstanceData(glm::mat4&& transform) : transformMatrix(transform) {}
 };
 
-class GLTFInstance
-{
-public:
-	GLTFModel* mModel;
-	int mId;
-	bool mDeleteSignal;
+class GLTFInstance {
+   public:
+    GLTFModel* mModel;
+    int mId;
+    bool mDeleteSignal;
 
-	InstanceData mData;
+    InstanceData mData;
 
-	GLTFInstance(GLTFModel* model, int id, InstanceData data = InstanceData());
+    GLTFInstance(GLTFModel* model, int id, InstanceData data = InstanceData());
 
-	void markDelete();
+    void markDelete();
 };

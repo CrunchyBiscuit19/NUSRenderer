@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
 #include <imgui.h>
+
+#include <vulkan/vulkan.hpp>
 
 #ifdef RELEASE
 constexpr bool USE_VALIDATION_LAYERS = false;
@@ -62,4 +63,3 @@ constexpr int FRUSTUM_LEFT_FACE = 2;
 constexpr int FRUSTUM_RIGHT_FACE = 3;
 constexpr int FRUSTUM_TOP_FACE = 4;
 constexpr int FRUSTUM_BOTTOM_FACE = 5;
-

@@ -3,80 +3,69 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
 #include <imgui.h>
-#define NOMINMAX // imfilebrowser.h contains windows.h
+#define NOMINMAX  // imfilebrowser.h contains windows.h
 #include <imfilebrowser.h>
 
 class Renderer;
 class Gui;
 
-struct GuiComponent
-{
-protected:
-	Renderer* mRenderer;
-	Gui* mGui;
+struct GuiComponent {
+   protected:
+    Renderer* mRenderer;
+    Gui* mGui;
 
-public:
-	std::string mName;
+   public:
+    std::string mName;
 
-	GuiComponent(Renderer* renderer, Gui* gui, std::string name);
-	virtual void elements() = 0;
+    GuiComponent(Renderer* renderer, Gui* gui, std::string name);
+    virtual void elements() = 0;
 };
 
-class Gui
-{
-	struct CameraGuiComponent : GuiComponent
-	{
-		CameraGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name)
-		{
-		}
+class Gui {
+    struct CameraGuiComponent : GuiComponent {
+        CameraGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 
-		void elements() override;
-	};
+        void elements() override;
+    };
 
-	struct SceneGuiComponent : GuiComponent
-	{
-		SceneGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name)
-		{
-		}
+    struct SceneGuiComponent : GuiComponent {
+        SceneGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 
-		void elements() override;
-	};
+        void elements() override;
+    };
 
-	struct MiscGuiComponent : GuiComponent
-	{
-		MiscGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name)
-		{
-		}
+    struct MiscGuiComponent : GuiComponent {
+        MiscGuiComponent(Renderer* renderer, Gui* gui, std::string name) : GuiComponent(renderer, gui, name) {}
 
-		void elements() override;
-	};
+        void elements() override;
+    };
 
-	Renderer* mRenderer;
+    Renderer* mRenderer;
 
-	vk::raii::DescriptorPool mDescriptorPool;
-	vk::raii::DescriptorSet mDescriptorSet;
+    vk::raii::DescriptorPool mDescriptorPool;
+    vk::raii::DescriptorSet mDescriptorSet;
 
-	bool mCollapsed;
+    bool mCollapsed;
 
-	std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
+    std::vector<std::unique_ptr<GuiComponent>> mGuiComponents;
 
-	void createDockSpace();
-	void createRendererOptionsWindow() const;
+    void createDockSpace();
+    void createRendererOptionsWindow() const;
 
-public:
-	Gui(Renderer* renderer);
+   public:
+    Gui(Renderer* renderer);
 
-	void initDescriptors();
-	void initBackend() const;
-	void initLinearColors();
-	void initFileBrowsers();
-	void initComponents();
-	void initKeyBinding();
+    void initDescriptors();
+    void initBackend() const;
+    void initLinearColors();
+    void initFileBrowsers();
+    void initComponents();
+    void initKeyBinding();
 
-	void updateFrame();
+    void updateFrame();
 
-	void cleanup();
+    void cleanup();
 
-	ImGui::FileBrowser mSelectModelFileBrowser;
-	ImGui::FileBrowser mSelectSkyboxFileBrowser;
+    ImGui::FileBrowser mSelectModelFileBrowser;
+    ImGui::FileBrowser mSelectSkyboxFileBrowser;
 };
