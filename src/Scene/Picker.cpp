@@ -115,22 +115,22 @@ void Picker::initDrawPipeline()
 	vk::ShaderModule vertexShader = mRenderer->mResources.getShader(
 		std::filesystem::path(SHADERS_PATH) / "PickerDraw.vert.spv");
 
-	GraphicsPipelineBuilder pickerPipelineBuilder;
-	pickerPipelineBuilder.setShaders(vertexShader, fragShader);
-	pickerPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
-	pickerPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
-	pickerPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
-	pickerPipelineBuilder.disableMultisampling();
-	pickerPipelineBuilder.disableSampleShading();
-	pickerPipelineBuilder.disableBlending();
-	pickerPipelineBuilder.setColorAttachmentFormat(mImage.imageFormat);
-	pickerPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
-	pickerPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
-	pickerPipelineBuilder.mPipelineLayout = *mDrawPipelineLayout;
+	GraphicsPipelineBuilder drawPipelineBuilder;
+	drawPipelineBuilder.setShaders(vertexShader, fragShader);
+	drawPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
+	drawPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
+	drawPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
+	drawPipelineBuilder.disableMultisampling();
+	drawPipelineBuilder.disableSampleShading();
+	drawPipelineBuilder.disableBlending();
+	drawPipelineBuilder.setColorAttachmentFormat(mImage.imageFormat);
+	drawPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
+	drawPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
+	drawPipelineBuilder.mPipelineLayout = *mDrawPipelineLayout;
 
 	mDrawPipelineBundle = PipelineBundle(
 		mRenderer->mInfrastructure.mLatestPipelineId++,
-		pickerPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
+		drawPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice),
 		*mDrawPipelineLayout
 	);
 	mRenderer->mCore.labelResourceDebug(mDrawPipelineBundle.pipeline, "PickerDrawPipeline");

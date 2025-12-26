@@ -1,10 +1,11 @@
 import PickerPick;
 
+[[vk::push_constant]]
+PickerPickPushConstants pickerPickPc;
+
 [numthreads(1)]
 
-void main(uniform PickerPickPushConstants pickerPickPushConstants)
-{
-    uint2 read = pickerImage.Load(pickerPickPushConstants.pickerBuffer[0].coords);
-    pickerPickPushConstants.pickerBuffer[0].read.x = read.x - 1;
-    pickerPickPushConstants.pickerBuffer[0].read.y = read.y - 1;
+void main(CSInput in) {
+    uint2 read = pickerImage.Load(pickerPickPc.pickerBuffer->coords);
+    pickerPickPc.pickerBuffer->read = uint2(read.x - 1, read.y - 1);
 }

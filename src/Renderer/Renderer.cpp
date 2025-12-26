@@ -549,7 +549,7 @@ void Renderer::draw() {
 	auto _ = mCore.mDevice.waitForFences(*mInfrastructure.getCurrentFrame().mRenderFence, true, 1e9);
 	mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
 	try {
-		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).second;
+		mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).value;
 	} catch (vk::OutOfDateKHRError e) {
 		mInfrastructure.mResizeRequested = true;
 		return;
