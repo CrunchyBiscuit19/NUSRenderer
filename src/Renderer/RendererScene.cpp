@@ -71,18 +71,18 @@ void RendererScene::initKeyBinding() const {
     mRenderer->mEventHandler.addEventCallback([this](SDL_Event& e) -> void {
         const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-        if(keyState[SDL_SCANCODE_DELETE] && mPicker.mClickedInstance != nullptr && e.type == SDL_KEYDOWN && !e.key.repeat) {
+        if (keyState[SDL_SCANCODE_DELETE] && mPicker.mClickedInstance != nullptr && e.type == SDL_KEYDOWN && !e.key.repeat) {
             mPicker.mClickedInstance->markDelete();
         }
     });
 }
 
 void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths) {
-    for(const auto& modelPath : paths) {
+    for (const auto& modelPath : paths) {
         auto modelShortPath = modelPath.stem().string();
         auto modelFullPath = MODELS_PATH / modelPath;
         auto [_, inserted] = mModelsCache.try_emplace(modelShortPath, mRenderer, modelFullPath);
-        if(inserted) {
+        if (inserted) {
             mModelsReverse.try_emplace(mModelsCache.at(modelShortPath).mId, modelShortPath);
             mFlags.modelAddedFlag = true;
         }
@@ -91,7 +91,7 @@ void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths) 
 
 void RendererScene::deleteModels() {
     std::erase_if(mModelsCache, [&](const std::pair<const std::string, GLTFModel>& pair) {
-        if(pair.second.mDeleteSignal.has_value()) {
+        if (pair.second.mDeleteSignal.has_value()) {
             mFlags.modelDestroyedFlag = true;
         }
         return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->mInfrastructure.mFrameNumber);
@@ -99,21 +99,21 @@ void RendererScene::deleteModels() {
 }
 
 void RendererScene::deleteInstances() {
-    for(auto& model : mModelsCache | std::views::values) {
+    for (auto& model : mModelsCache | std::views::values) {
         std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
     }
 }
 
 void RendererScene::regenerateRenderItemsInstances() {
-    for(auto batchType : mBatchTypes) {
-        for(auto& batch : *batchType | std::views::values) {
+    for (auto batchType : mBatchTypes) {
+        for (auto& batch : *batchType | std::views::values) {
             batch.renderItems.clear();
             batch.renderInstances.clear();
         }
     }
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
         model.generateRenderItemsInstances();
@@ -121,9 +121,9 @@ void RendererScene::regenerateRenderItemsInstances() {
 
     LOG_INFO(mRenderer->mLogger, "Render Items and Instances Regenerated");
 
-    for(auto batchType : mBatchTypes) {
-        for(auto& batch : *batchType | std::views::values) {
-            if(batch.renderItems.empty()) {
+    for (auto batchType : mBatchTypes) {
+        for (auto& batch : *batchType | std::views::values) {
+            if (batch.renderItems.empty()) {
                 continue;
             }
 
@@ -162,12 +162,12 @@ void RendererScene::realignVertexIndexOffset() {
     int vertexCumulative = 0;
     int indexCumulative = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
-        for(auto& mesh : model.mMeshes) {
+        for (auto& mesh : model.mMeshes) {
             mesh.mMainVertexOffset = vertexCumulative;
             mesh.mMainFirstIndex = indexCumulative;
             vertexCumulative += mesh.mNumVertices;
@@ -181,8 +181,8 @@ void RendererScene::realignVertexIndexOffset() {
 void RendererScene::realignMaterialOffset() {
     int materialCumulative = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -196,8 +196,8 @@ void RendererScene::realignMaterialOffset() {
 void RendererScene::realignNodeTransformsOffset() {
     int nodeTransformCumulative = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -211,8 +211,8 @@ void RendererScene::realignNodeTransformsOffset() {
 void RendererScene::realignBoundsOffset() {
     int boundsCumulative = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -226,8 +226,8 @@ void RendererScene::realignBoundsOffset() {
 void RendererScene::realignInstancesOffset() {
     int instanceCumulative = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -249,12 +249,12 @@ void RendererScene::realignOffsets() {
 void RendererScene::reloadMainVertexBuffer() {
     int dstOffset = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
-        for(auto& mesh : model.mMeshes) {
+        for (auto& mesh : model.mMeshes) {
             vk::BufferCopy meshVertexCopy{};
             meshVertexCopy.dstOffset = dstOffset;
             meshVertexCopy.srcOffset = 0;
@@ -277,12 +277,12 @@ void RendererScene::reloadMainVertexBuffer() {
 void RendererScene::reloadMainIndexBuffer() {
     int dstOffset = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
-        for(auto& mesh : model.mMeshes) {
+        for (auto& mesh : model.mMeshes) {
             vk::BufferCopy meshIndexCopy{};
             meshIndexCopy.dstOffset = dstOffset;
             meshIndexCopy.srcOffset = 0;
@@ -305,8 +305,8 @@ void RendererScene::reloadMainIndexBuffer() {
 void RendererScene::reloadMainMaterialConstantsBuffer() {
     int dstOffset = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -332,8 +332,8 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
 void RendererScene::reloadMainNodeTransformsBuffer() {
     int dstOffset = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -358,8 +358,8 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
 void RendererScene::reloadMainBoundsBuffer() {
     int dstOffset = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
 
@@ -384,11 +384,11 @@ void RendererScene::reloadMainBoundsBuffer() {
 void RendererScene::reloadMainInstancesBuffer() {
     int dstOffset = 0;
 
-    for(auto& model : mModelsCache | std::views::values) {
-        if(model.mDeleteSignal.has_value()) {
+    for (auto& model : mModelsCache | std::views::values) {
+        if (model.mDeleteSignal.has_value()) {
             continue;
         }
-        if(model.mInstances.empty()) {
+        if (model.mInstances.empty()) {
             continue;
         }
 
@@ -411,8 +411,8 @@ void RendererScene::reloadMainInstancesBuffer() {
 }
 
 void RendererScene::reloadMainMaterialResourcesArray() {
-    for(auto& model : mModelsCache | std::views::values) {
-        for(auto& material : model.mMaterials) {
+    for (auto& model : mModelsCache | std::views::values) {
+        for (auto& material : model.mMaterials) {
             int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
 
             DescriptorSetBinder writer;

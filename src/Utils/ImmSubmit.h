@@ -19,7 +19,7 @@ class ImmSubmit {
     ImmSubmit(ImmSubmit&& other) noexcept : mRenderer(other.mRenderer), mCommandPool(std::move(other.mCommandPool)), mCommandBuffer(std::move(other.mCommandBuffer)), mFence(std::move(other.mFence)) { other.mRenderer = nullptr; }
 
     ImmSubmit& operator=(ImmSubmit&& other) noexcept {
-        if(this != &other) {
+        if (this != &other) {
             mRenderer = other.mRenderer;
             mCommandPool = std::move(other.mCommandPool);
             mCommandBuffer = std::move(other.mCommandBuffer);

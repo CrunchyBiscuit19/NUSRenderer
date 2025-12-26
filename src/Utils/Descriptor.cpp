@@ -13,7 +13,7 @@ void DescriptorLayoutBuilder::addBinding(uint32_t binding, vk::DescriptorType ty
 void DescriptorLayoutBuilder::clear() { mBindings.clear(); }
 
 vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless) {
-    for(auto& b : mBindings) {
+    for (auto& b : mBindings) {
         b.stageFlags |= shaderStages;
     }
 
@@ -26,7 +26,7 @@ vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& d
     bindingFlagsInfo.pBindingFlags = &bindlessFlags;
     bindingFlagsInfo.bindingCount = static_cast<uint32_t>(mBindings.size());
 
-    if(useBindless) {
+    if (useBindless) {
         info.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
         info.pNext = &bindingFlagsInfo;
     }
@@ -46,9 +46,9 @@ void DescriptorAllocatorGrowable::init(uint32_t maxSets, std::vector<DescriptorT
 }
 
 void DescriptorAllocatorGrowable::clearPools() {
-    for(vk::raii::DescriptorPool& p : mReadyPools) p.reset();
+    for (vk::raii::DescriptorPool& p : mReadyPools) p.reset();
 
-    for(vk::raii::DescriptorPool& p : mFullPools) {
+    for (vk::raii::DescriptorPool& p : mFullPools) {
         p.reset();
         mReadyPools.emplace_back(std::move(p));
     }
@@ -73,13 +73,13 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::Descript
     vk::DescriptorSetVariableDescriptorCountAllocateInfo countInfo;
     countInfo.descriptorSetCount = 1;
     countInfo.pDescriptorCounts = &MAX_TEXTURE_ARRAY_SLOTS;
-    if(useBindless) allocInfo.pNext = &countInfo;
+    if (useBindless) allocInfo.pNext = &countInfo;
 
     std::vector<vk::raii::DescriptorSet> ds;
     try {
         ds = mRenderer->mCore.mDevice.allocateDescriptorSets(allocInfo);
         mReadyPools.emplace_back(std::move(poolToUse));
-    } catch(vk::SystemError e) {
+    } catch (vk::SystemError e) {
         // OutOfPoolMemory or FragmentedPool Errors
         mFullPools.emplace_back(std::move(poolToUse));
         vk::raii::DescriptorPool poolToUse1 = getPool();
@@ -92,20 +92,20 @@ vk::raii::DescriptorSet DescriptorAllocatorGrowable::allocate(const vk::Descript
 
 vk::raii::DescriptorPool DescriptorAllocatorGrowable::getPool() {
     // Check if available pools to use, else create new pool
-    if(!mReadyPools.empty()) {
+    if (!mReadyPools.empty()) {
         vk::raii::DescriptorPool newPool = std::move(mReadyPools.back());
         mReadyPools.pop_back();
         return newPool;
     }
     vk::raii::DescriptorPool newPool = createPool(mSetsPerPool, mRatios);
     mSetsPerPool *= 1.5;
-    if(mSetsPerPool > 4092) mSetsPerPool = 4092;
+    if (mSetsPerPool > 4092) mSetsPerPool = 4092;
     return newPool;
 }
 
 vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(uint32_t setCount, std::vector<DescriptorTypeRatio>& poolRatios) {
     std::vector<vk::DescriptorPoolSize> poolSizes;
-    for(const DescriptorTypeRatio ratio : poolRatios) poolSizes.push_back(vk::DescriptorPoolSize(ratio.type, ratio.amountPerSet * setCount));
+    for (const DescriptorTypeRatio ratio : poolRatios) poolSizes.push_back(vk::DescriptorPoolSize(ratio.type, ratio.amountPerSet * setCount));
     vk::DescriptorPoolCreateInfo pool_info = {};
     pool_info.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind | vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
     pool_info.maxSets = setCount;
@@ -160,6 +160,6 @@ void DescriptorSetBinder::clear() {
 }
 
 void DescriptorSetBinder::updateSetBindings(const vk::raii::Device& device, const vk::DescriptorSet set) {
-    for(vk::WriteDescriptorSet& write : mWrites) write.dstSet = set;
+    for (vk::WriteDescriptorSet& write : mWrites) write.dstSet = set;
     device.updateDescriptorSets(mWrites, nullptr);
 }

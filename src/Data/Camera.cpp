@@ -12,29 +12,29 @@ Camera::Camera(Renderer* renderer) : mRenderer(renderer) {
     mMovementFunctions[FREEFLY] = [this]() -> void {
         const SDL_Keymod modState = SDL_GetModState();
         const Uint8* keyState = SDL_GetKeyboardState(nullptr);
-        if(keyState[SDL_SCANCODE_W]) {
-            if(modState & KMOD_LSHIFT)
+        if (keyState[SDL_SCANCODE_W]) {
+            if (modState & KMOD_LSHIFT)
                 mVelocity.y = 1;
             else
                 mVelocity.z = -1;
         }
-        if(keyState[SDL_SCANCODE_S]) {
-            if(modState & KMOD_LSHIFT)
+        if (keyState[SDL_SCANCODE_S]) {
+            if (modState & KMOD_LSHIFT)
                 mVelocity.y = -1;
             else
                 mVelocity.z = 1;
         }
-        if(keyState[SDL_SCANCODE_A]) mVelocity.x = -1;
-        if(keyState[SDL_SCANCODE_D]) mVelocity.x = 1;
+        if (keyState[SDL_SCANCODE_A]) mVelocity.x = -1;
+        if (keyState[SDL_SCANCODE_D]) mVelocity.x = 1;
         mVelocity *= 0.1f;
     };
 
     mMovementFunctions[DRONE] = [this]() -> void {
         const Uint8* keyState = SDL_GetKeyboardState(nullptr);
-        if(keyState[SDL_SCANCODE_W]) mVelocity.z = -1;
-        if(keyState[SDL_SCANCODE_S]) mVelocity.z = 1;
-        if(keyState[SDL_SCANCODE_A]) mVelocity.x = -1;
-        if(keyState[SDL_SCANCODE_D]) mVelocity.x = 1;
+        if (keyState[SDL_SCANCODE_W]) mVelocity.z = -1;
+        if (keyState[SDL_SCANCODE_S]) mVelocity.z = 1;
+        if (keyState[SDL_SCANCODE_A]) mVelocity.x = -1;
+        if (keyState[SDL_SCANCODE_D]) mVelocity.x = 1;
         mVelocity *= 0.1f;
     };
 }
@@ -47,8 +47,8 @@ void Camera::initControls() {
 
         mMovementFunctions[mMovementMode]();
 
-        if(keyState[SDL_SCANCODE_C] && e.type == SDL_KEYDOWN && !e.key.repeat) {
-            switch(mMovementMode) {
+        if (keyState[SDL_SCANCODE_C] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+            switch (mMovementMode) {
                 case FREEFLY:
                     mMovementMode = DRONE;
                     break;
@@ -58,14 +58,14 @@ void Camera::initControls() {
             }
         }
 
-        if(e.button.button == SDL_BUTTON_RIGHT && e.type == SDL_MOUSEBUTTONDOWN) mRelativeMode = static_cast<SDL_bool>(!mRelativeMode);
+        if (e.button.button == SDL_BUTTON_RIGHT && e.type == SDL_MOUSEBUTTONDOWN) mRelativeMode = static_cast<SDL_bool>(!mRelativeMode);
 
-        if(e.type == SDL_MOUSEMOTION && mRelativeMode) {
+        if (e.type == SDL_MOUSEMOTION && mRelativeMode) {
             mYaw += static_cast<float>(e.motion.xrel) / 200.f;
             mPitch -= static_cast<float>(e.motion.yrel) / 200.f;
         }
 
-        if(e.type == SDL_MOUSEWHEEL) {
+        if (e.type == SDL_MOUSEWHEEL) {
             mSpeed += static_cast<float>(e.wheel.y);
             mSpeed = std::clamp(mSpeed, 0.f, MAX_CAMERA_SPEED);
         }
@@ -128,7 +128,7 @@ void Camera::uploadFrameFrustum() const {
 }
 
 void Camera::update(float deltaTime, float expectedDeltaTime) {
-    switch(mMovementMode) {
+    switch (mMovementMode) {
         case FREEFLY:
             mPosition += glm::vec3(getYawMatrix() * glm::vec4(mVelocity * mSpeed * (deltaTime / expectedDeltaTime), 0.f));
             break;

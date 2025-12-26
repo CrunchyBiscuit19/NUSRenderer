@@ -27,7 +27,7 @@ void RendererInfrastructure::initFrames() {
     vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
 
-    for(int i = 0; i < mFrames.size(); i++) {
+    for (int i = 0; i < mFrames.size(); i++) {
         mFrames[i].mRenderFence = mRenderer->mCore.mDevice.createFence(fenceCreateInfo);
         mRenderer->mCore.labelResourceDebug(mFrames[i].mRenderFence, fmt::format("FrameFence{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Render Fence Created", i);
@@ -87,13 +87,13 @@ void RendererInfrastructure::initSwapchain() {
 
     mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
-    for(int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
+    for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
         mSwapchainBundle.mImages.emplace_back(
             vkbSwapchain.get_images().value()[i], mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
             mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mUnormFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)), mRenderer->mCore.mDevice.createSemaphore(semaphoreCreateInfo));
     }
 
-    for(int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+    for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
         mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].image, fmt::format("SwapchainImage{}", i).c_str());
         mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].imageView, fmt::format("SwapchainImageView{}", i).c_str());
         mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].uNormImageView, fmt::format("SwapchainUnormImageView{}", i).c_str());
@@ -113,7 +113,7 @@ void RendererInfrastructure::initSwapchain() {
     mRenderer->mCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        for(int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
+        for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
             vkhelper::transitionImage(cmd, mSwapchainBundle.mImages[i].image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::ImageLayout::eUndefined,
                                       vk::ImageLayout::ePresentSrcKHR);
         }
@@ -155,7 +155,7 @@ void RendererInfrastructure::resizeSwapchain() {
 }
 
 void RendererInfrastructure::cleanup() {
-    for(auto& frame : mFrames) {
+    for (auto& frame : mFrames) {
         frame.cleanup();
     }
     LOG_INFO(mRenderer->mLogger, "Frames Destroyed");

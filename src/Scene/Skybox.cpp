@@ -7,7 +7,7 @@
 Skybox::Skybox(Renderer* renderer) : mRenderer(renderer), mPipelineLayout(nullptr), mDescriptorSet(nullptr), mDescriptorSetLayout(nullptr) {}
 
 void Skybox::init(const std::optional<std::filesystem::path>& skyboxDir) {
-    if(skyboxDir.has_value()) {
+    if (skyboxDir.has_value()) {
         loadImage(skyboxDir.value());
     }
     initDescriptor();
@@ -123,8 +123,8 @@ void Skybox::loadImage(const std::filesystem::path& skyboxImageDir) {
     int width = 0, height = 0, nrChannels = 0;
     int offset = 0;
 
-    for(auto& path : skyboxImagePaths) {
-        if(unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &nrChannels, 4)) {
+    for (auto& path : skyboxImagePaths) {
+        if (unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &nrChannels, 4)) {
             int imageSize = width * height * 4;
             std::memcpy(skyboxImageData.data() + offset, data, imageSize);
             offset += imageSize;

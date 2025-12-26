@@ -34,7 +34,7 @@ struct AllocatedImage {
     }
 
     AllocatedImage& operator=(AllocatedImage&& other) noexcept {
-        if(this != &other) {
+        if (this != &other) {
             image = std::move(other.image);
             imageView = std::move(other.imageView);
             imageFormat = other.imageFormat;
@@ -54,7 +54,7 @@ struct AllocatedImage {
     AllocatedImage& operator=(const AllocatedImage&) = delete;
 
     void cleanup() {
-        if(allocator == nullptr) {
+        if (allocator == nullptr) {
             return;
         }  // If destroying a moved AllocatedImage
         image.clear();
@@ -89,7 +89,7 @@ struct AllocatedBuffer {
     }
 
     AllocatedBuffer& operator=(AllocatedBuffer&& other) noexcept {
-        if(this != &other) {
+        if (this != &other) {
             buffer = std::move(other.buffer);
             allocator = other.allocator;
             allocation = other.allocation;
@@ -106,7 +106,7 @@ struct AllocatedBuffer {
     AllocatedBuffer& operator=(const AllocatedBuffer&) = delete;
 
     void cleanup() {
-        if(allocator == nullptr) {
+        if (allocator == nullptr) {
             return;
         }  // If destroying a moved AllocatedBuffer
         buffer.clear();
@@ -137,7 +137,7 @@ struct AddressedBuffer : AllocatedBuffer {
     }
 
     AddressedBuffer& operator=(AddressedBuffer&& other) noexcept {
-        if(this != &other) {
+        if (this != &other) {
             AllocatedBuffer::operator=(std::move(other));
             address = other.address;
             other.address = 0;

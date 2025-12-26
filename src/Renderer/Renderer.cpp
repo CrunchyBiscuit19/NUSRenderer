@@ -36,7 +36,7 @@ void Renderer::init() {
 void Renderer::initLogger() {
     quill::Backend::start();
 
-    if(LOG_TO_FILE) {
+    if (LOG_TO_FILE) {
         auto fileSink = quill::Frontend::create_or_get_sink<quill::FileSink>(
             fmt::format("{}Run.log", LOGS_PATH).c_str(),
             []() {
@@ -81,15 +81,15 @@ void Renderer::initComponents() {
     mImmSubmit.mCallbacks.clear();
 
     mEventHandler.addEventCallback([this](SDL_Event& e) -> void {
-        if(e.type == SDL_QUIT) {
-            for(auto& model : mScene.mModelsCache | std::views::values) {
+        if (e.type == SDL_QUIT) {
+            for (auto& model : mScene.mModelsCache | std::views::values) {
                 model.markDelete();
             }
             mInfrastructure.mProgramEndFrameNumber = mInfrastructure.mFrameNumber + FRAME_OVERLAP + 1;
         }
-        if(e.type == SDL_WINDOWEVENT) {
-            if(e.window.event == SDL_WINDOWEVENT_MINIMIZED) mStopRendering = true;
-            if(e.window.event == SDL_WINDOWEVENT_RESTORED) mStopRendering = false;
+        if (e.type == SDL_WINDOWEVENT) {
+            if (e.window.event == SDL_WINDOWEVENT_MINIMIZED) mStopRendering = true;
+            if (e.window.event == SDL_WINDOWEVENT_RESTORED) mStopRendering = false;
         }
         ImGui_ImplSDL2_ProcessEvent(&e);
     });
@@ -112,9 +112,9 @@ void Renderer::initPasses() {
         mScene.mCuller.mPushConstants.instancesBuffer = mScene.mMainInstancesBuffer.address;
         mScene.mCuller.mPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
 
-        for(auto batchType : mScene.mBatchTypes) {
-            for(auto& batch : *batchType | std::views::values) {
-                if(batch.renderItems.empty()) {
+        for (auto batchType : mScene.mBatchTypes) {
+            for (auto& batch : *batchType | std::views::values) {
+                if (batch.renderItems.empty()) {
                     continue;
                 }
 
@@ -141,7 +141,7 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::Pick, [&](vk::CommandBuffer cmd) {
-        if(!ImGui::IsMouseDown(ImGuiMouseButton_Left) || mCamera.mRelativeMode || ImGui::GetIO().WantCaptureMouse) {
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) || mCamera.mRelativeMode || ImGui::GetIO().WantCaptureMouse) {
             return;
         }
 
@@ -174,9 +174,9 @@ void Renderer::initPasses() {
         cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mPicker.mDrawPipelineBundle.layout, 0, *mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr);
 
-        for(auto batchType : mScene.mBatchTypes) {
-            for(auto& batch : *batchType | std::views::values) {
-                if(batch.renderItems.empty()) {
+        for (auto batchType : mScene.mBatchTypes) {
+            for (auto& batch : *batchType | std::views::values) {
+                if (batch.renderItems.empty()) {
                     continue;
                 }
 
@@ -215,14 +215,14 @@ void Renderer::initPasses() {
         uint32_t modelId = read.x;
 
         auto reverseIt = mScene.mModelsReverse.find(static_cast<int>(modelId));
-        if(reverseIt == mScene.mModelsReverse.end()) {
+        if (reverseIt == mScene.mModelsReverse.end()) {
             mScene.mPicker.mClickedInstance = nullptr;
             return;
         }
         std::string& clickedModelName = reverseIt->second;
 
         auto cacheIt = mScene.mModelsCache.find(clickedModelName);
-        if(cacheIt == mScene.mModelsCache.end()) {
+        if (cacheIt == mScene.mModelsCache.end()) {
             mScene.mPicker.mClickedInstance = nullptr;
             return;
         }
@@ -233,7 +233,7 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::Skybox, [&](vk::CommandBuffer cmd) {
-        if(!mScene.mSkybox.mActive) {
+        if (!mScene.mSkybox.mActive) {
             return;
         }
 
@@ -269,9 +269,9 @@ void Renderer::initPasses() {
 
         cmd.beginRendering(renderInfo);
 
-        for(auto batchType : mScene.mBatchTypes) {
-            for(auto& batch : *batchType | std::views::values) {
-                if(batch.renderItems.empty()) {
+        for (auto batchType : mScene.mBatchTypes) {
+            for (auto& batch : *batchType | std::views::values) {
+                if (batch.renderItems.empty()) {
                     continue;
                 }
 
@@ -350,26 +350,26 @@ void Renderer::initTransitions() {
 void Renderer::run() {
     SDL_Event e;
 
-    while(true) {
+    while (true) {
         auto start = std::chrono::system_clock::now();
 
-        if(mInfrastructure.mProgramEndFrameNumber.has_value() && (mInfrastructure.mFrameNumber < mInfrastructure.mProgramEndFrameNumber.value())) {
+        if (mInfrastructure.mProgramEndFrameNumber.has_value() && (mInfrastructure.mFrameNumber < mInfrastructure.mProgramEndFrameNumber.value())) {
             mCore.mDevice.waitIdle();
             break;
         }
 
-        while(SDL_PollEvent(&e) != 0) {
+        while (SDL_PollEvent(&e) != 0) {
             mEventHandler.executeEventCallbacks(e);
         }
 
-        if(mStopRendering) {
+        if (mStopRendering) {
             // Do not draw if minimized
             std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Throttle the speed to avoid endless spinning
             continue;
         }
 
         SDL_SetRelativeMouseMode(mCamera.mRelativeMode);
-        if(mInfrastructure.mResizeRequested) {
+        if (mInfrastructure.mResizeRequested) {
             mInfrastructure.resizeSwapchain();
         }
 
@@ -396,22 +396,22 @@ void Renderer::perFrameUpdate() {
     mScene.deleteModels();
     mScene.deleteInstances();
 
-    for(auto& model : mScene.mModelsCache | std::views::values) {
-        if(model.mReloadInstances) {
+    for (auto& model : mScene.mModelsCache | std::views::values) {
+        if (model.mReloadInstances) {
             model.reloadInstances();
             mScene.mFlags.reloadMainInstancesBuffer = true;
         }
     }
 
-    if(mScene.mFlags.modelAddedFlag || mScene.mFlags.modelDestroyedFlag) {
+    if (mScene.mFlags.modelAddedFlag || mScene.mFlags.modelDestroyedFlag) {
         mScene.realignOffsets();
         mScene.reloadMainBuffers();
         mScene.regenerateRenderItemsInstances();
-    } else if(mScene.mFlags.instanceAddedFlag || mScene.mFlags.instanceDestroyedFlag) {
+    } else if (mScene.mFlags.instanceAddedFlag || mScene.mFlags.instanceDestroyedFlag) {
         mScene.realignInstancesOffset();
         mScene.reloadMainInstancesBuffer();
         mScene.regenerateRenderItemsInstances();
-    } else if(mScene.mFlags.reloadMainInstancesBuffer) {
+    } else if (mScene.mFlags.reloadMainInstancesBuffer) {
         mScene.reloadMainInstancesBuffer();
     }
 
@@ -432,7 +432,7 @@ void Renderer::draw() {
     mCore.mDevice.resetFences(*mInfrastructure.getCurrentFrame().mRenderFence);
     try {
         mInfrastructure.mSwapchainIndex = mInfrastructure.mSwapchainBundle.mSwapchain.acquireNextImage(1e9, *mInfrastructure.getCurrentFrame().mAvailableSemaphore, nullptr).value;
-    } catch(vk::OutOfDateKHRError e) {
+    } catch (vk::OutOfDateKHRError e) {
         mInfrastructure.mResizeRequested = true;
         return;
     }
@@ -486,7 +486,7 @@ void Renderer::draw() {
 
     try {
         auto _ = mCore.mGraphicsQueue.presentKHR(presentInfo);
-    } catch(vk::OutOfDateKHRError e) {
+    } catch (vk::OutOfDateKHRError e) {
         mInfrastructure.mResizeRequested = true;
     }
 

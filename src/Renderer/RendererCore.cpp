@@ -9,7 +9,7 @@
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     std::string severity;
-    switch(messageSeverity) {
+    switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             severity = "ERROR";
             break;
@@ -29,19 +29,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagB
     message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
     message += fmt::format("Queue Labels:\n");
-    for(int i = 0; i < pCallbackData->queueLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
+    for (int i = 0; i < pCallbackData->queueLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
     message += fmt::format("CommandBuffer Labels:\n");
-    for(int i = 0; i < pCallbackData->cmdBufLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
+    for (int i = 0; i < pCallbackData->cmdBufLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
 
     message += fmt::format("\n");
 
-    for(int i = 0; i < pCallbackData->objectCount; i++) {
+    for (int i = 0; i < pCallbackData->objectCount; i++) {
         message +=
             fmt::format("Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n", std::to_string(i), vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)), std::to_string(pCallbackData->pObjects[i].objectHandle));
-        if(pCallbackData->pObjects[i].pObjectName) message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
+        if (pCallbackData->pObjects[i].pObjectName) message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
     }
 
-    switch(messageSeverity) {
+    switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             severity = "ERROR";
             LOG_ERROR(static_cast<Renderer*>(pUserData)->mLogger, "{}", message);
@@ -76,7 +76,7 @@ void RendererCore::init() {
         .set_debug_callback(debugMessageFunc)
         .set_debug_callback_user_data_pointer(mRenderer)
         .require_api_version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
-    if(USE_VALIDATION_LAYERS) {
+    if (USE_VALIDATION_LAYERS) {
         vkbInstBuilder.request_validation_layers(USE_VALIDATION_LAYERS)
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
@@ -172,7 +172,7 @@ void RendererCore::init() {
         const SDL_Keymod modState = SDL_GetModState();
         const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-        if((modState & KMOD_ALT) && keyState[SDL_SCANCODE_RETURN] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+        if ((modState & KMOD_ALT) && keyState[SDL_SCANCODE_RETURN] && e.type == SDL_KEYDOWN && !e.key.repeat) {
             mWindowFullScreen = !mWindowFullScreen;
             SDL_SetWindowFullscreen(mWindow, mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
             SDL_SetWindowBordered(mWindow, mWindowFullScreen ? SDL_FALSE : SDL_TRUE);

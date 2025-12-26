@@ -133,7 +133,7 @@ void Picker::initDrawPushConstants() {
 void Picker::initPickPushConstants() { mPickPushConstants.pickerBuffer = mRenderer->mCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer)); }
 
 void Picker::changeImguizmoOperation() {
-    switch(mImguizmoOperation) {
+    switch (mImguizmoOperation) {
         case ImGuizmo::TRANSLATE:
             mImguizmoOperation = ImGuizmo::ROTATE;
             break;
@@ -149,7 +149,7 @@ void Picker::changeImguizmoOperation() {
 }
 
 void Picker::imguizmoFrame() const {
-    if(mClickedInstance == nullptr) return;
+    if (mClickedInstance == nullptr) return;
 
     ImGuizmo::BeginFrame();
     ImGuizmo::SetOrthographic(false);
@@ -159,7 +159,7 @@ void Picker::imguizmoFrame() const {
     mRenderer->mScene.mPerspective.mData.proj[1][1] *= -1;  // Flip Y-axis in projection for ImGui coordinate system
     ImGuizmo::Manipulate(glm::value_ptr(mRenderer->mScene.mPerspective.mData.view), glm::value_ptr(mRenderer->mScene.mPerspective.mData.proj), mImguizmoOperation, ImGuizmo::WORLD, glm::value_ptr(mClickedInstance->mData.transformMatrix));
 
-    if(ImGuizmo::IsUsing()) {
+    if (ImGuizmo::IsUsing()) {
         mClickedInstance->mModel->mReloadInstances = true;
     }
 }

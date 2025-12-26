@@ -5,19 +5,19 @@
 
 void Node::refreshTransform(const glm::mat4& parentTransform) {
     mWorldTransform = parentTransform * mLocalTransform;
-    for(const auto& child : mChildren) child->refreshTransform(mWorldTransform);
+    for (const auto& child : mChildren) child->refreshTransform(mWorldTransform);
 }
 
 void Node::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model) {
-    for(const auto& child : mChildren) child->generateRenderItemsInstances(renderer, model);
+    for (const auto& child : mChildren) child->generateRenderItemsInstances(renderer, model);
 }
 
 void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model) {
-    for(auto& primitive : mMesh->mPrimitives) {
+    for (auto& primitive : mMesh->mPrimitives) {
         int pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
         int batchType = static_cast<uint32_t>(BatchType::Opaque);
-        switch(primitive.mMaterial->mPbrData.alphaMode) {
+        switch (primitive.mMaterial->mPbrData.alphaMode) {
             case fastgltf::AlphaMode::Opaque:
                 batchType = static_cast<uint32_t>(BatchType::Opaque);
                 break;
@@ -37,7 +37,7 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
 
         uint32_t renderItemIndex = static_cast<uint32_t>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
         uint32_t instanceIndex = model->mMainFirstInstance;
-        for(int i = 0; i < model->mInstances.size(); i++) {
+        for (int i = 0; i < model->mInstances.size(); i++) {
             renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderInstances.emplace_back(renderItemIndex, instanceIndex + i);
         }
     }

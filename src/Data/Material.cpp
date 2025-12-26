@@ -31,7 +31,7 @@ void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer) {
 
 void PbrMaterial::getMaterialPipeline() {
     PipelineOptions materialPipelineOptions{mPbrData.doubleSided, mPbrData.alphaMode};
-    if(auto it = mPipelinesCache.find(materialPipelineOptions); it != mPipelinesCache.end()) {
+    if (auto it = mPipelinesCache.find(materialPipelineOptions); it != mPipelinesCache.end()) {
         mPipelineBundle = &it->second;
         return;
     }

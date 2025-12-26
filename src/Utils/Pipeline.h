@@ -19,7 +19,7 @@ struct PipelineBundle {
     PipelineBundle(PipelineBundle&& other) noexcept : id(other.id), pipeline(std::move(other.pipeline)), layout(std::move(other.layout)) {}
 
     PipelineBundle& operator=(PipelineBundle&& other) noexcept {
-        if(this != &other) {
+        if (this != &other) {
             pipeline = std::move(other.pipeline);
             layout = std::move(other.layout);
             id = other.id;

@@ -24,11 +24,11 @@ GLTFModel::GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath)
     data.loadFromFile(modelPath);
 
     auto type = fastgltf::determineGltfFileType(&data);
-    if(type == fastgltf::GltfType::Invalid) {
+    if (type == fastgltf::GltfType::Invalid) {
         LOG_ERROR(mRenderer->mLogger, "{} Failed to determine GLTF Container", mName);
     }
     auto load = (type == fastgltf::GltfType::glTF) ? (parser.loadGLTF(&data, modelPath.parent_path(), gltfOptions)) : (parser.loadBinaryGLTF(&data, modelPath.parent_path(), gltfOptions));
-    if(load) {
+    if (load) {
         gltf = std::move(load.get());
     } else {
         LOG_ERROR(mRenderer->mLogger, "{} Failed to load GLTF Model: {}", mName, fastgltf::to_underlying(load.error()));
@@ -42,7 +42,7 @@ GLTFModel::GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath)
 }
 
 vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter) {
-    switch(filter) {
+    switch (filter) {
         case fastgltf::Filter::Nearest:
         case fastgltf::Filter::NearestMipMapNearest:
         case fastgltf::Filter::NearestMipMapLinear:
@@ -57,7 +57,7 @@ vk::Filter GLTFModel::extractFilter(fastgltf::Filter filter) {
 }
 
 vk::SamplerMipmapMode GLTFModel::extractMipmapMode(fastgltf::Filter filter) {
-    switch(filter) {
+    switch (filter) {
         case fastgltf::Filter::NearestMipMapNearest:
         case fastgltf::Filter::LinearMipMapNearest:
             return vk::SamplerMipmapMode::eNearest;
@@ -70,7 +70,7 @@ vk::SamplerMipmapMode GLTFModel::extractMipmapMode(fastgltf::Filter filter) {
 }
 
 vk::SamplerAddressMode GLTFModel::extractAddressMode(fastgltf::Wrap wrap) {
-    switch(wrap) {
+    switch (wrap) {
         case fastgltf::Wrap::Repeat:
             return vk::SamplerAddressMode::eRepeat;
         case fastgltf::Wrap::ClampToEdge:
@@ -92,7 +92,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
                        assert(filePath.fileByteOffset == 0);
                        assert(filePath.uri.isLocalPath());
                        const std::string path(filePath.uri.path().begin(), filePath.uri.path().end());  // Thanks C++.
-                       if(unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4)) {
+                       if (unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4)) {
                            vk::Extent3D imagesize;
                            imagesize.width = width;
                            imagesize.height = height;
@@ -103,7 +103,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
                    },
                    // Image is loaded directly into a std::vector. If the texture is on base64, or if we instruct it to load external image files (fastgltf::Options::LoadExternalImages).
                    [&](const fastgltf::sources::Vector& vector) {
-                       if(unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<int>(vector.bytes.size()), &width, &height, &nrChannels, 4)) {
+                       if (unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<int>(vector.bytes.size()), &width, &height, &nrChannels, 4)) {
                            vk::Extent3D imagesize;
                            imagesize.width = width;
                            imagesize.height = height;
@@ -118,7 +118,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
                        auto& buffer = mAsset.buffers[bufferView.bufferIndex];
                        std::visit(fastgltf::visitor{
                                       [&](const fastgltf::sources::Vector& vector) {
-                                          if(unsigned char* data = stbi_load_from_memory(vector.bytes.data() + bufferView.byteOffset, static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4)) {
+                                          if (unsigned char* data = stbi_load_from_memory(vector.bytes.data() + bufferView.byteOffset, static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4)) {
                                               vk::Extent3D imagesize;
                                               imagesize.width = width;
                                               imagesize.height = height;
@@ -145,11 +145,11 @@ void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& reso
     constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
 
     resources.base = {&mRenderer->mResources.mDefaultImages.at(DefaultImage::White), mRenderer->mResources.getSampler(vk::SamplerCreateInfo())};
-    if(material.pbrData.baseColorTexture.has_value()) {
+    if (material.pbrData.baseColorTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.pbrData.baseColorTexture.value().textureIndex].samplerIndex;
-        if(imageIndex.has_value()) resources.base.image = &mImages[imageIndex.value()];
-        if(samplerIndex.has_value()) resources.base.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
+        if (imageIndex.has_value()) resources.base.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value()) resources.base.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
     }
 }
 
@@ -157,11 +157,11 @@ void GLTFModel::assignMetallicRoughness(MaterialConstants& constants, MaterialRe
     constants.metallicRoughnessFactor = glm::vec2(material.pbrData.metallicFactor, material.pbrData.roughnessFactor);
 
     resources.metallicRoughness = {&mRenderer->mResources.mDefaultImages.at(DefaultImage::White), mRenderer->mResources.getSampler(vk::SamplerCreateInfo())};
-    if(material.pbrData.metallicRoughnessTexture.has_value()) {
+    if (material.pbrData.metallicRoughnessTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.pbrData.metallicRoughnessTexture.value().textureIndex].samplerIndex;
-        if(imageIndex.has_value()) resources.metallicRoughness.image = &mImages[imageIndex.value()];
-        if(samplerIndex.has_value()) resources.metallicRoughness.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
+        if (imageIndex.has_value()) resources.metallicRoughness.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value()) resources.metallicRoughness.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
     }
 }
 
@@ -169,21 +169,21 @@ void GLTFModel::assignEmissive(MaterialConstants& constants, MaterialResources& 
     constants.emissiveFactor = glm::vec4(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2], 0);
 
     resources.emissive = {&mRenderer->mResources.mDefaultImages.at(DefaultImage::White), mRenderer->mResources.getSampler(vk::SamplerCreateInfo())};
-    if(material.emissiveTexture.has_value()) {
+    if (material.emissiveTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.emissiveTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.emissiveTexture.value().textureIndex].samplerIndex;
-        if(imageIndex.has_value()) resources.emissive.image = &mImages[imageIndex.value()];
-        if(samplerIndex.has_value()) resources.emissive.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
+        if (imageIndex.has_value()) resources.emissive.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value()) resources.emissive.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
     }
 }
 
 auto GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material) -> void {
     resources.normal = {&mRenderer->mResources.mDefaultImages.at(DefaultImage::White), mRenderer->mResources.getSampler(vk::SamplerCreateInfo())};
-    if(material.normalTexture.has_value()) {
+    if (material.normalTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.normalTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.normalTexture.value().textureIndex].samplerIndex;
-        if(imageIndex.has_value()) resources.normal.image = &mImages[imageIndex.value()];
-        if(samplerIndex.has_value()) resources.normal.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
+        if (imageIndex.has_value()) resources.normal.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value()) resources.normal.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
 
         constants.normalScale = material.normalTexture.value().scale;
     }
@@ -191,11 +191,11 @@ auto GLTFModel::assignNormal(MaterialConstants& constants, MaterialResources& re
 
 void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material) {
     resources.occlusion = {&mRenderer->mResources.mDefaultImages.at(DefaultImage::White), mRenderer->mResources.getSampler(vk::SamplerCreateInfo())};
-    if(material.occlusionTexture.has_value()) {
+    if (material.occlusionTexture.has_value()) {
         auto imageIndex = mAsset.textures[material.occlusionTexture.value().textureIndex].imageIndex;
         auto samplerIndex = mAsset.textures[material.occlusionTexture.value().textureIndex].samplerIndex;
-        if(imageIndex.has_value()) resources.occlusion.image = &mImages[imageIndex.value()];
-        if(samplerIndex.has_value()) resources.occlusion.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
+        if (imageIndex.has_value()) resources.occlusion.image = &mImages[imageIndex.value()];
+        if (samplerIndex.has_value()) resources.occlusion.sampler = mRenderer->mResources.getSampler(mSamplerCreateInfos[samplerIndex.value()]);
 
         constants.occlusionStrength = material.occlusionTexture.value().strength;
     }
@@ -222,7 +222,7 @@ void GLTFModel::initBuffers() {
 
 void GLTFModel::loadSamplerCreateInfos() {
     mSamplerCreateInfos.reserve(mAsset.samplers.size());
-    for(fastgltf::Sampler& sampler : mAsset.samplers) {
+    for (fastgltf::Sampler& sampler : mAsset.samplers) {
         vk::SamplerCreateInfo samplerCreateInfo;
         samplerCreateInfo.pNext = nullptr;
         samplerCreateInfo.maxLod = vk::LodClampNone;
@@ -242,7 +242,7 @@ void GLTFModel::loadSamplerCreateInfos() {
 void GLTFModel::loadImages() {
     mImages.reserve(mAsset.images.size());
     int id = 0;
-    for(fastgltf::Image& image : mAsset.images) {
+    for (fastgltf::Image& image : mAsset.images) {
         AllocatedImage newImage = loadImage(image);
         mRenderer->mCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
         mRenderer->mCore.labelResourceDebug(newImage.imageView, fmt::format("{}ImageView{}", mName, id).c_str());
@@ -259,11 +259,11 @@ void GLTFModel::loadMaterials() {
 
     mMaterials.reserve(mAsset.materials.size());
     int materialIndex = 0;
-    for(fastgltf::Material& mat : mAsset.materials) {
+    for (fastgltf::Material& mat : mAsset.materials) {
         auto newMat = PbrMaterial(mRenderer);
 
         auto matName = std::string(mat.name);
-        if(matName.empty()) {
+        if (matName.empty()) {
             matName = fmt::format("{}", materialIndex);
         }
         newMat.mName = fmt::format("{}_mat{}", mName, matName);
@@ -300,7 +300,7 @@ void GLTFModel::loadMeshes() {
 
     uint32_t boundsOffset = 0;
     mMeshes.reserve(mAsset.meshes.size());
-    for(fastgltf::Mesh& mesh : mAsset.meshes) {
+    for (fastgltf::Mesh& mesh : mAsset.meshes) {
         Mesh newMesh;
 
         newMesh.mName = fmt::format("{}{}", mName, mesh.name);
@@ -309,7 +309,7 @@ void GLTFModel::loadMeshes() {
         indices.clear();
         vertices.clear();
 
-        for(auto&& p : mesh.primitives) {
+        for (auto&& p : mesh.primitives) {
             Primitive newPrimitive;
             newPrimitive.mRelativeFirstIndex = static_cast<uint32_t>(indices.size());
             newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
@@ -337,13 +337,13 @@ void GLTFModel::loadMeshes() {
 
             // Load vertex normals
             auto normals = p.findAttribute("NORMAL");
-            if(normals != p.attributes.end()) {
+            if (normals != p.attributes.end()) {
                 fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second], [&](glm::vec3 n, size_t pos) { vertices[vertexStartOffset + pos].normal = n; });
             }
 
             // Load UVs
             auto uv = p.findAttribute("TEXCOORD_0");
-            if(uv != p.attributes.end()) {
+            if (uv != p.attributes.end()) {
                 fastgltf::iterateAccessorWithIndex<glm::vec2>(mAsset, mAsset.accessors[uv->second], [&](glm::vec2 uv, size_t pos) {
                     vertices[vertexStartOffset + pos].uv_x = uv.x;
                     vertices[vertexStartOffset + pos].uv_y = uv.y;
@@ -352,11 +352,11 @@ void GLTFModel::loadMeshes() {
 
             // Load vertex colors
             auto colors = p.findAttribute("COLOR_0");
-            if(colors != p.attributes.end()) {
+            if (colors != p.attributes.end()) {
                 fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[colors->second], [&](glm::vec4 c, size_t pos) { vertices[vertexStartOffset + pos].color = c; });
             }
 
-            if(p.materialIndex.has_value())
+            if (p.materialIndex.has_value())
                 newPrimitive.mMaterial = &mMaterials[p.materialIndex.value()];
             else
                 newPrimitive.mMaterial = &mMaterials[0];
@@ -369,7 +369,7 @@ void GLTFModel::loadMeshes() {
 
         newMesh.mBounds.min = glm::vec4(vertices[0].position, 0.f);
         newMesh.mBounds.max = glm::vec4(vertices[0].position, 0.f);
-        for(auto& vertex : vertices) {
+        for (auto& vertex : vertices) {
             newMesh.mBounds.min = glm::min(newMesh.mBounds.min, glm::vec4(vertex.position, 0.f));
             newMesh.mBounds.max = glm::max(newMesh.mBounds.max, glm::vec4(vertex.position, 0.f));
         }
@@ -391,10 +391,10 @@ void GLTFModel::loadMeshes() {
 void GLTFModel::loadNodes() {
     int nodeIndex = 0;
     mNodes.reserve(mAsset.nodes.size());
-    for(fastgltf::Node& node : mAsset.nodes) {
+    for (fastgltf::Node& node : mAsset.nodes) {
         std::shared_ptr<Node> newNode;
 
-        if(node.meshIndex.has_value()) {
+        if (node.meshIndex.has_value()) {
             newNode = std::make_shared<MeshNode>();
             dynamic_cast<MeshNode*>(newNode.get())->mMesh = &mMeshes[*node.meshIndex];
         } else {
@@ -425,10 +425,10 @@ void GLTFModel::loadNodes() {
     LOG_INFO(mRenderer->mLogger, "{} Nodes Loaded", mName);
 
     // Setup hierarchy
-    for(int i = 0; i < mAsset.nodes.size(); i++) {
+    for (int i = 0; i < mAsset.nodes.size(); i++) {
         fastgltf::Node& assetNode = mAsset.nodes[i];
         std::shared_ptr<Node> localNode = mNodes[i];
-        for(auto& nodeChildIndex : assetNode.children) {
+        for (auto& nodeChildIndex : assetNode.children) {
             localNode->mChildren.push_back(mNodes[nodeChildIndex]);
             mNodes[nodeChildIndex]->mParent = localNode;
         }
@@ -436,8 +436,8 @@ void GLTFModel::loadNodes() {
     LOG_INFO(mRenderer->mLogger, "{} Nodes Hierarchy Established", mName);
 
     // Find the top nodes, with no parents
-    for(auto& node : mNodes) {
-        if(node->mParent.lock() == nullptr) {
+    for (auto& node : mNodes) {
+        if (node->mParent.lock() == nullptr) {
             mTopNodes.push_back(node);
             node->refreshTransform(glm::mat4{1.f});
         }
@@ -450,7 +450,7 @@ void GLTFModel::loadNodes() {
 void GLTFModel::loadBoundsBuffer() {
     const vk::DeviceSize boundsSize = mMeshes.size() * sizeof(AABB);
     std::vector<AABB> boundsVector;
-    for(const auto& mesh : mMeshes) {
+    for (const auto& mesh : mMeshes) {
         boundsVector.emplace_back(mesh.mBounds);
     }
 
@@ -526,7 +526,7 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 }
 
 void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector) {
-    for(int i = 0; i < nodesVector.size(); i++) {
+    for (int i = 0; i < nodesVector.size(); i++) {
         std::memcpy(static_cast<char*>(mRenderer->mResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof(glm::mat4), &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
     }
 
@@ -561,13 +561,13 @@ void GLTFModel::createInstanceAtCamera(Camera& camera) {
 }
 
 void GLTFModel::reloadInstances() {
-    if(mInstances.empty()) {
+    if (mInstances.empty()) {
         mReloadInstances = false;
         return;
     }
 
     int dstOffset = 0;
-    for(auto& instance : mInstances) {
+    for (auto& instance : mInstances) {
         std::memcpy(static_cast<char*>(mInstancesBuffer.info.pMappedData) + dstOffset, &instance.mData, sizeof(InstanceData));
         dstOffset += sizeof(InstanceData);
     }
@@ -580,7 +580,7 @@ void GLTFModel::reloadInstances() {
 
 void GLTFModel::markDelete() {
     mDeleteSignal = mRenderer->mInfrastructure.mFrameNumber + FRAME_OVERLAP;
-    for(auto& instance : mInstances) {
+    for (auto& instance : mInstances) {
         instance.markDelete();
     }
     LOG_INFO(mRenderer->mLogger, "{} Marked to Delete", mName);
@@ -600,8 +600,8 @@ void GLTFModel::load() {
 Renderer* GLTFModel::getRenderer() const { return mRenderer; }
 
 void GLTFModel::generateRenderItemsInstances() {
-    if(!mDeleteSignal.has_value()) {
-        for(auto& n : mTopNodes) {
+    if (!mDeleteSignal.has_value()) {
+        for (auto& n : mTopNodes) {
             n->generateRenderItemsInstances(mRenderer, this);
         }
         LOG_INFO(mRenderer->mLogger, "{} Render Items Generated", mName);

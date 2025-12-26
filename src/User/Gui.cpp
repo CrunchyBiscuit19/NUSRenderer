@@ -22,27 +22,27 @@ void Gui::CameraGuiComponent::elements() {
 }
 
 void Gui::SceneGuiComponent::elements() {
-    for(auto& model : mRenderer->mScene.mModelsCache | std::views::values) {
+    for (auto& model : mRenderer->mScene.mModelsCache | std::views::values) {
         const auto name = model.mName;
         ImGui::PushStyleColor(ImGuiCol_Header, static_cast<ImVec4>(IMGUI_HEADER_GREEN));
-        if(ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            if(ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
+        if (ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Button(fmt::format("Add Instance##{}", name).c_str())) {
                 model.createInstanceAtCamera(mRenderer->mCamera);
             }
             ImGui::SameLine();
             ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(IMGUI_BUTTON_RED));
-            if(ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
+            if (ImGui::Button(fmt::format("Delete Model##{}", name).c_str())) {
                 model.markDelete();
             }
             ImGui::PopStyleColor();
 
-            for(auto& instance : model.mInstances) {
-                if(ImGui::TreeNode(fmt::format("{}-{}", model.mName, instance.mId).c_str())) {
+            for (auto& instance : model.mInstances) {
+                if (ImGui::TreeNode(fmt::format("{}-{}", model.mName, instance.mId).c_str())) {
                     ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
                     glm::vec3 translation, rotation, scale;
                     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
-                    for(int i = 0; i < 3; i++) {
+                    for (int i = 0; i < 3; i++) {
                         rotation[i] = glm::radians(rotation[i]);
                     }
                     ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.3f", ImGuiInputTextFlags_ReadOnly);
@@ -57,24 +57,24 @@ void Gui::SceneGuiComponent::elements() {
         ImGui::PopStyleColor();
     }
 
-    if(ImGui::CollapsingHeader("Sunlight", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Sunlight", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.ambientColor));
         ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightColor));
         ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
         ImGui::InputFloat("Sunlight Power", &mRenderer->mScene.mPerspective.mData.sunlightDirection[3]);
     }
-    if(ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if(ImGui::Button("Change Skybox")) {
+    if (ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Change Skybox")) {
             mGui->mSelectSkyboxFileBrowser.Open();
         }
         ImGui::SameLine();
-        if(ImGui::Button("Toggle Skybox")) {
+        if (ImGui::Button("Toggle Skybox")) {
             mRenderer->mScene.mSkybox.mActive = !mRenderer->mScene.mSkybox.mActive;
         }
     }
 
     mGui->mSelectSkyboxFileBrowser.Display();
-    if(mGui->mSelectSkyboxFileBrowser.HasSelected()) {
+    if (mGui->mSelectSkyboxFileBrowser.HasSelected()) {
         std::filesystem::path selectedSkyboxDir = mGui->mSelectSkyboxFileBrowser.GetSelected();
         mRenderer->mScene.mSkybox.updateImage(selectedSkyboxDir);
         mGui->mSelectSkyboxFileBrowser.ClearSelected();
@@ -82,7 +82,7 @@ void Gui::SceneGuiComponent::elements() {
 }
 
 void Gui::MiscGuiComponent::elements() {
-    if(ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("VALIDATION LAYERS: %s", (USE_VALIDATION_LAYERS ? "ON" : "OFF"));
         ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrameTime);
         ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
@@ -91,7 +91,7 @@ void Gui::MiscGuiComponent::elements() {
         ImGui::Text("Pre-Cull Render Instances: %i", mRenderer->mStats.mPreCullRenderInstancesCount);
         ImGui::Text("Post-Cull Render Instances: %i", *static_cast<uint32_t*>(mRenderer->mStats.mPostCullRenderInstancesCountBuffer.info.pMappedData));
     }
-    if(ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("[G] Toggle GUI");
         ImGui::Text("[Alt + Enter] Toggle Borderless Fullscreen");
         ImGui::Text("[C] Change Camera Mode");
@@ -126,12 +126,12 @@ void Gui::createDockSpace() {
 }
 
 void Gui::createRendererOptionsWindow() const {
-    if(mCollapsed) return;
-    if(ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
-        if(!ImGui::IsWindowCollapsed()) {
-            if(ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown)) {
-                for(auto& component : mGuiComponents) {
-                    if(ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton)) {
+    if (mCollapsed) return;
+    if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
+        if (!ImGui::IsWindowCollapsed()) {
+            if (ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown)) {
+                for (auto& component : mGuiComponents) {
+                    if (ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton)) {
                         component->elements();
                         ImGui::EndTabItem();
                     }
@@ -209,7 +209,7 @@ void Gui::initLinearColors() {
     // Go through every colour and convert it to linear
     // Hack solution to not make it double gamma corrected
     ImGuiStyle& style = ImGui::GetStyle();
-    for(int i = 0; i < ImGuiCol_COUNT; i++) {
+    for (int i = 0; i < ImGuiCol_COUNT; i++) {
         /*float linear = (srgb <= 0.04045f) ? srgb / 12.92f : pow((srgb + 0.055f)
          * / 1.055f, 2.4f);*/
         ImVec4& col = style.Colors[i];
@@ -243,15 +243,15 @@ void Gui::initKeyBinding() {
         const SDL_Keymod modState = SDL_GetModState();
         const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 
-        if(keyState[SDL_SCANCODE_G] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+        if (keyState[SDL_SCANCODE_G] && e.type == SDL_KEYDOWN && !e.key.repeat) {
             mCollapsed = !mCollapsed;
         }
 
-        if(keyState[SDL_SCANCODE_T] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+        if (keyState[SDL_SCANCODE_T] && e.type == SDL_KEYDOWN && !e.key.repeat) {
             mRenderer->mScene.mPicker.changeImguizmoOperation();
         }
 
-        if((modState & KMOD_CTRL) && keyState[SDL_SCANCODE_I] && e.type == SDL_KEYDOWN && !e.key.repeat) {
+        if ((modState & KMOD_CTRL) && keyState[SDL_SCANCODE_I] && e.type == SDL_KEYDOWN && !e.key.repeat) {
             mRenderer->mGui.mSelectModelFileBrowser.Open();
             mRenderer->mCamera.mRelativeMode = SDL_FALSE;
         }
@@ -268,7 +268,7 @@ void Gui::updateFrame() {
     mRenderer->mScene.mPicker.imguizmoFrame();
 
     mSelectModelFileBrowser.Display();
-    if(mSelectModelFileBrowser.HasSelected()) {
+    if (mSelectModelFileBrowser.HasSelected()) {
         auto selectedFiles = mSelectModelFileBrowser.GetMultiSelected();
         mRenderer->mScene.loadModels(selectedFiles);
         mSelectModelFileBrowser.ClearSelected();

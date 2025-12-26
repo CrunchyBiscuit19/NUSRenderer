@@ -46,7 +46,7 @@ void ImmSubmit::queuedSubmit() {
 
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     mCommandBuffer.begin(cmdBeginInfo);
-    for(auto& callback : mCallbacks) {
+    for (auto& callback : mCallbacks) {
         callback(mRenderer, *mCommandBuffer);
     }
     mCommandBuffer.end();

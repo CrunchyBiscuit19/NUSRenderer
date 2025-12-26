@@ -42,8 +42,8 @@ void RendererResources::initDefaultImages() {
     constexpr uint32_t blue = std::byteswap(0x769DDBFF);
     mDefaultImages.try_emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled));
     std::array<uint32_t, 16 * 16> pixels;
-    for(int x = 0; x < 16; x++) {
-        for(int y = 0; y < 16; y++) {
+    for (int x = 0; x < 16; x++) {
+        for (int y = 0; y < 16; y++) {
             constexpr uint32_t magenta = std::byteswap(0xFF00FFFF);
             pixels[static_cast<std::array<uint32_t, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
         }
@@ -82,7 +82,7 @@ void RendererResources::initDefaultSampler() {
 vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInfo) {
     SamplerOptions samplerOptions(samplerCreateInfo);
     mSamplersCache.try_emplace(samplerOptions, mRenderer->mCore.mDevice, samplerCreateInfo);
-    if(auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
+    if (auto it = mSamplersCache.find(samplerOptions); it != mSamplersCache.end()) {
         return *it->second;
     }
 
@@ -92,7 +92,7 @@ vk::Sampler RendererResources::getSampler(vk::SamplerCreateInfo samplerCreateInf
 
 vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath) {
     auto shaderFileName = shaderPath.filename().string();
-    if(auto it = mShadersCache.find(shaderFileName); it != mShadersCache.end()) {
+    if (auto it = mShadersCache.find(shaderFileName); it != mShadersCache.end()) {
         return *it->second;
     }
 
@@ -140,10 +140,10 @@ AddressedBuffer RendererResources::createAddressedBuffer(size_t allocSize, vk::B
 
 AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap) const {
     vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);
-    if(mipmapped) {
+    if (mipmapped) {
         newImageCreateInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
     }
-    if(cubemap) {
+    if (cubemap) {
         newImageCreateInfo.arrayLayers = NUMBER_OF_CUBEMAP_FACES;
         newImageCreateInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
     }
@@ -162,10 +162,10 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
     newImage.allocator = &mRenderer->mCore.mVmaAllocator;
 
     auto aspectFlag = vk::ImageAspectFlagBits::eColor;
-    if(format == vk::Format::eD32Sfloat) aspectFlag = vk::ImageAspectFlagBits::eDepth;
+    if (format == vk::Format::eD32Sfloat) aspectFlag = vk::ImageAspectFlagBits::eDepth;
     vk::ImageViewCreateInfo newImageViewCreateInfo = vkhelper::imageViewCreateInfo(format, *newImage.image, aspectFlag);
     newImageViewCreateInfo.subresourceRange.levelCount = newImageCreateInfo.mipLevels;
-    if(cubemap) {
+    if (cubemap) {
         newImageViewCreateInfo.subresourceRange.layerCount = NUMBER_OF_CUBEMAP_FACES;
         newImageViewCreateInfo.viewType = vk::ImageViewType::eCube;
     }
@@ -191,7 +191,7 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 
         std::vector<vk::BufferImageCopy> copyRegions;
         copyRegions.reserve(numFaces);
-        for(int face = 0; face < numFaces; face++) {
+        for (int face = 0; face < numFaces; face++) {
             vk::BufferImageCopy copyRegion;
             copyRegion.bufferOffset = face * faceSize;
             copyRegion.bufferRowLength = 0;
@@ -206,7 +206,7 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 
         cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegions);
 
-        if(mipmapped)
+        if (mipmapped)
             vkhelper::generateMipmaps(cmd, *newImage.image, vk::Extent2D{newImage.imageExtent.width, newImage.imageExtent.height}, cubemap);
         else {
             vkhelper::transitionImage(cmd, *newImage.image, vk::PipelineStageFlagBits2KHR::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead,
@@ -247,7 +247,7 @@ RendererResources::RendererResources(RendererResources&& other) noexcept
       mShadersCache(std::move(other.mShadersCache)) {}
 
 RendererResources& RendererResources::operator=(RendererResources&& other) noexcept {
-    if(this != &other) {
+    if (this != &other) {
         mRenderer = std::move(other.mRenderer);
         mImageStagingBuffer = std::move(other.mImageStagingBuffer);
         mMeshStagingBuffer = std::move(other.mMeshStagingBuffer);

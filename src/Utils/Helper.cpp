@@ -91,7 +91,7 @@ vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk
     colorAttachment.loadOp = loadOp;
     colorAttachment.storeOp = storeOp;
     colorAttachment.clearValue = CLEAR_COLOR;
-    if(resolveImageView.has_value()) {
+    if (resolveImageView.has_value()) {
         colorAttachment.resolveImageView = resolveImageView.value();
         colorAttachment.resolveMode = vk::ResolveModeFlagBits::eAverage;
         colorAttachment.resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal;
@@ -270,7 +270,7 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
     int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
     const int mipLevels = static_cast<int>(std::floor(std::log2(std::max(imageSize.width, imageSize.height)))) + 1;
 
-    for(int mip = 0; mip < mipLevels; mip++) {
+    for (int mip = 0; mip < mipLevels; mip++) {
         // Transition current mipmap level from eTransferDstOptimal to eTransferSrcOptimal
         vk::Extent2D halfSize = imageSize;
         halfSize.width /= 2;
@@ -296,9 +296,9 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
         // Add another barrier to all the mipmap levels to transition the image into VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
         cmd.pipelineBarrier2(depInfo);
 
-        for(int face = 0; face < numFaces; face++) {
+        for (int face = 0; face < numFaces; face++) {
             // Copy the image from previous level into next level at half resolution (except if at last level).
-            if(mip < mipLevels - 1) {
+            if (mip < mipLevels - 1) {
                 vk::ImageBlit2 blitRegion{};
                 blitRegion.pNext = nullptr;
                 blitRegion.srcOffsets[1].x = imageSize.width;
@@ -338,7 +338,7 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
 
 int vkhelper::getFormatTexelSize(vk::Format format) {
     int bytesPerTexel = 0;
-    switch(format) {
+    switch (format) {
         case vk::Format::eR8G8B8A8Srgb:
         case vk::Format::eR8G8B8A8Unorm:
             bytesPerTexel = 4;
