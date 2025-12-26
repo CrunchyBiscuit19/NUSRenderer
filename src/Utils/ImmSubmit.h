@@ -16,7 +16,13 @@ class ImmSubmit {
 
     ImmSubmit(Renderer* renderer);
 
-    ImmSubmit(ImmSubmit&& other) noexcept : mRenderer(other.mRenderer), mCommandPool(std::move(other.mCommandPool)), mCommandBuffer(std::move(other.mCommandBuffer)), mFence(std::move(other.mFence)) { other.mRenderer = nullptr; }
+    ImmSubmit(ImmSubmit&& other) noexcept
+        : mRenderer(other.mRenderer),
+          mCommandPool(std::move(other.mCommandPool)),
+          mCommandBuffer(std::move(other.mCommandBuffer)),
+          mFence(std::move(other.mFence)) {
+        other.mRenderer = nullptr;
+    }
 
     ImmSubmit& operator=(ImmSubmit&& other) noexcept {
         if (this != &other) {

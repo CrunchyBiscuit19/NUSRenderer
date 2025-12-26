@@ -41,10 +41,18 @@ struct Transition {
     vk::ImageLayout currentLayout;
     vk::ImageLayout newLayout;
 
-    Transition(vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, vk::ImageLayout newLayout)
-        : srcStageMask(srcStageMask), srcAccessMask(srcAccessMask), dstStageMask(dstStageMask), dstAccessMask(dstAccessMask), currentLayout(currentLayout), newLayout(newLayout) {}
+    Transition(vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask,
+               vk::ImageLayout currentLayout, vk::ImageLayout newLayout)
+        : srcStageMask(srcStageMask),
+          srcAccessMask(srcAccessMask),
+          dstStageMask(dstStageMask),
+          dstAccessMask(dstAccessMask),
+          currentLayout(currentLayout),
+          newLayout(newLayout) {}
 
-    void execute(vk::CommandBuffer cmd, vk::Image image) { vkhelper::transitionImage(cmd, image, srcStageMask, srcAccessMask, dstStageMask, dstAccessMask, currentLayout, newLayout); }
+    void execute(vk::CommandBuffer cmd, vk::Image image) {
+        vkhelper::transitionImage(cmd, image, srcStageMask, srcAccessMask, dstStageMask, dstAccessMask, currentLayout, newLayout);
+    }
 };
 
 class Renderer {

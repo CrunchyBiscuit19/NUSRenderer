@@ -10,7 +10,8 @@
 #include <fastgltf/glm_element_traits.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-GLTFModel::GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath) : mRenderer(renderer), mModelDescriptorAllocator(DescriptorAllocatorGrowable(renderer)) {
+GLTFModel::GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath)
+    : mRenderer(renderer), mModelDescriptorAllocator(DescriptorAllocatorGrowable(renderer)) {
     mName = modelPath.stem().string();
     LOG_INFO(mRenderer->mLogger, "{} Open GLTF / GLB File", mName);
 
@@ -19,7 +20,8 @@ GLTFModel::GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath)
     fastgltf::Parser parser{};
     fastgltf::Asset gltf;
     fastgltf::GltfDataBuffer data;
-    constexpr auto gltfOptions = fastgltf::Options::DontRequireValidAssetMember | fastgltf::Options::AllowDouble | fastgltf::Options::LoadGLBBuffers | fastgltf::Options::LoadExternalBuffers | fastgltf::Options::LoadExternalImages;
+    constexpr auto gltfOptions = fastgltf::Options::DontRequireValidAssetMember | fastgltf::Options::AllowDouble | fastgltf::Options::LoadGLBBuffers |
+                                 fastgltf::Options::LoadExternalBuffers | fastgltf::Options::LoadExternalImages;
 
     data.loadFromFile(modelPath);
 
@@ -27,7 +29,8 @@ GLTFModel::GLTFModel(Renderer* renderer, const std::filesystem::path& modelPath)
     if (type == fastgltf::GltfType::Invalid) {
         LOG_ERROR(mRenderer->mLogger, "{} Failed to determine GLTF Container", mName);
     }
-    auto load = (type == fastgltf::GltfType::glTF) ? (parser.loadGLTF(&data, modelPath.parent_path(), gltfOptions)) : (parser.loadBinaryGLTF(&data, modelPath.parent_path(), gltfOptions));
+    auto load = (type == fastgltf::GltfType::glTF) ? (parser.loadGLTF(&data, modelPath.parent_path(), gltfOptions))
+                                                   : (parser.loadBinaryGLTF(&data, modelPath.parent_path(), gltfOptions));
     if (load) {
         gltf = std::move(load.get());
     } else {
@@ -86,54 +89,58 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
     AllocatedImage newImage;
     int width, height, nrChannels;
 
-    std::visit(fastgltf::visitor{
-                   // Image stored outside of GLTF / GLB file.
-                   [&](const fastgltf::sources::URI& filePath) {
-                       assert(filePath.fileByteOffset == 0);
-                       assert(filePath.uri.isLocalPath());
-                       const std::string path(filePath.uri.path().begin(), filePath.uri.path().end());  // Thanks C++.
-                       if (unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4)) {
-                           vk::Extent3D imagesize;
-                           imagesize.width = width;
-                           imagesize.height = height;
-                           imagesize.depth = 1;
-                           newImage = mRenderer->mResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, true);
-                           stbi_image_free(data);
-                       }
-                   },
-                   // Image is loaded directly into a std::vector. If the texture is on base64, or if we instruct it to load external image files (fastgltf::Options::LoadExternalImages).
-                   [&](const fastgltf::sources::Vector& vector) {
-                       if (unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<int>(vector.bytes.size()), &width, &height, &nrChannels, 4)) {
-                           vk::Extent3D imagesize;
-                           imagesize.width = width;
-                           imagesize.height = height;
-                           imagesize.depth = 1;
-                           newImage = mRenderer->mResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, true);
-                           stbi_image_free(data);
-                       }
-                   },
-                   // Image embedded into the binary GLB file.
-                   [&](const fastgltf::sources::BufferView& view) {
-                       const auto& bufferView = mAsset.bufferViews[view.bufferViewIndex];
-                       auto& buffer = mAsset.buffers[bufferView.bufferIndex];
-                       std::visit(fastgltf::visitor{
-                                      [&](const fastgltf::sources::Vector& vector) {
-                                          if (unsigned char* data = stbi_load_from_memory(vector.bytes.data() + bufferView.byteOffset, static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4)) {
-                                              vk::Extent3D imagesize;
-                                              imagesize.width = width;
-                                              imagesize.height = height;
-                                              imagesize.depth = 1;
-                                              newImage = mRenderer->mResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, true);
-                                              stbi_image_free(data);
-                                          }
-                                      },
-                                      [](const auto& arg) {},
-                                  },
-                                  buffer.data);
-                   },
-                   [](const auto& arg) {},
-               },
-               image.data);
+    std::visit(
+        fastgltf::visitor{
+            // Image stored outside of GLTF / GLB file.
+            [&](const fastgltf::sources::URI& filePath) {
+                assert(filePath.fileByteOffset == 0);
+                assert(filePath.uri.isLocalPath());
+                const std::string path(filePath.uri.path().begin(), filePath.uri.path().end());  // Thanks C++.
+                if (unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 4)) {
+                    vk::Extent3D imagesize;
+                    imagesize.width = width;
+                    imagesize.height = height;
+                    imagesize.depth = 1;
+                    newImage = mRenderer->mResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, true);
+                    stbi_image_free(data);
+                }
+            },
+            // Image is loaded directly into a std::vector. If the texture is on base64, or if we instruct it to load external image files
+            // (fastgltf::Options::LoadExternalImages).
+            [&](const fastgltf::sources::Vector& vector) {
+                if (unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<int>(vector.bytes.size()), &width, &height, &nrChannels, 4)) {
+                    vk::Extent3D imagesize;
+                    imagesize.width = width;
+                    imagesize.height = height;
+                    imagesize.depth = 1;
+                    newImage = mRenderer->mResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, true);
+                    stbi_image_free(data);
+                }
+            },
+            // Image embedded into the binary GLB file.
+            [&](const fastgltf::sources::BufferView& view) {
+                const auto& bufferView = mAsset.bufferViews[view.bufferViewIndex];
+                auto& buffer = mAsset.buffers[bufferView.bufferIndex];
+                std::visit(fastgltf::visitor{
+                               [&](const fastgltf::sources::Vector& vector) {
+                                   if (unsigned char* data = stbi_load_from_memory(vector.bytes.data() + bufferView.byteOffset,
+                                                                                   static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4)) {
+                                       vk::Extent3D imagesize;
+                                       imagesize.width = width;
+                                       imagesize.height = height;
+                                       imagesize.depth = 1;
+                                       newImage = mRenderer->mResources.createImage(data, imagesize, vk::Format::eR8G8B8A8Srgb,
+                                                                                    vk::ImageUsageFlagBits::eSampled, true);
+                                       stbi_image_free(data);
+                                   }
+                               },
+                               [](const auto& arg) {},
+                           },
+                           buffer.data);
+            },
+            [](const auto& arg) {},
+        },
+        image.data);
     // Move the lambda taking const auto to the bottom. Otherwise it always get runs and the other lambdas don't.
     // Needs to be exactly const auto&?
     // No idea why it's even needed in the first place.
@@ -142,7 +149,8 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
 }
 
 void GLTFModel::assignBase(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material) {
-    constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2], material.pbrData.baseColorFactor[3]);
+    constants.baseFactor = glm::vec4(material.pbrData.baseColorFactor[0], material.pbrData.baseColorFactor[1], material.pbrData.baseColorFactor[2],
+                                     material.pbrData.baseColorFactor[3]);
 
     resources.base = {&mRenderer->mResources.mDefaultImages.at(DefaultImage::White), mRenderer->mResources.getSampler(vk::SamplerCreateInfo())};
     if (material.pbrData.baseColorTexture.has_value()) {
@@ -202,20 +210,27 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
 }
 
 void GLTFModel::initBuffers() {
-    mMaterialConstantsBuffer =
-        mRenderer->mResources.createBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
+        MAX_MATERIALS * sizeof(MaterialConstants),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
 
-    mNodeTransformsBuffer = mRenderer->mResources.createBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mNodeTransformsBuffer = mRenderer->mResources.createBuffer(
+        MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
 
-    mInstancesBuffer = mRenderer->mResources.createBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    mInstancesBuffer = mRenderer->mResources.createBuffer(
+        MAX_INSTANCES * sizeof(InstanceData),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
     mRenderer->mCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 
-    mBoundsBuffer = mRenderer->mResources.createBuffer(MAX_MESHES * sizeof(AABB), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    mBoundsBuffer = mRenderer->mResources.createBuffer(
+        MAX_MESHES * sizeof(AABB), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_MEMORY_USAGE_CPU_TO_GPU);
     mRenderer->mCore.labelResourceDebug(mBoundsBuffer.buffer, fmt::format("{}BoundsBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Created", mName);
 }
@@ -338,7 +353,8 @@ void GLTFModel::loadMeshes() {
             // Load vertex normals
             auto normals = p.findAttribute("NORMAL");
             if (normals != p.attributes.end()) {
-                fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second], [&](glm::vec3 n, size_t pos) { vertices[vertexStartOffset + pos].normal = n; });
+                fastgltf::iterateAccessorWithIndex<glm::vec3>(mAsset, mAsset.accessors[normals->second],
+                                                              [&](glm::vec3 n, size_t pos) { vertices[vertexStartOffset + pos].normal = n; });
             }
 
             // Load UVs
@@ -353,7 +369,8 @@ void GLTFModel::loadMeshes() {
             // Load vertex colors
             auto colors = p.findAttribute("COLOR_0");
             if (colors != p.attributes.end()) {
-                fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[colors->second], [&](glm::vec4 c, size_t pos) { vertices[vertexStartOffset + pos].color = c; });
+                fastgltf::iterateAccessorWithIndex<glm::vec4>(mAsset, mAsset.accessors[colors->second],
+                                                              [&](glm::vec4 c, size_t pos) { vertices[vertexStartOffset + pos].color = c; });
             }
 
             if (p.materialIndex.has_value())
@@ -404,20 +421,21 @@ void GLTFModel::loadNodes() {
         newNode->mRelativeNodeIndex = nodeIndex;
 
         // First function if it's a mat4 transform, second function if it's separate transform / rotate / scale quaternion or vec3
-        std::visit(fastgltf::visitor{[&](const fastgltf::Node::TransformMatrix& matrix) { std::memcpy(&newNode->mLocalTransform, matrix.data(), sizeof(matrix)); },
-                                     [&](const fastgltf::Node::TRS& transform) {
-                                         const glm::vec3 tl(transform.translation[0], transform.translation[1], transform.translation[2]);
-                                         const glm::quat rot(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
-                                         const glm::vec3 sc(transform.scale[0], transform.scale[1], transform.scale[2]);
+        std::visit(
+            fastgltf::visitor{[&](const fastgltf::Node::TransformMatrix& matrix) { std::memcpy(&newNode->mLocalTransform, matrix.data(), sizeof(matrix)); },
+                              [&](const fastgltf::Node::TRS& transform) {
+                                  const glm::vec3 tl(transform.translation[0], transform.translation[1], transform.translation[2]);
+                                  const glm::quat rot(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+                                  const glm::vec3 sc(transform.scale[0], transform.scale[1], transform.scale[2]);
 
-                                         const glm::mat4 tm = glm::translate(glm::mat4(1.f), tl);
-                                         const glm::mat4 rm = glm::toMat4(rot);
-                                         const glm::mat4 sm = glm::scale(glm::mat4(1.f), sc);
+                                  const glm::mat4 tm = glm::translate(glm::mat4(1.f), tl);
+                                  const glm::mat4 rm = glm::toMat4(rot);
+                                  const glm::mat4 sm = glm::scale(glm::mat4(1.f), sc);
 
-                                         glm::mat4 localTransform = tm * rm * sm;
-                                         newNode->mLocalTransform = localTransform;
-                                     }},
-                   node.transform);
+                                  glm::mat4 localTransform = tm * rm * sm;
+                                  newNode->mLocalTransform = localTransform;
+                              }},
+            node.transform);
 
         mNodes.push_back(newNode);
         nodeIndex++;
@@ -462,11 +480,13 @@ void GLTFModel::loadBoundsBuffer() {
     boundsCopy.size = boundsSize;
 
     mRenderer->mImmSubmit.individualSubmit([this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mBoundsStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mBoundsStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost,
+                                              vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mBoundsStagingBuffer.buffer, *mBoundsBuffer.buffer, boundsCopy);
 
-        vkhelper::createBufferPipelineBarrier(cmd, *mBoundsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *mBoundsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                                              vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Uploading", mName);
@@ -476,9 +496,13 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
     const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
     const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
 
-    mesh.mVertexBuffer = mRenderer->mResources.createBuffer(srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh.mVertexBuffer = mRenderer->mResources.createBuffer(
+        srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mesh.mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh.mName).c_str());
-    mesh.mIndexBuffer = mRenderer->mResources.createBuffer(srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mesh.mIndexBuffer = mRenderer->mResources.createBuffer(
+        srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mesh.mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh.mName).c_str());
 
     std::memcpy(static_cast<char*>(mRenderer->mResources.mMeshStagingBuffer.info.pMappedData) + 0, srcVertexVector.data(), srcVertexVectorSize);
@@ -494,20 +518,24 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, 
     indexCopy.size = srcIndexVectorSize;
 
     mRenderer->mImmSubmit.individualSubmit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mMeshStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mMeshStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost,
+                                              vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mVertexBuffer.buffer, vertexCopy);
         cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mIndexBuffer.buffer, indexCopy);
 
-        vkhelper::createBufferPipelineBarrier(cmd, *mesh.mVertexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *mesh.mVertexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                                              vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
-        vkhelper::createBufferPipelineBarrier(cmd, *mesh.mIndexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *mesh.mIndexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                                              vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Model Buffer {} Uploading", mName, mesh.mId);
 }
 
 void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector) {
-    std::memcpy(mRenderer->mResources.mMaterialConstantsStagingBuffer.info.pMappedData, materialConstantsVector.data(), materialConstantsVector.size() * sizeof(MaterialConstants));
+    std::memcpy(mRenderer->mResources.mMaterialConstantsStagingBuffer.info.pMappedData, materialConstantsVector.data(),
+                materialConstantsVector.size() * sizeof(MaterialConstants));
 
     vk::BufferCopy materialConstantsCopy{};
     materialConstantsCopy.dstOffset = 0;
@@ -515,19 +543,21 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
     materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
     mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mMaterialConstantsStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer,
-                                              vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mMaterialConstantsStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost,
+                                              vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 
-        vkhelper::createBufferPipelineBarrier(cmd, *mMaterialConstantsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *mMaterialConstantsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                                              vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 }
 
 void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector) {
     for (int i = 0; i < nodesVector.size(); i++) {
-        std::memcpy(static_cast<char*>(mRenderer->mResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof(glm::mat4), &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
+        std::memcpy(static_cast<char*>(mRenderer->mResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof(glm::mat4),
+                    &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
     }
 
     vk::BufferCopy nodeTransformsCopy{};
@@ -536,12 +566,13 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
     nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
 
     mRenderer->mImmSubmit.individualSubmit([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mNodeTransformsStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer,
-                                              vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *renderer->mResources.mNodeTransformsStagingBuffer.buffer, vk::PipelineStageFlagBits2::eHost,
+                                              vk::AccessFlagBits2::eHostWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
 
-        vkhelper::createBufferPipelineBarrier(cmd, *mNodeTransformsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        vkhelper::createBufferPipelineBarrier(cmd, *mNodeTransformsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                                              vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 }

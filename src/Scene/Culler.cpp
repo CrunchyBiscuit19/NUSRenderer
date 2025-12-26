@@ -37,7 +37,8 @@ void Culler::initPipeline() {
     cullPipelineBuilder.setShader(computeShaderModule);
     cullPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
-    mPipelineBundle = PipelineBundle(mRenderer->mInfrastructure.mLatestPipelineId++, cullPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mPipelineLayout);
+    mPipelineBundle =
+        PipelineBundle(mRenderer->mInfrastructure.mLatestPipelineId++, cullPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mPipelineLayout);
     mRenderer->mCore.labelResourceDebug(mPipelineBundle.pipeline, "CullPipeline");
     LOG_INFO(mRenderer->mLogger, "Cull Pipeline Created");
 }

@@ -18,7 +18,7 @@ UseTab: Never # Always use spaces for indentation
 # --- Other Common Settings ---
 
 # The maximum length of a line before clang-format wraps it.
-ColumnLimit: 250
+ColumnLimit: 160
 
 # Control spacing around pointers/references (e.g., int *x vs int* x)
 # The options are: None, Before, After, Both

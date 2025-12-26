@@ -101,13 +101,15 @@ void GraphicsPipelineBuilder::enableSampleShading() {
 
 void GraphicsPipelineBuilder::disableBlending() {
     // default write mask
-    mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    mColorBlendAttachment.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     // no blending
     mColorBlendAttachment.blendEnable = VK_FALSE;
 }
 
 void GraphicsPipelineBuilder::enableBlendingAdditive() {
-    mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    mColorBlendAttachment.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     mColorBlendAttachment.blendEnable = VK_TRUE;
     mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
     mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
@@ -118,7 +120,8 @@ void GraphicsPipelineBuilder::enableBlendingAdditive() {
 }
 
 void GraphicsPipelineBuilder::enableBlendingAlpha() {
-    mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    mColorBlendAttachment.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     mColorBlendAttachment.blendEnable = VK_TRUE;
     mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
     mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
@@ -129,7 +132,8 @@ void GraphicsPipelineBuilder::enableBlendingAlpha() {
 }
 
 void GraphicsPipelineBuilder::enableBlendingSkybox() {
-    mColorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    mColorBlendAttachment.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     mColorBlendAttachment.blendEnable = VK_TRUE;
     mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha;
     mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
@@ -173,7 +177,9 @@ void GraphicsPipelineBuilder::enableDepthTest(bool depthWriteEnable, vk::Compare
 
 ComputePipelineBuilder::ComputePipelineBuilder() {}
 
-void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader) { mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main"); }
+void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader) {
+    mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
+}
 
 vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device) {
     vk::ComputePipelineCreateInfo computePipelineInfo{};

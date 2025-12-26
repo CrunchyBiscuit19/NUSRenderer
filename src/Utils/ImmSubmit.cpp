@@ -6,7 +6,8 @@
 ImmSubmit::ImmSubmit(Renderer* renderer) : mRenderer(renderer), mCommandPool(nullptr), mCommandBuffer(nullptr), mFence(nullptr) {}
 
 void ImmSubmit::init() {
-    vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    vk::CommandPoolCreateInfo commandPoolInfo =
+        vkhelper::commandPoolCreateInfo(mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
     mCommandPool = mRenderer->mCore.mDevice.createCommandPool(commandPoolInfo);
 
     LOG_INFO(mRenderer->mLogger, "ImmSubmit Command Pool Created");

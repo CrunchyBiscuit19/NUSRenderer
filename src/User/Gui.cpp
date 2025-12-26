@@ -41,7 +41,8 @@ void Gui::SceneGuiComponent::elements() {
                     ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
                     glm::vec3 translation, rotation, scale;
-                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
+                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation),
+                                                          glm::value_ptr(scale));
                     for (int i = 0; i < 3; i++) {
                         rotation[i] = glm::radians(rotation[i]);
                     }
@@ -106,8 +107,9 @@ void Gui::MiscGuiComponent::elements() {
 
 void Gui::createDockSpace() {
     static ImGuiDockNodeFlags dockSpaceFlags = ImGuiDockNodeFlags_NoDockingOverCentralNode | ImGuiDockNodeFlags_PassthruCentralNode;
-    static ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                                          ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
+    static ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                                          ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                          ImGuiWindowFlags_NoBackground;
 
     ImGuiViewport* mainViewport = ImGui::GetMainViewport();
 
@@ -129,7 +131,8 @@ void Gui::createRendererOptionsWindow() const {
     if (mCollapsed) return;
     if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
         if (!ImGui::IsWindowCollapsed()) {
-            if (ImGui::BeginTabBar("RendererOptionsTabBar", ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown)) {
+            if (ImGui::BeginTabBar("RendererOptionsTabBar",
+                                   ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown)) {
                 for (auto& component : mGuiComponents) {
                     if (ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton)) {
                         component->elements();

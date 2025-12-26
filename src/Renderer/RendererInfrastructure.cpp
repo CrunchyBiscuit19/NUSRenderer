@@ -7,7 +7,10 @@
 
 std::filesystem::path shaderDir = SHADERS_PATH;
 
-RendererInfrastructure::RendererInfrastructure(Renderer* renderer) : mRenderer(renderer), mSwapchainBundle(nullptr), mMainDescriptorAllocator(DescriptorAllocatorGrowable(renderer)) { mFrames.resize(FRAME_OVERLAP); }
+RendererInfrastructure::RendererInfrastructure(Renderer* renderer)
+    : mRenderer(renderer), mSwapchainBundle(nullptr), mMainDescriptorAllocator(DescriptorAllocatorGrowable(renderer)) {
+    mFrames.resize(FRAME_OVERLAP);
+}
 
 void RendererInfrastructure::initDescriptors() {
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
@@ -24,7 +27,8 @@ void RendererInfrastructure::initDescriptors() {
 void RendererInfrastructure::initFrames() {
     // mRenderFence to control when the GPU has finished rendering the frame, start signalled so we can wait on it on the first frame
     vk::FenceCreateInfo fenceCreateInfo = vkhelper::fenceCreateInfo(vk::FenceCreateFlagBits::eSignaled);
-    vk::CommandPoolCreateInfo commandPoolInfo = vkhelper::commandPoolCreateInfo(mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    vk::CommandPoolCreateInfo commandPoolInfo =
+        vkhelper::commandPoolCreateInfo(mRenderer->mCore.mGraphicsQueueFamily, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
 
     for (int i = 0; i < mFrames.size(); i++) {
@@ -45,12 +49,15 @@ void RendererInfrastructure::initFrames() {
         mRenderer->mCore.labelResourceDebug(mFrames[i].mAvailableSemaphore, fmt::format("FrameAvailableSemaphore{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Available Semaphore Created", i);
 
-        mFrames[i].mPerspectiveBuffer =
-            mRenderer->mResources.createAddressedBuffer(sizeof(PerspectiveData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        mFrames[i].mPerspectiveBuffer = mRenderer->mResources.createAddressedBuffer(
+            sizeof(PerspectiveData),
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            VMA_MEMORY_USAGE_CPU_TO_GPU);
         mRenderer->mCore.labelResourceDebug(mFrames[i].mPerspectiveBuffer.buffer, fmt::format("FramePerspectiveBuffer{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Perspective Buffer Created", i);
 
-        mFrames[i].mPerspectiveDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mRenderer->mScene.mPerspective.mDescriptorSetLayout);
+        mFrames[i].mPerspectiveDescriptorSet =
+            mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mRenderer->mScene.mPerspective.mDescriptorSetLayout);
         mRenderer->mCore.labelResourceDebug(mFrames[i].mPerspectiveDescriptorSet, fmt::format("FramePerspectiveDescriptorSet{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Perspective Descriptor Set Created", i);
 
@@ -72,7 +79,9 @@ void RendererInfrastructure::initSwapchain() {
     formatListCreateInfo.viewFormatCount = formats.size();
 
     vkb::SwapchainBuilder swapchainBuilder{*mRenderer->mCore.mChosenGPU, *mRenderer->mCore.mDevice, *mRenderer->mCore.mSurface};
-    vkb::Swapchain vkbSwapchain = swapchainBuilder.set_desired_format(VkSurfaceFormatKHR{.format = static_cast<VkFormat>(mSwapchainBundle.mFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)})
+    vkb::Swapchain vkbSwapchain = swapchainBuilder
+                                      .set_desired_format(VkSurfaceFormatKHR{.format = static_cast<VkFormat>(mSwapchainBundle.mFormat),
+                                                                             .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)})
                                       .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
                                       .set_desired_extent(mRenderer->mCore.mWindowExtent.width, mRenderer->mCore.mWindowExtent.height)
                                       .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
@@ -88,9 +97,12 @@ void RendererInfrastructure::initSwapchain() {
     mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
     for (int i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
-        mSwapchainBundle.mImages.emplace_back(
-            vkbSwapchain.get_images().value()[i], mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
-            mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(mSwapchainBundle.mUnormFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)), mRenderer->mCore.mDevice.createSemaphore(semaphoreCreateInfo));
+        mSwapchainBundle.mImages.emplace_back(vkbSwapchain.get_images().value()[i],
+                                              mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(
+                                                  mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
+                                              mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(
+                                                  mSwapchainBundle.mUnormFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
+                                              mRenderer->mCore.mDevice.createSemaphore(semaphoreCreateInfo));
     }
 
     for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
@@ -100,10 +112,14 @@ void RendererInfrastructure::initSwapchain() {
         mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].renderedSemaphore, fmt::format("SwapchainRenderedSemaphore{}", i).c_str());
     }
 
-    mDrawImage = mRenderer->mResources.createImage(vk::Extent3D{mRenderer->mCore.mWindowExtent, 1}, vk::Format::eR16G16B16A16Sfloat,
-                                                   vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment, false, true);
-    mDepthImage = mRenderer->mResources.createImage(mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, false, true);
-    mIntermediateImage = mRenderer->mResources.createImage(mDrawImage.imageExtent, vk::Format::eR16G16B16A16Sfloat, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment);
+    mDrawImage = mRenderer->mResources.createImage(
+        vk::Extent3D{mRenderer->mCore.mWindowExtent, 1}, vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment, false, true);
+    mDepthImage =
+        mRenderer->mResources.createImage(mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, false, true);
+    mIntermediateImage = mRenderer->mResources.createImage(
+        mDrawImage.imageExtent, vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment);
 
     mRenderer->mCore.labelResourceDebug(mDrawImage.image, "DrawImage");
     mRenderer->mCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
@@ -114,14 +130,19 @@ void RendererInfrastructure::initSwapchain() {
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         for (int i = 0; i < mSwapchainBundle.mImages.size(); i++) {
-            vkhelper::transitionImage(cmd, mSwapchainBundle.mImages[i].image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::ImageLayout::eUndefined,
+            vkhelper::transitionImage(cmd, mSwapchainBundle.mImages[i].image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
+                                      vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::ImageLayout::eUndefined,
                                       vk::ImageLayout::ePresentSrcKHR);
         }
-        vkhelper::transitionImage(cmd, *mDrawImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite, vk::ImageLayout::eUndefined,
+        vkhelper::transitionImage(cmd, *mDrawImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
+                                  vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite, vk::ImageLayout::eUndefined,
                                   vk::ImageLayout::eColorAttachmentOptimal);
-        vkhelper::transitionImage(cmd, *mDepthImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-                                  vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
-        vkhelper::transitionImage(cmd, *mIntermediateImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead, vk::ImageLayout::eUndefined,
+        vkhelper::transitionImage(cmd, *mDepthImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
+                                  vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+                                  vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+                                  vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
+        vkhelper::transitionImage(cmd, *mIntermediateImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
+                                  vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead, vk::ImageLayout::eUndefined,
                                   vk::ImageLayout::eTransferSrcOptimal);
     });
 

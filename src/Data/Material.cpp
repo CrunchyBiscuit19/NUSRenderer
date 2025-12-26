@@ -60,7 +60,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
     materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
-    auto [it, _] = mPipelinesCache.try_emplace(materialPipelineOptions, mRenderer->mInfrastructure.mLatestPipelineId, materialPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mPipelineLayout);
+    auto [it, _] = mPipelinesCache.try_emplace(materialPipelineOptions, mRenderer->mInfrastructure.mLatestPipelineId,
+                                               materialPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mPipelineLayout);
     mRenderer->mCore.labelResourceDebug(it->second.pipeline, fmt::format("MaterialPipeline{}", mRenderer->mInfrastructure.mLatestPipelineId).c_str());
     LOG_INFO(mRenderer->mLogger, "{}", fmt::format("Material Pipeline {} Created", mRenderer->mInfrastructure.mLatestPipelineId).c_str());
 

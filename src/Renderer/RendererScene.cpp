@@ -6,38 +6,56 @@
 #include <ranges>
 
 RendererScene::RendererScene(Renderer* renderer)
-    : mRenderer(renderer), mPerspective(Perspective(renderer)), mSkybox(Skybox(renderer)), mCuller(Culler(renderer)), mPicker(Picker(renderer)), mMainMaterialResourcesDescriptorSet(nullptr), mMainMaterialResourcesDescriptorSetLayout(nullptr) {
+    : mRenderer(renderer),
+      mPerspective(Perspective(renderer)),
+      mSkybox(Skybox(renderer)),
+      mCuller(Culler(renderer)),
+      mPicker(Picker(renderer)),
+      mMainMaterialResourcesDescriptorSet(nullptr),
+      mMainMaterialResourcesDescriptorSetLayout(nullptr) {
     mBatchTypes[static_cast<uint32_t>(BatchType::Opaque)] = &mOpaqueBatches;
     mBatchTypes[static_cast<uint32_t>(BatchType::Mask)] = &mMaskBatches;
     mBatchTypes[static_cast<uint32_t>(BatchType::Transparent)] = &mTransparentBatches;
 }
 
 void RendererScene::initBuffers() {
-    mMainVertexBuffer = mRenderer->mResources.createAddressedBuffer(MAIN_VERTEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mMainVertexBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAIN_VERTEX_BUFFER_SIZE,
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMainVertexBuffer.buffer, "MainVertexBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Created");
 
-    mMainIndexBuffer = mRenderer->mResources.createBuffer(MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_MEMORY_USAGE_GPU_ONLY);
+    mMainIndexBuffer = mRenderer->mResources.createBuffer(MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+                                                          VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
-    mMainMaterialConstantsBuffer = mRenderer->mResources.createAddressedBuffer(MAX_MATERIALS * sizeof(MaterialConstants), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-                                                                               VMA_MEMORY_USAGE_GPU_ONLY);
+    mMainMaterialConstantsBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAX_MATERIALS * sizeof(MaterialConstants),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Created");
 
-    mMainNodeTransformsBuffer =
-        mRenderer->mResources.createAddressedBuffer(MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mMainNodeTransformsBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAX_NODES * sizeof(glm::mat4),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
-    mMainInstancesBuffer =
-        mRenderer->mResources.createAddressedBuffer(MAX_INSTANCES * sizeof(InstanceData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mMainInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAX_INSTANCES * sizeof(InstanceData),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 
-    mMainBoundsBuffer =
-        mRenderer->mResources.createAddressedBuffer(MAX_RENDER_ITEMS * sizeof(AABB), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_GPU_ONLY);
+    mMainBoundsBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAX_RENDER_ITEMS * sizeof(AABB),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 }
@@ -45,7 +63,8 @@ void RendererScene::initBuffers() {
 void RendererScene::initDescriptor() {
     DescriptorLayoutBuilder builder;
     builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS);
-    mMainMaterialResourcesDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, true);
+    mMainMaterialResourcesDescriptorSetLayout =
+        builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, true);
     mRenderer->mCore.labelResourceDebug(mMainMaterialResourcesDescriptorSetLayout, "MainMaterialResourcesDescriptorSetLayout");
     mMainMaterialResourcesDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(mMainMaterialResourcesDescriptorSetLayout, true);
     mRenderer->mCore.labelResourceDebug(mMainMaterialResourcesDescriptorSet, "MainMaterialResourcesDescriptorSet");
@@ -133,7 +152,8 @@ void RendererScene::regenerateRenderItemsInstances() {
             renderItemsCopy.srcOffset = 0;
             renderItemsCopy.size = batch.renderItems.size() * sizeof(RenderItem);
 
-            std::memcpy(batch.renderInstancesStagingBuffer.info.pMappedData, batch.renderInstances.data(), batch.renderInstances.size() * sizeof(RenderInstance));
+            std::memcpy(batch.renderInstancesStagingBuffer.info.pMappedData, batch.renderInstances.data(),
+                        batch.renderInstances.size() * sizeof(RenderInstance));
             vk::BufferCopy renderInstancesCopy{};
             renderInstancesCopy.dstOffset = 0;
             renderInstancesCopy.srcOffset = 0;
@@ -142,15 +162,21 @@ void RendererScene::regenerateRenderItemsInstances() {
             mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
                 cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
                 vkhelper::createBufferPipelineBarrier(  // Wait for render items buffer to be flushed
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
+                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                    vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
                 cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
                 vkhelper::createBufferPipelineBarrier(  // Wait for render items to finish uploading
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
+                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                    vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
 
                 cmd.fillBuffer(*batch.renderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
-                vkhelper::createBufferPipelineBarrier(cmd, *batch.renderInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
+                vkhelper::createBufferPipelineBarrier(cmd, *batch.renderInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer,
+                                                      vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eTransfer,
+                                                      vk::AccessFlagBits2::eTransferWrite);
                 cmd.copyBuffer(*batch.renderInstancesStagingBuffer.buffer, *batch.renderInstancesBuffer.buffer, renderInstancesCopy);
-                vkhelper::createBufferPipelineBarrier(cmd, *batch.renderInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
+                vkhelper::createBufferPipelineBarrier(cmd, *batch.renderInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer,
+                                                      vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eComputeShader,
+                                                      vk::AccessFlagBits2::eShaderRead);
             });
 
             LOG_INFO(mRenderer->mLogger, "Batch {} Render Items and Render Instances Uploading", batch.pipelineBundle->id);
@@ -262,13 +288,16 @@ void RendererScene::reloadMainVertexBuffer() {
 
             dstOffset += meshVertexCopy.size;
 
-            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) { cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy); });
+            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+                cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
+            });
         }
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main vertex buffer to finish uploading
-            cmd, *mMainVertexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
+            cmd, *mMainVertexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Reloading");
@@ -290,13 +319,16 @@ void RendererScene::reloadMainIndexBuffer() {
 
             dstOffset += meshIndexCopy.size;
 
-            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) { cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy); });
+            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+                cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
+            });
         }
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main index buffer to finish uploading
-            cmd, *mMainIndexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
+            cmd, *mMainIndexBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Index Buffer Reloading");
@@ -317,13 +349,15 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
 
         dstOffset += materialConstantCopy.size;
 
-        mRenderer->mImmSubmit.mCallbacks.push_back(
-            [&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd) { cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy); });
+        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+            cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
+        });
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main material constants buffer to finish uploading
-            cmd, *mMainMaterialConstantsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
+            cmd, *mMainMaterialConstantsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Reloading");
@@ -344,12 +378,15 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
 
         dstOffset += nodeTransformsCopy.size;
 
-        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) { cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy); });
+        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+            cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
+        });
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main node transforms buffer to finish uploading
-            cmd, *mMainNodeTransformsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
+            cmd, *mMainNodeTransformsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
@@ -370,12 +407,15 @@ void RendererScene::reloadMainBoundsBuffer() {
 
         dstOffset += boundsCopy.size;
 
-        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) { cmd.copyBuffer(*model.mBoundsBuffer.buffer, *mMainBoundsBuffer.buffer, boundsCopy); });
+        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+            cmd.copyBuffer(*model.mBoundsBuffer.buffer, *mMainBoundsBuffer.buffer, boundsCopy);
+        });
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main bounds buffer to finish uploading
-            cmd, *mMainBoundsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
+            cmd, *mMainBoundsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Reloading");
@@ -399,12 +439,15 @@ void RendererScene::reloadMainInstancesBuffer() {
 
         dstOffset += instancesCopy.size;
 
-        mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) { cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy); });
+        mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+            cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
+        });
     }
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main instances buffer to finish uploading
-            cmd, *mMainInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
+            cmd, *mMainInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Reloading");
@@ -416,13 +459,19 @@ void RendererScene::reloadMainMaterialResourcesArray() {
             int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
 
             DescriptorSetBinder writer;
-            writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView, material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-            writer.bindImageArray(0, materialTextureArrayIndex + 1, *material.mPbrData.resources.metallicRoughness.image->imageView, material.mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+            writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView,
+                                  material.mPbrData.resources.base.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
+            writer.bindImageArray(0, materialTextureArrayIndex + 1, *material.mPbrData.resources.metallicRoughness.image->imageView,
+                                  material.mPbrData.resources.metallicRoughness.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
                                   vk::DescriptorType::eCombinedImageSampler);
-            writer.bindImageArray(0, materialTextureArrayIndex + 2, *material.mPbrData.resources.emissive.image->imageView, material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+            writer.bindImageArray(0, materialTextureArrayIndex + 2, *material.mPbrData.resources.emissive.image->imageView,
+                                  material.mPbrData.resources.emissive.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
                                   vk::DescriptorType::eCombinedImageSampler);
-            writer.bindImageArray(0, materialTextureArrayIndex + 3, *material.mPbrData.resources.normal.image->imageView, material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler);
-            writer.bindImageArray(0, materialTextureArrayIndex + 4, *material.mPbrData.resources.occlusion.image->imageView, material.mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+            writer.bindImageArray(0, materialTextureArrayIndex + 3, *material.mPbrData.resources.normal.image->imageView,
+                                  material.mPbrData.resources.normal.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
+                                  vk::DescriptorType::eCombinedImageSampler);
+            writer.bindImageArray(0, materialTextureArrayIndex + 4, *material.mPbrData.resources.occlusion.image->imageView,
+                                  material.mPbrData.resources.occlusion.sampler, vk::ImageLayout::eShaderReadOnlyOptimal,
                                   vk::DescriptorType::eCombinedImageSampler);
             writer.updateSetBindings(mRenderer->mCore.mDevice, *mMainMaterialResourcesDescriptorSet);
         }

@@ -42,7 +42,9 @@ template <>
 struct std::hash<PipelineOptions> {
     // Compute individual hash values for strings
     // Combine them using XOR and bit shifting
-    std::size_t operator()(const PipelineOptions& k) const { return ((std::hash<bool>()(k.doubleSided) ^ (std::hash<fastgltf::AlphaMode>()(k.alphaMode) << 1)) >> 1); }
+    std::size_t operator()(const PipelineOptions& k) const {
+        return ((std::hash<bool>()(k.doubleSided) ^ (std::hash<fastgltf::AlphaMode>()(k.alphaMode) << 1)) >> 1);
+    }
 };
 
 class PipelineBuilder {

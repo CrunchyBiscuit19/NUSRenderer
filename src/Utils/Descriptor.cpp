@@ -21,7 +21,8 @@ vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& d
     info.pBindings = mBindings.data();
     info.bindingCount = static_cast<uint32_t>(mBindings.size());
 
-    vk::DescriptorBindingFlags bindlessFlags = vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind | vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+    vk::DescriptorBindingFlags bindlessFlags = vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind |
+                                               vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
     vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{};
     bindingFlagsInfo.pBindingFlags = &bindlessFlags;
     bindingFlagsInfo.bindingCount = static_cast<uint32_t>(mBindings.size());
@@ -130,7 +131,8 @@ void DescriptorSetBinder::bindImage(int binding, const vk::ImageView image, cons
     mWrites.push_back(write);
 }
 
-void DescriptorSetBinder::bindImageArray(int binding, uint32_t arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type) {
+void DescriptorSetBinder::bindImageArray(int binding, uint32_t arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout,
+                                         vk::DescriptorType type) {
     const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
     vk::WriteDescriptorSet write = {};
     write.descriptorCount = 1;
