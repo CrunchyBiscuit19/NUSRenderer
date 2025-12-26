@@ -209,8 +209,7 @@ ComputePipelineBuilder::ComputePipelineBuilder()
 
 void ComputePipelineBuilder::setShader(vk::ShaderModule computeShader)
 {
-	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(
-		vk::ShaderStageFlagBits::eCompute, computeShader, "main");
+	mComputeShaderStageCreateInfo = vkhelper::pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits::eCompute, computeShader, "main");
 }
 
 vk::raii::Pipeline ComputePipelineBuilder::buildPipeline(vk::raii::Device& device)

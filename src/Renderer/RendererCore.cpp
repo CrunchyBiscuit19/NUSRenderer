@@ -101,15 +101,9 @@ void RendererCore::init() {
 
 	mContext = vk::raii::Context();
 
-	vkb::InstanceBuilder builder;
-	auto instResult = builder
+	vkb::InstanceBuilder vkbInstBuilder;
+	vkbInstBuilder
 		.set_app_name("Vulkan renderer")
-		.request_validation_layers(USE_VALIDATION_LAYERS)
-		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
-		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
-		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
-		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))
-		.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices))
 		.set_debug_messenger_severity(
 			static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
 				vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
@@ -122,9 +116,19 @@ void RendererCore::init() {
 				vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
 		.set_debug_callback(debugMessageFunc)
 		.set_debug_callback_user_data_pointer(mRenderer)
-		.require_api_version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
-		.build();
-	const vkb::Instance vkbInst = instResult.value();
+		.require_api_version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
+	if (USE_VALIDATION_LAYERS) {
+		vkbInstBuilder
+			.request_validation_layers(USE_VALIDATION_LAYERS)
+			.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
+			.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
+			.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
+			.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))
+			//.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices))
+		;
+	}
+
+	const vkb::Instance vkbInst = vkbInstBuilder.build().value();
 	mInstance = vk::raii::Instance(mContext, vkbInst.instance);
 	vk::raii::DebugUtilsMessengerEXT debugMessenger(mInstance, vkbInst.debug_messenger);
 	mDebugMessenger = std::move(debugMessenger);
