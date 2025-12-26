@@ -10,3 +10,4 @@ CMakeSettings.json
 resources/models
 logs/
 src/includes*
+/format.ps1
