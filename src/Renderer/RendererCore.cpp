@@ -84,8 +84,7 @@ void RendererCore::init() {
 
     vkb::InstanceBuilder vkbInstBuilder;
     vkbInstBuilder.set_app_name("Vulkan renderer")
-        .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-                                                                                       vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+        .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
                                                                                        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
         .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                                                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
