@@ -34,11 +34,17 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
         renderer->mScene.mBatchTypes[batchType]->try_emplace(pipelineId, renderer, primitive, pipelineId);
         renderer->mScene.mBatchTypes[batchType]
             ->at(pipelineId)
-            .renderItems.emplace_back(primitive.mIndexCount, model->mInstances.size(), mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
-                                      mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset, model->mMainFirstInstance,
-                                      model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
-                                      model->mMainFirstNodeTransform + this->mRelativeNodeIndex, model->mId,
-                                      model->mMainFirstBounds + mMesh->mRelativeFirstBounds);
+            .renderItems.emplace_back(
+                primitive.mIndexCount, 
+                model->mInstances.size(), 
+                mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
+                mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset, 
+                model->mMainFirstInstance,
+                model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
+                model->mMainFirstNodeTransform + this->mRelativeNodeIndex, 
+                model->mId,
+                model->mMainFirstBounds + mMesh->mRelativeFirstBounds
+            );
 
         u32 renderItemIndex = static_cast<u32>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
         u32 instanceIndex = model->mMainFirstInstance;

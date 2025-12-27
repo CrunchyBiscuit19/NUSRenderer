@@ -23,7 +23,7 @@ public struct ForwardPushConstants
 
 public struct VSInput
 {
-    public uint vertexIndex : SV_VertexID;
+    public uint vertexIndex : SV_VulkanVertexID;
     public uint instanceIndex : SV_InstanceID;
     public uint drawIndex : SV_DrawIndex;
 };

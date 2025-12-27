@@ -18,7 +18,7 @@ public struct SkyboxPushConstants
 
 public struct VSInput
 {
-    public uint vertexIndex : SV_VertexID;
+    public uint vertexIndex : SV_VulkanVertexID;
 }
 public struct VSOutput
 {
