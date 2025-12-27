@@ -10,8 +10,8 @@ class RendererStats {
    public:
     float mFrameTime;
     float mDrawTime;
-    uint32_t mDrawCallCount;
-    uint32_t mPreCullRenderInstancesCount;
+    u32 mDrawCallCount;
+    u32 mPreCullRenderInstancesCount;
     AddressedBuffer mPostCullRenderInstancesCountBuffer;
     float mSceneUpdateTime;
 

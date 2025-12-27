@@ -1,8 +1,9 @@
 #include <Data/Instance.h>
 #include <Data/Model.h>
 #include <Renderer/Renderer.h>
+#include <Utils/Types.h>
 
-GLTFInstance::GLTFInstance(GLTFModel* model, int id, InstanceData data) : mModel(model), mId(id), mDeleteSignal(false), mData(data) {}
+GLTFInstance::GLTFInstance(GLTFModel* model, u32 id, InstanceData data) : mModel(model), mId(id), mDeleteSignal(false), mData(data) {}
 
 void GLTFInstance::markDelete() {
     mDeleteSignal = true;

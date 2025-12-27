@@ -40,9 +40,9 @@ class RendererInfrastructure {
     Renderer* mRenderer;
 
    public:
-    uint64_t mFrameNumber{0};
-    // Normal 32-bit should also be fine, but just to safeguard against overflow use 64 bit int
-    std::optional<uint64_t> mProgramEndFrameNumber{std::nullopt};
+    u64 mFrameNumber{0};
+    // u32 should also be fine, but just to safeguard against overflow use u64
+    std::optional<u64> mProgramEndFrameNumber{std::nullopt};
     std::vector<Frame> mFrames;
     inline Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
     inline Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
@@ -50,7 +50,7 @@ class RendererInfrastructure {
 
     bool mResizeRequested{false};
     SwapchainBundle mSwapchainBundle;
-    uint32_t mSwapchainIndex;
+    u32 mSwapchainIndex;
 
     DescriptorAllocatorGrowable mMainDescriptorAllocator;
 
@@ -58,7 +58,7 @@ class RendererInfrastructure {
     AllocatedImage mDepthImage;
     AllocatedImage mIntermediateImage;
 
-    int mLatestPipelineId{0};
+    u32 mLatestPipelineId{0};
 
     RendererInfrastructure(Renderer* renderer);
 

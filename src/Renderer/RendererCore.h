@@ -13,14 +13,14 @@ struct VulkanResourceInfo;
     template <>                                                                                                                  \
     struct VulkanResourceInfo<HppType> {                                                                                         \
         static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                         \
-        static uint64_t getHandle(const HppType& resource) { return reinterpret_cast<uint64_t>(static_cast<VkType>(resource)); } \
+        static u64 getHandle(const HppType& resource) { return reinterpret_cast<u64>(static_cast<VkType>(resource)); } \
     };
 
 #define DEFINE_VULKAN_RAII_RESOURCE_INFO(RaiiType, VkType, resourceTypeEnum)                                                       \
     template <>                                                                                                                    \
     struct VulkanResourceInfo<RaiiType> {                                                                                          \
         static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                           \
-        static uint64_t getHandle(const RaiiType& resource) { return reinterpret_cast<uint64_t>(static_cast<VkType>(*resource)); } \
+        static u64 getHandle(const RaiiType& resource) { return reinterpret_cast<u64>(static_cast<VkType>(*resource)); } \
     };
 
 DEFINE_VULKAN_RESOURCE_INFO(vk::Buffer, VkBuffer, vk::ObjectType::eBuffer)
@@ -97,9 +97,9 @@ class RendererCore {
     bool mWindowFullScreen{false};
 
     vk::raii::Queue mComputeQueue;
-    uint32_t mComputeQueueFamily;
+    u32 mComputeQueueFamily;
     vk::raii::Queue mGraphicsQueue;
-    uint32_t mGraphicsQueueFamily;
+    u32 mGraphicsQueueFamily;
 
     VmaAllocator mVmaAllocator;
 

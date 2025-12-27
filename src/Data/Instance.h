@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/Types.h>
+
 #include <glm/glm.hpp>
 
 class GLTFModel;
@@ -15,12 +17,12 @@ struct InstanceData {
 class GLTFInstance {
    public:
     GLTFModel* mModel;
-    int mId;
+    u32 mId;
     bool mDeleteSignal;
 
     InstanceData mData;
 
-    GLTFInstance(GLTFModel* model, int id, InstanceData data = InstanceData());
+    GLTFInstance(GLTFModel* model, u32 id, InstanceData data = InstanceData());
 
     void markDelete();
 };

@@ -202,12 +202,12 @@ struct std::hash<SamplerOptions> {
     // Combine them using XOR and bit shifting
     std::size_t operator()(const SamplerOptions& k) const {
         std::size_t seed = 0;
-        hashCombine(seed, static_cast<uint32_t>(k.magFilter));
-        hashCombine(seed, static_cast<uint32_t>(k.minFilter));
-        hashCombine(seed, static_cast<uint32_t>(k.mipmapMode));
-        hashCombine(seed, static_cast<uint32_t>(k.addressModeU));
-        hashCombine(seed, static_cast<uint32_t>(k.addressModeV));
-        hashCombine(seed, static_cast<uint32_t>(k.addressModeW));
+        hashCombine(seed, static_cast<u32>(k.magFilter));
+        hashCombine(seed, static_cast<u32>(k.minFilter));
+        hashCombine(seed, static_cast<u32>(k.mipmapMode));
+        hashCombine(seed, static_cast<u32>(k.addressModeU));
+        hashCombine(seed, static_cast<u32>(k.addressModeV));
+        hashCombine(seed, static_cast<u32>(k.addressModeW));
         return seed;
     }
 

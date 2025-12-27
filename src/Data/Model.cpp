@@ -1,6 +1,7 @@
 #include <Data/Model.h>
 #include <Renderer/Renderer.h>
 #include <Utils/Helper.h>
+#include <Utils/Types.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <fmt/core.h>
@@ -87,7 +88,7 @@ vk::SamplerAddressMode GLTFModel::extractAddressMode(fastgltf::Wrap wrap) {
 
 AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
     AllocatedImage newImage;
-    int width, height, nrChannels;
+    i32 width, height, nrChannels;
 
     std::visit(
         fastgltf::visitor{
@@ -108,7 +109,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
             // Image is loaded directly into a std::vector. If the texture is on base64, or if we instruct it to load external image files
             // (fastgltf::Options::LoadExternalImages).
             [&](const fastgltf::sources::Vector& vector) {
-                if (unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<int>(vector.bytes.size()), &width, &height, &nrChannels, 4)) {
+                if (unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<u32>(vector.bytes.size()), &width, &height, &nrChannels, 4)) {
                     vk::Extent3D imagesize;
                     imagesize.width = width;
                     imagesize.height = height;
@@ -124,7 +125,7 @@ AllocatedImage GLTFModel::loadImage(fastgltf::Image& image) {
                 std::visit(fastgltf::visitor{
                                [&](const fastgltf::sources::Vector& vector) {
                                    if (unsigned char* data = stbi_load_from_memory(vector.bytes.data() + bufferView.byteOffset,
-                                                                                   static_cast<int>(bufferView.byteLength), &width, &height, &nrChannels, 4)) {
+                                                                                   static_cast<u32>(bufferView.byteLength), &width, &height, &nrChannels, 4)) {
                                        vk::Extent3D imagesize;
                                        imagesize.width = width;
                                        imagesize.height = height;
@@ -256,7 +257,7 @@ void GLTFModel::loadSamplerCreateInfos() {
 
 void GLTFModel::loadImages() {
     mImages.reserve(mAsset.images.size());
-    int id = 0;
+    u32 id = 0;
     for (fastgltf::Image& image : mAsset.images) {
         AllocatedImage newImage = loadImage(image);
         mRenderer->mCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
@@ -273,7 +274,7 @@ void GLTFModel::loadMaterials() {
     materialConstants.reserve(mAsset.materials.size());
 
     mMaterials.reserve(mAsset.materials.size());
-    int materialIndex = 0;
+    u32 materialIndex = 0;
     for (fastgltf::Material& mat : mAsset.materials) {
         auto newMat = PbrMaterial(mRenderer);
 
@@ -310,10 +311,10 @@ void GLTFModel::loadMaterials() {
 }
 
 void GLTFModel::loadMeshes() {
-    std::vector<uint32_t> indices;
+    std::vector<u32> indices;
     std::vector<Vertex> vertices;
 
-    uint32_t boundsOffset = 0;
+    u32 boundsOffset = 0;
     mMeshes.reserve(mAsset.meshes.size());
     for (fastgltf::Mesh& mesh : mAsset.meshes) {
         Mesh newMesh;
@@ -326,16 +327,16 @@ void GLTFModel::loadMeshes() {
 
         for (auto&& p : mesh.primitives) {
             Primitive newPrimitive;
-            newPrimitive.mRelativeFirstIndex = static_cast<uint32_t>(indices.size());
-            newPrimitive.mRelativeVertexOffset = static_cast<uint32_t>(vertices.size());
-            newPrimitive.mIndexCount = static_cast<uint32_t>(mAsset.accessors[p.indicesAccessor.value()].count);
+            newPrimitive.mRelativeFirstIndex = static_cast<u32>(indices.size());
+            newPrimitive.mRelativeVertexOffset = static_cast<u32>(vertices.size());
+            newPrimitive.mIndexCount = static_cast<u32>(mAsset.accessors[p.indicesAccessor.value()].count);
 
             size_t vertexStartOffset = vertices.size();
 
             // Load indexes
             fastgltf::Accessor& indexAccessor = mAsset.accessors[p.indicesAccessor.value()];
             indices.reserve(indices.size() + indexAccessor.count);
-            fastgltf::iterateAccessor<std::uint32_t>(mAsset, indexAccessor, [&](std::uint32_t index) { indices.push_back(index); });
+            fastgltf::iterateAccessor<u32>(mAsset, indexAccessor, [&](u32 index) { indices.push_back(index); });
 
             // Load vertex positions
             fastgltf::Accessor& posAccessor = mAsset.accessors[p.findAttribute("POSITION")->second];
@@ -406,7 +407,7 @@ void GLTFModel::loadMeshes() {
 }
 
 void GLTFModel::loadNodes() {
-    int nodeIndex = 0;
+    u32 nodeIndex = 0;
     mNodes.reserve(mAsset.nodes.size());
     for (fastgltf::Node& node : mAsset.nodes) {
         std::shared_ptr<Node> newNode;
@@ -443,7 +444,7 @@ void GLTFModel::loadNodes() {
     LOG_INFO(mRenderer->mLogger, "{} Nodes Loaded", mName);
 
     // Setup hierarchy
-    for (int i = 0; i < mAsset.nodes.size(); i++) {
+    for (u32 i = 0; i < mAsset.nodes.size(); i++) {
         fastgltf::Node& assetNode = mAsset.nodes[i];
         std::shared_ptr<Node> localNode = mNodes[i];
         for (auto& nodeChildIndex : assetNode.children) {
@@ -492,9 +493,9 @@ void GLTFModel::loadBoundsBuffer() {
     LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Uploading", mName);
 }
 
-void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector) {
+void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::span<Vertex> srcVertexVector) {
     const vk::DeviceSize srcVertexVectorSize = srcVertexVector.size() * sizeof(Vertex);
-    const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(uint32_t);
+    const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(u32);
 
     mesh.mVertexBuffer = mRenderer->mResources.createBuffer(
         srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
@@ -555,7 +556,7 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 }
 
 void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector) {
-    for (int i = 0; i < nodesVector.size(); i++) {
+    for (u32 i = 0; i < nodesVector.size(); i++) {
         std::memcpy(static_cast<char*>(mRenderer->mResources.mNodeTransformsStagingBuffer.info.pMappedData) + i * sizeof(glm::mat4),
                     &nodesVector[i]->mWorldTransform, sizeof(glm::mat4));
     }
@@ -597,7 +598,7 @@ void GLTFModel::reloadInstances() {
         return;
     }
 
-    int dstOffset = 0;
+    u32 dstOffset = 0;
     for (auto& instance : mInstances) {
         std::memcpy(static_cast<char*>(mInstancesBuffer.info.pMappedData) + dstOffset, &instance.mData, sizeof(InstanceData));
         dstOffset += sizeof(InstanceData);

@@ -1,7 +1,7 @@
 #include <Renderer/Renderer.h>
 #include <Utils/Descriptor.h>
 
-void DescriptorLayoutBuilder::addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count) {
+void DescriptorLayoutBuilder::addBinding(u32 binding, vk::DescriptorType type, u32 count) {
     vk::DescriptorSetLayoutBinding newbind{};
     newbind.binding = binding;
     newbind.descriptorType = type;
@@ -19,13 +19,13 @@ vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& d
 
     vk::DescriptorSetLayoutCreateInfo info{};
     info.pBindings = mBindings.data();
-    info.bindingCount = static_cast<uint32_t>(mBindings.size());
+    info.bindingCount = static_cast<u32>(mBindings.size());
 
     vk::DescriptorBindingFlags bindlessFlags = vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind |
                                                vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
     vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{};
     bindingFlagsInfo.pBindingFlags = &bindlessFlags;
-    bindingFlagsInfo.bindingCount = static_cast<uint32_t>(mBindings.size());
+    bindingFlagsInfo.bindingCount = static_cast<u32>(mBindings.size());
 
     if (useBindless) {
         info.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
@@ -37,7 +37,7 @@ vk::raii::DescriptorSetLayout DescriptorLayoutBuilder::build(vk::raii::Device& d
 
 DescriptorAllocatorGrowable::DescriptorAllocatorGrowable(Renderer* renderer) : mRenderer(renderer) {}
 
-void DescriptorAllocatorGrowable::init(uint32_t maxSets, std::vector<DescriptorTypeRatio>& poolRatios) {
+void DescriptorAllocatorGrowable::init(u32 maxSets, std::vector<DescriptorTypeRatio>& poolRatios) {
     mRatios = poolRatios;
 
     vk::raii::DescriptorPool newPool = createPool(maxSets, poolRatios);
@@ -104,13 +104,13 @@ vk::raii::DescriptorPool DescriptorAllocatorGrowable::getPool() {
     return newPool;
 }
 
-vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(uint32_t setCount, std::vector<DescriptorTypeRatio>& poolRatios) {
+vk::raii::DescriptorPool DescriptorAllocatorGrowable::createPool(u32 setCount, std::vector<DescriptorTypeRatio>& poolRatios) {
     std::vector<vk::DescriptorPoolSize> poolSizes;
     for (const DescriptorTypeRatio ratio : poolRatios) poolSizes.push_back(vk::DescriptorPoolSize(ratio.type, ratio.amountPerSet * setCount));
     vk::DescriptorPoolCreateInfo pool_info = {};
     pool_info.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind | vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
     pool_info.maxSets = setCount;
-    pool_info.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    pool_info.poolSizeCount = static_cast<u32>(poolSizes.size());
     pool_info.pPoolSizes = poolSizes.data();
     return mRenderer->mCore.mDevice.createDescriptorPool(pool_info, nullptr);
 }
@@ -120,7 +120,7 @@ void DescriptorAllocatorGrowable::cleanup() {
     mFullPools.clear();
 }
 
-void DescriptorSetBinder::bindImage(int binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type) {
+void DescriptorSetBinder::bindImage(u32 binding, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type) {
     const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
     vk::WriteDescriptorSet write = {};
     write.descriptorCount = 1;
@@ -131,7 +131,7 @@ void DescriptorSetBinder::bindImage(int binding, const vk::ImageView image, cons
     mWrites.push_back(write);
 }
 
-void DescriptorSetBinder::bindImageArray(int binding, uint32_t arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout,
+void DescriptorSetBinder::bindImageArray(u32 binding, u32 arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout,
                                          vk::DescriptorType type) {
     const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
     vk::WriteDescriptorSet write = {};
@@ -144,7 +144,7 @@ void DescriptorSetBinder::bindImageArray(int binding, uint32_t arrayIndex, const
     mWrites.push_back(write);
 }
 
-void DescriptorSetBinder::bindBuffer(int binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type) {
+void DescriptorSetBinder::bindBuffer(u32 binding, const vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type) {
     const vk::DescriptorBufferInfo& info = mBufferInfos.emplace_back(buffer, offset, size);
     vk::WriteDescriptorSet write = {};
     write.dstBinding = binding;

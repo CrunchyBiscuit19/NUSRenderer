@@ -13,9 +13,9 @@ RendererScene::RendererScene(Renderer* renderer)
       mPicker(Picker(renderer)),
       mMainMaterialResourcesDescriptorSet(nullptr),
       mMainMaterialResourcesDescriptorSetLayout(nullptr) {
-    mBatchTypes[static_cast<uint32_t>(BatchType::Opaque)] = &mOpaqueBatches;
-    mBatchTypes[static_cast<uint32_t>(BatchType::Mask)] = &mMaskBatches;
-    mBatchTypes[static_cast<uint32_t>(BatchType::Transparent)] = &mTransparentBatches;
+    mBatchTypes[static_cast<u32>(BatchType::Opaque)] = &mOpaqueBatches;
+    mBatchTypes[static_cast<u32>(BatchType::Mask)] = &mMaskBatches;
+    mBatchTypes[static_cast<u32>(BatchType::Transparent)] = &mTransparentBatches;
 }
 
 void RendererScene::initBuffers() {
@@ -185,8 +185,8 @@ void RendererScene::regenerateRenderItemsInstances() {
 }
 
 void RendererScene::realignVertexIndexOffset() {
-    int vertexCumulative = 0;
-    int indexCumulative = 0;
+    u32 vertexCumulative = 0;
+    u32 indexCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -205,7 +205,7 @@ void RendererScene::realignVertexIndexOffset() {
 }
 
 void RendererScene::realignMaterialOffset() {
-    int materialCumulative = 0;
+    u32 materialCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -220,7 +220,7 @@ void RendererScene::realignMaterialOffset() {
 }
 
 void RendererScene::realignNodeTransformsOffset() {
-    int nodeTransformCumulative = 0;
+    u32 nodeTransformCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -235,7 +235,7 @@ void RendererScene::realignNodeTransformsOffset() {
 }
 
 void RendererScene::realignBoundsOffset() {
-    int boundsCumulative = 0;
+    u32 boundsCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -250,7 +250,7 @@ void RendererScene::realignBoundsOffset() {
 }
 
 void RendererScene::realignInstancesOffset() {
-    int instanceCumulative = 0;
+    u32 instanceCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -273,7 +273,7 @@ void RendererScene::realignOffsets() {
 }
 
 void RendererScene::reloadMainVertexBuffer() {
-    int dstOffset = 0;
+    u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -304,7 +304,7 @@ void RendererScene::reloadMainVertexBuffer() {
 }
 
 void RendererScene::reloadMainIndexBuffer() {
-    int dstOffset = 0;
+    u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -315,7 +315,7 @@ void RendererScene::reloadMainIndexBuffer() {
             vk::BufferCopy meshIndexCopy{};
             meshIndexCopy.dstOffset = dstOffset;
             meshIndexCopy.srcOffset = 0;
-            meshIndexCopy.size = mesh.mNumIndices * sizeof(uint32_t);
+            meshIndexCopy.size = mesh.mNumIndices * sizeof(u32);
 
             dstOffset += meshIndexCopy.size;
 
@@ -335,7 +335,7 @@ void RendererScene::reloadMainIndexBuffer() {
 }
 
 void RendererScene::reloadMainMaterialConstantsBuffer() {
-    int dstOffset = 0;
+    u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -364,7 +364,7 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
 }
 
 void RendererScene::reloadMainNodeTransformsBuffer() {
-    int dstOffset = 0;
+    u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -393,7 +393,7 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
 }
 
 void RendererScene::reloadMainBoundsBuffer() {
-    int dstOffset = 0;
+    u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -422,7 +422,7 @@ void RendererScene::reloadMainBoundsBuffer() {
 }
 
 void RendererScene::reloadMainInstancesBuffer() {
-    int dstOffset = 0;
+    u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mDeleteSignal.has_value()) {
@@ -456,7 +456,7 @@ void RendererScene::reloadMainInstancesBuffer() {
 void RendererScene::reloadMainMaterialResourcesArray() {
     for (auto& model : mModelsCache | std::views::values) {
         for (auto& material : model.mMaterials) {
-            int materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
+            u32 materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
 
             DescriptorSetBinder writer;
             writer.bindImageArray(0, materialTextureArrayIndex + 0, *material.mPbrData.resources.base.image->imageView,

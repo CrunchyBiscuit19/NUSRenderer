@@ -44,7 +44,7 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
 
     vk::GraphicsPipelineCreateInfo graphicsPipelineInfo = {};
     graphicsPipelineInfo.pNext = &mRenderInfo;
-    graphicsPipelineInfo.stageCount = static_cast<uint32_t>(mShaderStages.size());
+    graphicsPipelineInfo.stageCount = static_cast<u32>(mShaderStages.size());
     graphicsPipelineInfo.pStages = mShaderStages.data();
     graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
     graphicsPipelineInfo.pInputAssemblyState = &mInputAssembly;

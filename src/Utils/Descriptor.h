@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Utils/Types.h>
+
 #include <deque>
 #include <vulkan/vulkan_raii.hpp>
 
@@ -8,7 +10,7 @@ class Renderer;
 struct DescriptorLayoutBuilder {
     std::vector<vk::DescriptorSetLayoutBinding> mBindings;
 
-    void addBinding(uint32_t binding, vk::DescriptorType type, uint32_t count = 1);
+    void addBinding(u32 binding, vk::DescriptorType type, u32 count = 1);
     void clear();
     vk::raii::DescriptorSetLayout build(vk::raii::Device& device, vk::ShaderStageFlags shaderStages, bool useBindless = false);
 };
@@ -20,12 +22,12 @@ struct DescriptorAllocatorGrowable {
    public:
     struct DescriptorTypeRatio {
         vk::DescriptorType type;
-        int amountPerSet;
+        u32 amountPerSet;
     };
 
     DescriptorAllocatorGrowable(Renderer* renderer);
 
-    void init(uint32_t initialSets, std::vector<DescriptorTypeRatio>& poolRatios);
+    void init(u32 initialSets, std::vector<DescriptorTypeRatio>& poolRatios);
 
     void clearPools();
     void destroyPools();
@@ -35,12 +37,12 @@ struct DescriptorAllocatorGrowable {
 
    private:
     vk::raii::DescriptorPool getPool();
-    vk::raii::DescriptorPool createPool(uint32_t setCount, std::vector<DescriptorTypeRatio>& poolRatios);
+    vk::raii::DescriptorPool createPool(u32 setCount, std::vector<DescriptorTypeRatio>& poolRatios);
 
     std::vector<DescriptorTypeRatio> mRatios;
     std::vector<vk::raii::DescriptorPool> mFullPools;
     std::vector<vk::raii::DescriptorPool> mReadyPools;
-    uint32_t mSetsPerPool = 0;
+    u32 mSetsPerPool = 0;
 };
 
 struct DescriptorSetBinder {
@@ -48,9 +50,9 @@ struct DescriptorSetBinder {
     std::deque<vk::DescriptorBufferInfo> mBufferInfos;
     std::vector<vk::WriteDescriptorSet> mWrites;
 
-    void bindImage(int binding, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
-    void bindImageArray(int binding, uint32_t arrayIndex, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
-    void bindBuffer(int binding, vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
+    void bindImage(u32 binding, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
+    void bindImageArray(u32 binding, u32 arrayIndex, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
+    void bindBuffer(u32 binding, vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
 
     void clear();
     void updateSetBindings(const vk::raii::Device& device, vk::DescriptorSet set);

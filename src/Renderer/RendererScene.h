@@ -27,9 +27,9 @@ class RendererScene {
     Culler mCuller;
     Picker mPicker;
 
-    int mLatestInstanceId{0};
-    int mLatestMeshId{0};
-    int mLatestModelId{0};
+    u32 mLatestInstanceId{0};
+    u32 mLatestMeshId{0};
+    u32 mLatestModelId{0};
 
     struct Flags {
         bool modelAddedFlag;
@@ -42,12 +42,12 @@ class RendererScene {
     Flags mFlags;
 
     std::unordered_map<std::string, GLTFModel> mModelsCache;
-    std::unordered_map<int, std::string> mModelsReverse;
+    std::unordered_map<u32, std::string> mModelsReverse;
 
-    std::unordered_map<int, Batch> mOpaqueBatches;
-    std::unordered_map<int, Batch> mMaskBatches;
-    std::unordered_map<int, Batch> mTransparentBatches;
-    std::array<std::unordered_map<int, Batch>*, 3> mBatchTypes;
+    std::unordered_map<u32, Batch> mOpaqueBatches;
+    std::unordered_map<u32, Batch> mMaskBatches;
+    std::unordered_map<u32, Batch> mTransparentBatches;
+    std::array<std::unordered_map<u32, Batch>*, 3> mBatchTypes;
     ForwardPushConstants mForwardPushConstants;
 
     AddressedBuffer mMainVertexBuffer;

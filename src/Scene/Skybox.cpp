@@ -1,6 +1,7 @@
 #include <Renderer/Renderer.h>
 #include <Scene/Skybox.h>
 #include <Utils/Helper.h>
+
 #include <quill/LogMacros.h>
 #include <stb_image.h>
 
@@ -90,7 +91,7 @@ void Skybox::initBuffer() {
         1.0f,  -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,  1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
     };
 
-    int skyboxVertexSize = mVertices.size() * sizeof(float);
+    u32 skyboxVertexSize = mVertices.size() * sizeof(float);
 
     mVertexBuffer = mRenderer->mResources.createBuffer(
         skyboxVertexSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
@@ -133,19 +134,19 @@ void Skybox::loadImage(const std::filesystem::path& skyboxImageDir) {
                                     skyboxImageDir / "ny.png", skyboxImageDir / "pz.png", skyboxImageDir / "nz.png"};
     std::vector<std::byte> skyboxImageData(MAX_IMAGE_SIZE);
 
-    int width = 0, height = 0, nrChannels = 0;
-    int offset = 0;
+    i32 width = 0, height = 0, nrChannels = 0;
+    i32 offset = 0;
 
     for (auto& path : skyboxImagePaths) {
         if (unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &nrChannels, 4)) {
-            int imageSize = width * height * 4;
+            u32 imageSize = width * height * 4;
             std::memcpy(skyboxImageData.data() + offset, data, imageSize);
             offset += imageSize;
             stbi_image_free(data);
         }
     }
 
-    mImage = mRenderer->mResources.createImage(skyboxImageData.data(), vk::Extent3D{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1},
+    mImage = mRenderer->mResources.createImage(skyboxImageData.data(), vk::Extent3D{static_cast<u32>(width), static_cast<u32>(height), 1},
                                                vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled, true, false, true);
 
     LOG_INFO(mRenderer->mLogger, "Skybox Loaded");

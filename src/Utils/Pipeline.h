@@ -1,16 +1,18 @@
 ﻿#pragma once
 
+#include <Utils/Types.h>
+
 #include <fastgltf/types.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
 struct PipelineBundle {
-    int id;
+    u32 id;
     vk::raii::Pipeline pipeline;
     vk::PipelineLayout layout;
 
     PipelineBundle() : id(-1), pipeline(nullptr), layout(nullptr) {}
 
-    PipelineBundle(int id_, vk::raii::Pipeline pipeline, vk::PipelineLayout layout) : id(id_), pipeline(std::move(pipeline)), layout(layout) {}
+    PipelineBundle(u32 id_, vk::raii::Pipeline pipeline, vk::PipelineLayout layout) : id(id_), pipeline(std::move(pipeline)), layout(layout) {}
 
     ~PipelineBundle() { cleanup(); }
 

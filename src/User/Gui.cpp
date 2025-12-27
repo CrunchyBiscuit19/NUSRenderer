@@ -1,15 +1,16 @@
 #include <Renderer/Renderer.h>
 #include <User/Gui.h>
+
 #include <fmt/core.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 #include <imgui_internal.h>
 #include <quill/LogMacros.h>
-
 #include <glm/gtc/type_ptr.hpp>
 #include <magic_enum.hpp>
-#include <ranges>
 #include <vulkan/vulkan_raii.hpp>
+
+#include <ranges>
 
 GuiComponent::GuiComponent(Renderer* renderer, Gui* gui, std::string name) : mRenderer(renderer), mGui(gui), mName(name) {}
 
@@ -43,7 +44,7 @@ void Gui::SceneGuiComponent::elements() {
                     glm::vec3 translation, rotation, scale;
                     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation),
                                                           glm::value_ptr(scale));
-                    for (int i = 0; i < 3; i++) {
+                    for (u32 i = 0; i < 3; i++) {
                         rotation[i] = glm::radians(rotation[i]);
                     }
                     ImGui::InputFloat3("Translation", glm::value_ptr(translation), "%.3f", ImGuiInputTextFlags_ReadOnly);
@@ -90,7 +91,7 @@ void Gui::MiscGuiComponent::elements() {
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
         ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
         ImGui::Text("Pre-Cull Render Instances: %i", mRenderer->mStats.mPreCullRenderInstancesCount);
-        ImGui::Text("Post-Cull Render Instances: %i", *static_cast<uint32_t*>(mRenderer->mStats.mPostCullRenderInstancesCountBuffer.info.pMappedData));
+        ImGui::Text("Post-Cull Render Instances: %i", *static_cast<u32*>(mRenderer->mStats.mPostCullRenderInstancesCountBuffer.info.pMappedData));
     }
     if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("[G] Toggle GUI");
@@ -165,7 +166,7 @@ void Gui::initDescriptors() {
     vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
     poolInfo.maxSets = 100;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.poolSizeCount = static_cast<u32>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     mDescriptorPool = mRenderer->mCore.mDevice.createDescriptorPool(poolInfo);
 
@@ -212,7 +213,7 @@ void Gui::initLinearColors() {
     // Go through every colour and convert it to linear
     // Hack solution to not make it double gamma corrected
     ImGuiStyle& style = ImGui::GetStyle();
-    for (int i = 0; i < ImGuiCol_COUNT; i++) {
+    for (u32 i = 0; i < ImGuiCol_COUNT; i++) {
         /*float linear = (srgb <= 0.04045f) ? srgb / 12.92f : pow((srgb + 0.055f)
          * / 1.055f, 2.4f);*/
         ImVec4& col = style.Colors[i];

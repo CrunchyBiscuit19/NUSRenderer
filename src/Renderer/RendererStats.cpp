@@ -7,7 +7,7 @@ RendererStats::RendererStats(Renderer* renderer)
 
 void RendererStats::initBuffers() {
     mPostCullRenderInstancesCountBuffer =
-        mRenderer->mResources.createAddressedBuffer(sizeof(uint32_t),
+        mRenderer->mResources.createAddressedBuffer(sizeof(u32),
                                                     vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc |
                                                         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                                                     VMA_MEMORY_USAGE_CPU_TO_GPU);

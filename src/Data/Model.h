@@ -4,6 +4,7 @@
 #include <Data/Instance.h>
 #include <Data/Mesh.h>
 #include <Utils/Descriptor.h>
+#include <Utils/Types.h>
 
 #include <fastgltf/parser.hpp>
 #include <filesystem>
@@ -15,8 +16,8 @@ class GLTFModel {
 
    public:
     std::string mName;
-    int mId{0};
-    std::optional<uint64_t> mDeleteSignal{std::nullopt};
+    u32 mId{0};
+    std::optional<u64> mDeleteSignal{std::nullopt};
     bool mReloadInstances{true};
 
     DescriptorAllocatorGrowable mModelDescriptorAllocator;
@@ -28,19 +29,19 @@ class GLTFModel {
 
     std::vector<PbrMaterial> mMaterials;
     AllocatedBuffer mMaterialConstantsBuffer;
-    uint32_t mMainFirstMaterial{0};
+    u32 mMainFirstMaterial{0};
 
     std::vector<std::shared_ptr<Node>> mTopNodes;
     std::vector<std::shared_ptr<Node>> mNodes;
     AllocatedBuffer mNodeTransformsBuffer;
-    uint32_t mMainFirstNodeTransform{0};
+    u32 mMainFirstNodeTransform{0};
 
     std::vector<GLTFInstance> mInstances;
     AllocatedBuffer mInstancesBuffer;
-    uint32_t mMainFirstInstance{0};
+    u32 mMainFirstInstance{0};
 
     AllocatedBuffer mBoundsBuffer;
-    uint32_t mMainFirstBounds{0};
+    u32 mMainFirstBounds{0};
 
    private:
     vk::Filter extractFilter(fastgltf::Filter filter);
@@ -63,7 +64,7 @@ class GLTFModel {
     void loadNodes();
     void loadBoundsBuffer();
 
-    void loadMeshBuffers(Mesh& mesh, std::span<uint32_t> srcIndexVector, std::span<Vertex> srcVertexVector);
+    void loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::span<Vertex> srcVertexVector);
     void loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector);
     void loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector);
 

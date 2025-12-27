@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 namespace vkhelper {
-vk::CommandPoolCreateInfo commandPoolCreateInfo(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flags);
-vk::CommandBufferAllocateInfo commandBufferAllocateInfo(vk::CommandPool pool, uint32_t count = 1);
+vk::CommandPoolCreateInfo commandPoolCreateInfo(u32 queueFamilyIndex, vk::CommandPoolCreateFlags flags);
+vk::CommandBufferAllocateInfo commandBufferAllocateInfo(vk::CommandPool pool, u32 count = 1);
 vk::CommandBufferBeginInfo commandBufferBeginInfo(vk::CommandBufferUsageFlags flags);
 vk::CommandBufferSubmitInfo commandBufferSubmitInfo(vk::CommandBuffer cmd);
 
@@ -19,12 +19,12 @@ vk::RenderingAttachmentInfo colorAttachmentInfo(vk::ImageView view, vk::ImageLay
 vk::RenderingAttachmentInfo depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp load = vk::AttachmentLoadOp::eLoad,
                                                 vk::AttachmentStoreOp store = vk::AttachmentStoreOp::eStore);
 vk::RenderingInfo renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment, vk::RenderingAttachmentInfo* depthAttachment,
-                                uint32_t count = 1);
+                                u32 count = 1);
 
-vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding(vk::DescriptorType type, vk::ShaderStageFlags stageFlags, uint32_t binding);
-vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutBinding* bindings, uint32_t bindingCount);
-vk::WriteDescriptorSet writeDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorImageInfo* imageInfo, uint32_t binding);
-vk::WriteDescriptorSet writeDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorBufferInfo* bufferInfo, uint32_t binding);
+vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding(vk::DescriptorType type, vk::ShaderStageFlags stageFlags, u32 binding);
+vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutBinding* bindings, u32 bindingCount);
+vk::WriteDescriptorSet writeDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorImageInfo* imageInfo, u32 binding);
+vk::WriteDescriptorSet writeDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorBufferInfo* bufferInfo, u32 binding);
 vk::DescriptorBufferInfo bufferInfo(vk::Buffer buffer, vk::DeviceSize offset, vk::DeviceSize range);
 
 vk::ImageSubresourceRange imageSubresourceRange(vk::ImageAspectFlags aspectMask);
@@ -35,7 +35,7 @@ void transitionImage(vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFl
                      vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, vk::ImageLayout newLayout);
 void copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image destination, vk::Extent2D srcSize, vk::Extent2D dstSize);
 void generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize, bool cubemap = false);
-int getFormatTexelSize(vk::Format format);
+u32 getFormatTexelSize(vk::Format format);
 
 vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo();
 vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo(vk::ShaderStageFlagBits stage, vk::ShaderModule shaderModule, const char* entry = "main");

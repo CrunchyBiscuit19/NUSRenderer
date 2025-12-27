@@ -200,7 +200,7 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::PickPick, [&](vk::CommandBuffer cmd) {
-        std::array<int32_t, 2> mouseClickLocation = {static_cast<int32_t>(ImGui::GetIO().MousePos.x), static_cast<int32_t>(ImGui::GetIO().MousePos.y)};
+        std::array<i32, 2> mouseClickLocation = {static_cast<i32>(ImGui::GetIO().MousePos.x), static_cast<i32>(ImGui::GetIO().MousePos.y)};
         std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, mouseClickLocation.data(), sizeof(glm::ivec2));
 
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mPicker.mPickPipelineBundle.pipeline);
@@ -224,9 +224,9 @@ void Renderer::initPasses() {
         glm::uvec2 read(0);
         std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), sizeof(glm::uvec2));
 
-        uint32_t modelId = read.x;
+        u32 modelId = read.x;
 
-        auto reverseIt = mScene.mModelsReverse.find(static_cast<int>(modelId));
+        auto reverseIt = mScene.mModelsReverse.find(static_cast<u32>(modelId));
         if (reverseIt == mScene.mModelsReverse.end()) {
             mScene.mPicker.mClickedInstance = nullptr;
             return;
@@ -240,7 +240,7 @@ void Renderer::initPasses() {
         }
         GLTFModel& clickedModel = cacheIt->second;
 
-        uint32_t localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
+        u32 localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
         mScene.mPicker.mClickedInstance = &clickedModel.mInstances[localInstanceIndex];
     });
 

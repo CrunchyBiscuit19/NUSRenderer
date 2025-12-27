@@ -1,5 +1,7 @@
 #include <Data/Mesh.h>
 #include <Renderer/Renderer.h>
+#include <Utils/Types.h>
+
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
 
@@ -14,18 +16,18 @@ void Node::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model) {
 
 void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model) {
     for (auto& primitive : mMesh->mPrimitives) {
-        int pipelineId = primitive.mMaterial->mPipelineBundle->id;
+        u32 pipelineId = primitive.mMaterial->mPipelineBundle->id;
 
-        int batchType = static_cast<uint32_t>(BatchType::Opaque);
+        u32 batchType = static_cast<u32>(BatchType::Opaque);
         switch (primitive.mMaterial->mPbrData.alphaMode) {
             case fastgltf::AlphaMode::Opaque:
-                batchType = static_cast<uint32_t>(BatchType::Opaque);
+                batchType = static_cast<u32>(BatchType::Opaque);
                 break;
             case fastgltf::AlphaMode::Mask:
-                batchType = static_cast<uint32_t>(BatchType::Mask);
+                batchType = static_cast<u32>(BatchType::Mask);
                 break;
             case fastgltf::AlphaMode::Blend:
-                batchType = static_cast<uint32_t>(BatchType::Transparent);
+                batchType = static_cast<u32>(BatchType::Transparent);
                 break;
         }
 
@@ -38,9 +40,9 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                                       model->mMainFirstNodeTransform + this->mRelativeNodeIndex, model->mId,
                                       model->mMainFirstBounds + mMesh->mRelativeFirstBounds);
 
-        uint32_t renderItemIndex = static_cast<uint32_t>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
-        uint32_t instanceIndex = model->mMainFirstInstance;
-        for (int i = 0; i < model->mInstances.size(); i++) {
+        u32 renderItemIndex = static_cast<u32>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
+        u32 instanceIndex = model->mMainFirstInstance;
+        for (u32 i = 0; i < model->mInstances.size(); i++) {
             renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderInstances.emplace_back(renderItemIndex, instanceIndex + i);
         }
     }

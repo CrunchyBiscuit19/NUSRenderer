@@ -1,9 +1,10 @@
 #include <Renderer/Renderer.h>
 #include <Scene/Batch.h>
+
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
 
-Batch::Batch(Renderer* renderer, Primitive& primitive, int pipelineId) {
+Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     pipelineBundle = primitive.mMaterial->mPipelineBundle;
 
     renderItemsBuffer = renderer->mResources.createAddressedBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem),

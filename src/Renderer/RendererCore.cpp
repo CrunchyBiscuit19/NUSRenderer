@@ -31,13 +31,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagB
     message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
     message += fmt::format("Queue Labels:\n");
-    for (int i = 0; i < pCallbackData->queueLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
+    for (u32 i = 0; i < pCallbackData->queueLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pQueueLabels[i].pLabelName);
     message += fmt::format("CommandBuffer Labels:\n");
-    for (int i = 0; i < pCallbackData->cmdBufLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
+    for (u32 i = 0; i < pCallbackData->cmdBufLabelCount; i++) message += fmt::format("LabelName = <{}>\n", pCallbackData->pCmdBufLabels[i].pLabelName);
 
     message += fmt::format("\n");
 
-    for (int i = 0; i < pCallbackData->objectCount; i++) {
+    for (u32 i = 0; i < pCallbackData->objectCount; i++) {
         message += fmt::format("Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n", std::to_string(i),
                                vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)),
                                std::to_string(pCallbackData->pObjects[i].objectHandle));
@@ -75,8 +75,8 @@ RendererCore::RendererCore(Renderer* renderer)
 
 void RendererCore::init() {
     SDL_Init(SDL_INIT_VIDEO);
-    mWindow = SDL_CreateWindow("NUSRenderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, static_cast<int>(mWindowExtent.width),
-                               static_cast<int>(mWindowExtent.height), SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+    mWindow = SDL_CreateWindow("NUSRenderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, static_cast<u32>(mWindowExtent.width),
+                               static_cast<u32>(mWindowExtent.height), SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
     LOG_INFO(mRenderer->mLogger, "SDL Window Created");
 

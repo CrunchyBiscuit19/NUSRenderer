@@ -1,14 +1,14 @@
 ﻿#include <Renderer/RendererInfrastructure.h>
 #include <Utils/Helper.h>
 
-vk::CommandPoolCreateInfo vkhelper::commandPoolCreateInfo(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags flags) {
+vk::CommandPoolCreateInfo vkhelper::commandPoolCreateInfo(u32 queueFamilyIndex, vk::CommandPoolCreateFlags flags) {
     vk::CommandPoolCreateInfo info = {};
     info.pNext = nullptr;
     info.flags = flags;
     return info;
 }
 
-vk::CommandBufferAllocateInfo vkhelper::commandBufferAllocateInfo(vk::CommandPool pool, uint32_t count) {
+vk::CommandBufferAllocateInfo vkhelper::commandBufferAllocateInfo(vk::CommandPool pool, u32 count) {
     vk::CommandBufferAllocateInfo info = {};
     info.pNext = nullptr;
     info.commandPool = pool;
@@ -115,7 +115,7 @@ vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk
 }
 
 vk::RenderingInfo vkhelper::renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment, vk::RenderingAttachmentInfo* depthAttachment,
-                                          uint32_t count) {
+                                          u32 count) {
     vk::RenderingInfo renderInfo{};
     renderInfo.pNext = nullptr;
     renderInfo.renderArea = vk::Rect2D{vk::Offset2D{0, 0}, renderExtent};
@@ -137,7 +137,7 @@ vk::ImageSubresourceRange vkhelper::imageSubresourceRange(vk::ImageAspectFlags a
     return subImage;
 }
 
-vk::DescriptorSetLayoutBinding vkhelper::descriptorSetLayoutBinding(vk::DescriptorType type, vk::ShaderStageFlags stageFlags, uint32_t binding) {
+vk::DescriptorSetLayoutBinding vkhelper::descriptorSetLayoutBinding(vk::DescriptorType type, vk::ShaderStageFlags stageFlags, u32 binding) {
     vk::DescriptorSetLayoutBinding setbind = {};
     setbind.binding = binding;
     setbind.descriptorCount = 1;
@@ -148,7 +148,7 @@ vk::DescriptorSetLayoutBinding vkhelper::descriptorSetLayoutBinding(vk::Descript
     return setbind;
 }
 
-vk::DescriptorSetLayoutCreateInfo vkhelper::descriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutBinding* bindings, uint32_t bindingCount) {
+vk::DescriptorSetLayoutCreateInfo vkhelper::descriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutBinding* bindings, u32 bindingCount) {
     vk::DescriptorSetLayoutCreateInfo info = {};
     info.pNext = nullptr;
     info.pBindings = bindings;
@@ -157,7 +157,7 @@ vk::DescriptorSetLayoutCreateInfo vkhelper::descriptorSetLayoutCreateInfo(vk::De
     return info;
 }
 
-vk::WriteDescriptorSet vkhelper::writeDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorImageInfo* imageInfo, uint32_t binding) {
+vk::WriteDescriptorSet vkhelper::writeDescriptorImage(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorImageInfo* imageInfo, u32 binding) {
     vk::WriteDescriptorSet write = {};
     write.pNext = nullptr;
     write.dstBinding = binding;
@@ -169,7 +169,7 @@ vk::WriteDescriptorSet vkhelper::writeDescriptorImage(vk::DescriptorType type, v
 }
 
 vk::WriteDescriptorSet vkhelper::writeDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorBufferInfo* bufferInfo,
-                                                       uint32_t binding) {
+                                                       u32 binding) {
     vk::WriteDescriptorSet write = {};
     write.pNext = nullptr;
     write.dstBinding = binding;
@@ -244,11 +244,11 @@ void vkhelper::transitionImage(vk::CommandBuffer cmd, vk::Image image, vk::Pipel
 void vkhelper::copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image destination, vk::Extent2D srcSize, vk::Extent2D dstSize) {
     vk::ImageBlit2 blitRegion{};
     blitRegion.pNext = nullptr;
-    blitRegion.srcOffsets[1].x = static_cast<int>(srcSize.width);
-    blitRegion.srcOffsets[1].y = static_cast<int>(srcSize.height);
+    blitRegion.srcOffsets[1].x = static_cast<u32>(srcSize.width);
+    blitRegion.srcOffsets[1].y = static_cast<u32>(srcSize.height);
     blitRegion.srcOffsets[1].z = 1;
-    blitRegion.dstOffsets[1].x = static_cast<int>(dstSize.width);
-    blitRegion.dstOffsets[1].y = static_cast<int>(dstSize.height);
+    blitRegion.dstOffsets[1].x = static_cast<u32>(dstSize.width);
+    blitRegion.dstOffsets[1].y = static_cast<u32>(dstSize.height);
     blitRegion.dstOffsets[1].z = 1;
     blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     blitRegion.srcSubresource.baseArrayLayer = 0;
@@ -273,10 +273,10 @@ void vkhelper::copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image dest
 }
 
 void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize, bool cubemap) {
-    int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
-    const int mipLevels = static_cast<int>(std::floor(std::log2(std::max(imageSize.width, imageSize.height)))) + 1;
+    u32 numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
+    const u32 mipLevels = static_cast<u32>(std::floor(std::log2(std::max(imageSize.width, imageSize.height)))) + 1;
 
-    for (int mip = 0; mip < mipLevels; mip++) {
+    for (u32 mip = 0; mip < mipLevels; mip++) {
         // Transition current mipmap level from eTransferDstOptimal to eTransferSrcOptimal
         vk::Extent2D halfSize = imageSize;
         halfSize.width /= 2;
@@ -302,7 +302,7 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
         // Add another barrier to all the mipmap levels to transition the image into VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
         cmd.pipelineBarrier2(depInfo);
 
-        for (int face = 0; face < numFaces; face++) {
+        for (u32 face = 0; face < numFaces; face++) {
             // Copy the image from previous level into next level at half resolution (except if at last level).
             if (mip < mipLevels - 1) {
                 vk::ImageBlit2 blitRegion{};
@@ -342,8 +342,8 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
                     vk::AccessFlagBits2::eShaderRead, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
-int vkhelper::getFormatTexelSize(vk::Format format) {
-    int bytesPerTexel = 0;
+u32 vkhelper::getFormatTexelSize(vk::Format format) {
+    u32 bytesPerTexel = 0;
     switch (format) {
         case vk::Format::eR8G8B8A8Srgb:
         case vk::Format::eR8G8B8A8Unorm:

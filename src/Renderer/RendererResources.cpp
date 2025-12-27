@@ -33,19 +33,19 @@ void RendererResources::initStaging() {
 
 void RendererResources::initDefaultImages() {
     // Colour data interpreted as little endian
-    constexpr uint32_t white = std::byteswap(0xFFFFFFFF);
+    constexpr u32 white = std::byteswap(0xFFFFFFFF);
     mDefaultImages.try_emplace(DefaultImage::White, createImage(&white, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled));
-    constexpr uint32_t grey = std::byteswap(0xAAAAAAFF);
+    constexpr u32 grey = std::byteswap(0xAAAAAAFF);
     mDefaultImages.try_emplace(DefaultImage::Grey, createImage(&grey, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled));
-    constexpr uint32_t black = std::byteswap(0x000000FF);
+    constexpr u32 black = std::byteswap(0x000000FF);
     mDefaultImages.try_emplace(DefaultImage::Black, createImage(&black, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled));
-    constexpr uint32_t blue = std::byteswap(0x769DDBFF);
+    constexpr u32 blue = std::byteswap(0x769DDBFF);
     mDefaultImages.try_emplace(DefaultImage::Blue, createImage(&blue, vk::Extent3D{1, 1, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled));
-    std::array<uint32_t, 16 * 16> pixels;
-    for (int x = 0; x < 16; x++) {
-        for (int y = 0; y < 16; y++) {
-            constexpr uint32_t magenta = std::byteswap(0xFF00FFFF);
-            pixels[static_cast<std::array<uint32_t, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+    std::array<u32, 16 * 16> pixels;
+    for (u32 x = 0; x < 16; x++) {
+        for (u32 y = 0; y < 16; y++) {
+            constexpr u32 magenta = std::byteswap(0xFF00FFFF);
+            pixels[static_cast<std::array<u32, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
         }
     }
     mDefaultImages.try_emplace(DefaultImage::Checkerboard,
@@ -99,7 +99,7 @@ vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath) 
 
     std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
     const size_t fileSize = file.tellg();
-    std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+    std::vector<u32> buffer(fileSize / sizeof(u32));
     file.seekg(0);
     file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(fileSize));
     // Load whole file into buffer
@@ -107,7 +107,7 @@ vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath) 
 
     vk::ShaderModuleCreateInfo shaderCreateInfo = {};
     shaderCreateInfo.pNext = nullptr;
-    shaderCreateInfo.codeSize = buffer.size() * sizeof(uint32_t);
+    shaderCreateInfo.codeSize = buffer.size() * sizeof(u32);
     shaderCreateInfo.pCode = buffer.data();
 
     mShadersCache.try_emplace(shaderFileName, mRenderer->mCore.mDevice, shaderCreateInfo);
@@ -143,7 +143,7 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
                                               bool cubemap) const {
     vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);
     if (mipmapped) {
-        newImageCreateInfo.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
+        newImageCreateInfo.mipLevels = static_cast<u32>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
     }
     if (cubemap) {
         newImageCreateInfo.arrayLayers = NUMBER_OF_CUBEMAP_FACES;
@@ -179,9 +179,9 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
 
 AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped,
                                               bool multisampling, bool cubemap) const {
-    int numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
+    u32 numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
 
-    int bytesPerTexel = vkhelper::getFormatTexelSize(format);
+    u32 bytesPerTexel = vkhelper::getFormatTexelSize(format);
     const size_t faceSize = extent.depth * extent.width * extent.height * bytesPerTexel;
     const size_t dataSize = faceSize * numFaces;
     std::memcpy(mImageStagingBuffer.info.pMappedData, data, dataSize);
@@ -195,7 +195,7 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
 
         std::vector<vk::BufferImageCopy> copyRegions;
         copyRegions.reserve(numFaces);
-        for (int face = 0; face < numFaces; face++) {
+        for (u32 face = 0; face < numFaces; face++) {
             vk::BufferImageCopy copyRegion;
             copyRegion.bufferOffset = face * faceSize;
             copyRegion.bufferRowLength = 0;

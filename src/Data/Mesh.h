@@ -17,34 +17,34 @@ struct AABB {
 };
 
 struct Primitive {
-    uint32_t mRelativeFirstIndex;
-    uint32_t mIndexCount;
-    uint32_t mRelativeVertexOffset;
+    u32 mRelativeFirstIndex;
+    u32 mIndexCount;
+    u32 mRelativeVertexOffset;
     PbrMaterial* mMaterial;
 };
 
 class Mesh {
    public:
     std::string mName;
-    int mId;
+    u32 mId;
     std::vector<Primitive> mPrimitives;
 
     AABB mBounds;
-    uint32_t mRelativeFirstBounds;
+    u32 mRelativeFirstBounds;
 
     AllocatedBuffer mVertexBuffer;
-    uint32_t mNumVertices{0};
-    uint32_t mMainVertexOffset{0};
+    u32 mNumVertices{0};
+    u32 mMainVertexOffset{0};
 
     AllocatedBuffer mIndexBuffer;
-    uint32_t mNumIndices{0};
-    uint32_t mMainFirstIndex{0};
+    u32 mNumIndices{0};
+    u32 mMainFirstIndex{0};
 };
 
 class Node {
    public:
     std::string mName;
-    int mRelativeNodeIndex;
+    u32 mRelativeNodeIndex;
     std::weak_ptr<Node> mParent;
     std::vector<std::shared_ptr<Node>> mChildren;
     glm::mat4 mLocalTransform;

@@ -1,6 +1,8 @@
 ﻿#include <Renderer/Renderer.h>
 
-int main() {
+#include <Utils/Types.h>
+
+u32 main() {
     Renderer renderer;
     renderer.init();
     renderer.run();
