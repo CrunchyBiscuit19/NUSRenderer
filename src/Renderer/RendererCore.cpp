@@ -93,6 +93,9 @@ void RendererCore::init() {
         .set_debug_callback_user_data_pointer(mRenderer)
         .require_api_version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
     if (USE_VALIDATION_LAYERS) {
+        vkbInstBuilder.request_validation_layers(USE_VALIDATION_LAYERS);
+    }
+    if (STRICT_VALIDATION) {
         vkbInstBuilder.request_validation_layers(USE_VALIDATION_LAYERS)
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))

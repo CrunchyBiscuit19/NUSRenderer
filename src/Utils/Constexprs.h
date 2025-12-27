@@ -7,8 +7,10 @@
 
 #ifdef RELEASE
 constexpr bool USE_VALIDATION_LAYERS = false;
+constexpr bool STRICT_VALIDATION = false;
 #else
 constexpr bool USE_VALIDATION_LAYERS = true;
+constexpr bool STRICT_VALIDATION = false;
 #endif
 
 constexpr bool LOG_TO_FILE = false;
