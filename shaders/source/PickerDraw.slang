@@ -1,21 +1,17 @@
-module Mesh;
+module PickerDraw;
 
 import Perspective;
 import Vertex;
-import MaterialConstant;
 import NodeTransform;
 import Instance;
 import RenderItem;
 
 [[vk::binding(0, 0)]]
 public uniform ConstantBuffer<Perspective> perspectiveBuffer;
-[[vk::binding(0, 1)]]
-public uniform Sampler2D materialResources[];
 
-public struct ForwardPushConstants
+public struct PickerDrawPushConstants
 {
     public Vertex *verticesBuffer;
-    public MaterialConstant *materialConstantsBuffer;
     public NodeTransform *nodeTransformsBuffer;
     public Instance *instancesBuffer;
     public RenderItem *renderItemsBuffer;
@@ -24,17 +20,15 @@ public struct ForwardPushConstants
 public struct VSInput
 {
     public uint vertexIndex : SV_VulkanVertexID;
-    public uint instanceIndex : SV_InstanceID;
+    public uint instanceIndex : SV_VulkanInstanceID;
     public uint drawIndex : SV_DrawIndex;
 };
 
 public struct VSOutput
 {
     public float4 position : SV_Position;
-    public float3 normal : NORMAL;
-    public float2 uv : TEXCOORD0;
-    public float4 color : COLOR0;
-    public nointerpolation uint materialIndex;
+    public nointerpolation uint modelIndex;
+    public nointerpolation uint instanceIndex;
 };
 
 public typedef VSOutput FSInput;

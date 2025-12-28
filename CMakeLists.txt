@@ -17,75 +17,11 @@ endif()
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-# Build all Shaders
-find_program(SLANGC slangc HINTS "/usr/bin" "/usr/local/bin" "$ENV{VULKAN_SDK}/Bin/" "$ENV{VULKAN_SDK}/Bin32/")
-set(CMAKE_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
-file(MAKE_DIRECTORY "${CMAKE_SHADER_DIR}/out")
-
-# Get all common Slang modules and build them
-set(SLANG_COMMON_MODULE_OUTPUTS)
-file(GLOB_RECURSE SLANG_COMMON_MODULES "${CMAKE_SHADER_DIR}/common/*.mod.slang")
-foreach(SLANG_COMMON_MODULE ${SLANG_COMMON_MODULES})
-    message(STATUS "BUILDING SLANG MODULE: ${SLANG_COMMON_MODULE}")
-    get_filename_component(SLANG_COMMON_MODULE_NAME ${SLANG_COMMON_MODULE} NAME_WE)
-    set(SLANG_COMMON_MODULE_PATH "${CMAKE_SHADER_DIR}/out/${SLANG_COMMON_MODULE_NAME}.slang-module")
-    add_custom_command(
-        OUTPUT "${SLANG_COMMON_MODULE_PATH}"
-        COMMAND "${SLANGC}" "${SLANG_COMMON_MODULE}" -o "${SLANG_COMMON_MODULE_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -module-name "${SLANG_COMMON_MODULE_NAME}" -O3
-        DEPENDS "${SLANG_COMMON_MODULE}"
-    )
-    list(APPEND SLANG_COMMON_MODULE_OUTPUTS "${SLANG_COMMON_MODULE_PATH}")
-endforeach()
-add_custom_target(SlangCommonModules ALL DEPENDS ${SLANG_COMMON_MODULE_OUTPUTS})
-
-# Get all other Slang modules and build them
-set(SLANG_OTHER_MODULE_OUTPUTS)
-file(GLOB_RECURSE SLANG_OTHER_MODULES "${CMAKE_SHADER_DIR}/source/**/*.mod.slang")
-foreach(SLANG_OTHER_MODULE ${SLANG_OTHER_MODULES})
-    message(STATUS "BUILDING SLANG MODULE: ${SLANG_OTHER_MODULE}")
-    get_filename_component(SLANG_OTHER_MODULE_NAME ${SLANG_OTHER_MODULE} NAME_WE)
-    string(REPLACE ".module" "" SLANG_OTHER_MODULE_NAME "${SLANG_OTHER_MODULE_NAME}")
-    set(SLANG_OTHER_MODULE_PATH "${CMAKE_SHADER_DIR}/out/${SLANG_OTHER_MODULE_NAME}.slang-module")
-    add_custom_command(
-        OUTPUT "${SLANG_OTHER_MODULE_PATH}"
-        COMMAND "${SLANGC}" "${SLANG_OTHER_MODULE}" -o "${SLANG_OTHER_MODULE_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -module-name "${SLANG_OTHER_MODULE_NAME}" -O3
-        DEPENDS "${SLANG_OTHER_MODULE}"
-    )
-    list(APPEND SLANG_OTHER_MODULE_OUTPUTS "${SLANG_OTHER_MODULE_PATH}")
-endforeach()
-add_custom_target(SlangOtherModules ALL DEPENDS ${SLANG_OTHER_MODULE_OUTPUTS})
-add_dependencies(SlangOtherModules SlangCommonModules)
-
-# Get all Slang shaders and build them
-set(SLANG_SOURCE_OUTPUTS)
-file(GLOB_RECURSE SLANG_SOURCES
-    "${CMAKE_SHADER_DIR}/**/*.vert.slang"
-    "${CMAKE_SHADER_DIR}/**/*.frag.slang"
-    "${CMAKE_SHADER_DIR}/**/*.comp.slang"
+# Set shader target and grab all source files
+file(GLOB_RECURSE SLANG_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/source/*.slang"
 )
-foreach(SLANG_SOURCE ${SLANG_SOURCES})
-    message(STATUS "BUILDING SLANG SOURCE: ${SLANG_SOURCE}")
-    get_filename_component(SLANG_SOURCE_NAME ${SLANG_SOURCE} NAME) # ${CMAKE_SHADER_DIR}/source/Cull/Cull.comp.slang -> Cull.comp.slang
-    string(REPLACE ".slang" "" SLANG_SOURCE_NAME "${SLANG_SOURCE_NAME}") # Cull.comp.slang -> Cull.comp
-    get_filename_component(SLANG_STAGE_SHORT ${SLANG_SOURCE_NAME} LAST_EXT) # Cull.comp -> .comp
-    set(SLANG_STAGE_LONG "nostage")
-    if(SLANG_STAGE_SHORT STREQUAL ".vert")
-        set(SLANG_STAGE_LONG "vertex")
-    elseif(SLANG_STAGE_SHORT STREQUAL ".frag")
-        set(SLANG_STAGE_LONG "fragment")
-    elseif(SLANG_STAGE_SHORT STREQUAL ".comp")
-        set(SLANG_STAGE_LONG "compute")
-    endif()
-    set(SLANG_SOURCE_OUTPUT_PATH "${CMAKE_SHADER_DIR}/out/${SLANG_SOURCE_NAME}.spv")
-    add_custom_command(
-        OUTPUT "${SLANG_SOURCE_OUTPUT_PATH}"
-        COMMAND "${SLANGC}" "${SLANG_SOURCE}" -o "${SLANG_SOURCE_OUTPUT_PATH}" -I "${CMAKE_SHADER_DIR}/out/" -stage "${SLANG_STAGE_LONG}" -profile glsl_460 -target spirv -O3
-        DEPENDS "${SLANG_SOURCE}"
-    )
-    list(APPEND SLANG_SOURCE_OUTPUTS ${SLANG_SOURCE_OUTPUT_PATH})
-endforeach()
-add_custom_target(Shaders DEPENDS ${SLANG_SOURCE_OUTPUTS} SOURCES ${SLANG_COMMON_MODULES} ${SLANG_OTHER_MODULES} ${SLANG_SOURCES})
-add_dependencies(Shaders SlangOtherModules)
+add_custom_target(Shaders ALL SOURCES ${SLANG_SOURCES})
 
 # Set C++ Standard, and grab all source files
 project(NUSRenderer)
@@ -168,6 +104,8 @@ target_compile_definitions(NUSRenderer PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC LOGS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/logs/")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC MODELS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/models/")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SKYBOXES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/skyboxes/")
+set(CMAKE_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+file(MAKE_DIRECTORY "${CMAKE_SHADER_DIR}/out")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC SHADERS_PATH="${CMAKE_SHADER_DIR}/out")
 target_compile_definitions(NUSRenderer PRIVATE $<$<CONFIG:Release>:RELEASE>)
 
