@@ -27,6 +27,12 @@ struct CullerResetPushConstants {
     u32 renderItemsCount;
 };
 
+struct CullerCompactPushConstants {
+    vk::DeviceAddress preCullRenderItemsBuffer;
+    vk::DeviceAddress postCullRenderItemsBuffer;
+    u32 renderItemsCount;
+};
+
 class Culler {
     Renderer* mRenderer;
 
@@ -39,11 +45,16 @@ public:
     vk::raii::PipelineLayout mCullPipelineLayout;
     CullerCullPushConstants mCullPushConstants;
 
+    PipelineBundle mCompactPipelineBundle;
+    vk::raii::PipelineLayout mCompactPipelineLayout;
+    CullerCompactPushConstants mCompactPushConstants;
+
     Culler(Renderer* renderer);
 
     void init();
     void initResetPipeline();
     void initCullPipeline();
+    void initCompactPipeline();
 
     void cleanup();
 };

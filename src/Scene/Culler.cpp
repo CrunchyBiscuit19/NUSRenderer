@@ -5,7 +5,8 @@
 Culler::Culler(Renderer* renderer)
     : mRenderer(renderer),
       mResetPipelineLayout(nullptr),
-      mCullPipelineLayout(nullptr)
+      mCullPipelineLayout(nullptr), 
+      mCompactPipelineLayout(nullptr) 
 {}
 
 void Culler::init() {
@@ -67,6 +68,34 @@ void Culler::initCullPipeline() {
         PipelineBundle(mRenderer->mInfrastructure.mLatestPipelineId++, cullPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mCullPipelineLayout);
     mRenderer->mCore.labelResourceDebug(mCullPipelineBundle.pipeline, "CullerCullPipeline");
     LOG_INFO(mRenderer->mLogger, "Culler Cull Pipeline Created");
+}
+
+void Culler::initCompactPipeline() {
+    vk::PushConstantRange compactPushConstantRange{};
+    compactPushConstantRange.offset = 0;
+    compactPushConstantRange.size = sizeof(CullerCompactPushConstants);
+    compactPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+    vk::PipelineLayoutCreateInfo compactLayoutInfo{};
+    compactLayoutInfo.setLayoutCount = 0;
+    compactLayoutInfo.pSetLayouts = nullptr;
+    compactLayoutInfo.pPushConstantRanges = &compactPushConstantRange;
+    compactLayoutInfo.pushConstantRangeCount = 1;
+
+    mCompactPipelineLayout = mRenderer->mCore.mDevice.createPipelineLayout(compactLayoutInfo);
+    mRenderer->mCore.labelResourceDebug(mCompactPipelineLayout, "CullerCompactPipelineLayout");
+    LOG_INFO(mRenderer->mLogger, "Culler Compact Pipeline Layout Created");
+
+    vk::ShaderModule computeShaderModule = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "CullerCompact.comp.spv");
+
+    ComputePipelineBuilder compactPipelineBuilder;
+    compactPipelineBuilder.setShader(computeShaderModule);
+    compactPipelineBuilder.mPipelineLayout = *mCompactPipelineLayout;
+
+    mCompactPipelineBundle =
+        PipelineBundle(mRenderer->mInfrastructure.mLatestPipelineId++, compactPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mCompactPipelineLayout);
+    mRenderer->mCore.labelResourceDebug(mCompactPipelineBundle.pipeline, "CullerCompactPipeline");
+    LOG_INFO(mRenderer->mLogger, "Culler Compact Pipeline Created");
 }
 
 void Culler::cleanup() {

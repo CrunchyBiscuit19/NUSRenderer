@@ -111,6 +111,12 @@ void Renderer::initPasses() {
                     continue;
                 }
 
+                vkhelper::createBufferPipelineBarrier(  // Wait for draw commands using this to be finished
+                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eDrawIndirect,
+                    vk::AccessFlagBits2::eIndirectCommandRead, vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderRead
+                );
+
                 mScene.mCuller.mResetPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
                 mScene.mCuller.mResetPushConstants.renderItemsCount = batch.renderItems.size();
                 cmd.pushConstants<CullerResetPushConstants>(mScene.mCuller.mResetPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0,
@@ -160,7 +166,7 @@ void Renderer::initPasses() {
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for culling to write finish all visible render items
                     cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
+                    vk::PipelineStageFlagBits2::eDrawIndirect, vk::AccessFlagBits2::eIndirectCommandRead);
             }
         }
     });
