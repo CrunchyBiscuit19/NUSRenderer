@@ -12,7 +12,22 @@
 #include <Utils/ImmSubmit.h>
 #include <quill/Logger.h>
 
-enum class PassType { Cull, ClearScreen, Pick, PickClear, PickDraw, PickPick, Geometry, Skybox, ResolveMSAA, IntermediateToSwapchain, ImGui };
+enum class PassType {
+    Cull,
+    CullReset,
+    CullCull,
+    CullCompact,
+    ClearScreen,
+    Pick,
+    PickClear,
+    PickDraw,
+    PickPick,
+    Geometry,
+    Skybox,
+    ResolveMSAA,
+    IntermediateToSwapchain,
+    ImGui
+};
 
 struct Pass {
     static Renderer* renderer;

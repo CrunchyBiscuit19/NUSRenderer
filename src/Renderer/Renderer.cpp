@@ -97,21 +97,13 @@ void Renderer::initComponents() {
 
 void Renderer::initPasses() {
     mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd) {
-        cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mPipelineBundle.pipeline);
+        mPasses.at(PassType::CullReset).execute(cmd);
+        mPasses.at(PassType::CullCull).execute(cmd);
+        mPasses.at(PassType::CullCompact).execute(cmd);
+    });
 
-        cmd.fillBuffer(*mStats.mPostCullRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
-
-        vkhelper::createBufferPipelineBarrier(  // Wait for stats total count buffer to be reset to zero
-            cmd, *mStats.mPostCullRenderInstancesCountBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
-
-        mScene.mCuller.mPushConstants.postCullRenderInstancesCountBuffer = mStats.mPostCullRenderInstancesCountBuffer.address;
-        mScene.mCuller.mPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
-        mScene.mCuller.mPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
-        mScene.mCuller.mPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
-        mScene.mCuller.mPushConstants.preCullnstancesBuffer = mScene.mMainPreCullInstancesBuffer.address;
-        mScene.mCuller.mPushConstants.postCullnstancesBuffer = mScene.mMainPostCullInstancesBuffer.address;
-        mScene.mCuller.mPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
+    mPasses.try_emplace(PassType::CullReset, [&](vk::CommandBuffer cmd) {
+        cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mResetPipelineBundle.pipeline);
 
         for (auto batchType : mScene.mBatchTypes) {
             for (auto& batch : *batchType | std::views::values) {
@@ -119,11 +111,50 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                mScene.mCuller.mPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
-                mScene.mCuller.mPushConstants.renderInstancesCount = batch.renderInstances.size();
-                mScene.mCuller.mPushConstants.renderInstancesBuffer = batch.renderInstancesBuffer.address;
-                cmd.pushConstants<CullPushConstants>(mScene.mCuller.mPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0,
-                                                     mScene.mCuller.mPushConstants);
+                mScene.mCuller.mResetPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+                mScene.mCuller.mResetPushConstants.renderItemsCount = batch.renderItems.size();
+                cmd.pushConstants<CullerResetPushConstants>(mScene.mCuller.mResetPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0,
+                                                            mScene.mCuller.mResetPushConstants);
+
+                cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
+
+                vkhelper::createBufferPipelineBarrier(  // Wait for all render items to have instance count reset
+                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite, vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderRead
+                );
+            }
+        }
+    });
+
+    mPasses.try_emplace(PassType::CullCull, [&](vk::CommandBuffer cmd) {
+        cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mCullPipelineBundle.pipeline);
+
+        cmd.fillBuffer(*mStats.mPostCullRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
+
+        vkhelper::createBufferPipelineBarrier(  // Wait for stats total count buffer to be reset to zero
+            cmd, *mStats.mPostCullRenderInstancesCountBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
+
+        mScene.mCuller.mCullPushConstants.postCullRenderInstancesCountBuffer = mStats.mPostCullRenderInstancesCountBuffer.address;
+        mScene.mCuller.mCullPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
+        mScene.mCuller.mCullPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
+        mScene.mCuller.mCullPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
+        mScene.mCuller.mCullPushConstants.preCullnstancesBuffer = mScene.mMainPreCullInstancesBuffer.address;
+        mScene.mCuller.mCullPushConstants.postCullnstancesBuffer = mScene.mMainPostCullInstancesBuffer.address;
+        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
+
+        for (auto batchType : mScene.mBatchTypes) {
+            for (auto& batch : *batchType | std::views::values) {
+                if (batch.renderItems.empty()) {
+                    continue;
+                }
+
+                mScene.mCuller.mCullPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+                mScene.mCuller.mCullPushConstants.renderInstancesCount = batch.renderInstances.size();
+                mScene.mCuller.mCullPushConstants.renderInstancesBuffer = batch.renderInstancesBuffer.address;
+                cmd.pushConstants<CullerCullPushConstants>(mScene.mCuller.mCullPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0,
+                                                           mScene.mCuller.mCullPushConstants);
 
                 cmd.dispatch(std::ceil(batch.renderInstances.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
@@ -132,6 +163,10 @@ void Renderer::initPasses() {
                     vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
             }
         }
+    });
+
+    mPasses.try_emplace(PassType::CullCompact, [&](vk::CommandBuffer cmd) {
+
     });
 
     mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {

@@ -9,7 +9,7 @@ struct Plane {
     float d;
 };
 
-struct CullPushConstants {
+struct CullerCullPushConstants {
     vk::DeviceAddress renderItemsBuffer;
     vk::DeviceAddress renderInstancesBuffer;
     vk::DeviceAddress postCullRenderInstancesCountBuffer;
@@ -22,19 +22,28 @@ struct CullPushConstants {
     u32 renderInstancesCount;
 };
 
+struct CullerResetPushConstants {
+    vk::DeviceAddress renderItemsBuffer;
+    u32 renderItemsCount;
+};
+
 class Culler {
     Renderer* mRenderer;
 
-   public:
-    PipelineBundle mPipelineBundle;
-    vk::raii::PipelineLayout mPipelineLayout;
-    CullPushConstants mPushConstants;
+public:
+    PipelineBundle mResetPipelineBundle;
+    vk::raii::PipelineLayout mResetPipelineLayout;
+    CullerResetPushConstants mResetPushConstants;
+
+    PipelineBundle mCullPipelineBundle;
+    vk::raii::PipelineLayout mCullPipelineLayout;
+    CullerCullPushConstants mCullPushConstants;
 
     Culler(Renderer* renderer);
 
     void init();
-    void initPipelineLayout();
-    void initPipeline();
+    void initResetPipeline();
+    void initCullPipeline();
 
     void cleanup();
 };

@@ -41,10 +41,7 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
             model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
             model->mMainFirstNodeTransform + this->mRelativeNodeIndex, 
             model->mId,
-            model->mMainFirstBounds + mMesh->mRelativeFirstBounds,
-            0,
-            0,
-            0
+            model->mMainFirstBounds + mMesh->mRelativeFirstBounds
         );
 
         RenderItem& currRenderItem = renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.back();    

@@ -14,9 +14,6 @@ struct RenderItem {
     u32 nodeTransformIndex;
     u32 modelIndex;
     u32 boundsIndex;
-    u32 _pad0;
-    u32 _pad1;
-    u32 _pad2;
 };
 
 struct RenderInstance {

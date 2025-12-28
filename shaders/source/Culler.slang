@@ -1,4 +1,4 @@
-module Cull;
+module Culler;
 
 import Perspective;
 import NodeTransform;
@@ -24,7 +24,7 @@ public struct Bounds {
     public float3 max;
 }
 
-public struct CullPushConstants {
+public struct CullerCullPushConstants {
     public RenderItem* renderItemsBuffer;
     public RenderInstance* renderInstancesBuffer;
     public uint* postCullRenderInstancesCountBuffer;
@@ -35,6 +35,11 @@ public struct CullPushConstants {
     public Instance* postCullInstancesBuffer;
     public Perspective* perspectiveBuffer;
     public uint renderInstancesCount;
+};
+
+public struct CullerResetPushConstants {
+    public RenderItem* renderItemsBuffer;
+    public uint renderItemsCount;
 };
 
 public struct CSInput {
