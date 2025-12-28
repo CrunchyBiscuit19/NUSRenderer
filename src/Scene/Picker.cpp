@@ -141,7 +141,7 @@ void Picker::initPickPipeline() {
 void Picker::initDrawPushConstants() {
     mDrawPushConstants.vertexBuffer = mRenderer->mScene.mMainVertexBuffer.address;
     mDrawPushConstants.nodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address;
-    mDrawPushConstants.instancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address;
+    mDrawPushConstants.instancesBuffer = mRenderer->mScene.mMainPostCullInstancesBuffer.address;
 }
 
 void Picker::initPickPushConstants() {

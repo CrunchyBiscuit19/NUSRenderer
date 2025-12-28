@@ -31,7 +31,8 @@ public struct CullPushConstants {
     public Bounds* boundsBuffer;
     public Frustum* frustumBuffer;
     public NodeTransform* nodeTransformsBuffer;
-    public Instance* instancesBuffer;
+    public Instance* preCullInstancesBuffer;
+    public Instance* postCullInstancesBuffer;
     public Perspective* perspectiveBuffer;
     public uint renderInstancesCount;
 };

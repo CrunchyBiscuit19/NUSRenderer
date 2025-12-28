@@ -58,7 +58,8 @@ class RendererScene {
     vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
 
     AddressedBuffer mMainNodeTransformsBuffer;
-    AddressedBuffer mMainInstancesBuffer;
+    AddressedBuffer mMainPreCullInstancesBuffer;
+    AddressedBuffer mMainPostCullInstancesBuffer;
     AddressedBuffer mMainBoundsBuffer;
 
     RendererScene(Renderer* renderer);

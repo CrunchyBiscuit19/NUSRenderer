@@ -45,12 +45,19 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
-    mMainInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainPreCullInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
         MAX_INSTANCES * sizeof(InstanceData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY);
-    mRenderer->mCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
-    LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
+    mRenderer->mCore.labelResourceDebug(mMainPreCullInstancesBuffer.buffer, "MainPreCullInstancesBuffer");
+    LOG_INFO(mRenderer->mLogger, "Main Pre-Cull Instances Buffer Created");
+
+    mMainPostCullInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAX_INSTANCES * sizeof(InstanceData),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY);
+    mRenderer->mCore.labelResourceDebug(mMainPostCullInstancesBuffer.buffer, "MainPostCullInstancesBuffer");
+    LOG_INFO(mRenderer->mLogger, "Main Post-Cull Instances Buffer Created");
 
     mMainBoundsBuffer = mRenderer->mResources.createAddressedBuffer(
         MAX_RENDER_ITEMS * sizeof(AABB),
@@ -75,7 +82,7 @@ void RendererScene::initPushConstants() {
     mForwardPushConstants.vertexBuffer = mMainVertexBuffer.address;
     mForwardPushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
     mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
-    mForwardPushConstants.instancesBuffer = mMainInstancesBuffer.address;
+    mForwardPushConstants.instancesBuffer = mMainPostCullInstancesBuffer.address;
     LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
@@ -440,17 +447,17 @@ void RendererScene::reloadMainInstancesBuffer() {
         dstOffset += instancesCopy.size;
 
         mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-            cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
+            cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainPreCullInstancesBuffer.buffer, instancesCopy);
         });
     }
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main instances buffer to finish uploading
-            cmd, *mMainInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+            cmd, *mMainPreCullInstancesBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
-    LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Reloading");
+    LOG_INFO(mRenderer->mLogger, "Main Pre-Cull Instances Buffer Reloading");
 }
 
 void RendererScene::reloadMainMaterialResourcesArray() {
@@ -515,8 +522,10 @@ void RendererScene::cleanup() {
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Layout Destroyed");
     mMainBoundsBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Destroyed");
-    mMainInstancesBuffer.cleanup();
-    LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Destroyed");
+    mMainPreCullInstancesBuffer.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Main Pre-Cull Instances Buffer Destroyed");
+    mMainPostCullInstancesBuffer.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Main Post-Cull Instances Buffer Destroyed");
     mMainNodeTransformsBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Destroyed");
     mMainMaterialConstantsBuffer.cleanup();

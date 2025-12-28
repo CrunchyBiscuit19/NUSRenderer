@@ -109,7 +109,8 @@ void Renderer::initPasses() {
         mScene.mCuller.mPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
         mScene.mCuller.mPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
         mScene.mCuller.mPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
-        mScene.mCuller.mPushConstants.instancesBuffer = mScene.mMainInstancesBuffer.address;
+        mScene.mCuller.mPushConstants.preCullnstancesBuffer = mScene.mMainPreCullInstancesBuffer.address;
+        mScene.mCuller.mPushConstants.postCullnstancesBuffer = mScene.mMainPostCullInstancesBuffer.address;
         mScene.mCuller.mPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
 
         for (auto batchType : mScene.mBatchTypes) {

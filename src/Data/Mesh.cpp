@@ -32,24 +32,33 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
         }
 
         renderer->mScene.mBatchTypes[batchType]->try_emplace(pipelineId, renderer, primitive, pipelineId);
-        renderer->mScene.mBatchTypes[batchType]
-            ->at(pipelineId)
-            .renderItems.emplace_back(
-                primitive.mIndexCount, 
-                model->mInstances.size(), 
-                mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
-                mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset, 
-                model->mMainFirstInstance,
-                model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
-                model->mMainFirstNodeTransform + this->mRelativeNodeIndex, 
-                model->mId,
-                model->mMainFirstBounds + mMesh->mRelativeFirstBounds
-            );
+        renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.emplace_back(
+            primitive.mIndexCount, 
+            0, // Instance count set to 0, incremented inside culling compute shader
+            mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
+            mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset, 
+            model->mMainFirstInstance,
+            model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
+            model->mMainFirstNodeTransform + this->mRelativeNodeIndex, 
+            model->mId,
+            model->mMainFirstBounds + mMesh->mRelativeFirstBounds,
+            0,
+            0,
+            0
+        );
 
+        RenderItem& currRenderItem = renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.back();    
         u32 renderItemIndex = static_cast<u32>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
-        u32 instanceIndex = model->mMainFirstInstance;
+        u32 instanceIndex = model->mMainFirstInstance; 
         for (u32 i = 0; i < model->mInstances.size(); i++) {
-            renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderInstances.emplace_back(renderItemIndex, instanceIndex + i);
+            renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderInstances.emplace_back(
+                renderItemIndex, 
+                instanceIndex + i, 
+                currRenderItem.instanceCount, 
+                currRenderItem.firstInstance,
+                currRenderItem.nodeTransformIndex,
+                currRenderItem.boundsIndex
+            );
         }
     }
 

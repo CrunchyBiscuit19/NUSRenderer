@@ -16,17 +16,20 @@ void main(CSInput in) {
     uint renderInstancesIndex = in.dispatchThreadID.x;
     if(renderInstancesIndex >= cullPc.renderInstancesCount) return;
 
-    // Setup necessary data for culling test
+    // Grab representative data for this thread
     bool visible = true;
-    RenderItem renderItem = cullPc.renderItemsBuffer[renderInstancesIndex];
-    NodeTransform nodeTransform = cullPc.nodeTransformsBuffer[renderItem.nodeTransformIndex];
-    Bounds bounds = cullPc.boundsBuffer[renderItem.boundsIndex];
-    Instance firstInstance = cullPc.instancesBuffer[renderItem.firstInstance];
+    RenderInstance renderInstance = cullPc.renderInstancesBuffer[renderInstancesIndex];
+    RenderItem* renderItem = &cullPc.renderItemsBuffer[renderInstance.renderItemIndex];
+
+    // Grab data for culling test
+    Instance currInstance = cullPc.preCullInstancesBuffer[renderInstance.instanceIndex];
+    NodeTransform nodeTransform = cullPc.nodeTransformsBuffer[renderInstance.nodeTransformIndex];
     Perspective perspective = cullPc.perspectiveBuffer[0];
+    Bounds bounds = cullPc.boundsBuffer[renderInstance.boundsIndex];
     Frustum frustum = cullPc.frustumBuffer[0];
 
     // Culling test
-    /*TODO culling*/
+    /*TODO culling, always unculled for now*/
 
     // Increment counter of unculled render instances
     if(!visible) return;
@@ -34,7 +37,6 @@ void main(CSInput in) {
 
     // Write unculled render instance data to another instance buffers
     uint writeInstanceIndex;
-    //InterlockedAdd(renderItem.instanceCount, 1, writeInstanceIndex);
-
-    /*cullPushConstants.postCullRenderItemsBuffer[postCullIndex] = cullPushConstants.preCullRenderItemsBuffer[preCullIndex];*/
+    InterlockedAdd(renderItem->instanceCount, 1, writeInstanceIndex); // Do another pass to zero out after drawing?
+    cullPc.postCullInstancesBuffer[renderInstance.firstInstance + writeInstanceIndex] = currInstance;
 }

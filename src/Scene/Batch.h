@@ -14,11 +14,18 @@ struct RenderItem {
     u32 nodeTransformIndex;
     u32 modelIndex;
     u32 boundsIndex;
+    u32 _pad0;
+    u32 _pad1;
+    u32 _pad2;
 };
 
 struct RenderInstance {
     u32 renderItemIndex;  // Per batch render items index
     u32 instanceIndex;    // Global main instances buffer index
+    u32 instanceCount;
+    u32 firstInstance;
+    u32 nodeTransformIndex;
+    u32 boundsIndex;
 };
 
 enum class BatchType { Opaque = 0, Mask = 1, Transparent = 2 };
