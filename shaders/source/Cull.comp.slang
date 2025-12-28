@@ -28,11 +28,13 @@ void main(CSInput in) {
     // Culling test
     /*TODO culling*/
 
-
+    // Increment counter of unculled render instances
     if(!visible) return;
     uint _; InterlockedAdd(cullPc.postCullRenderInstancesCountBuffer[0], 1, _);
 
+    // Write unculled render instance data to another instance buffers
     uint writeInstanceIndex;
+    //InterlockedAdd(renderItem.instanceCount, 1, writeInstanceIndex);
 
     /*cullPushConstants.postCullRenderItemsBuffer[postCullIndex] = cullPushConstants.preCullRenderItemsBuffer[preCullIndex];*/
 }
