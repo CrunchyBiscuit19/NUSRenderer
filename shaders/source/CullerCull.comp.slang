@@ -18,7 +18,7 @@ void main(CSInput in) {
     // Grab representative data for this thread
     bool visible = true;
     RenderInstance renderInstance = cullerCullPc.renderInstancesBuffer[renderInstancesIndex];
-    RenderItem *renderItem = &cullerCullPc.renderItemsBuffer[renderInstance.renderItemsIndex];
+    RenderItem *renderItem = &cullerCullPc.preCullRenderItemsBuffer[renderInstance.renderItemsIndex];
 
     // Grab data for culling test
     Instance currInstance = cullerCullPc.preCullInstancesBuffer[renderInstance.instanceIndex];

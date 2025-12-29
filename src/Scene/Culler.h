@@ -9,28 +9,29 @@ struct Plane {
     float d;
 };
 
+struct CullerResetPushConstants {
+    vk::DeviceAddress preCullRenderItemsBuffer;
+    u32 preCullRenderItemsCount;
+};
+
 struct CullerCullPushConstants {
-    vk::DeviceAddress renderItemsBuffer;
+    vk::DeviceAddress preCullRenderItemsBuffer;
     vk::DeviceAddress renderInstancesBuffer;
     vk::DeviceAddress postCullRenderInstancesCountBuffer;
     vk::DeviceAddress boundsBuffer;
     vk::DeviceAddress frustumBuffer;
     vk::DeviceAddress nodeTransformsBuffer;
-    vk::DeviceAddress preCullnstancesBuffer;
-    vk::DeviceAddress postCullnstancesBuffer;
+    vk::DeviceAddress preCullInstancesBuffer;
+    vk::DeviceAddress postCullInstancesBuffer;
     vk::DeviceAddress perspectiveBuffer;
     u32 renderInstancesCount;
-};
-
-struct CullerResetPushConstants {
-    vk::DeviceAddress renderItemsBuffer;
-    u32 renderItemsCount;
 };
 
 struct CullerCompactPushConstants {
     vk::DeviceAddress preCullRenderItemsBuffer;
     vk::DeviceAddress postCullRenderItemsBuffer;
-    u32 renderItemsCount;
+    vk::DeviceAddress postCullRenderItemsCountBuffer;
+    u32 preCullRenderItemsCount;
 };
 
 class Culler {

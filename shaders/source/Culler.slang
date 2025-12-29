@@ -24,8 +24,13 @@ public struct Bounds {
     public float3 max;
 }
 
+public struct CullerResetPushConstants {
+    public RenderItem *preCullRenderItemsBuffer;
+    public uint preCullRenderItemsCount;
+};
+
 public struct CullerCullPushConstants {
-    public RenderItem* renderItemsBuffer;
+    public RenderItem* preCullRenderItemsBuffer;
     public RenderInstance* renderInstancesBuffer;
     public uint* postCullRenderInstancesCountBuffer;
     public Bounds* boundsBuffer;
@@ -37,9 +42,11 @@ public struct CullerCullPushConstants {
     public uint renderInstancesCount;
 };
 
-public struct CullerResetPushConstants {
-    public RenderItem* renderItemsBuffer;
-    public uint renderItemsCount;
+public struct CullerCompactPushConstants {
+    public RenderItem* preCullRenderItemsBuffer;
+    public RenderItem* postCullRenderItemsBuffer;
+    public uint* postCullRenderItemsCountBuffer;
+    public uint preCullRenderItemsCount; 
 };
 
 public struct CSInput {

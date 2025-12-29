@@ -167,13 +167,13 @@ void RendererScene::regenerateRenderItemsInstances() {
             renderInstancesCopy.size = batch.renderInstances.size() * sizeof(RenderInstance);
 
             mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-                cmd.fillBuffer(*batch.renderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+                cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
                 vkhelper::createBufferPipelineBarrier(  // Wait for render items buffer to be flushed
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                    cmd, *batch.preCullRenderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
                     vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
-                cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.renderItemsBuffer.buffer, renderItemsCopy);
+                cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
                 vkhelper::createBufferPipelineBarrier(  // Wait for render items to finish uploading
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
+                    cmd, *batch.preCullRenderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite,
                     vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
 
                 cmd.fillBuffer(*batch.renderInstancesBuffer.buffer, 0, vk::WholeSize, 0);

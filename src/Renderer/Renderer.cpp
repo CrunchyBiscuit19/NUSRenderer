@@ -112,20 +112,20 @@ void Renderer::initPasses() {
                 }
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for draw commands using this to be finished
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eDrawIndirect,
+                    cmd, *batch.preCullRenderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eDrawIndirect,
                     vk::AccessFlagBits2::eIndirectCommandRead, vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead
                 );
 
-                mScene.mCuller.mResetPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
-                mScene.mCuller.mResetPushConstants.renderItemsCount = batch.renderItems.size();
+                mScene.mCuller.mResetPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
+                mScene.mCuller.mResetPushConstants.preCullRenderItemsCount = batch.renderItems.size();
                 cmd.pushConstants<CullerResetPushConstants>(mScene.mCuller.mResetPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0,
                                                             mScene.mCuller.mResetPushConstants);
 
                 cmd.dispatch(std::ceil(batch.renderItems.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for all render items to have instance count reset
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eComputeShader,
+                    cmd, *batch.preCullRenderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite, vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead
                 );
@@ -146,8 +146,8 @@ void Renderer::initPasses() {
         mScene.mCuller.mCullPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
         mScene.mCuller.mCullPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
         mScene.mCuller.mCullPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
-        mScene.mCuller.mCullPushConstants.preCullnstancesBuffer = mScene.mMainPreCullInstancesBuffer.address;
-        mScene.mCuller.mCullPushConstants.postCullnstancesBuffer = mScene.mMainPostCullInstancesBuffer.address;
+        mScene.mCuller.mCullPushConstants.preCullInstancesBuffer = mScene.mMainPreCullInstancesBuffer.address;
+        mScene.mCuller.mCullPushConstants.postCullInstancesBuffer = mScene.mMainPostCullInstancesBuffer.address;
         mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
 
         for (auto batchType : mScene.mBatchTypes) {
@@ -156,7 +156,7 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                mScene.mCuller.mCullPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+                mScene.mCuller.mCullPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
                 mScene.mCuller.mCullPushConstants.renderInstancesCount = batch.renderInstances.size();
                 mScene.mCuller.mCullPushConstants.renderInstancesBuffer = batch.renderInstancesBuffer.address;
                 cmd.pushConstants<CullerCullPushConstants>(mScene.mCuller.mCullPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0,
@@ -165,14 +165,14 @@ void Renderer::initPasses() {
                 cmd.dispatch(std::ceil(batch.renderInstances.size() / static_cast<float>(MAX_CULL_LOCAL_SIZE)), 1, 1);
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for culling to write finish all visible render items
-                    cmd, *batch.renderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderWrite,
+                    cmd, *batch.preCullRenderItemsBuffer.buffer, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderWrite,
                     vk::PipelineStageFlagBits2::eDrawIndirect, vk::AccessFlagBits2::eIndirectCommandRead);
             }
         }
     });
 
     mPasses.try_emplace(PassType::CullCompact, [&](vk::CommandBuffer cmd) {
-
+        
     });
 
     mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {
@@ -230,11 +230,11 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                mScene.mPicker.mDrawPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+                mScene.mPicker.mDrawPushConstants.renderItemsBuffer = batch.preCullRenderItemsBuffer.address;
                 cmd.pushConstants<PickerDrawPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0,
                                                            mScene.mPicker.mDrawPushConstants);
 
-                cmd.drawIndexedIndirect(*batch.renderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
+                cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
             }
         }
 
@@ -346,10 +346,10 @@ void Renderer::initPasses() {
                                        *mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr);
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-                mScene.mForwardPushConstants.renderItemsBuffer = batch.renderItemsBuffer.address;
+                mScene.mForwardPushConstants.renderItemsBuffer = batch.preCullRenderItemsBuffer.address;
                 cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
 
-                cmd.drawIndexedIndirect(*batch.renderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
+                cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
 
                 mStats.mDrawCallCount++;
                 mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();

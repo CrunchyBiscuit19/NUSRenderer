@@ -12,6 +12,7 @@ Culler::Culler(Renderer* renderer)
 void Culler::init() {
     initResetPipeline();
     initCullPipeline();
+    initCompactPipeline();
 }
 
 void Culler::initResetPipeline() {
@@ -99,6 +100,10 @@ void Culler::initCompactPipeline() {
 }
 
 void Culler::cleanup() {
+    mCompactPipelineBundle.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Culler Compact Pipeline Destroyed");
+    mCompactPipelineLayout.clear();
+    LOG_INFO(mRenderer->mLogger, "Culler Compact Pipeline Layout Destroyed");
     mCullPipelineBundle.cleanup();
     LOG_INFO(mRenderer->mLogger, "Culler Cull Pipeline Destroyed");
     mCullPipelineLayout.clear();
