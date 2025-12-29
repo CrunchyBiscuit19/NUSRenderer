@@ -4,10 +4,36 @@ import NodeTransform;
 import Instance;
 import RenderItem;
 
-static const int MAX_CULL_LOCAL_SIZE = 256;
+static const uint MAX_CULL_LOCAL_SIZE = 256;
+static const uint NUM_FRUSTUM_PLANES = 6;
 
 [[vk::push_constant]]
 CullerCullPushConstants cullerCullPc;
+
+/*
+Get the corner of the AABB which will give us the maximum result in the point-normal plane equation
+Point-normal plane equation is positive if it's on the side of the plane the normal is pointing
+And since frustum plane normals point inward, a positive (or zero) result means that corrner of the AABB is "inside" the plane
+If at least that chosen corner is inside all 6 planes, it is inside the frustum, the current render instance is considered visible
+*/
+bool frustumCull(Plane* frustum, Bounds* bounds, Instance* currInstance, NodeTransform* nodeTransform) {
+    bool visible = true;
+    for (uint i = 0; i < NUM_FRUSTUM_PLANES; i++) {
+        Plane p = frustum[i];
+        float4 chosen;
+        chosen.x = (p.normal.x >= 0) ? bounds->max.x : bounds->min.x;
+        chosen.y = (p.normal.y >= 0) ? bounds->max.y : bounds->min.y;
+        chosen.z = (p.normal.z >= 0) ? bounds->max.z : bounds->min.z;
+        chosen.w = 1.0;
+        chosen = mul(currInstance->transformMatrix, mul(*nodeTransform, chosen));
+        float result = dot(p.normal, chosen.xyz) - p.d;
+        if (result < 0) {
+            visible = false;
+            break;
+        }
+    }
+    return visible;
+}
 
 [numthreads(MAX_CULL_LOCAL_SIZE,1,1)]
 void main(CSInput in) {
@@ -16,19 +42,17 @@ void main(CSInput in) {
     if (renderInstancesIndex >= cullerCullPc.renderInstancesCount) return;
 
     // Grab representative data for this thread
-    bool visible = true;
     RenderInstance renderInstance = cullerCullPc.renderInstancesBuffer[renderInstancesIndex];
     RenderItem *renderItem = &cullerCullPc.preCullRenderItemsBuffer[renderInstance.renderItemsIndex];
 
     // Grab data for culling test
-    Instance currInstance = cullerCullPc.preCullInstancesBuffer[renderInstance.instanceIndex];
-    NodeTransform nodeTransform = cullerCullPc.nodeTransformsBuffer[renderInstance.nodeTransformIndex];
-    Perspective perspective = cullerCullPc.perspectiveBuffer[0];
-    Bounds bounds = cullerCullPc.boundsBuffer[renderInstance.boundsIndex];
-    Frustum frustum = cullerCullPc.frustumBuffer[0];
+    Instance* currInstance = &cullerCullPc.preCullInstancesBuffer[renderInstance.instanceIndex];
+    NodeTransform* nodeTransform = &cullerCullPc.nodeTransformsBuffer[renderInstance.nodeTransformIndex];
+    Bounds* bounds = &cullerCullPc.boundsBuffer[renderInstance.boundsIndex];
+    Plane* frustum = cullerCullPc.frustumBuffer;
 
-    // Culling test
-    /*TODO culling, always unculled for now*/
+    // Culling tests
+    bool visible = frustumCull(frustum, bounds, currInstance, nodeTransform);
 
     // Increment counter of unculled render instances
     if (!visible) return;
@@ -37,5 +61,5 @@ void main(CSInput in) {
     // Write unculled render instance data to another instance buffers
     uint writeInstanceIndex;
     InterlockedAdd(renderItem->instanceCount, 1, writeInstanceIndex); // Do another pass to zero out after drawing?
-    cullerCullPc.postCullInstancesBuffer[renderInstance.firstInstance + writeInstanceIndex] = currInstance;
+    cullerCullPc.postCullInstancesBuffer[renderInstance.firstInstance + writeInstanceIndex] = *currInstance;
 }

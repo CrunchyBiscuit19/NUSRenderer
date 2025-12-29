@@ -60,6 +60,7 @@ constexpr float FOVY = 70.f;
 constexpr float NEAR_PLANE = 0.1f;
 constexpr float FAR_PLANE = 10000.f;
 
+constexpr u32 FRUSTUM_NUM_PLANES = 6;
 constexpr u32 FRUSTUM_NEAR_FACE = 0;
 constexpr u32 FRUSTUM_FAR_FACE = 1;
 constexpr u32 FRUSTUM_LEFT_FACE = 2;

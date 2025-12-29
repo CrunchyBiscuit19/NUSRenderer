@@ -10,18 +10,9 @@ public struct Plane {
     public float d;
 }
 
-public struct Frustum {
-    public Plane near;
-    public Plane far;
-    public Plane left;
-    public Plane right;
-    public Plane top;
-    public Plane bottom;
-}
-
 public struct Bounds {
-    public float3 min;
-    public float3 max;
+    public float4 min;
+    public float4 max;
 }
 
 public struct CullerResetPushConstants {
@@ -34,7 +25,7 @@ public struct CullerCullPushConstants {
     public RenderInstance* renderInstancesBuffer;
     public uint* postCullRenderInstancesCountBuffer;
     public Bounds* boundsBuffer;
-    public Frustum* frustumBuffer;
+    public Plane* frustumBuffer;
     public NodeTransform* nodeTransformsBuffer;
     public Instance* preCullInstancesBuffer;
     public Instance* postCullInstancesBuffer;

@@ -28,7 +28,7 @@ void Perspective::update() {
     mData.view = mRenderer->mCamera.getViewMatrix();
     mData.proj = glm::perspective(
         glm::radians(FOVY),
-        static_cast<float>(mRenderer->mCore.mWindowExtent.width) / static_cast<float>(mRenderer->mCore.mWindowExtent.height),
+        mRenderer->mCore.mAspectRatio,
         FAR_PLANE,
         NEAR_PLANE
     );

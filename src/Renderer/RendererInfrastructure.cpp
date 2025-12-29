@@ -207,6 +207,7 @@ void RendererInfrastructure::resizeSwapchain() {
     SDL_GetWindowSize(mRenderer->mCore.mWindow, &w, &h);
     mRenderer->mCore.mWindowExtent.width = w;
     mRenderer->mCore.mWindowExtent.height = h;
+    mRenderer->mCore.mAspectRatio = static_cast<float>(w) / static_cast<float>(h);
 
     initSwapchain();
 

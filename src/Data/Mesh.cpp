@@ -54,7 +54,6 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                 .renderInstances.emplace_back(
                     renderItemIndex,
                     instanceIndex + i,
-                    currRenderItem.instanceCount,
                     currRenderItem.firstInstance,
                     currRenderItem.nodeTransformIndex,
                     currRenderItem.boundsIndex

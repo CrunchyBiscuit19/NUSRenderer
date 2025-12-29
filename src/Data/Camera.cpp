@@ -109,24 +109,24 @@ glm::vec3 Camera::getDirectionVector() const {
 
 void Camera::uploadFrameFrustum() const {
     glm::mat4 rot = getRotationMatrix();
-    glm::vec3 forward = glm::vec3(rot * glm::vec4(0, 0, -1, 0));
-    glm::vec3 right = glm::vec3(rot * glm::vec4(1, 0, 0, 0));
-    glm::vec3 up = glm::vec3(rot * glm::vec4(0, 1, 0, 0));
+    glm::vec3 forward = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0)));
+    glm::vec3 right = glm::normalize(glm::vec3(rot * glm::vec4(1, 0, 0, 0)));
+    glm::vec3 up = glm::normalize(glm::vec3(rot * glm::vec4(0, 1, 0, 0)));
 
-    const float halfVSide = NEAR_PLANE * std::tanf(FOVY * .5f);
-    const float halfHSide = halfVSide * static_cast<float>(mRenderer->mCore.mWindowExtent.width) / static_cast<float>(mRenderer->mCore.mWindowExtent.height);
+    const float halfVSide = FAR_PLANE * std::tanf(glm::radians(FOVY) * .5f);
+    const float halfHSide = halfVSide * mRenderer->mCore.mAspectRatio;
 
     std::array<Plane, 6> planes;
-    planes[FRUSTUM_NEAR_FACE] = {forward, glm::length(mPosition + forward * NEAR_PLANE)};
-    planes[FRUSTUM_FAR_FACE] = {-forward, glm::length(mPosition + forward * FAR_PLANE)};
-    planes[FRUSTUM_LEFT_FACE] = {glm::cross(up, forward * FAR_PLANE + right * halfHSide), glm::length(mPosition)};
-    planes[FRUSTUM_RIGHT_FACE] = {glm::cross(forward * FAR_PLANE - right * halfHSide, up), glm::length(mPosition)};
-    planes[FRUSTUM_TOP_FACE] = {glm::cross(right, forward * FAR_PLANE - up * halfVSide), glm::length(mPosition)};
-    planes[FRUSTUM_BOTTOM_FACE] = {glm::cross(forward * FAR_PLANE + up * halfVSide, right), glm::length(mPosition)};
+    planes[FRUSTUM_NEAR_FACE] = Plane(forward, mPosition + forward * NEAR_PLANE);
+    planes[FRUSTUM_FAR_FACE] = Plane(-forward, mPosition + forward * FAR_PLANE);
+    planes[FRUSTUM_LEFT_FACE] = Plane(glm::cross(up, forward * FAR_PLANE + right * halfHSide), mPosition);
+    planes[FRUSTUM_RIGHT_FACE] = Plane(glm::cross(forward * FAR_PLANE - right * halfHSide, up), mPosition);
+    planes[FRUSTUM_TOP_FACE] = Plane(glm::cross(right, forward * FAR_PLANE - up * halfVSide), mPosition);
+    planes[FRUSTUM_BOTTOM_FACE] = Plane(glm::cross(forward * FAR_PLANE + up * halfVSide, right), mPosition);
     // Cross product between slanted vectors and up / right vectors gives plane normals pointing inward.
     // Planes stretch indefinitely. Left, right, top, bottom planes all pass through camera position. Near and far calculate with normal * distance.
 
-    std::memcpy(mFrustumBuffer.info.pMappedData, planes.data(), planes.max_size() * sizeof(Plane));
+    std::memcpy(mFrustumBuffer.info.pMappedData, planes.data(), FRUSTUM_NUM_PLANES * sizeof(Plane));
 }
 
 void Camera::update(float deltaTime, float expectedDeltaTime) {

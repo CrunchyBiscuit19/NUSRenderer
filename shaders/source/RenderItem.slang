@@ -3,7 +3,6 @@ module RenderItem;
 public struct RenderInstance {
     public uint renderItemsIndex;
     public uint instanceIndex;
-    public uint instanceCount;
     public uint firstInstance;
     public uint nodeTransformIndex;
     public uint boundsIndex;

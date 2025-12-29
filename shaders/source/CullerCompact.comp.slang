@@ -1,7 +1,7 @@
 import Culler;
 import RenderItem;
 
-static const int MAX_CULL_LOCAL_SIZE = 256;
+static const uint MAX_CULL_LOCAL_SIZE = 256;
 
 [[vk::push_constant]]
 CullerCompactPushConstants cullerCompactPc;

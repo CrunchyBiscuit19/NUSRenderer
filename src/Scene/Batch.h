@@ -19,7 +19,6 @@ struct RenderItem {
 struct RenderInstance {
     u32 renderItemIndex;  // Per batch render items index
     u32 instanceIndex;    // Global main instances buffer index
-    u32 instanceCount;
     u32 firstInstance;
     u32 nodeTransformIndex;
     u32 boundsIndex;
