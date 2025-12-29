@@ -131,8 +131,9 @@ void DescriptorSetBinder::bindImage(u32 binding, const vk::ImageView image, cons
     mWrites.push_back(write);
 }
 
-void DescriptorSetBinder::bindImageArray(u32 binding, u32 arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout,
-                                         vk::DescriptorType type) {
+void DescriptorSetBinder::bindImageArray(
+    u32 binding, u32 arrayIndex, const vk::ImageView image, const vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type
+) {
     const vk::DescriptorImageInfo& info = mImageInfos.emplace_back(sampler, image, layout);
     vk::WriteDescriptorSet write = {};
     write.descriptorCount = 1;

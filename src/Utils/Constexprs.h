@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Utils/Types.h>
-
 #include <imgui.h>
+
 #include <vulkan/vulkan.hpp>
 
 #ifdef RELEASE

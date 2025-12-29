@@ -7,8 +7,10 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData
+) {
     std::string severity;
     switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
@@ -26,8 +28,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagB
     }
 
     std::string message = "\n";
-    message += fmt::format("{} <{}> Frame {}\n\n", severity, std::string(pCallbackData->pMessageIdName),
-                           static_cast<Renderer*>(pUserData)->mInfrastructure.mFrameNumber);
+    message += fmt::format(
+        "{} <{}> Frame {}\n\n",
+        severity,
+        pCallbackData->pMessageIdName == nullptr ? "" : std::string(pCallbackData->pMessageIdName),
+        static_cast<Renderer*>(pUserData)->mInfrastructure.mFrameNumber
+    );
     message += fmt::format("{}\n\n", std::string(pCallbackData->pMessage));
 
     message += fmt::format("Queue Labels:\n");
@@ -38,9 +44,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagB
     message += fmt::format("\n");
 
     for (u32 i = 0; i < pCallbackData->objectCount; i++) {
-        message += fmt::format("Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n", std::to_string(i),
-                               vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)),
-                               std::to_string(pCallbackData->pObjects[i].objectHandle));
+        message += fmt::format(
+            "Resource {} -> [ ResourceType = {}, ResourceHandle = {}]\n",
+            std::to_string(i),
+            vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)),
+            std::to_string(pCallbackData->pObjects[i].objectHandle)
+        );
         if (pCallbackData->pObjects[i].pObjectName) message += fmt::format("ResourceName   = <{}>\n", pCallbackData->pObjects[i].pObjectName);
     }
 
@@ -75,8 +84,14 @@ RendererCore::RendererCore(Renderer* renderer)
 
 void RendererCore::init() {
     SDL_Init(SDL_INIT_VIDEO);
-    mWindow = SDL_CreateWindow("NUSRenderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, static_cast<u32>(mWindowExtent.width),
-                               static_cast<u32>(mWindowExtent.height), SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+    mWindow = SDL_CreateWindow(
+        "NUSRenderer",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        static_cast<u32>(mWindowExtent.width),
+        static_cast<u32>(mWindowExtent.height),
+        SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
+    );
 
     LOG_INFO(mRenderer->mLogger, "SDL Window Created");
 
@@ -84,11 +99,14 @@ void RendererCore::init() {
 
     vkb::InstanceBuilder vkbInstBuilder;
     vkbInstBuilder.set_app_name("Vulkan renderer")
-        .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                                                                       vk::DebugUtilsMessageSeverityFlagBitsEXT::eError))
-        .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                                                               vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                                                                               vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance))
+        .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
+        ))
+        .set_debug_messenger_type(static_cast<VkDebugUtilsMessageTypeFlagsEXT>(
+            vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+        ))
         .set_debug_callback(debugMessageFunc)
         .set_debug_callback_user_data_pointer(mRenderer)
         .require_api_version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
@@ -101,8 +119,7 @@ void RendererCore::init() {
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))
-            .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices))
-            ;
+            .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eBestPractices));
     }
 
     const vkb::Instance vkbInst = vkbInstBuilder.build().value();

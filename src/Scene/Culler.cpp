@@ -2,12 +2,7 @@
 #include <Scene/Culler.h>
 #include <quill/LogMacros.h>
 
-Culler::Culler(Renderer* renderer)
-    : mRenderer(renderer),
-      mResetPipelineLayout(nullptr),
-      mCullPipelineLayout(nullptr), 
-      mCompactPipelineLayout(nullptr) 
-{}
+Culler::Culler(Renderer* renderer) : mRenderer(renderer), mResetPipelineLayout(nullptr), mCullPipelineLayout(nullptr), mCompactPipelineLayout(nullptr) {}
 
 void Culler::init() {
     initResetPipeline();

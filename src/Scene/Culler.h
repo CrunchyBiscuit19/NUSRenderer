@@ -37,7 +37,7 @@ struct CullerCompactPushConstants {
 class Culler {
     Renderer* mRenderer;
 
-public:
+   public:
     PipelineBundle mResetPipelineBundle;
     vk::raii::PipelineLayout mResetPipelineLayout;
     CullerResetPushConstants mResetPushConstants;

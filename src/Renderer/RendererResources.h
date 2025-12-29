@@ -24,8 +24,10 @@ struct AllocatedImage {
     AllocatedImage()
         : image(nullptr), imageView(nullptr), imageFormat(vk::Format::eUndefined), imageExtent({0, 0, 0}), allocator(nullptr), allocation(nullptr) {}
 
-    AllocatedImage(vk::raii::Image image, vk::raii::ImageView imageView, vk::Format imageFormat, vk::Extent3D imageExtent, VmaAllocator* allocator,
-                   VmaAllocation allocation)
+    AllocatedImage(
+        vk::raii::Image image, vk::raii::ImageView imageView, vk::Format imageFormat, vk::Extent3D imageExtent, VmaAllocator* allocator,
+        VmaAllocation allocation
+    )
         : image(std::move(image)),
           imageView(std::move(imageView)),
           imageFormat(imageFormat),
@@ -191,8 +193,10 @@ struct SamplerOptions {
           addressModeW(samplerCreateInfo.addressModeW) {}
 
     bool operator==(const SamplerOptions& other) const {
-        return (magFilter == other.magFilter && minFilter == other.minFilter && mipmapMode == other.mipmapMode && addressModeU == other.addressModeU &&
-                addressModeV == other.addressModeV && addressModeW == other.addressModeW);
+        return (
+            magFilter == other.magFilter && minFilter == other.minFilter && mipmapMode == other.mipmapMode && addressModeU == other.addressModeU &&
+            addressModeV == other.addressModeV && addressModeW == other.addressModeW
+        );
     }
 };
 
@@ -239,18 +243,22 @@ class RendererResources {
     void initDefaultImages();
     void initDefaultSampler();
 
-    vk::Sampler getSampler(vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear,
-                                                                                           vk::SamplerMipmapMode::eLinear));
+    vk::Sampler getSampler(
+        vk::SamplerCreateInfo samplerCreateInfo = vk::SamplerCreateInfo({}, vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear)
+    );
     vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
     AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
     AddressedBuffer createAddressedBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
     AllocatedBuffer createStagingBuffer(size_t allocSize) const;
 
-    AllocatedImage createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false,
-                               bool cubemap = false) const;
-    AllocatedImage createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false,
-                               bool multisampling = false, bool cubemap = false) const;
+    AllocatedImage createImage(
+        vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false, bool cubemap = false
+    ) const;
+    AllocatedImage createImage(
+        const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped = false, bool multisampling = false,
+        bool cubemap = false
+    ) const;
 
     void cleanup();
 

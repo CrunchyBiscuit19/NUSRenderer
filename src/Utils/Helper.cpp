@@ -56,8 +56,9 @@ vk::CommandBufferSubmitInfo vkhelper::commandBufferSubmitInfo(vk::CommandBuffer 
     return info;
 }
 
-vk::SubmitInfo2 vkhelper::submitInfo(vk::CommandBufferSubmitInfo* cmd, vk::SemaphoreSubmitInfo* signalSemaphoreInfo,
-                                     vk::SemaphoreSubmitInfo* waitSemaphoreInfo) {
+vk::SubmitInfo2 vkhelper::submitInfo(
+    vk::CommandBufferSubmitInfo* cmd, vk::SemaphoreSubmitInfo* signalSemaphoreInfo, vk::SemaphoreSubmitInfo* waitSemaphoreInfo
+) {
     vk::SubmitInfo2 info = {};
     info.pNext = nullptr;
 
@@ -84,8 +85,9 @@ vk::PresentInfoKHR vkhelper::presentInfo() {
     return info;
 }
 
-vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp,
-                                                          vk::AttachmentStoreOp storeOp, std::optional<vk::ImageView> resolveImageView) {
+vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(
+    vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, std::optional<vk::ImageView> resolveImageView
+) {
     vk::RenderingAttachmentInfo colorAttachment{};
     colorAttachment.pNext = nullptr;
     colorAttachment.imageView = view;
@@ -102,8 +104,9 @@ vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(vk::ImageView view, vk
     return colorAttachment;
 }
 
-vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp,
-                                                          vk::AttachmentStoreOp storeOp) {
+vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(
+    vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp
+) {
     vk::RenderingAttachmentInfo depthAttachment{};
     depthAttachment.pNext = nullptr;
     depthAttachment.imageView = view;
@@ -114,8 +117,9 @@ vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(vk::ImageView view, vk
     return depthAttachment;
 }
 
-vk::RenderingInfo vkhelper::renderingInfo(vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment, vk::RenderingAttachmentInfo* depthAttachment,
-                                          u32 count) {
+vk::RenderingInfo vkhelper::renderingInfo(
+    vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment, vk::RenderingAttachmentInfo* depthAttachment, u32 count
+) {
     vk::RenderingInfo renderInfo{};
     renderInfo.pNext = nullptr;
     renderInfo.renderArea = vk::Rect2D{vk::Offset2D{0, 0}, renderExtent};
@@ -168,8 +172,7 @@ vk::WriteDescriptorSet vkhelper::writeDescriptorImage(vk::DescriptorType type, v
     return write;
 }
 
-vk::WriteDescriptorSet vkhelper::writeDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorBufferInfo* bufferInfo,
-                                                       u32 binding) {
+vk::WriteDescriptorSet vkhelper::writeDescriptorBuffer(vk::DescriptorType type, vk::DescriptorSet dstSet, vk::DescriptorBufferInfo* bufferInfo, u32 binding) {
     vk::WriteDescriptorSet write = {};
     write.pNext = nullptr;
     write.dstBinding = binding;
@@ -217,8 +220,10 @@ vk::ImageViewCreateInfo vkhelper::imageViewCreateInfo(vk::Format format, vk::Ima
     return info;
 }
 
-void vkhelper::transitionImage(vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-                               vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, vk::ImageLayout newLayout) {
+void vkhelper::transitionImage(
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
+    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask
+) {
     vk::ImageMemoryBarrier2 imageBarrier{};
     imageBarrier.pNext = nullptr;
     imageBarrier.srcStageMask = srcStageMask;
@@ -338,8 +343,16 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
     }
 
     // Transition all mip levels into the final read_only layout
-    transitionImage(cmd, image, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead, vk::PipelineStageFlagBits2::eFragmentShader,
-                    vk::AccessFlagBits2::eShaderRead, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    transitionImage(
+        cmd,
+        image,
+        vk::ImageLayout::eTransferSrcOptimal,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferRead,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead
+    );
 }
 
 u32 vkhelper::getFormatTexelSize(vk::Format format) {
@@ -380,7 +393,12 @@ void vkhelper::setViewportScissors(vk::CommandBuffer cmd, vk::Extent3D drawImage
     vk::Extent2D drawImage2dExtent = extent3dTo2d(drawImageExtent);
 
     vk::Viewport viewport = {
-        0, 0, static_cast<float>(drawImage2dExtent.width), static_cast<float>(drawImage2dExtent.height), 0.f, 1.f,
+        0,
+        0,
+        static_cast<float>(drawImage2dExtent.width),
+        static_cast<float>(drawImage2dExtent.height),
+        0.f,
+        1.f,
     };
     cmd.setViewport(0, viewport);
     vk::Rect2D scissor = {
@@ -390,8 +408,10 @@ void vkhelper::setViewportScissors(vk::CommandBuffer cmd, vk::Extent3D drawImage
     cmd.setScissor(0, scissor);
 }
 
-void vkhelper::createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buffer, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-                                           vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask) {
+void vkhelper::createBufferPipelineBarrier(
+    vk::CommandBuffer cmd, vk::Buffer buffer, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
+    vk::AccessFlags2 dstAccessMask
+) {
     vk::BufferMemoryBarrier2 bufferBarrier{};
     bufferBarrier.pNext = nullptr;
     bufferBarrier.srcStageMask = srcStageMask;
@@ -410,8 +430,10 @@ void vkhelper::createBufferPipelineBarrier(vk::CommandBuffer cmd, vk::Buffer buf
     cmd.pipelineBarrier2(depInfo);
 }
 
-void vkhelper::createImagePipelineBarrier(vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-                                          vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout) {
+void vkhelper::createImagePipelineBarrier(
+    vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
+    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout
+) {
     vk::ImageMemoryBarrier2 imageBarrier{};
     imageBarrier.pNext = nullptr;
     imageBarrier.srcStageMask = srcStageMask;

@@ -21,7 +21,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     postCullRenderItemsBuffer = renderer->mResources.createAddressedBuffer(
         MAX_RENDER_ITEMS * sizeof(RenderItem),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
-         vk::BufferUsageFlagBits::eShaderDeviceAddress,
+            vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
     renderer->mCore.labelResourceDebug(postCullRenderItemsBuffer.buffer, fmt::format("PostCullRenderItemsBuffer{}", pipelineId).c_str());
@@ -29,8 +29,8 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
 
     postCullRenderItemsCountBuffer = renderer->mResources.createAddressedBuffer(
         sizeof(uint32_t),
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer |
-            vk::BufferUsageFlagBits::eIndirectBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
+            vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
     renderer->mCore.labelResourceDebug(postCullRenderItemsCountBuffer.buffer, fmt::format("PostCullRenderItemsCountBuffer{}", pipelineId).c_str());

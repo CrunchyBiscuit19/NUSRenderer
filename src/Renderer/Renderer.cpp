@@ -347,7 +347,9 @@ void Renderer::initPasses() {
                     batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mPicker.mDrawPushConstants
                 );
 
-                cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
+                cmd.drawIndexedIndirectCount(
+                    *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
+                );
             }
         }
 
@@ -490,11 +492,13 @@ void Renderer::initPasses() {
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
                 mScene.mForwardPushConstants.renderItemsBuffer = batch.postCullRenderItemsBuffer.address;
-                //mScene.mForwardPushConstants.renderItemsBuffer = batch.preCullRenderItemsBuffer.address;
+                // mScene.mForwardPushConstants.renderItemsBuffer = batch.preCullRenderItemsBuffer.address;
                 cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
 
-                cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
-                //cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
+                cmd.drawIndexedIndirectCount(
+                    *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
+                );
+                // cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
 
                 mStats.mDrawCallCount++;
                 mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();
@@ -549,72 +553,72 @@ void Renderer::initPasses() {
 void Renderer::initTransitions() {
     mTransitions.try_emplace(
         TransitionType::PickerGeneralIntoColorAttachment,
+        vk::ImageLayout::eGeneral,
         vk::PipelineStageFlagBits2::eClear,
         vk::AccessFlagBits2::eTransferWrite,
+        vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
-        vk::ImageLayout::eGeneral,
-        vk::ImageLayout::eColorAttachmentOptimal
+        vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT
     );
 
     mTransitions.try_emplace(
         TransitionType::PickerColorAttachmentIntoGeneral,
+        vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
+        vk::ImageLayout::eGeneral,
         vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::eGeneral
+        vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
     );
 
     mTransitions.try_emplace(
         TransitionType::IntermediateTransferSrcIntoColorAttachment,
+        vk::ImageLayout::eTransferSrcOptimal,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferRead,
+        vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eTransferSrcOptimal,
-        vk::ImageLayout::eColorAttachmentOptimal
+        vk::AccessFlagBits2::eColorAttachmentWrite
     );
 
     mTransitions.try_emplace(
         TransitionType::IntermediateColorAttachmentIntoTransferSrc,
+        vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::eTransferSrcOptimal,
         vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::eTransferSrcOptimal
+        vk::AccessFlagBits2::eTransferRead
     );
 
     mTransitions.try_emplace(
         TransitionType::SwapchainPresentIntoTransferDst,
+        vk::ImageLayout::ePresentSrcKHR,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eNone,
+        vk::ImageLayout::eTransferDstOptimal,
         vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite,
-        vk::ImageLayout::ePresentSrcKHR,
-        vk::ImageLayout::eTransferDstOptimal
+        vk::AccessFlagBits2::eTransferWrite
     );
 
     mTransitions.try_emplace(
         TransitionType::SwapchainTransferDstIntoColorAttachment,
+        vk::ImageLayout::eTransferDstOptimal,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferWrite,
+        vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eTransferDstOptimal,
-        vk::ImageLayout::eColorAttachmentOptimal
+        vk::AccessFlagBits2::eColorAttachmentWrite
     );
 
     mTransitions.try_emplace(
         TransitionType::SwapchainColorAttachmentIntoPresent,
+        vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::ePresentSrcKHR,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::ePresentSrcKHR
+        vk::AccessFlagBits2::eNone
     );
 }
 

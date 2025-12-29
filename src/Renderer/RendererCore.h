@@ -9,17 +9,17 @@
 template <typename T>
 struct VulkanResourceInfo;
 
-#define DEFINE_VULKAN_RESOURCE_INFO(HppType, VkType, resourceTypeEnum)                                                           \
-    template <>                                                                                                                  \
-    struct VulkanResourceInfo<HppType> {                                                                                         \
-        static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                         \
+#define DEFINE_VULKAN_RESOURCE_INFO(HppType, VkType, resourceTypeEnum)                                                 \
+    template <>                                                                                                        \
+    struct VulkanResourceInfo<HppType> {                                                                               \
+        static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                               \
         static u64 getHandle(const HppType& resource) { return reinterpret_cast<u64>(static_cast<VkType>(resource)); } \
     };
 
-#define DEFINE_VULKAN_RAII_RESOURCE_INFO(RaiiType, VkType, resourceTypeEnum)                                                       \
-    template <>                                                                                                                    \
-    struct VulkanResourceInfo<RaiiType> {                                                                                          \
-        static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                           \
+#define DEFINE_VULKAN_RAII_RESOURCE_INFO(RaiiType, VkType, resourceTypeEnum)                                             \
+    template <>                                                                                                          \
+    struct VulkanResourceInfo<RaiiType> {                                                                                \
+        static constexpr vk::ObjectType resourceType = resourceTypeEnum;                                                 \
         static u64 getHandle(const RaiiType& resource) { return reinterpret_cast<u64>(static_cast<VkType>(*resource)); } \
     };
 
@@ -71,8 +71,10 @@ DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Fence, VkFence, vk::ObjectType::eFenc
 
 DEFINE_VULKAN_RAII_RESOURCE_INFO(vk::raii::Semaphore, VkSemaphore, vk::ObjectType::eSemaphore)
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData
+);
 
 class Renderer;
 

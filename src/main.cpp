@@ -1,5 +1,4 @@
 ﻿#include <Renderer/Renderer.h>
-
 #include <Utils/Types.h>
 
 u32 main() {

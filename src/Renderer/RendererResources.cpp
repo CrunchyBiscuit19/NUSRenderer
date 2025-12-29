@@ -48,8 +48,9 @@ void RendererResources::initDefaultImages() {
             pixels[static_cast<std::array<u32, 256Ui64>::size_type>(y) * 16 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
         }
     }
-    mDefaultImages.try_emplace(DefaultImage::Checkerboard,
-                               createImage(pixels.data(), vk::Extent3D{16, 16, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled));
+    mDefaultImages.try_emplace(
+        DefaultImage::Checkerboard, createImage(pixels.data(), vk::Extent3D{16, 16, 1}, vk::Format::eR8G8B8A8Srgb, vk::ImageUsageFlagBits::eSampled)
+    );
 
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).image, "DefaultWhiteImage");
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).imageView, "DefaultWhiteImageView");
@@ -139,8 +140,9 @@ AddressedBuffer RendererResources::createAddressedBuffer(size_t allocSize, vk::B
     return tmp;
 }
 
-AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling,
-                                              bool cubemap) const {
+AllocatedImage RendererResources::createImage(
+    vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap
+) const {
     vk::ImageCreateInfo newImageCreateInfo = vkhelper::imageCreateInfo(format, usage, multisampling, extent);
     if (mipmapped) {
         newImageCreateInfo.mipLevels = static_cast<u32>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
@@ -177,8 +179,9 @@ AllocatedImage RendererResources::createImage(vk::Extent3D extent, vk::Format fo
     return newImage;
 }
 
-AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped,
-                                              bool multisampling, bool cubemap) const {
+AllocatedImage RendererResources::createImage(
+    const void* data, vk::Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, bool mipmapped, bool multisampling, bool cubemap
+) const {
     u32 numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
 
     u32 bytesPerTexel = vkhelper::getFormatTexelSize(format);
@@ -190,8 +193,16 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
         createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, multisampling, cubemap);
 
     mRenderer->mImmSubmit.individualSubmit([&](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(cmd, *newImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eTransfer,
-                                  vk::AccessFlagBits2::eTransferWrite, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+        vkhelper::transitionImage(
+            cmd,
+            *newImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferWrite
+        );
 
         std::vector<vk::BufferImageCopy> copyRegions;
         copyRegions.reserve(numFaces);
@@ -213,9 +224,16 @@ AllocatedImage RendererResources::createImage(const void* data, vk::Extent3D ext
         if (mipmapped)
             vkhelper::generateMipmaps(cmd, *newImage.image, vk::Extent2D{newImage.imageExtent.width, newImage.imageExtent.height}, cubemap);
         else {
-            vkhelper::transitionImage(cmd, *newImage.image, vk::PipelineStageFlagBits2KHR::eTransfer, vk::AccessFlagBits2::eTransferWrite,
-                                      vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead, vk::ImageLayout::eTransferDstOptimal,
-                                      vk::ImageLayout::eShaderReadOnlyOptimal);
+            vkhelper::transitionImage(
+                cmd,
+                *newImage.image,
+                vk::ImageLayout::eTransferDstOptimal,
+                vk::PipelineStageFlagBits2KHR::eTransfer,
+                vk::AccessFlagBits2::eTransferWrite,
+                vk::ImageLayout::eShaderReadOnlyOptimal,
+                vk::PipelineStageFlagBits2KHR::eFragmentShader,
+                vk::AccessFlagBits2::eShaderRead
+            );
         }
     });
 

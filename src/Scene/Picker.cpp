@@ -26,17 +26,20 @@ void Picker::init() {
 
 void Picker::initBuffer() {
     mBuffer = mRenderer->mResources.createBuffer(
-        sizeof(PickerData), vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_CPU_TO_GPU);
+        sizeof(PickerData),
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
     mRenderer->mCore.labelResourceDebug(mBuffer.buffer, "PickerBuffer");
     LOG_INFO(mRenderer->mLogger, "Picker Buffer Created");
 }
 
 void Picker::initImage() {
-    mImage =
-        mRenderer->mResources.createImage(mRenderer->mInfrastructure.mDrawImage.imageExtent,
-                                          vk::Format::eR32G32Uint,  // Model Id / Instance Id
-                                          vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage);
+    mImage = mRenderer->mResources.createImage(
+        mRenderer->mInfrastructure.mDrawImage.imageExtent,
+        vk::Format::eR32G32Uint,  // Model Id / Instance Id
+        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage
+    );
     mRenderer->mCore.labelResourceDebug(mImage.image, "PickerDrawImage");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image Created");
     mRenderer->mCore.labelResourceDebug(mImage.imageView, "PickerDrawImageView");
@@ -49,12 +52,26 @@ void Picker::initImage() {
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(cmd, *mImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eComputeShader,
-                                  vk::AccessFlagBits2::eShaderRead, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
-        vkhelper::transitionImage(cmd, *mDepthImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
-                                  vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-                                  vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-                                  vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
+        vkhelper::transitionImage(
+            cmd,
+            *mImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eGeneral,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead
+        );
+        vkhelper::transitionImage(
+            cmd,
+            *mDepthImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+        );
     });
 }
 
@@ -171,11 +188,20 @@ void Picker::imguizmoFrame() const {
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetGizmoSizeClipSpace(IMGUIZMO_SIZE);
 
-    ImGuizmo::SetRect(0, 0, static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.width),
-                      static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.height));
+    ImGuizmo::SetRect(
+        0,
+        0,
+        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.width),
+        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.height)
+    );
     mRenderer->mScene.mPerspective.mData.proj[1][1] *= -1;  // Flip Y-axis in projection for ImGui coordinate system
-    ImGuizmo::Manipulate(glm::value_ptr(mRenderer->mScene.mPerspective.mData.view), glm::value_ptr(mRenderer->mScene.mPerspective.mData.proj),
-                         mImguizmoOperation, ImGuizmo::WORLD, glm::value_ptr(mClickedInstance->mData.transformMatrix));
+    ImGuizmo::Manipulate(
+        glm::value_ptr(mRenderer->mScene.mPerspective.mData.view),
+        glm::value_ptr(mRenderer->mScene.mPerspective.mData.proj),
+        mImguizmoOperation,
+        ImGuizmo::WORLD,
+        glm::value_ptr(mClickedInstance->mData.transformMatrix)
+    );
 
     if (ImGuizmo::IsUsing()) {
         mClickedInstance->mModel->mReloadInstances = true;

@@ -1,16 +1,15 @@
 #include <Renderer/Renderer.h>
 #include <User/Gui.h>
-
 #include <fmt/core.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 #include <imgui_internal.h>
 #include <quill/LogMacros.h>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <magic_enum.hpp>
-#include <vulkan/vulkan_raii.hpp>
-
 #include <ranges>
+#include <vulkan/vulkan_raii.hpp>
 
 GuiComponent::GuiComponent(Renderer* renderer, Gui* gui, std::string name) : mRenderer(renderer), mGui(gui), mName(name) {}
 
@@ -42,8 +41,9 @@ void Gui::SceneGuiComponent::elements() {
                     ImGui::PushID(fmt::format("{}-{}", model.mName, instance.mId).c_str());
 
                     glm::vec3 translation, rotation, scale;
-                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation),
-                                                          glm::value_ptr(scale));
+                    ImGuizmo::DecomposeMatrixToComponents(
+                        glm::value_ptr(instance.mData.transformMatrix), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale)
+                    );
                     for (u32 i = 0; i < 3; i++) {
                         rotation[i] = glm::radians(rotation[i]);
                     }
@@ -132,8 +132,10 @@ void Gui::createRendererOptionsWindow() const {
     if (mCollapsed) return;
     if (ImGui::Begin("Renderer Options", nullptr, ImGuiWindowFlags_NoDecoration)) {
         if (!ImGui::IsWindowCollapsed()) {
-            if (ImGui::BeginTabBar("RendererOptionsTabBar",
-                                   ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown)) {
+            if (ImGui::BeginTabBar(
+                    "RendererOptionsTabBar",
+                    ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown
+                )) {
                 for (auto& component : mGuiComponents) {
                     if (ImGui::BeginTabItem(component->mName.c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton)) {
                         component->elements();
@@ -211,15 +213,14 @@ void Gui::initBackend() const {
 
 void Gui::initLinearColors() {
     // Go through every colour and convert it to linear
-    // Hack solution to not make it double gamma corrected
+    // Hack solution of applying a gamma correction factor to reduce brightness
     ImGuiStyle& style = ImGui::GetStyle();
+    constexpr float gamma = 2.2f;
     for (u32 i = 0; i < ImGuiCol_COUNT; i++) {
-        /*float linear = (srgb <= 0.04045f) ? srgb / 12.92f : pow((srgb + 0.055f)
-         * / 1.055f, 2.4f);*/
         ImVec4& col = style.Colors[i];
-        col.x = col.x <= 0.04045f ? col.x / 12.92f : pow((col.x + 0.055f) / 1.055f, 2.4f);
-        col.y = col.y <= 0.04045f ? col.y / 12.92f : pow((col.y + 0.055f) / 1.055f, 2.4f);
-        col.z = col.z <= 0.04045f ? col.z / 12.92f : pow((col.z + 0.055f) / 1.055f, 2.4f);
+        col.x = pow(col.x, gamma);
+        col.y = pow(col.y, gamma);
+        col.z = pow(col.z, gamma);
     }
 }
 

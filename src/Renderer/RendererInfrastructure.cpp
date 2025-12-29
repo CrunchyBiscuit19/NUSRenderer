@@ -52,7 +52,8 @@ void RendererInfrastructure::initFrames() {
         mFrames[i].mPerspectiveBuffer = mRenderer->mResources.createAddressedBuffer(
             sizeof(PerspectiveData),
             vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            VMA_MEMORY_USAGE_CPU_TO_GPU
+        );
         mRenderer->mCore.labelResourceDebug(mFrames[i].mPerspectiveBuffer.buffer, fmt::format("FramePerspectiveBuffer{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Perspective Buffer Created", i);
 
@@ -79,17 +80,19 @@ void RendererInfrastructure::initSwapchain() {
     formatListCreateInfo.viewFormatCount = formats.size();
 
     vkb::SwapchainBuilder swapchainBuilder{*mRenderer->mCore.mChosenGPU, *mRenderer->mCore.mDevice, *mRenderer->mCore.mSurface};
-    vkb::Swapchain vkbSwapchain = swapchainBuilder
-                                      .set_desired_format(VkSurfaceFormatKHR{.format = static_cast<VkFormat>(mSwapchainBundle.mFormat),
-                                                                             .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)})
-                                      .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
-                                      .set_desired_extent(mRenderer->mCore.mWindowExtent.width, mRenderer->mCore.mWindowExtent.height)
-                                      .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
-                                      .set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
-                                      .set_create_flags(static_cast<VkSwapchainCreateFlagBitsKHR>(vk::SwapchainCreateFlagBitsKHR::eMutableFormat))
-                                      .add_pNext(&formatListCreateInfo)
-                                      .build()
-                                      .value();
+    vkb::Swapchain vkbSwapchain =
+        swapchainBuilder
+            .set_desired_format(VkSurfaceFormatKHR{
+                .format = static_cast<VkFormat>(mSwapchainBundle.mFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)
+            })
+            .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
+            .set_desired_extent(mRenderer->mCore.mWindowExtent.width, mRenderer->mCore.mWindowExtent.height)
+            .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
+            .set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
+            .set_create_flags(static_cast<VkSwapchainCreateFlagBitsKHR>(vk::SwapchainCreateFlagBitsKHR::eMutableFormat))
+            .add_pNext(&formatListCreateInfo)
+            .build()
+            .value();
 
     mSwapchainBundle.mExtent = vkbSwapchain.extent;
     mSwapchainBundle.mSwapchain = vk::raii::SwapchainKHR(mRenderer->mCore.mDevice, vkbSwapchain.swapchain);
@@ -97,12 +100,16 @@ void RendererInfrastructure::initSwapchain() {
     mSwapchainBundle.mImages.reserve(NUMBER_OF_SWAPCHAIN_IMAGES);
     vk::SemaphoreCreateInfo semaphoreCreateInfo = vkhelper::semaphoreCreateInfo();
     for (u32 i = 0; i < vkbSwapchain.get_images().value().size(); i++) {
-        mSwapchainBundle.mImages.emplace_back(vkbSwapchain.get_images().value()[i],
-                                              mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(
-                                                  mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
-                                              mRenderer->mCore.mDevice.createImageView(vkhelper::imageViewCreateInfo(
-                                                  mSwapchainBundle.mUnormFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)),
-                                              mRenderer->mCore.mDevice.createSemaphore(semaphoreCreateInfo));
+        mSwapchainBundle.mImages.emplace_back(
+            vkbSwapchain.get_images().value()[i],
+            mRenderer->mCore.mDevice.createImageView(
+                vkhelper::imageViewCreateInfo(mSwapchainBundle.mFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)
+            ),
+            mRenderer->mCore.mDevice.createImageView(
+                vkhelper::imageViewCreateInfo(mSwapchainBundle.mUnormFormat, vkbSwapchain.get_images().value()[i], vk::ImageAspectFlagBits::eColor)
+            ),
+            mRenderer->mCore.mDevice.createSemaphore(semaphoreCreateInfo)
+        );
     }
 
     for (u32 i = 0; i < mSwapchainBundle.mImages.size(); i++) {
@@ -113,13 +120,19 @@ void RendererInfrastructure::initSwapchain() {
     }
 
     mDrawImage = mRenderer->mResources.createImage(
-        vk::Extent3D{mRenderer->mCore.mWindowExtent, 1}, vk::Format::eR16G16B16A16Sfloat,
-        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment, false, true);
+        vk::Extent3D{mRenderer->mCore.mWindowExtent, 1},
+        vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
+        false,
+        true
+    );
     mDepthImage =
         mRenderer->mResources.createImage(mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, false, true);
     mIntermediateImage = mRenderer->mResources.createImage(
-        mDrawImage.imageExtent, vk::Format::eR16G16B16A16Sfloat,
-        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment);
+        mDrawImage.imageExtent,
+        vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment
+    );
 
     mRenderer->mCore.labelResourceDebug(mDrawImage.image, "DrawImage");
     mRenderer->mCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
@@ -130,20 +143,47 @@ void RendererInfrastructure::initSwapchain() {
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         for (u32 i = 0; i < mSwapchainBundle.mImages.size(); i++) {
-            vkhelper::transitionImage(cmd, mSwapchainBundle.mImages[i].image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
-                                      vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone, vk::ImageLayout::eUndefined,
-                                      vk::ImageLayout::ePresentSrcKHR);
+            vkhelper::transitionImage(
+                cmd,
+                mSwapchainBundle.mImages[i].image,
+                vk::ImageLayout::eUndefined,
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::ImageLayout::ePresentSrcKHR,
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone
+            );
         }
-        vkhelper::transitionImage(cmd, *mDrawImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
-                                  vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite, vk::ImageLayout::eUndefined,
-                                  vk::ImageLayout::eColorAttachmentOptimal);
-        vkhelper::transitionImage(cmd, *mDepthImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
-                                  vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-                                  vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-                                  vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal);
-        vkhelper::transitionImage(cmd, *mIntermediateImage.image, vk::PipelineStageFlagBits2::eNone, vk::AccessFlagBits2::eNone,
-                                  vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead, vk::ImageLayout::eUndefined,
-                                  vk::ImageLayout::eTransferSrcOptimal);
+        vkhelper::transitionImage(
+            cmd,
+            *mDrawImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::AccessFlagBits2::eColorAttachmentWrite
+        );
+        vkhelper::transitionImage(
+            cmd,
+            *mDepthImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+        );
+        vkhelper::transitionImage(
+            cmd,
+            *mIntermediateImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eTransferSrcOptimal,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferRead
+        );
     });
 
     LOG_INFO(mRenderer->mLogger, "Swapchain Created");

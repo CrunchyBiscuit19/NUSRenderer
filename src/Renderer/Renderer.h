@@ -50,24 +50,26 @@ enum class TransitionType {
 };
 
 struct Transition {
+    vk::ImageLayout currentLayout;
     vk::PipelineStageFlags2 srcStageMask;
     vk::AccessFlags2 srcAccessMask;
+    vk::ImageLayout newLayout;
     vk::PipelineStageFlags2 dstStageMask;
     vk::AccessFlags2 dstAccessMask;
-    vk::ImageLayout currentLayout;
-    vk::ImageLayout newLayout;
 
-    Transition(vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask,
-               vk::ImageLayout currentLayout, vk::ImageLayout newLayout)
-        : srcStageMask(srcStageMask),
+    Transition(
+        vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::ImageLayout newLayout,
+        vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask
+    )
+        : currentLayout(currentLayout),
+          srcStageMask(srcStageMask),
           srcAccessMask(srcAccessMask),
+          newLayout(newLayout),
           dstStageMask(dstStageMask),
-          dstAccessMask(dstAccessMask),
-          currentLayout(currentLayout),
-          newLayout(newLayout) {}
+          dstAccessMask(dstAccessMask) {}
 
     void execute(vk::CommandBuffer cmd, vk::Image image) {
-        vkhelper::transitionImage(cmd, image, srcStageMask, srcAccessMask, dstStageMask, dstAccessMask, currentLayout, newLayout);
+        vkhelper::transitionImage(cmd, image, currentLayout, srcStageMask, srcAccessMask, newLayout, dstStageMask, dstAccessMask);
     }
 };
 
