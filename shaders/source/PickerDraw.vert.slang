@@ -11,17 +11,17 @@ VSOutput main(VSInput in)
     Vertex v = pickerDrawPc.verticesBuffer[in.vertexIndex];
     float4 position = float4(v.position, 1.0f);
 
-    uint firstInstance = pickerDrawPc.renderItemsBuffer[in.drawIndex].firstInstance;
+    uint firstInstance = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].firstInstance;
     uint instanceIndex = in.instanceIndex + firstInstance;
     float4x4 instanceTransformMatrix = pickerDrawPc.instancesBuffer[instanceIndex].transformMatrix;
 
-    uint mainNodeTransformIndex = pickerDrawPc.renderItemsBuffer[in.drawIndex].nodeTransformIndex;
+    uint mainNodeTransformIndex = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;
     float4x4 nodeTransformMatrix = pickerDrawPc.nodeTransformsBuffer[mainNodeTransformIndex];
 
     out.position =
         mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix),
             position);
-    out.modelIndex = pickerDrawPc.renderItemsBuffer[in.drawIndex].modelIndex;
+    out.modelIndex = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].modelIndex;
     out.instanceIndex = instanceIndex;
     return out;
 }

@@ -100,43 +100,51 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd) {
         mPasses.at(PassType::CullReset).execute(cmd);
         mPasses.at(PassType::CullCull).execute(cmd);
-        //mPasses.at(PassType::CullCompact).execute(cmd);
-
-        for (auto batchType : mScene.mBatchTypes) {
-            for (auto& batch : *batchType | std::views::values) {
-                if (batch.renderItems.empty()) {
-                    continue;
-                }
-
-                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsBuffer to be written to in CullCompact
-                    cmd,
-                    *batch.postCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead
-                );
-
-                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsCountBuffer to be accurately counted in CullCompact
-                    cmd,
-                    *batch.postCullRenderItemsCountBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead
-                );
-            }
-        }
+        mPasses.at(PassType::CullCompact).execute(cmd);
+        mPasses.at(PassType::CullSyncBeforeDraw).execute(cmd);
     });
 
     mPasses.try_emplace(PassType::CullReset, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mResetPipelineBundle.pipeline);
 
+        cmd.fillBuffer(*mStats.mPostCullRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
+
+        vkhelper::createBufferPipelineBarrier(  // Wait for stats total count buffer to be reset to zero
+            cmd,
+            *mStats.mPostCullRenderInstancesCountBuffer.buffer,
+            vk::PipelineStageFlagBits2::eTransfer,
+            vk::AccessFlagBits2::eTransferWrite,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+        );
+
         for (auto batchType : mScene.mBatchTypes) {
             for (auto& batch : *batchType | std::views::values) {
                 if (batch.renderItems.empty()) {
                     continue;
                 }
+
+                cmd.fillBuffer(*batch.postCullRenderItemsCountBuffer.buffer, 0, vk::WholeSize, 0);
+
+                vkhelper::createBufferPipelineBarrier(  // Wait for per-batch render items count buffer to be reset to zero
+                    cmd,
+                    *batch.postCullRenderItemsCountBuffer.buffer,
+                    vk::PipelineStageFlagBits2::eTransfer,
+                    vk::AccessFlagBits2::eTransferWrite,
+                    vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+                );
+
+                cmd.fillBuffer(*batch.postCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
+
+                vkhelper::createBufferPipelineBarrier(  // Zero out render items buffer
+                    cmd,
+                    *batch.postCullRenderItemsBuffer.buffer,
+                    vk::PipelineStageFlagBits2::eTransfer,
+                    vk::AccessFlagBits2::eTransferWrite,
+                    vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+                );
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for preCullRenderItemsBuffer to be copied into postCullRenderItemsBuffer in CullCompact
                     cmd,
@@ -160,17 +168,6 @@ void Renderer::initPasses() {
 
     mPasses.try_emplace(PassType::CullCull, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mCullPipelineBundle.pipeline);
-
-        cmd.fillBuffer(*mStats.mPostCullRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
-
-        vkhelper::createBufferPipelineBarrier(  // Wait for stats total count buffer to be reset to zero
-            cmd,
-            *mStats.mPostCullRenderInstancesCountBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
-        );
 
         mScene.mCuller.mCullPushConstants.postCullRenderInstancesCountBuffer = mStats.mPostCullRenderInstancesCountBuffer.address;
         mScene.mCuller.mCullPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
@@ -256,6 +253,34 @@ void Renderer::initPasses() {
         }
     });
 
+    mPasses.try_emplace(PassType::CullSyncBeforeDraw, [&](vk::CommandBuffer cmd) {
+        for (auto batchType : mScene.mBatchTypes) {
+            for (auto& batch : *batchType | std::views::values) {
+                if (batch.renderItems.empty()) {
+                    continue;
+                }
+
+                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsBuffer to be written to in CullCompact
+                    cmd,
+                    *batch.postCullRenderItemsBuffer.buffer,
+                    vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderWrite,
+                    vk::PipelineStageFlagBits2::eDrawIndirect,
+                    vk::AccessFlagBits2::eIndirectCommandRead
+                );
+
+                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsCountBuffer to be accurately counted in CullCompact
+                    cmd,
+                    *batch.postCullRenderItemsCountBuffer.buffer,
+                    vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderWrite,
+                    vk::PipelineStageFlagBits2::eDrawIndirect,
+                    vk::AccessFlagBits2::eIndirectCommandRead
+                );
+            }
+        }
+    });
+
     mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {
         vk::RenderingAttachmentInfo colorAttachment =
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
@@ -317,14 +342,12 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                //mScene.mPicker.mDrawPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
-                mScene.mPicker.mDrawPushConstants.postCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
+                mScene.mPicker.mDrawPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
                 cmd.pushConstants<PickerDrawPushConstants>(
                     batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mPicker.mDrawPushConstants
                 );
 
-                //cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
-                cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
+                cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
             }
         }
 
@@ -466,12 +489,12 @@ void Renderer::initPasses() {
                 );
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-                //mScene.mForwardPushConstants.renderItemsBuffer = batch.postCullRenderItemsBuffer.address;
-                mScene.mForwardPushConstants.renderItemsBuffer = batch.preCullRenderItemsBuffer.address;
+                mScene.mForwardPushConstants.renderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+                //mScene.mForwardPushConstants.renderItemsBuffer = batch.preCullRenderItemsBuffer.address;
                 cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
 
-                //cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
-                cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
+                cmd.drawIndexedIndirectCount(*batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem));
+                //cmd.drawIndexedIndirect(*batch.preCullRenderItemsBuffer.buffer, 0, batch.renderItems.size(), sizeof(RenderItem));
 
                 mStats.mDrawCallCount++;
                 mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();

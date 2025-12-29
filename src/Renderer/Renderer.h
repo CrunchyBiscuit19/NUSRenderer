@@ -17,6 +17,7 @@ enum class PassType {
     CullReset,
     CullCull,
     CullCompact,
+    CullSyncBeforeDraw,
     ClearScreen,
     Pick,
     PickClear,

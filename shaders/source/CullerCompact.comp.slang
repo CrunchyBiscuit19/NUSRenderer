@@ -20,7 +20,4 @@ void main(CSInput in) {
     uint writeRenderItemsIndex;
     InterlockedAdd(cullerCompactPc.postCullRenderItemsCountBuffer[0], 1, writeRenderItemsIndex);
     cullerCompactPc.postCullRenderItemsBuffer[writeRenderItemsIndex] = *currRenderItem;
-
-    uint _;
-    InterlockedAdd(cullerCompactPc.postCullRenderItemsCountBuffer[0], 1, _);
 }

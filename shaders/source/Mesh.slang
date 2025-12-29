@@ -18,7 +18,7 @@ public struct ForwardPushConstants
     public MaterialConstant *materialConstantsBuffer;
     public NodeTransform *nodeTransformsBuffer;
     public Instance *instancesBuffer;
-    public RenderItem *renderItemsBuffer;
+    public RenderItem *postCullRenderItemsBuffer;
 };
 
 public struct VSInput
