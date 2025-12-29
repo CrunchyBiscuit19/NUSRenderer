@@ -30,3 +30,7 @@ ConstructorInitializerIndentWidth: 4
 # Put a space between the function name and the opening parenthesis.
 # e.g., 'void func (int a)'
 SpaceBeforeParens: ControlStatements
+
+BinPackArguments: false
+BinPackParameters: true
+AlignAfterOpenBracket: BlockIndent

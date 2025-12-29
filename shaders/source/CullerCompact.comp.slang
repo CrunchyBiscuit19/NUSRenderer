@@ -14,8 +14,13 @@ void main(CSInput in) {
 
     // Copy over render items with more than zero instances, and increment counter
     RenderItem* currRenderItem = &cullerCompactPc.preCullRenderItemsBuffer[renderItemsIndex];
+    
     if (currRenderItem->instanceCount == 0) return;
+    
     uint writeRenderItemsIndex;
     InterlockedAdd(cullerCompactPc.postCullRenderItemsCountBuffer[0], 1, writeRenderItemsIndex);
     cullerCompactPc.postCullRenderItemsBuffer[writeRenderItemsIndex] = *currRenderItem;
+
+    uint _;
+    InterlockedAdd(cullerCompactPc.postCullRenderItemsCountBuffer[0], 1, _);
 }
