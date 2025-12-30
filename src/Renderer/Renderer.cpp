@@ -120,18 +120,18 @@ void Renderer::initPasses() {
 
         vkhelper::createBufferPipelineBarrier(  // Wait for visible instances indices buffer to be used finish by the indirect draw commands
             cmd,
-            *mScene.mVisibleInstancesIndicesBuffer.buffer,
-            vk::PipelineStageFlagBits2::eDrawIndirect,
-            vk::AccessFlagBits2::eVertexAttributeRead,
+            *mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer,
+            vk::PipelineStageFlagBits2::eVertexShader,
+            vk::AccessFlagBits2::eShaderRead,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite
         );
 
-        cmd.fillBuffer(*mScene.mVisibleInstancesIndicesBuffer.buffer, 0, vk::WholeSize, 0);
+        cmd.fillBuffer(*mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer, 0, vk::WholeSize, 0);
 
         vkhelper::createBufferPipelineBarrier(  // Zero out visisble instances indices buffer before writing into it in CullCompact
             cmd,
-            *mScene.mVisibleInstancesIndicesBuffer.buffer,
+            *mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eComputeShader,
@@ -152,7 +152,7 @@ void Renderer::initPasses() {
                     vk::PipelineStageFlagBits2::eTransfer,
                     vk::AccessFlagBits2::eTransferWrite
                 );
-                
+
                 cmd.fillBuffer(*batch.postCullRenderItemsCountBuffer.buffer, 0, vk::WholeSize, 0);
 
                 vkhelper::createBufferPipelineBarrier(  // Zero out render items buffer before writing into it in CullCompact
@@ -212,7 +212,7 @@ void Renderer::initPasses() {
         mScene.mCuller.mCullPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
         mScene.mCuller.mCullPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
         mScene.mCuller.mCullPushConstants.instancesBuffer = mScene.mMainInstancesBuffer.address;
-        mScene.mCuller.mCullPushConstants.visibleInstancesIndicesBuffer = mScene.mVisibleInstancesIndicesBuffer.address;
+        mScene.mCuller.mCullPushConstants.visibleRenderInstancesInstanceIndexBuffer = mScene.mVisibleRenderInstancesInstanceIndexBuffer.address;
 
         for (auto batchType : mScene.mBatchTypes) {
             for (auto& batch : *batchType | std::views::values) {
@@ -299,11 +299,11 @@ void Renderer::initPasses() {
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for visible instances indices buffer to be written to in CullCull
                     cmd,
-                    *mScene.mVisibleInstancesIndicesBuffer.buffer,
+                    *mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eVertexAttributeRead
+                    vk::PipelineStageFlagBits2::eVertexShader,
+                    vk::AccessFlagBits2::eShaderRead
                 );
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsBuffer to be written to in CullCompact
@@ -541,7 +541,7 @@ void Renderer::initPasses() {
                 cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
 
                 cmd.drawIndexedIndirectCount(
-                    *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, 1e9, sizeof(RenderItem)
+                    *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
                 );
 
                 mStats.mDrawCallCount++;

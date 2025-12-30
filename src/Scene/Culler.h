@@ -25,7 +25,7 @@ struct CullerCullPushConstants {
     vk::DeviceAddress frustumBuffer;
     vk::DeviceAddress nodeTransformsBuffer;
     vk::DeviceAddress instancesBuffer;
-    vk::DeviceAddress visibleInstancesIndicesBuffer;
+    vk::DeviceAddress visibleRenderInstancesInstanceIndexBuffer;
     u32 renderInstancesLimit;
 };
 

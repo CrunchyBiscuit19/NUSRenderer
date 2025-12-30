@@ -60,7 +60,7 @@ class RendererScene {
     AddressedBuffer mMainNodeTransformsBuffer;
     AddressedBuffer mMainInstancesBuffer;
     AddressedBuffer mMainBoundsBuffer;
-    AddressedBuffer mVisibleInstancesIndicesBuffer;
+    AddressedBuffer mVisibleRenderInstancesInstanceIndexBuffer;
 
     RendererScene(Renderer* renderer);
 

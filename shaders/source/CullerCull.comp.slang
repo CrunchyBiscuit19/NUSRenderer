@@ -66,5 +66,5 @@ void main(CSInput in) {
     InterlockedAdd(renderItem->instanceCount, 1, offsetInstanceIndicesBufferIndex);
     uint finalInstanceIndicesBufferIndex = renderInstance.firstInstance + offsetInstanceIndicesBufferIndex;
     uint finalInstanceBufferIndex = renderInstance.firstInstance + renderInstance.instanceIndex;
-    cullerCullPc.visibleInstancesIndicesBuffer[finalInstanceIndicesBufferIndex] = finalInstanceBufferIndex;
+    cullerCullPc.visibleRenderInstancesInstanceIndexBuffer[finalInstanceIndicesBufferIndex] = finalInstanceBufferIndex;
 }

@@ -65,13 +65,13 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 
-    mVisibleInstancesIndicesBuffer = mRenderer->mResources.createAddressedBuffer(
+    mVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createAddressedBuffer(
         MAX_INSTANCES,
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    mRenderer->mCore.labelResourceDebug(mVisibleInstancesIndicesBuffer.buffer, "VisibleInstancesIndicesBuffer");
-    LOG_INFO(mRenderer->mLogger, "Visible Instances Indices Buffer Created");
+    mRenderer->mCore.labelResourceDebug(mVisibleRenderInstancesInstanceIndexBuffer.buffer, "VisibleRenderInstancesInstanceIndexBuffer");
+    LOG_INFO(mRenderer->mLogger, "Visible Render Instances Instance Index Buffer Created");
 }
 
 void RendererScene::initDescriptor() {
@@ -604,7 +604,7 @@ void RendererScene::cleanup() {
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");
     mMainMaterialResourcesDescriptorSetLayout.clear();
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Layout Destroyed");
-    mVisibleInstancesIndicesBuffer.cleanup();
+    mVisibleRenderInstancesInstanceIndexBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Visible Instances Indices Buffer Destroyed");
     mMainBoundsBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Destroyed");

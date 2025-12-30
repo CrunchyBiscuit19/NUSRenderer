@@ -28,7 +28,7 @@ public struct CullerCullPushConstants {
     public Plane* frustumBuffer;
     public NodeTransform* nodeTransformsBuffer;
     public Instance* instancesBuffer;
-    public uint* visibleInstancesIndicesBuffer;
+    public uint* visibleRenderInstancesInstanceIndexBuffer;
     public uint renderInstancesLimit;
 };
 
