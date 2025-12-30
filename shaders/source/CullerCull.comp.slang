@@ -46,7 +46,7 @@ void main(CSInput in) {
     RenderItem *renderItem = &cullerCullPc.preCullRenderItemsBuffer[renderInstance.renderItemsIndex];
 
     // Grab data for culling test
-    Instance* instance = &cullerCullPc.instancesBuffer[renderInstance.instanceIndex];
+    Instance* instance = &cullerCullPc.instancesBuffer[renderInstance.mainInstanceIndex];
     NodeTransform* nodeTransform = &cullerCullPc.nodeTransformsBuffer[renderInstance.nodeTransformIndex];
     Bounds* bounds = &cullerCullPc.boundsBuffer[renderInstance.boundsIndex];
     Plane* frustum = cullerCullPc.frustumBuffer;
@@ -62,9 +62,8 @@ void main(CSInput in) {
     // Write the indices of visible render instances to the visible instances indices buffer
     // Index into visible instances indices buffer with (in.instanceIndex + firstInstance) and get the index into the instances buffer
     // Then index into the instances buffer with that index to get the actual instance data
-    uint offsetInstanceIndicesBufferIndex;
-    InterlockedAdd(renderItem->instanceCount, 1, offsetInstanceIndicesBufferIndex);
-    uint finalInstanceIndicesBufferIndex = renderInstance.firstInstance + offsetInstanceIndicesBufferIndex;
-    uint finalInstanceBufferIndex = renderInstance.firstInstance + renderInstance.instanceIndex;
-    cullerCullPc.visibleRenderInstancesInstanceIndexBuffer[finalInstanceIndicesBufferIndex] = finalInstanceBufferIndex;
+    uint offsetRenderInstanceIndex;
+    InterlockedAdd(renderItem->renderInstanceCount, 1, offsetRenderInstanceIndex);
+    uint finalRenderInstanceIndex = renderInstance.firstRenderInstance + offsetRenderInstanceIndex;
+    cullerCullPc.visibleRenderInstancesInstanceIndexBuffer[finalRenderInstanceIndex] = renderInstance.mainInstanceIndex;
 }

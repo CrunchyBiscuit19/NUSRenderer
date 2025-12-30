@@ -11,8 +11,8 @@ VSOutput main(VSInput in)
     Vertex v = pickerDrawPc.verticesBuffer[in.vertexIndex];
     float4 position = float4(v.position, 1.0f);
 
-    uint firstInstance = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].firstInstance;
-    uint instanceIndex = in.instanceIndex + firstInstance;
+    uint firstRenderInstance = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].firstRenderInstance;
+    uint instanceIndex = in.instanceIndex + firstRenderInstance;
     float4x4 instanceTransformMatrix = pickerDrawPc.instancesBuffer[instanceIndex].transformMatrix;
 
     uint mainNodeTransformIndex = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;

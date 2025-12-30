@@ -38,7 +38,7 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                 0,  // Instance count set to 0, incremented inside culling compute shader
                 mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
                 mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
-                model->mMainFirstInstance,
+                model->mMainFirstInstance * model->mInstances.size(), // if there are 5 instances, firstRenderInstance for 1st render item is 0, for 2nd is 5
                 model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
                 model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
                 model->mId,
@@ -53,8 +53,9 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                 ->at(pipelineId)
                 .renderInstances.emplace_back(
                     renderItemIndex,
+                    Batch::mainRenderInstancesIndex++,
                     instanceIndex + i,
-                    currRenderItem.firstInstance,
+                    currRenderItem.firstRenderInstance,
                     currRenderItem.nodeTransformIndex,
                     currRenderItem.boundsIndex
                 );

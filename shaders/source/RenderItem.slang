@@ -1,22 +1,23 @@
 module RenderItem;
 
-public struct RenderInstance {
-    public uint renderItemsIndex;
-    public uint instanceIndex;
-    public uint firstInstance;
-    public uint nodeTransformIndex;
-    public uint boundsIndex;
-}
-
 public struct RenderItem
 {
     public uint indexCount;
-    public uint instanceCount;
+    public uint renderInstanceCount;
     public uint firstIndex;
     public uint vertexOffset;
-    public uint firstInstance;
+    public uint firstRenderInstance;
     public uint materialIndex;
     public uint nodeTransformIndex;
     public uint modelIndex;
     public uint boundsIndex;
 };
+
+public struct RenderInstance {
+    public uint renderItemsIndex;
+    public uint mainRenderInstanceIndex;
+    public uint mainInstanceIndex;
+    public uint firstRenderInstance;
+    public uint nodeTransformIndex;
+    public uint boundsIndex;
+}

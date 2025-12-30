@@ -3,6 +3,8 @@
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
 
+u32 Batch::mainRenderInstancesIndex = 0; 
+
 Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     pipelineBundle = primitive.mMaterial->mPipelineBundle;
 

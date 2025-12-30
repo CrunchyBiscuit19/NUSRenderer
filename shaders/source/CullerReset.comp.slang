@@ -13,5 +13,5 @@ void main(CSInput in) {
     if (renderItemsIndex >= cullerResetPc.preCullRenderItemsLimit) return;
 
     // Reset render item instance count to zero
-    cullerResetPc.preCullRenderItemsBuffer[renderItemsIndex].instanceCount = 0;
+    cullerResetPc.preCullRenderItemsBuffer[renderItemsIndex].renderInstanceCount = 0;
 }

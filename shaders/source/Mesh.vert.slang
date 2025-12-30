@@ -12,9 +12,9 @@ VSOutput main(VSInput in)
     Vertex v = forwardPc.verticesBuffer[in.vertexIndex];
     float4 position = float4(v.position, 1.0f);
 
-    uint firstInstance = forwardPc.postCullRenderItemsBuffer[in.drawIndex].firstInstance;
+    uint firstRenderInstance = forwardPc.postCullRenderItemsBuffer[in.drawIndex].firstRenderInstance;
     float4x4 instanceTransformMatrix =
-        forwardPc.instancesBuffer[in.instanceIndex + firstInstance].transformMatrix;
+        forwardPc.instancesBuffer[in.instanceIndex + firstRenderInstance].transformMatrix;
 
     uint mainNodeTransformIndex = forwardPc.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;
     float4x4 nodeTransformMatrix = forwardPc.nodeTransformsBuffer[mainNodeTransformIndex];

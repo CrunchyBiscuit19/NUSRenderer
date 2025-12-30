@@ -6,10 +6,10 @@ struct PipelineBundle;
 
 struct RenderItem {
     u32 indexCount;
-    u32 instanceCount;
+    u32 renderInstanceCount;
     u32 firstIndex;
     u32 vertexOffset;
-    u32 firstInstance;
+    u32 firstRenderInstance;
     u32 materialIndex;
     u32 nodeTransformIndex;
     u32 modelIndex;
@@ -18,8 +18,9 @@ struct RenderItem {
 
 struct RenderInstance {
     u32 renderItemIndex;  // Per batch render items index
-    u32 instanceIndex;    // Global main instances buffer index
-    u32 firstInstance;
+    u32 mainRenderInstanceIndex;
+    u32 mainInstanceIndex; 
+    u32 firstRenderInstance; 
     u32 nodeTransformIndex;
     u32 boundsIndex;
 };
@@ -27,6 +28,8 @@ struct RenderInstance {
 enum class BatchType { Opaque = 0, Mask = 1, Transparent = 2 };
 
 struct Batch {
+    static u32 mainRenderInstancesIndex;
+
     PipelineBundle* pipelineBundle;
 
     std::vector<RenderItem> renderItems;
