@@ -91,7 +91,7 @@ void Gui::MiscGuiComponent::elements() {
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
         ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
         ImGui::Text("Pre-Cull Render Instances: %i", mRenderer->mStats.mPreCullRenderInstancesCount);
-        ImGui::Text("Post-Cull Render Instances: %i", *static_cast<u32*>(mRenderer->mStats.mPostCullRenderInstancesCountBuffer.info.pMappedData));
+        ImGui::Text("Post-Cull Render Instances: %i", *static_cast<u32*>(mRenderer->mStats.mRenderInstancesCountBuffer.info.pMappedData));
     }
     if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("[G] Toggle GUI");

@@ -16,28 +16,27 @@ public struct Bounds {
 }
 
 public struct CullerResetPushConstants {
-    public RenderItem *preCullRenderItemsBuffer;
-    public uint preCullRenderItemsCount;
+    public RenderItem* preCullRenderItemsBuffer;
+    public uint preCullRenderItemsLimit;
 };
 
 public struct CullerCullPushConstants {
     public RenderItem* preCullRenderItemsBuffer;
     public RenderInstance* renderInstancesBuffer;
-    public uint* postCullRenderInstancesCountBuffer;
+    public uint* renderInstancesCountBuffer;
     public Bounds* boundsBuffer;
     public Plane* frustumBuffer;
     public NodeTransform* nodeTransformsBuffer;
-    public Instance* preCullInstancesBuffer;
-    public Instance* postCullInstancesBuffer;
-    public Perspective* perspectiveBuffer;
-    public uint renderInstancesCount;
+    public Instance* instancesBuffer;
+    public uint* visibleInstancesIndicesBuffer;
+    public uint renderInstancesLimit;
 };
 
 public struct CullerCompactPushConstants {
     public RenderItem* preCullRenderItemsBuffer;
     public RenderItem* postCullRenderItemsBuffer;
     public uint* postCullRenderItemsCountBuffer;
-    public uint preCullRenderItemsCount; 
+    public uint preCullRenderItemsLimit; 
 };
 
 public struct CSInput {

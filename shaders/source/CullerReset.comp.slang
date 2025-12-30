@@ -10,7 +10,7 @@ CullerResetPushConstants cullerResetPc;
 void main(CSInput in) {
     // Get thread ID as index into render item
     uint renderItemsIndex = in.dispatchThreadID.x;
-    if (renderItemsIndex >= cullerResetPc.preCullRenderItemsCount) return;
+    if (renderItemsIndex >= cullerResetPc.preCullRenderItemsLimit) return;
 
     // Reset render item instance count to zero
     cullerResetPc.preCullRenderItemsBuffer[renderItemsIndex].instanceCount = 0;

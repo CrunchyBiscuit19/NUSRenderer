@@ -49,21 +49,13 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
-    mMainPreCullInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
         MAX_INSTANCES * sizeof(InstanceData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    mRenderer->mCore.labelResourceDebug(mMainPreCullInstancesBuffer.buffer, "MainPreCullInstancesBuffer");
-    LOG_INFO(mRenderer->mLogger, "Main Pre-Cull Instances Buffer Created");
-
-    mMainPostCullInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
-        MAX_INSTANCES * sizeof(InstanceData),
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
-    mRenderer->mCore.labelResourceDebug(mMainPostCullInstancesBuffer.buffer, "MainPostCullInstancesBuffer");
-    LOG_INFO(mRenderer->mLogger, "Main Post-Cull Instances Buffer Created");
+    mRenderer->mCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
+    LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 
     mMainBoundsBuffer = mRenderer->mResources.createAddressedBuffer(
         MAX_RENDER_ITEMS * sizeof(AABB),
@@ -72,6 +64,14 @@ void RendererScene::initBuffers() {
     );
     mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
+
+    mVisibleInstancesIndicesBuffer = mRenderer->mResources.createAddressedBuffer(
+        MAX_INSTANCES,
+        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+    mRenderer->mCore.labelResourceDebug(mVisibleInstancesIndicesBuffer.buffer, "VisibleInstancesIndicesBuffer");
+    LOG_INFO(mRenderer->mLogger, "Visible Instances Indices Buffer Created");
 }
 
 void RendererScene::initDescriptor() {
@@ -89,7 +89,7 @@ void RendererScene::initPushConstants() {
     mForwardPushConstants.vertexBuffer = mMainVertexBuffer.address;
     mForwardPushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
     mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
-    mForwardPushConstants.instancesBuffer = mMainPostCullInstancesBuffer.address;
+    mForwardPushConstants.instancesBuffer = mMainInstancesBuffer.address;
     LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
@@ -500,14 +500,14 @@ void RendererScene::reloadMainInstancesBuffer() {
         dstOffset += instancesCopy.size;
 
         mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-            cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainPreCullInstancesBuffer.buffer, instancesCopy);
+            cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
         });
     }
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         vkhelper::createBufferPipelineBarrier(  // Wait for main instances buffer to finish uploading
             cmd,
-            *mMainPreCullInstancesBuffer.buffer,
+            *mMainInstancesBuffer.buffer,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eVertexShader,
@@ -604,12 +604,12 @@ void RendererScene::cleanup() {
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");
     mMainMaterialResourcesDescriptorSetLayout.clear();
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Layout Destroyed");
+    mVisibleInstancesIndicesBuffer.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Visible Instances Indices Buffer Destroyed");
     mMainBoundsBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Destroyed");
-    mMainPreCullInstancesBuffer.cleanup();
-    LOG_INFO(mRenderer->mLogger, "Main Pre-Cull Instances Buffer Destroyed");
-    mMainPostCullInstancesBuffer.cleanup();
-    LOG_INFO(mRenderer->mLogger, "Main Post-Cull Instances Buffer Destroyed");
+    mMainInstancesBuffer.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Destroyed");
     mMainNodeTransformsBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Destroyed");
     mMainMaterialConstantsBuffer.cleanup();

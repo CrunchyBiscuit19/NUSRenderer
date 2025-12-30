@@ -39,27 +39,32 @@ bool frustumCull(Plane* frustum, Bounds* bounds, Instance* currInstance, NodeTra
 void main(CSInput in) {
     // Get thread ID as index into which render instance for culling check
     uint renderInstancesIndex = in.dispatchThreadID.x;
-    if (renderInstancesIndex >= cullerCullPc.renderInstancesCount) return;
+    if (renderInstancesIndex >= cullerCullPc.renderInstancesLimit) return;
 
     // Grab representative data for this thread
     RenderInstance renderInstance = cullerCullPc.renderInstancesBuffer[renderInstancesIndex];
     RenderItem *renderItem = &cullerCullPc.preCullRenderItemsBuffer[renderInstance.renderItemsIndex];
 
     // Grab data for culling test
-    Instance* currInstance = &cullerCullPc.preCullInstancesBuffer[renderInstance.instanceIndex];
+    Instance* instance = &cullerCullPc.instancesBuffer[renderInstance.instanceIndex];
     NodeTransform* nodeTransform = &cullerCullPc.nodeTransformsBuffer[renderInstance.nodeTransformIndex];
     Bounds* bounds = &cullerCullPc.boundsBuffer[renderInstance.boundsIndex];
     Plane* frustum = cullerCullPc.frustumBuffer;
 
     // Culling tests
-    bool visible = frustumCull(frustum, bounds, currInstance, nodeTransform);
+    bool visible = frustumCull(frustum, bounds, instance, nodeTransform);
+    //visible = true;
 
     // Increment counter of unculled render instances
     if (!visible) return;
-    uint _; InterlockedAdd(cullerCullPc.postCullRenderInstancesCountBuffer[0], 1, _);
+    uint _; InterlockedAdd(cullerCullPc.renderInstancesCountBuffer[0], 1, _);
 
-    // Write unculled render instance data to another instance buffers
-    uint writeInstanceIndex;
-    InterlockedAdd(renderItem->instanceCount, 1, writeInstanceIndex); // Do another pass to zero out after drawing?
-    cullerCullPc.postCullInstancesBuffer[renderInstance.firstInstance + writeInstanceIndex] = *currInstance;
+    // Write the indices of visible render instances to the visible instances indices buffer
+    // Index into visible instances indices buffer with (in.instanceIndex + firstInstance) and get the index into the instances buffer
+    // Then index into the instances buffer with that index to get the actual instance data
+    uint offsetInstanceIndicesBufferIndex;
+    InterlockedAdd(renderItem->instanceCount, 1, offsetInstanceIndicesBufferIndex);
+    uint finalInstanceIndicesBufferIndex = renderInstance.firstInstance + offsetInstanceIndicesBufferIndex;
+    uint finalInstanceBufferIndex = renderInstance.firstInstance + renderInstance.instanceIndex;
+    cullerCullPc.visibleInstancesIndicesBuffer[finalInstanceIndicesBufferIndex] = finalInstanceBufferIndex;
 }

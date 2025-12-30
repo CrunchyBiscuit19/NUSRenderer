@@ -15,7 +15,7 @@ struct ForwardPushConstants {
     vk::DeviceAddress materialConstantsBuffer;
     vk::DeviceAddress nodeTransformsBuffer;
     vk::DeviceAddress instancesBuffer;
-    vk::DeviceAddress renderItemsBuffer;
+    vk::DeviceAddress postCullRenderItemsBuffer;
 };
 
 class RendererScene {
@@ -58,9 +58,9 @@ class RendererScene {
     vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
 
     AddressedBuffer mMainNodeTransformsBuffer;
-    AddressedBuffer mMainPreCullInstancesBuffer;
-    AddressedBuffer mMainPostCullInstancesBuffer;
+    AddressedBuffer mMainInstancesBuffer;
     AddressedBuffer mMainBoundsBuffer;
+    AddressedBuffer mVisibleInstancesIndicesBuffer;
 
     RendererScene(Renderer* renderer);
 

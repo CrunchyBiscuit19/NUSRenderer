@@ -10,14 +10,14 @@ CullerCompactPushConstants cullerCompactPc;
 void main(CSInput in) {
     // Get thread ID as index into render item
     uint renderItemsIndex = in.dispatchThreadID.x;
-    if (renderItemsIndex >= cullerCompactPc.preCullRenderItemsCount) return;
+    if (renderItemsIndex >= cullerCompactPc.preCullRenderItemsLimit) return;
 
     // Copy over render items with more than zero instances, and increment counter
-    RenderItem* currRenderItem = &cullerCompactPc.preCullRenderItemsBuffer[renderItemsIndex];
+    RenderItem* renderItem = &cullerCompactPc.preCullRenderItemsBuffer[renderItemsIndex];
     
-    if (currRenderItem->instanceCount == 0) return;
+    if (renderItem->instanceCount == 0) return;
     
     uint writeRenderItemsIndex;
     InterlockedAdd(cullerCompactPc.postCullRenderItemsCountBuffer[0], 1, writeRenderItemsIndex);
-    cullerCompactPc.postCullRenderItemsBuffer[writeRenderItemsIndex] = *currRenderItem;
+    cullerCompactPc.postCullRenderItemsBuffer[writeRenderItemsIndex] = *renderItem;
 }
