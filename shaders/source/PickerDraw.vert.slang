@@ -19,7 +19,7 @@ VSOutput main(VSInput in)
     RenderItem renderItem = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex];
 
     uint firstRenderInstance = renderItem.firstRenderInstance;
-    uint mainInstanceIndex = pickerDrawPc.mainVisibleRenderInstancesInstanceIndexBuffer[in.instanceIndex + firstRenderInstance];
+    uint mainInstanceIndex = pickerDrawPc.mainVisibleRenderInstancesInstanceIndexBuffer[in.instanceIndex];
     float4x4 instanceTransformMatrix = pickerDrawPc.mainInstancesBuffer[mainInstanceIndex].transformMatrix;
 
     uint mainNodeTransformIndex = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;

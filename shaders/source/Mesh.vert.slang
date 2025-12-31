@@ -16,7 +16,7 @@ VSOutput main(VSInput in)
     RenderItem renderItem = forwardPc.postCullRenderItemsBuffer[in.drawIndex];
 
     uint firstRenderInstance = renderItem.firstRenderInstance;
-    uint mainInstanceIndex = forwardPc.mainVisibleRenderInstancesInstanceIndexBuffer[in.instanceIndex + firstRenderInstance];
+    uint mainInstanceIndex = forwardPc.mainVisibleRenderInstancesInstanceIndexBuffer[in.instanceIndex];
     float4x4 instanceTransformMatrix = forwardPc.mainInstancesBuffer[mainInstanceIndex].transformMatrix;
 
     uint mainNodeTransformIndex = forwardPc.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;

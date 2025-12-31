@@ -129,7 +129,7 @@ void Renderer::initPasses() {
             vk::AccessFlagBits2::eTransferWrite
         );
 
-        cmd.fillBuffer(*mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer, 0, vk::WholeSize, 0);
+        cmd.fillBuffer(*mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer, 0, vk::WholeSize, UINT32_MAX);
 
         vkhelper::createBufferPipelineBarrier(  // Zero out visisble instances indices buffer before writing into it in CullCompact
             cmd,
