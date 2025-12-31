@@ -48,8 +48,10 @@ void Renderer::initLogger() {
             quill::FileEventNotifier{}
         );
         mLogger = quill::Frontend::create_or_get_logger("FileLogger", std::move(fileSink));
+    } else {
+        mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
     }
-    mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
+
     mLogger->set_log_level(quill::LogLevel::TraceL3);
 }
 
@@ -120,18 +122,18 @@ void Renderer::initPasses() {
 
         vkhelper::createBufferPipelineBarrier(  // Wait for visible instances indices buffer to be used finish by the indirect draw commands
             cmd,
-            *mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer,
+            *mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer,
             vk::PipelineStageFlagBits2::eVertexShader,
             vk::AccessFlagBits2::eShaderRead,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite
         );
 
-        cmd.fillBuffer(*mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer, 0, vk::WholeSize, 0);
+        cmd.fillBuffer(*mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer, 0, vk::WholeSize, 0);
 
         vkhelper::createBufferPipelineBarrier(  // Zero out visisble instances indices buffer before writing into it in CullCompact
             cmd,
-            *mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer,
+            *mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer,
             vk::PipelineStageFlagBits2::eTransfer,
             vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eComputeShader,
@@ -208,11 +210,11 @@ void Renderer::initPasses() {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mCullPipelineBundle.pipeline);
 
         mScene.mCuller.mCullPushConstants.renderInstancesCountBuffer = mStats.mRenderInstancesCountBuffer.address;
-        mScene.mCuller.mCullPushConstants.boundsBuffer = mScene.mMainBoundsBuffer.address;
+        mScene.mCuller.mCullPushConstants.mainBoundsBuffer = mScene.mMainBoundsBuffer.address;
         mScene.mCuller.mCullPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
-        mScene.mCuller.mCullPushConstants.nodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
-        mScene.mCuller.mCullPushConstants.instancesBuffer = mScene.mMainInstancesBuffer.address;
-        mScene.mCuller.mCullPushConstants.visibleRenderInstancesInstanceIndexBuffer = mScene.mVisibleRenderInstancesInstanceIndexBuffer.address;
+        mScene.mCuller.mCullPushConstants.mainNodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
+        mScene.mCuller.mCullPushConstants.mainInstancesBuffer = mScene.mMainInstancesBuffer.address;
+        mScene.mCuller.mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
 
         for (auto batchType : mScene.mBatchTypes) {
             for (auto& batch : *batchType | std::views::values) {
@@ -299,7 +301,7 @@ void Renderer::initPasses() {
 
                 vkhelper::createBufferPipelineBarrier(  // Wait for visible instances indices buffer to be written to in CullCull
                     cmd,
-                    *mScene.mVisibleRenderInstancesInstanceIndexBuffer.buffer,
+                    *mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderWrite,
                     vk::PipelineStageFlagBits2::eVertexShader,

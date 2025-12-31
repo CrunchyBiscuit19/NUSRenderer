@@ -21,11 +21,11 @@ struct CullerCullPushConstants {
     vk::DeviceAddress preCullRenderItemsBuffer;
     vk::DeviceAddress renderInstancesBuffer;
     vk::DeviceAddress renderInstancesCountBuffer;
-    vk::DeviceAddress boundsBuffer;
     vk::DeviceAddress frustumBuffer;
-    vk::DeviceAddress nodeTransformsBuffer;
-    vk::DeviceAddress instancesBuffer;
-    vk::DeviceAddress visibleRenderInstancesInstanceIndexBuffer;
+    vk::DeviceAddress mainBoundsBuffer;
+    vk::DeviceAddress mainNodeTransformsBuffer;
+    vk::DeviceAddress mainInstancesBuffer;
+    vk::DeviceAddress mainVisibleRenderInstancesInstanceIndexBuffer;
     u32 renderInstancesLimit;
 };
 

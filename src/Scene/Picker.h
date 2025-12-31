@@ -8,9 +8,10 @@ class Renderer;
 class GLTFInstance;
 
 struct PickerDrawPushConstants {
-    vk::DeviceAddress vertexBuffer;
-    vk::DeviceAddress nodeTransformsBuffer;
-    vk::DeviceAddress instancesBuffer;
+    vk::DeviceAddress mainVertexBuffer;
+    vk::DeviceAddress mainNodeTransformsBuffer;
+    vk::DeviceAddress mainInstancesBuffer;
+    vk::DeviceAddress mainVisibleRenderInstancesInstanceIndexBuffer;
     vk::DeviceAddress postCullRenderItemsBuffer;
 };
 

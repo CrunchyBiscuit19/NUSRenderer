@@ -14,11 +14,12 @@ public uniform Sampler2D materialResources[];
 
 public struct ForwardPushConstants
 {
-    public Vertex *verticesBuffer;
-    public MaterialConstant *materialConstantsBuffer;
-    public NodeTransform *nodeTransformsBuffer;
-    public Instance *instancesBuffer;
-    public RenderItem *postCullRenderItemsBuffer;
+    public Vertex *mainVertexBuffer;
+    public MaterialConstant *mainMaterialConstantsBuffer;
+    public NodeTransform *mainNodeTransformsBuffer;
+    public Instance *mainInstancesBuffer;
+    public uint* mainVisibleRenderInstancesInstanceIndexBuffer;
+    public RenderItem* postCullRenderItemsBuffer;
 };
 
 public struct VSInput

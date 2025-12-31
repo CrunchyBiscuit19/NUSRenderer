@@ -13,7 +13,7 @@ constexpr bool USE_VALIDATION_LAYERS = true;
 constexpr bool STRICT_VALIDATION = false;
 #endif
 
-constexpr bool LOG_TO_FILE = false;
+constexpr bool LOG_TO_FILE = true;
 
 constexpr u32 MAJOR_VERSION = 1;
 constexpr u32 MINOR_VERSION = 3;

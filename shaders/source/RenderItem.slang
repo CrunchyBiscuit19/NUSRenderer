@@ -10,14 +10,11 @@ public struct RenderItem
     public uint materialIndex;
     public uint nodeTransformIndex;
     public uint modelIndex;
+    public uint firstInstance;
     public uint boundsIndex;
 };
 
 public struct RenderInstance {
     public uint renderItemsIndex;
-    public uint mainRenderInstanceIndex;
     public uint mainInstanceIndex;
-    public uint firstRenderInstance;
-    public uint nodeTransformIndex;
-    public uint boundsIndex;
 }

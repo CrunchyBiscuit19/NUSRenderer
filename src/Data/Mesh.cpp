@@ -38,12 +38,21 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                 0,  // Instance count set to 0, incremented inside culling compute shader
                 mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
                 mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
-                model->mMainFirstInstance * model->mInstances.size(), // if there are 5 instances, firstRenderInstance for 1st render item is 0, for 2nd is 5
+                Batch::firstRenderInstanceOffset, 
                 model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
                 model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
                 model->mId,
+                model->mMainFirstInstance,
                 model->mMainFirstBounds + mMesh->mRelativeFirstBounds
             );
+        LOG_INFO(
+            renderer->mLogger,
+            "Batch {} Render Item {}: Render Instance [Starts {} Num {}]",
+            pipelineId,
+            renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1,
+            Batch::firstRenderInstanceOffset,
+            model->mInstances.size()
+        );
 
         RenderItem& currRenderItem = renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.back();
         u32 renderItemIndex = static_cast<u32>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
@@ -53,13 +62,12 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                 ->at(pipelineId)
                 .renderInstances.emplace_back(
                     renderItemIndex,
-                    Batch::mainRenderInstancesIndex++,
-                    instanceIndex + i,
-                    currRenderItem.firstRenderInstance,
-                    currRenderItem.nodeTransformIndex,
-                    currRenderItem.boundsIndex
+                    instanceIndex + i
                 );
+            LOG_INFO(renderer->mLogger, "Render Instance {} Uses Instance {}", Batch::firstRenderInstanceOffset + i, instanceIndex + i);
         }
+
+        Batch::firstRenderInstanceOffset += model->mInstances.size();
     }
 
     Node::generateRenderItemsInstances(renderer, model);

@@ -65,13 +65,13 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 
-    mVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createAddressedBuffer(
         MAX_INSTANCES,
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    mRenderer->mCore.labelResourceDebug(mVisibleRenderInstancesInstanceIndexBuffer.buffer, "VisibleRenderInstancesInstanceIndexBuffer");
-    LOG_INFO(mRenderer->mLogger, "Visible Render Instances Instance Index Buffer Created");
+    mRenderer->mCore.labelResourceDebug(mMainVisibleRenderInstancesInstanceIndexBuffer.buffer, "MainVisibleRenderInstancesInstanceIndexBuffer");
+    LOG_INFO(mRenderer->mLogger, "Main Visible Render Instances Instance Index Buffer Created");
 }
 
 void RendererScene::initDescriptor() {
@@ -86,10 +86,11 @@ void RendererScene::initDescriptor() {
 }
 
 void RendererScene::initPushConstants() {
-    mForwardPushConstants.vertexBuffer = mMainVertexBuffer.address;
-    mForwardPushConstants.materialConstantsBuffer = mMainMaterialConstantsBuffer.address;
-    mForwardPushConstants.nodeTransformsBuffer = mMainNodeTransformsBuffer.address;
-    mForwardPushConstants.instancesBuffer = mMainInstancesBuffer.address;
+    mForwardPushConstants.mainVertexBuffer = mMainVertexBuffer.address;
+    mForwardPushConstants.mainMaterialConstantsBuffer = mMainMaterialConstantsBuffer.address;
+    mForwardPushConstants.mainNodeTransformsBuffer = mMainNodeTransformsBuffer.address;
+    mForwardPushConstants.mainInstancesBuffer = mMainInstancesBuffer.address;
+    mForwardPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mMainVisibleRenderInstancesInstanceIndexBuffer.address;
     LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 
@@ -138,7 +139,8 @@ void RendererScene::deleteInstances() {
 }
 
 void RendererScene::regenerateRenderItemsInstances() {
-    Batch::mainRenderInstancesIndex = 0;
+    Batch::firstRenderInstanceOffset = 0;
+    
     for (auto batchType : mBatchTypes) {
         for (auto& batch : *batchType | std::views::values) {
             batch.renderItems.clear();
@@ -605,8 +607,8 @@ void RendererScene::cleanup() {
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Destroyed");
     mMainMaterialResourcesDescriptorSetLayout.clear();
     LOG_INFO(mRenderer->mLogger, "Main Material Resources Descriptor Set Layout Destroyed");
-    mVisibleRenderInstancesInstanceIndexBuffer.cleanup();
-    LOG_INFO(mRenderer->mLogger, "Visible Instances Indices Buffer Destroyed");
+    mMainVisibleRenderInstancesInstanceIndexBuffer.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Main Visible Render Instances Instance Index Buffer Destroyed");
     mMainBoundsBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Destroyed");
     mMainInstancesBuffer.cleanup();

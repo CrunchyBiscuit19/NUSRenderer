@@ -11,10 +11,11 @@
 #include <vector>
 
 struct ForwardPushConstants {
-    vk::DeviceAddress vertexBuffer;
-    vk::DeviceAddress materialConstantsBuffer;
-    vk::DeviceAddress nodeTransformsBuffer;
-    vk::DeviceAddress instancesBuffer;
+    vk::DeviceAddress mainVertexBuffer;
+    vk::DeviceAddress mainMaterialConstantsBuffer;
+    vk::DeviceAddress mainNodeTransformsBuffer;
+    vk::DeviceAddress mainInstancesBuffer;
+    vk::DeviceAddress mainVisibleRenderInstancesInstanceIndexBuffer;
     vk::DeviceAddress postCullRenderItemsBuffer;
 };
 
@@ -60,7 +61,7 @@ class RendererScene {
     AddressedBuffer mMainNodeTransformsBuffer;
     AddressedBuffer mMainInstancesBuffer;
     AddressedBuffer mMainBoundsBuffer;
-    AddressedBuffer mVisibleRenderInstancesInstanceIndexBuffer;
+    AddressedBuffer mMainVisibleRenderInstancesInstanceIndexBuffer;
 
     RendererScene(Renderer* renderer);
 

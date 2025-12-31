@@ -1,4 +1,4 @@
-module PickerDraw;
+module Picker;
 
 import Perspective;
 import Vertex;
@@ -6,14 +6,12 @@ import NodeTransform;
 import Instance;
 import RenderItem;
 
-[[vk::binding(0, 0)]]
-public uniform ConstantBuffer<Perspective> perspectiveBuffer;
-
 public struct PickerDrawPushConstants
 {
-    public Vertex *verticesBuffer;
-    public NodeTransform *nodeTransformsBuffer;
-    public Instance *instancesBuffer;
+    public Vertex *mainVertexBuffer;
+    public NodeTransform *mainNodeTransformsBuffer;
+    public Instance *mainInstancesBuffer;
+    public uint *mainVisibleRenderInstancesInstanceIndexBuffer;
     public RenderItem *postCullRenderItemsBuffer;
 };
 
@@ -32,3 +30,15 @@ public struct VSOutput
 };
 
 public typedef VSOutput FSInput;
+
+public struct PickerData {
+    public int2 coords;
+    public uint2 read;
+};
+public struct PickerPickPushConstants {
+    public PickerData* pickerBuffer;
+};
+
+public struct CSInput {
+    public uint3 dispatchThreadID : SV_DispatchThreadID;
+};

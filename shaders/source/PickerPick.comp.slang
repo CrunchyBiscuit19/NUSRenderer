@@ -1,4 +1,7 @@
-import PickerPick;
+import Picker;
+
+[[vk::binding(0, 0)]]
+public uniform RWTexture2D<uint2> pickerImage;
 
 [[vk::push_constant]]
 PickerPickPushConstants pickerPickPc;
