@@ -114,8 +114,7 @@ void RendererCore::init() {
         vkbInstBuilder.request_validation_layers(true);
     }
     if (VALIDATION_MODE >= ValidationMode::Strict) {
-        vkbInstBuilder
-            .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
+        vkbInstBuilder.add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eDebugPrintf))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssisted))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot))
             .add_validation_feature_enable(static_cast<VkValidationFeatureEnableEXT>(vk::ValidationFeatureEnableEXT::eSynchronizationValidation))

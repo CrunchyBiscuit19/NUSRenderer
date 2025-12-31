@@ -26,12 +26,7 @@ void Perspective::initDescriptor() {
 void Perspective::update() {
     mRenderer->mCamera.update(mRenderer->mStats.mFrameTime, static_cast<float>(ONE_SECOND_IN_MS / EXPECTED_FRAME_RATE));
     mData.view = mRenderer->mCamera.getViewMatrix();
-    mData.proj = glm::perspective(
-        glm::radians(FOVY),
-        mRenderer->mCore.mAspectRatio,
-        FAR_PLANE,
-        NEAR_PLANE
-    );
+    mData.proj = glm::perspective(glm::radians(FOVY), mRenderer->mCore.mAspectRatio, FAR_PLANE, NEAR_PLANE);
     mData.proj[1][1] *= -1;
 
     auto* sceneBufferPtr = static_cast<PerspectiveData*>(mRenderer->mInfrastructure.getCurrentFrame().mPerspectiveBuffer.info.pMappedData);

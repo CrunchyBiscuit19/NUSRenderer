@@ -6,11 +6,13 @@ import RenderItem;
 
 static const uint MAX_CULL_LOCAL_SIZE = 256;
 static const uint NUM_FRUSTUM_PLANES = 6;
+static const uint NUM_AABB_CORNERS = 8;
 
 [[vk::push_constant]]
 CullerCullPushConstants cullerCullPc;
 
 /*
+Transform all corners of the AABB to world space
 Get the corner of the AABB which will give us the maximum result in the point-normal plane equation
 Point-normal plane equation is positive if it's on the side of the plane the normal is pointing
 And since frustum plane normals point inward, a positive (or zero) result means that corrner of the AABB is "inside" the plane
@@ -18,14 +20,31 @@ If at least that chosen corner is inside all 6 planes, it is inside the frustum,
 */
 bool frustumCull(Plane* frustum, AABB* bounds, Instance* currInstance, NodeTransform* nodeTransform) {
     bool visible = true;
+    float4[NUM_AABB_CORNERS] newCorners = {
+        float4(bounds->min.x, bounds->min.y, bounds->min.z, 1.f),
+        float4(bounds->min.x, bounds->min.y, bounds->max.z, 1.f),
+        float4(bounds->min.x, bounds->max.y, bounds->min.z, 1.f),
+        float4(bounds->min.x, bounds->max.y, bounds->max.z, 1.f),
+        float4(bounds->max.x, bounds->min.y, bounds->min.z, 1.f),
+        float4(bounds->max.x, bounds->min.y, bounds->max.z, 1.f),
+        float4(bounds->max.x, bounds->max.y, bounds->min.z, 1.f),
+        float4(bounds->max.x, bounds->max.y, bounds->max.z, 1.f),
+    };
+    float4 newMin = float4(1.f);
+    float4 newMax = float4(0.f);
+    for (uint j = 0; j < NUM_AABB_CORNERS; j++) {
+        newCorners[j] = mul(currInstance->transformMatrix, mul(*nodeTransform, newCorners[j]));
+        newMin = min(newMin, newCorners[j]);
+        newMax = max(newMax, newCorners[j]);
+    }
+
     for (uint i = 0; i < NUM_FRUSTUM_PLANES; i++) {
         Plane p = frustum[i];
         float4 chosen;
-        chosen.x = (p.normal.x >= 0) ? bounds->max.x : bounds->min.x;
-        chosen.y = (p.normal.y >= 0) ? bounds->max.y : bounds->min.y;
-        chosen.z = (p.normal.z >= 0) ? bounds->max.z : bounds->min.z;
+        chosen.x = (p.normal.x >= 0) ? newMax.x : newMin.x;
+        chosen.y = (p.normal.y >= 0) ? newMax.y : newMin.y;
+        chosen.z = (p.normal.z >= 0) ? newMax.z : newMin.z;
         chosen.w = 1.0;
-        chosen = mul(currInstance->transformMatrix, mul(*nodeTransform, chosen));
         float result = dot(p.normal, chosen.xyz) - p.d;
         if (result < 0) {
             visible = false;
@@ -53,7 +72,6 @@ void main(CSInput in) {
 
     // Culling tests
     bool visible = frustumCull(frustum, bounds, instance, nodeTransform);
-    //visible = true;
 
     // Increment counter of unculled render instances
     if (!visible) return;

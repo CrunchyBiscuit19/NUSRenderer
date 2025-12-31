@@ -18,8 +18,8 @@ struct RenderItem {
 };
 
 struct RenderInstance {
-    u32 renderItemIndex; 
-    u32 mainInstanceIndex; 
+    u32 renderItemIndex;
+    u32 mainInstanceIndex;
 };
 
 enum class BatchType { Opaque = 0, Mask = 1, Transparent = 2 };

@@ -38,7 +38,7 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
                 0,  // Instance count set to 0, incremented inside culling compute shader
                 mMesh->mMainFirstIndex + primitive.mRelativeFirstIndex,
                 mMesh->mMainVertexOffset + primitive.mRelativeVertexOffset,
-                Batch::firstRenderInstanceOffset, 
+                Batch::firstRenderInstanceOffset,
                 model->mMainFirstMaterial + primitive.mMaterial->mRelativeMaterialIndex,
                 model->mMainFirstNodeTransform + this->mRelativeNodeIndex,
                 model->mId,
@@ -58,12 +58,7 @@ void MeshNode::generateRenderItemsInstances(Renderer* renderer, GLTFModel* model
         u32 renderItemIndex = static_cast<u32>(renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderItems.size() - 1);
         u32 instanceIndex = model->mMainFirstInstance;
         for (u32 i = 0; i < model->mInstances.size(); i++) {
-            renderer->mScene.mBatchTypes[batchType]
-                ->at(pipelineId)
-                .renderInstances.emplace_back(
-                    renderItemIndex,
-                    instanceIndex + i
-                );
+            renderer->mScene.mBatchTypes[batchType]->at(pipelineId).renderInstances.emplace_back(renderItemIndex, instanceIndex + i);
             LOG_INFO(renderer->mLogger, "Render Instance {} Uses Instance {}", Batch::firstRenderInstanceOffset + i, instanceIndex + i);
         }
 

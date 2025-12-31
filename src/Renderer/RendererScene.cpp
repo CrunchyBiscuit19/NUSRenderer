@@ -140,7 +140,7 @@ void RendererScene::deleteInstances() {
 
 void RendererScene::regenerateRenderItemsInstances() {
     Batch::firstRenderInstanceOffset = 0;
-    
+
     for (auto batchType : mBatchTypes) {
         for (auto& batch : *batchType | std::views::values) {
             batch.renderItems.clear();
