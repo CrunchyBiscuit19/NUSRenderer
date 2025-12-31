@@ -33,8 +33,8 @@
 FMTQUILL_BEGIN_NAMESPACE
 namespace detail {
 
-// Generate a unique explicit instantion in every translation unit using a tag
-// type in an anonymous namespace.
+// Generate a unique explicit instantiation in every translation unit using a
+// tag type in an anonymous namespace.
 namespace {
 struct file_access_tag {};
 }  // namespace
@@ -158,7 +158,8 @@ void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
 
 FMTQUILL_EXPORT template <typename... T>
 void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
-  fmtquill::print(os, "{}\n", fmtquill::format(fmt, std::forward<T>(args)...));
+  fmtquill::print(os, FMTQUILL_STRING("{}\n"),
+             fmtquill::format(fmt, std::forward<T>(args)...));
 }
 
 FMTQUILL_END_NAMESPACE

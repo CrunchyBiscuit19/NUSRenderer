@@ -24,6 +24,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -155,6 +156,18 @@ public:
     _rotation_naming_scheme = value;
   }
 
+  /**
+   * @brief Sets whether to force rotation on file sink creation/startup.
+   * When enabled, if a log file with the same name exists on startup, it will be rotated
+   * according to the RotationNamingScheme before starting to write new logs.
+   * This allows creating a new log file for every program run. The default value is false.
+   * @param value True to force rotation on creation, false otherwise.
+   */
+  QUILL_ATTRIBUTE_COLD void set_rotation_on_creation(bool value)
+  {
+    _rotation_on_creation = value;
+  }
+
   /** Getter methods **/
   QUILL_NODISCARD size_t rotation_max_file_size() const noexcept { return _rotation_max_file_size; }
   QUILL_NODISCARD uint32_t max_backup_files() const noexcept { return _max_backup_files; }
@@ -173,6 +186,7 @@ public:
   {
     return _rotation_naming_scheme;
   }
+  QUILL_NODISCARD bool rotation_on_creation() const noexcept { return _rotation_on_creation; }
 
 private:
   /***/
@@ -239,12 +253,13 @@ private:
   RotationNamingScheme _rotation_naming_scheme{RotationNamingScheme::Index};
   bool _overwrite_rolled_files{true};
   bool _remove_old_files{true};
+  bool _rotation_on_creation{false};
 };
 
 /**
  * @brief The RotatingSink class
  */
-template<typename TBase>
+template <typename TBase>
 class RotatingSink : public TBase
 {
 public:
@@ -261,15 +276,16 @@ public:
    * @param start_time start time
    */
   RotatingSink(fs::path const& filename, RotatingFileSinkConfig const& config,
-                   FileEventNotifier file_event_notifier = FileEventNotifier{},
-                   std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now())
-    : base_type(filename, static_cast<FileSinkConfig const&>(config), std::move(file_event_notifier), false),
+               FileEventNotifier file_event_notifier = FileEventNotifier{},
+               std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now())
+    : base_type(filename, static_cast<FileSinkConfig const&>(config),
+                std::move(file_event_notifier), false, start_time),
       _config(config)
   {
     uint64_t const today_timestamp_ns = static_cast<uint64_t>(
       std::chrono::duration_cast<std::chrono::nanoseconds>(start_time.time_since_epoch()).count());
 
-    _clean_and_recover_files(filename, _config.open_mode(), today_timestamp_ns);
+    _clean_and_recover_files(this->_filename, _config.open_mode(), today_timestamp_ns);
 
     if (_config.rotation_frequency() != RotatingFileSinkConfig::RotationFrequency::Disabled)
     {
@@ -286,6 +302,12 @@ public:
       std::chrono::duration_cast<std::chrono::nanoseconds>(start_time.time_since_epoch()).count());
 
     _created_files.emplace_front(this->_filename, 0, std::string{});
+
+    // Check if we need to rotate on creation
+    if (_config.rotation_on_creation() && !this->is_null() && _get_file_size(this->_filename) > 0)
+    {
+      _rotate_files(today_timestamp_ns);
+    }
 
     if (!this->is_null())
     {
@@ -321,8 +343,8 @@ public:
     if (this->is_null())
     {
       base_type::write_log(log_metadata, log_timestamp, thread_id, thread_name, process_id,
-                            logger_name, log_level, log_level_description, log_level_short_code,
-                            named_args, log_message, log_statement);
+                           logger_name, log_level, log_level_description, log_level_short_code,
+                           named_args, log_message, log_statement);
       return;
     }
 
@@ -342,8 +364,8 @@ public:
 
     // write to file
     base_type::write_log(log_metadata, log_timestamp, thread_id, thread_name, process_id,
-                          logger_name, log_level, log_level_description, log_level_short_code,
-                          named_args, log_message, log_statement);
+                         logger_name, log_level, log_level_description, log_level_short_code,
+                         named_args, log_message, log_statement);
   }
 
 private:
@@ -459,7 +481,7 @@ private:
     _created_files.emplace_front(this->_filename, 0, std::string{});
 
     // Open file for logging
-    this->open_file(this->_filename, "w");
+    this->open_file(this->_filename, _config.open_mode());
     _open_file_timestamp = record_timestamp_ns;
     this->_file_size = 0;
   }
@@ -476,9 +498,9 @@ private:
     }
 
     // if we are starting in "w" mode, then we also should clean all previous log files of the previous run
-    if (_config.remove_old_files() && (open_mode == "w"))
+    if (_config.remove_old_files() && (open_mode.find('w') != std::string::npos))
     {
-      for (const auto& entry : fs::directory_iterator(fs::current_path() / filename.parent_path()))
+      for (auto const& entry : fs::directory_iterator(fs::current_path() / filename.parent_path()))
       {
         if (entry.path().extension().string() != filename.extension().string())
         {
@@ -537,10 +559,10 @@ private:
         }
       }
     }
-    else if (open_mode == "a")
+    else if (open_mode.find('a') != std::string::npos)
     {
       // we need to recover the index from the existing files
-      for (const auto& entry : fs::directory_iterator(fs::current_path() / filename.parent_path()))
+      for (auto const& entry : fs::directory_iterator(fs::current_path() / filename.parent_path()))
       {
         // is_directory() does not exist in std::experimental::filesystem
         if (entry.path().extension().string() != filename.extension().string())
@@ -638,17 +660,19 @@ private:
   }
 
   /***/
-  static bool _remove_file(fs::path const& filename) noexcept
+  static void _remove_file(fs::path const& filename) noexcept
   {
     std::error_code ec;
-    fs::remove(filename, ec);
 
-    if (ec)
+    fs::file_status const status = fs::status(filename, ec);
+
+    if (ec || status.type() != fs::file_type::regular)
     {
-      return false;
+      // File doesn't exist or is not a regular file
+      return;
     }
 
-    return true;
+    fs::remove(filename, ec);
   }
 
   /***/
@@ -659,7 +683,17 @@ private:
 
     if (ec)
     {
-      return false;
+      // Retry once after a delay - workaround for Windows antivirus locking files
+      // This is a common issue where antivirus software temporarily locks files during scanning
+      std::this_thread::sleep_for(std::chrono::milliseconds{250});
+
+      ec.clear();
+      fs::rename(previous_file, new_file, ec);
+
+      if (ec)
+      {
+        return false;
+      }
     }
 
     return true;
@@ -694,7 +728,12 @@ private:
   /***/
   static uint64_t _calculate_initial_rotation_tp(uint64_t start_time_ns, RotatingFileSinkConfig const& config)
   {
+// time_t on i386 is 32 bits so casting out of range number results in zero
+#if (defined(__i386))
+    time_t const time_now = static_cast<time_t>(start_time_ns / 1000000000);
+#else
     time_t const time_now = static_cast<time_t>(start_time_ns) / 1000000000;
+#endif
     tm date;
 
     // here we do this because of `daily_rotation_time_str` that might have specified the time in UTC

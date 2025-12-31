@@ -11,7 +11,6 @@
 #include "quill/sinks/StreamSink.h"
 
 #include <array>
-#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -166,7 +165,7 @@ public:
         return false;
       }
 
-      static constexpr const char* terms[] = {
+      static constexpr char const* terms[] = {
         "ansi",          "color",     "console",        "cygwin",         "gnome",
         "konsole",       "kterm",     "linux",          "msys",           "putty",
         "rxvt",          "screen",    "vt100",          "xterm",          "tmux",
@@ -175,7 +174,7 @@ public:
         "kde-konsole"};
 
       // Loop through each term and check if it's found in env_p
-      for (const char* term : terms)
+      for (char const* term : terms)
       {
         if (std::strstr(env_p, term) != nullptr)
         {
@@ -336,10 +335,14 @@ public:
    * @brief Constructor with custom ConsoleColours
    * config
    */
-  explicit ConsoleSink(ConsoleSinkConfig const& config = ConsoleSinkConfig{})
-    : StreamSink{config.stream(), nullptr, config.override_pattern_formatter_options()}, _config(config)
+  explicit ConsoleSink(ConsoleSinkConfig const& config = ConsoleSinkConfig{},
+                       FileEventNotifier file_event_notifier = FileEventNotifier{})
+    : StreamSink{config.stream(), nullptr, config.override_pattern_formatter_options(),
+                 std::move(file_event_notifier)},
+      _config(config)
   {
-    assert((_config.stream() == "stdout") || (config.stream() == "stderr"));
+    QUILL_ASSERT(_config.stream() == "stdout" || config.stream() == "stderr",
+                 "Invalid stream name in ConsoleSink constructor, must be 'stdout' or 'stderr'");
 
     if (_config.colour_mode() == ConsoleSinkConfig::ColourMode::Never)
     {

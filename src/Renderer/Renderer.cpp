@@ -49,10 +49,12 @@ void Renderer::initLogger() {
     auto consoleSink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1");
 
     if (LOG_LOCATION == LogLocation::File) {
-        mLogger = quill::Frontend::create_or_get_logger("FileLogger", std::move(fileSink));
-    } else if (LOG_LOCATION == LogLocation::Console || LOG_LOCATION == LogLocation::Both) {
-        mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", std::move(consoleSink));
-    } 
+        mLogger = quill::Frontend::create_or_get_logger("LOGGER", std::move(fileSink));
+    } else if (LOG_LOCATION == LogLocation::Console) {
+        mLogger = quill::Frontend::create_or_get_logger("LOGGER", std::move(consoleSink));
+    } else if (LOG_LOCATION == LogLocation::Both) {
+        mLogger = quill::Frontend::create_or_get_logger("LOGGER", {std::move(fileSink), std::move(consoleSink)});
+    }
     mLogger->set_log_level(quill::LogLevel::TraceL3);
 }
 

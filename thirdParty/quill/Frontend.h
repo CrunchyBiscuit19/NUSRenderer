@@ -19,7 +19,6 @@
 #include "quill/sinks/Sink.h"
 
 #include <atomic>
-#include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <initializer_list>
@@ -259,9 +258,8 @@ public:
     std::atomic<bool> logger_removal_complete{false};
     std::atomic<bool>* logger_removal_complete_ptr = &logger_removal_complete;
 
-    while (!logger->template log_statement<false, false>(
-      LogLevel::None, &macro_metadata, reinterpret_cast<uintptr_t>(logger_removal_complete_ptr),
-      logger->get_logger_name()))
+    while (!logger->template log_statement<false>(
+      &macro_metadata, reinterpret_cast<uintptr_t>(logger_removal_complete_ptr), logger->get_logger_name()))
     {
       // We do not want to drop the message if a dropping queue is used
       if (sleep_duration_ns > 0)
@@ -348,7 +346,7 @@ public:
 private:
   QUILL_NODISCARD static logger_t* _cast_to_logger(detail::LoggerBase* logger_base)
   {
-    assert(logger_base);
+    QUILL_ASSERT(logger_base, "logger_base is nullptr in Frontend::_cast_to_logger()");
 
 #if QUILL_USE_RTTI
     // MSVC may warn that a variable with the same name is hidden by this declaration,
