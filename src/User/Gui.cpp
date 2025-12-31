@@ -74,6 +74,9 @@ void Gui::SceneGuiComponent::elements() {
             mRenderer->mScene.mSkybox.mActive = !mRenderer->mScene.mSkybox.mActive;
         }
     }
+    if (ImGui::CollapsingHeader("Culler", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Freeze Culling", &mRenderer->mScene.mCuller.mFreezeCulling);
+    }
 
     mGui->mSelectSkyboxFileBrowser.Display();
     if (mGui->mSelectSkyboxFileBrowser.HasSelected()) {
@@ -85,7 +88,7 @@ void Gui::SceneGuiComponent::elements() {
 
 void Gui::MiscGuiComponent::elements() {
     if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Text("VALIDATION LAYERS: %s", (USE_VALIDATION_LAYERS ? "ON" : "OFF"));
+        ImGui::Text("VALIDATION MODE: %s", magic_enum::enum_name(VALIDATION_MODE).data());
         ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrameTime);
         ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
         ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);

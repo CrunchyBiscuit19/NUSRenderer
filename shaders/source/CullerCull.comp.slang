@@ -16,7 +16,7 @@ Point-normal plane equation is positive if it's on the side of the plane the nor
 And since frustum plane normals point inward, a positive (or zero) result means that corrner of the AABB is "inside" the plane
 If at least that chosen corner is inside all 6 planes, it is inside the frustum, the current render instance is considered visible
 */
-bool frustumCull(Plane* frustum, Bounds* bounds, Instance* currInstance, NodeTransform* nodeTransform) {
+bool frustumCull(Plane* frustum, AABB* bounds, Instance* currInstance, NodeTransform* nodeTransform) {
     bool visible = true;
     for (uint i = 0; i < NUM_FRUSTUM_PLANES; i++) {
         Plane p = frustum[i];
@@ -48,7 +48,7 @@ void main(CSInput in) {
     // Grab data for culling test
     Instance* instance = &cullerCullPc.mainInstancesBuffer[renderInstance.mainInstanceIndex];
     NodeTransform* nodeTransform = &cullerCullPc.mainNodeTransformsBuffer[renderItem->nodeTransformIndex];
-    Bounds* bounds = &cullerCullPc.mainBoundsBuffer[renderItem->boundsIndex];
+    AABB* bounds = &cullerCullPc.mainBoundsBuffer[renderItem->boundsIndex];
     Plane* frustum = cullerCullPc.frustumBuffer;
 
     // Culling tests

@@ -403,8 +403,8 @@ void GLTFModel::loadMeshes() {
         newMesh.mBounds.min = glm::vec4(vertices[0].position, 0.f);
         newMesh.mBounds.max = glm::vec4(vertices[0].position, 0.f);
         for (auto& vertex : vertices) {
-            newMesh.mBounds.min = glm::min(newMesh.mBounds.min, glm::vec4(vertex.position, 0.f));
-            newMesh.mBounds.max = glm::max(newMesh.mBounds.max, glm::vec4(vertex.position, 0.f));
+            newMesh.mBounds.min = glm::min(newMesh.mBounds.min, vertex.position);
+            newMesh.mBounds.max = glm::max(newMesh.mBounds.max, vertex.position);
         }
         newMesh.mRelativeFirstBounds = boundsOffset;
         boundsOffset++;

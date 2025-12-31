@@ -36,22 +36,23 @@ void Renderer::init() {
 void Renderer::initLogger() {
     quill::Backend::start();
 
-    if (LOG_TO_FILE) {
-        auto fileSink = quill::Frontend::create_or_get_sink<quill::FileSink>(
-            fmt::format("{}Run.log", LOGS_PATH).c_str(),
-            []() {
-                quill::FileSinkConfig cfg;
-                cfg.set_open_mode('w');
-                cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
-                return cfg;
-            }(),
-            quill::FileEventNotifier{}
-        );
-        mLogger = quill::Frontend::create_or_get_logger("FileLogger", std::move(fileSink));
-    } else {
-        mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1"));
-    }
+    auto fileSink = quill::Frontend::create_or_get_sink<quill::FileSink>(
+        fmt::format("{}Run.log", LOGS_PATH).c_str(),
+        []() {
+            quill::FileSinkConfig cfg;
+            cfg.set_open_mode('w');
+            cfg.set_filename_append_option(quill::FilenameAppendOption::StartDateTime);
+            return cfg;
+        }(),
+        quill::FileEventNotifier{}
+    );
+    auto consoleSink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1");
 
+    if (LOG_LOCATION == LogLocation::File) {
+        mLogger = quill::Frontend::create_or_get_logger("FileLogger", std::move(fileSink));
+    } else if (LOG_LOCATION == LogLocation::Console || LOG_LOCATION == LogLocation::Both) {
+        mLogger = quill::Frontend::create_or_get_logger("ConsoleLogger", std::move(consoleSink));
+    } 
     mLogger->set_log_level(quill::LogLevel::TraceL3);
 }
 
@@ -100,6 +101,7 @@ void Renderer::initComponents() {
 
 void Renderer::initPasses() {
     mPasses.try_emplace(PassType::Cull, [&](vk::CommandBuffer cmd) {
+        if (mScene.mCuller.mFreezeCulling) return;
         mPasses.at(PassType::CullReset).execute(cmd);
         mPasses.at(PassType::CullCull).execute(cmd);
         mPasses.at(PassType::CullCompact).execute(cmd);

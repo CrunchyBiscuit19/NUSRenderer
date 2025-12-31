@@ -5,15 +5,17 @@
 
 #include <vulkan/vulkan.hpp>
 
+enum class ValidationMode { None, Basic, Strict };
+
+enum class LogLocation { Console, File, Both };
+
 #ifdef RELEASE
-constexpr bool USE_VALIDATION_LAYERS = false;
-constexpr bool STRICT_VALIDATION = false;
+constexpr ValidationMode VALIDATION_MODE = ValidationMode::None;
 #else
-constexpr bool USE_VALIDATION_LAYERS = true;
-constexpr bool STRICT_VALIDATION = false;
+constexpr ValidationMode VALIDATION_MODE = ValidationMode::Strict;
 #endif
 
-constexpr bool LOG_TO_FILE = true;
+constexpr LogLocation LOG_LOCATION = LogLocation::Both;
 
 constexpr u32 MAJOR_VERSION = 1;
 constexpr u32 MINOR_VERSION = 3;

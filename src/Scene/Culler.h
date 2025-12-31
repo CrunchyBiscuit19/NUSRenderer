@@ -52,6 +52,8 @@ class Culler {
     vk::raii::PipelineLayout mCompactPipelineLayout;
     CullerCompactPushConstants mCompactPushConstants;
 
+    bool mFreezeCulling{false};
+
     Culler(Renderer* renderer);
 
     void init();

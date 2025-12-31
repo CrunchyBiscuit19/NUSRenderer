@@ -10,9 +10,9 @@ public struct Plane {
     public float d;
 }
 
-public struct Bounds {
-    public float4 min;
-    public float4 max;
+public struct AABB {
+    public float3 min;
+    public float3 max;
 }
 
 public struct CullerResetPushConstants {
@@ -25,7 +25,7 @@ public struct CullerCullPushConstants {
     public RenderInstance* renderInstancesBuffer;
     public uint* renderInstancesCountBuffer;
     public Plane* frustumBuffer;
-    public Bounds* mainBoundsBuffer;
+    public AABB* mainBoundsBuffer;
     public NodeTransform* mainNodeTransformsBuffer;
     public Instance* mainInstancesBuffer;
     public uint* mainVisibleRenderInstancesInstanceIndexBuffer;
