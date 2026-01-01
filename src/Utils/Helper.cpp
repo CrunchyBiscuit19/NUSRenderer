@@ -1,6 +1,8 @@
 ﻿#include <Renderer/RendererInfrastructure.h>
 #include <Utils/Helper.h>
 
+#include <cmath>
+
 vk::CommandPoolCreateInfo vkhelper::commandPoolCreateInfo(u32 queueFamilyIndex, vk::CommandPoolCreateFlags flags) {
     vk::CommandPoolCreateInfo info = {};
     info.pNext = nullptr;
@@ -457,3 +459,19 @@ void vkhelper::createImagePipelineBarrier(
 }
 
 vk::Extent2D vkhelper::extent3dTo2d(vk::Extent3D extent3d) { return vk::Extent2D(extent3d.width, extent3d.height); }
+
+u32 vkhelper::previousPow2(u32 x) {
+    if (x == 0) return 0;
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return x - (x >> 1);
+}
+
+u32 vkhelper::getMipMapLevelsDepthPyramid(vk::Extent3D extent) {
+    u32 lower = std::min(extent.width, extent.height);
+    return static_cast<u32>(std::log2(lower)) + 1;
+}

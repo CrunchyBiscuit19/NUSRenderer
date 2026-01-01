@@ -52,14 +52,29 @@ class Culler {
     vk::raii::PipelineLayout mCompactPipelineLayout;
     CullerCompactPushConstants mCompactPushConstants;
 
+    PipelineBundle mDepthPyramidPipelineBundle;
+    vk::raii::PipelineLayout mDepthPyramidPipelineLayout;
+    vk::raii::DescriptorSet mDepthPyramidDescriptorSet;
+    vk::raii::DescriptorSetLayout mDepthPyramidDescriptorSetLayout;
+    AllocatedImage mDepthPyramidImage;
+    vk::Sampler mDepthPyramidSampler;
+    std::vector<vk::raii::ImageView> mDepthPyramidMipViews;
+
     bool mFreezeCulling{false};
 
     Culler(Renderer* renderer);
 
     void init();
+    void initDepthPyramidDescriptor();
+    void initDepthPyramidImage();
+    void initDepthPyramidPipeline();
     void initResetPipeline();
     void initCullPipeline();
     void initCompactPipeline();
+
+    void reconstructDepthPyramid();
+
+    void bindDepthPyramidDescriptor();
 
     void cleanup();
 };

@@ -175,6 +175,7 @@ struct SamplerOptions {
     vk::SamplerAddressMode addressModeU;
     vk::SamplerAddressMode addressModeV;
     vk::SamplerAddressMode addressModeW;
+    const void* pNext;
 
     SamplerOptions()
         : magFilter(vk::Filter::eLinear),
@@ -182,7 +183,8 @@ struct SamplerOptions {
           mipmapMode(vk::SamplerMipmapMode::eLinear),
           addressModeU(vk::SamplerAddressMode::eRepeat),
           addressModeV(vk::SamplerAddressMode::eRepeat),
-          addressModeW(vk::SamplerAddressMode::eRepeat) {}
+          addressModeW(vk::SamplerAddressMode::eRepeat),
+          pNext(nullptr) {}
 
     SamplerOptions(vk::SamplerCreateInfo samplerCreateInfo)
         : magFilter(samplerCreateInfo.magFilter),
@@ -190,12 +192,13 @@ struct SamplerOptions {
           mipmapMode(samplerCreateInfo.mipmapMode),
           addressModeU(samplerCreateInfo.addressModeU),
           addressModeV(samplerCreateInfo.addressModeV),
-          addressModeW(samplerCreateInfo.addressModeW) {}
+          addressModeW(samplerCreateInfo.addressModeW),
+          pNext(samplerCreateInfo.pNext) {}
 
     bool operator==(const SamplerOptions& other) const {
         return (
             magFilter == other.magFilter && minFilter == other.minFilter && mipmapMode == other.mipmapMode && addressModeU == other.addressModeU &&
-            addressModeV == other.addressModeV && addressModeW == other.addressModeW
+            addressModeV == other.addressModeV && addressModeW == other.addressModeW && pNext == other.pNext
         );
     }
 };

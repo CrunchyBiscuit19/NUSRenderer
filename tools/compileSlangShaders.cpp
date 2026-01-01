@@ -55,7 +55,9 @@ int main() {
         auto ext = p.path().extension();
         if (ext == ".spv" || ext == ".slang-module") {
             fs::remove(p.path());
-            std::cout << "Deleted: " << p.path() << "\n";
+            std::string deletedPath = std::filesystem::weakly_canonical(p.path()).string();
+            std::replace(deletedPath.begin(), deletedPath.end(), '\\', '/');
+            std::cout << "Deleted: " << deletedPath << "\n";
         }
     }
 

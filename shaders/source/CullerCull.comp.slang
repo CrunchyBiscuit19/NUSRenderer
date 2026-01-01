@@ -15,8 +15,8 @@ CullerCullPushConstants cullerCullPc;
 Transform all corners of the AABB to world space
 Get the corner of the AABB which will give us the maximum result in the point-normal plane equation
 Point-normal plane equation is positive if it's on the side of the plane the normal is pointing
-And since frustum plane normals point inward, a positive (or zero) result means that corrner of the AABB is "inside" the plane
-If at least that chosen corner is inside all 6 planes, it is inside the frustum, the current render instance is considered visible
+And since frustum plane normals point inward, a positive (or zero) result means that corrner of the AABB is on the correct side of the plane
+If there is at least one corner inside all 6 planes, it is inside the frustum, the current render instance is considered visible
 */
 bool frustumCull(Plane* frustum, AABB* bounds, Instance* currInstance, NodeTransform* nodeTransform) {
     bool visible = true;

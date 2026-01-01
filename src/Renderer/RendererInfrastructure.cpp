@@ -212,8 +212,6 @@ void RendererInfrastructure::resizeSwapchain() {
     initSwapchain();
 
     LOG_INFO(mRenderer->mLogger, "Swapchain Resized");
-
-    mResizeRequested = false;
 }
 
 void RendererInfrastructure::cleanup() {

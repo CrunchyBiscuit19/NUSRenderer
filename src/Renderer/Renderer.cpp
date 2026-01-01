@@ -696,6 +696,8 @@ void Renderer::run() {
         SDL_SetRelativeMouseMode(mCamera.mRelativeMode);
         if (mInfrastructure.mResizeRequested) {
             mInfrastructure.resizeSwapchain();
+            mScene.mCuller.reconstructDepthPyramid();
+            mInfrastructure.mResizeRequested = false;
         }
 
         mGui.updateFrame();
