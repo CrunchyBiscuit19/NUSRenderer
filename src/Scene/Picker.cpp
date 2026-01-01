@@ -45,7 +45,7 @@ void Picker::initImage() {
     mRenderer->mCore.labelResourceDebug(mImage.imageView, "PickerDrawImageView");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image View Created");
 
-    mDepthImage = mRenderer->mResources.createImage(mImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment);
+    mDepthImage = mRenderer->mResources.createImage(mImage.imageExtent, vk::Format::eD24UnormS8Uint, vk::ImageUsageFlagBits::eDepthStencilAttachment);
     mRenderer->mCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image Created");
     mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "PickerDepthImageView");
@@ -68,7 +68,7 @@ void Picker::initImage() {
             vk::ImageLayout::eUndefined,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::ImageLayout::eDepthStencilAttachmentOptimal,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
             vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
         );

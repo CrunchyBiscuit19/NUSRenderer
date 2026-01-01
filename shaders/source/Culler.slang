@@ -39,6 +39,10 @@ public struct CullerCompactPushConstants {
     public uint preCullRenderItemsLimit; 
 };
 
+public struct CullerDepthPyramidPushConstants {
+    public uint2 levelExtent;
+};
+
 public struct CSInput {
     public uint3 dispatchThreadID : SV_DispatchThreadID;
 };

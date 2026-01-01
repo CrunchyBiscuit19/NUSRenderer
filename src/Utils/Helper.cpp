@@ -235,8 +235,24 @@ void vkhelper::transitionImage(
     imageBarrier.oldLayout = currentLayout;
     imageBarrier.newLayout = newLayout;
 
-    const vk::ImageAspectFlagBits aspectMask =
-        (newLayout == vk::ImageLayout::eDepthAttachmentOptimal) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+    vk::ImageAspectFlags aspectMask;
+    switch (newLayout) {
+        case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+            break;
+        case vk::ImageLayout::eDepthAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eDepth;
+            break;
+        case vk::ImageLayout::eStencilAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eStencil;
+            break;
+        case vk::ImageLayout::eColorAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eColor;
+            break;
+        default:
+            aspectMask = vk::ImageAspectFlagBits::eColor;
+            break;
+    }
     imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
     imageBarrier.image = image;
 
@@ -445,8 +461,24 @@ void vkhelper::createImagePipelineBarrier(
     imageBarrier.oldLayout = currentLayout;
     imageBarrier.newLayout = currentLayout;
 
-    const vk::ImageAspectFlagBits aspectMask =
-        (currentLayout == vk::ImageLayout::eDepthAttachmentOptimal) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+    vk::ImageAspectFlags aspectMask;
+    switch (currentLayout) {
+        case vk::ImageLayout::eDepthStencilAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
+            break;
+        case vk::ImageLayout::eDepthAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eDepth;
+            break;
+        case vk::ImageLayout::eStencilAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eStencil;
+            break;
+        case vk::ImageLayout::eColorAttachmentOptimal:
+            aspectMask = vk::ImageAspectFlagBits::eColor;
+            break;
+        default: 
+            aspectMask = vk::ImageAspectFlagBits::eColor;
+            break;
+    }
     imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
     imageBarrier.image = image;
 
@@ -459,6 +491,8 @@ void vkhelper::createImagePipelineBarrier(
 }
 
 vk::Extent2D vkhelper::extent3dTo2d(vk::Extent3D extent3d) { return vk::Extent2D(extent3d.width, extent3d.height); }
+
+u32 vkhelper::fastCeil(u32 x, u32 y) { return (x + y - 1) / y; }
 
 u32 vkhelper::previousPow2(u32 x) {
     if (x == 0) return 0;

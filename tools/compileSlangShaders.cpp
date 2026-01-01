@@ -112,7 +112,7 @@ int main() {
         fs::path output_file = shaders_out_dir / (sf.shortName + ".slang-module");
         std::string cmd = slang_compiler + " " + sf.fullName.string() + " -o " + output_file.string() +
                 " -I " + shaders_source_dir.string() +
-                " -module-name " + sf.shortName;
+                " -module-name " + sf.shortName + " -fvk-use-scalar-layout";
         std::system(cmd.c_str());
         std::cout << sf.shortName << ".slang-module\n";
     }
@@ -121,7 +121,7 @@ int main() {
         fs::path output_file = shaders_out_dir / (sf.shortName + ".slang-module");
         std::string cmd = slang_compiler + " " + sf.fullName.string() + " -o " + output_file.string() +
                 " -I " + shaders_source_dir.string() +
-                " -module-name " + sf.shortName;
+                " -module-name " + sf.shortName + " -fvk-use-scalar-layout";
         std::system(cmd.c_str());
         std::cout << sf.shortName << ".slang-module\n";
     }
@@ -131,7 +131,8 @@ int main() {
         std::string cmd = slang_compiler + " " + sf.fullName.string() + " -o " + output_file.string() +
                 " -I " + shaders_source_dir.string() +
                 " -stage " + shaderType(sf.type, true) +
-                " -profile sm_6_6 -target spirv -O3";
+                " -profile sm_6_6 -target spirv -O3" +
+                " -fvk-use-scalar-layout";
         std::system(cmd.c_str());
         std::cout << sf.shortName << "." << shaderType(sf.type) << ".spv\n";
     }

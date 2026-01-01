@@ -36,6 +36,11 @@ struct CullerCompactPushConstants {
     u32 preCullRenderItemsLimit;
 };
 
+struct CullerDepthPyramidPushConstants {
+    glm::uvec2 levelExtent;
+    u32 level;
+};
+
 class Culler {
     Renderer* mRenderer;
 
@@ -59,6 +64,9 @@ class Culler {
     AllocatedImage mDepthPyramidImage;
     vk::Sampler mDepthPyramidSampler;
     std::vector<vk::raii::ImageView> mDepthPyramidMipViews;
+    u32 mDepthPyramidLevels{0};
+    vk::Extent3D mDepthPyramidExtent;
+    CullerDepthPyramidPushConstants mDepthPyramidPushConstants;
 
     bool mFreezeCulling{false};
 
@@ -74,7 +82,7 @@ class Culler {
 
     void reconstructDepthPyramid();
 
-    void bindDepthPyramidDescriptor();
+    void bindDepthPyramidDescriptor(u32 depthPyramidLevel);
 
     void cleanup();
 };

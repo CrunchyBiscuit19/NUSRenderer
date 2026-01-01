@@ -1,6 +1,5 @@
 #include <Renderer/Renderer.h>
 #include <Scene/Culler.h>
-
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
 
@@ -25,7 +24,8 @@ void Culler::init() {
 void Culler::initDepthPyramidDescriptor() {
     DescriptorLayoutBuilder builder;
     builder.addBinding(0, vk::DescriptorType::eSampledImage);
-    builder.addBinding(1, vk::DescriptorType::eSampledImage);
+    builder.addBinding(1, vk::DescriptorType::eStorageImage);
+    builder.addBinding(2, vk::DescriptorType::eStorageImage);
     mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSetLayout, "CullerDepthPyramidDescriptorSetLayout");
     mDepthPyramidDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDepthPyramidDescriptorSetLayout);
@@ -37,40 +37,24 @@ void Culler::initDepthPyramidImage() {
     // Depth Pyramid Image
     u32 depthPyramidWidth = vkhelper::previousPow2(mRenderer->mInfrastructure.mDrawImage.imageExtent.width);
     u32 depthPyramidHeight = vkhelper::previousPow2(mRenderer->mInfrastructure.mDrawImage.imageExtent.height);
-    vk::Extent3D depthPyramidExtent = {
+    mDepthPyramidExtent = vk::Extent3D{
         depthPyramidWidth,
         depthPyramidHeight,
         1,
     };
-    u32 depthPyramidLevels = vkhelper::getMipMapLevelsDepthPyramid(depthPyramidExtent);
+    mDepthPyramidLevels = vkhelper::getMipMapLevelsDepthPyramid(mDepthPyramidExtent);
     mDepthPyramidImage = mRenderer->mResources.createImage(
-        depthPyramidExtent,
-        vk::Format::eR32Sfloat,
-        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc,
-        true
+        mDepthPyramidExtent, vk::Format::eR32Sfloat, vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc, true
     );
     mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.image, "CullerDepthPyramidImage");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image Created");
     mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.imageView, "CullerDepthPyramidImageView");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image View Created");
 
-    mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(
-            cmd,
-            *mDepthPyramidImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eGeneral,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
-        );
-    });
-
     // Depth Pyramid Image Views
     mDepthPyramidMipViews.clear();
-    mDepthPyramidMipViews.reserve(depthPyramidLevels);
-    for (u32 i = 0; i < depthPyramidLevels; i++) {
+    mDepthPyramidMipViews.reserve(mDepthPyramidLevels);
+    for (u32 i = 0; i < mDepthPyramidLevels; i++) {
         vk::ImageViewCreateInfo levelInfo =
             vkhelper::imageViewCreateInfo(mDepthPyramidImage.imageFormat, mDepthPyramidImage.image, vk::ImageAspectFlagBits::eColor);
         levelInfo.subresourceRange.levelCount = 1;
@@ -81,7 +65,7 @@ void Culler::initDepthPyramidImage() {
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Created");
 
     // Depth Pyramid Sampler
-    vk::SamplerReductionModeCreateInfo reductionModeInfo{}; 
+    vk::SamplerReductionModeCreateInfo reductionModeInfo{};
     reductionModeInfo.reductionMode = vk::SamplerReductionMode::eMin;
     vk::SamplerCreateInfo depthSamplerCreateInfo{};
     depthSamplerCreateInfo.magFilter = vk::Filter::eLinear;
@@ -97,9 +81,16 @@ void Culler::initDepthPyramidImage() {
 }
 
 void Culler::initDepthPyramidPipeline() {
+    vk::PushConstantRange depthPyramidPushConstantRange{};
+    depthPyramidPushConstantRange.offset = 0;
+    depthPyramidPushConstantRange.size = sizeof(CullerDepthPyramidPushConstants);
+    depthPyramidPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+
     vk::PipelineLayoutCreateInfo depthPyramidPipelineLayoutInfo{};
     depthPyramidPipelineLayoutInfo.setLayoutCount = 1;
     depthPyramidPipelineLayoutInfo.pSetLayouts = &(*mDepthPyramidDescriptorSetLayout);
+    depthPyramidPipelineLayoutInfo.pPushConstantRanges = &depthPyramidPushConstantRange;
+    depthPyramidPipelineLayoutInfo.pushConstantRangeCount = 1;
 
     mDepthPyramidPipelineLayout = mRenderer->mCore.mDevice.createPipelineLayout(depthPyramidPipelineLayoutInfo);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidPipelineLayout, "CullerDepthPyramidPipelineLayout");
@@ -213,9 +204,16 @@ void Culler::reconstructDepthPyramid() {
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Reconstructed After Resize");
 }
 
-void Culler::bindDepthPyramidDescriptor() {
+void Culler::bindDepthPyramidDescriptor(u32 depthPyramidLevel) {
     DescriptorSetBinder writer;
-    writer.bindImage(0, *mDepthPyramidImage.imageView, nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
+    if (depthPyramidLevel == 0) {
+        writer.bindImage(
+            0, *mRenderer->mInfrastructure.mDepthImage.imageView, mDepthPyramidSampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage
+        );
+    } else {
+        writer.bindImage(1, *mDepthPyramidMipViews[depthPyramidLevel - 1], mDepthPyramidSampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
+    }
+    writer.bindImage(2, *mDepthPyramidMipViews[depthPyramidLevel], mDepthPyramidSampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDepthPyramidDescriptorSet);
 }
 

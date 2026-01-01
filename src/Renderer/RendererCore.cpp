@@ -139,6 +139,8 @@ void RendererCore::init() {
     features13.dynamicRendering = true;
     features13.synchronization2 = true;
     vk::PhysicalDeviceVulkan12Features features12{};
+    features12.scalarBlockLayout = true;
+    features12.samplerFilterMinmax = true;
     features12.bufferDeviceAddress = true;
     features12.descriptorIndexing = true;
     features12.drawIndirectCount = true;
@@ -152,14 +154,15 @@ void RendererCore::init() {
     features12.storageBuffer8BitAccess = true;
     vk::PhysicalDeviceVulkan11Features features11{};
     features11.shaderDrawParameters = true;
-    vk::PhysicalDeviceFeatures features{};
-    features.multiDrawIndirect = true;
-    features.samplerAnisotropy = true;
-    features.sampleRateShading = true;
-    features.drawIndirectFirstInstance = true;
-    features.fragmentStoresAndAtomics = true;
-    features.vertexPipelineStoresAndAtomics = true;
-    features.shaderInt64 = true;
+    vk::PhysicalDeviceFeatures features10{};
+    features10.shaderStorageImageMultisample = true;
+    features10.multiDrawIndirect = true;
+    features10.samplerAnisotropy = true;
+    features10.sampleRateShading = true;
+    features10.drawIndirectFirstInstance = true;
+    features10.fragmentStoresAndAtomics = true;
+    features10.vertexPipelineStoresAndAtomics = true;
+    features10.shaderInt64 = true;
     vk::PhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusedAttachmentsFeatures{};
     unusedAttachmentsFeatures.dynamicRenderingUnusedAttachments = vk::True;
 
@@ -171,7 +174,7 @@ void RendererCore::init() {
                                              .set_required_features_13(features13)
                                              .set_required_features_12(features12)
                                              .set_required_features_11(features11)
-                                             .set_required_features(features)
+                                             .set_required_features(features10)
                                              .set_surface(*mSurface)
                                              .select()
                                              .value();

@@ -165,8 +165,8 @@ AllocatedImage RendererResources::createImage(
     newImage.image = vk::raii::Image(mRenderer->mCore.mDevice, tempImage);
     newImage.allocator = &mRenderer->mCore.mVmaAllocator;
 
-    auto aspectFlag = vk::ImageAspectFlagBits::eColor;
-    if (format == vk::Format::eD32Sfloat) aspectFlag = vk::ImageAspectFlagBits::eDepth;
+    vk::ImageAspectFlags aspectFlag = vk::ImageAspectFlagBits::eColor;
+    if (format == vk::Format::eD32Sfloat || format == vk::Format::eD24UnormS8Uint) aspectFlag = vk::ImageAspectFlagBits::eDepth;
     vk::ImageViewCreateInfo newImageViewCreateInfo = vkhelper::imageViewCreateInfo(format, *newImage.image, aspectFlag);
     newImageViewCreateInfo.subresourceRange.levelCount = newImageCreateInfo.mipLevels;
     if (cubemap) {

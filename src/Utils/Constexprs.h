@@ -12,7 +12,7 @@ enum class LogLocation { Console, File, Both };
 #ifdef RELEASE
 constexpr ValidationMode VALIDATION_MODE = ValidationMode::None;
 #else
-constexpr ValidationMode VALIDATION_MODE = ValidationMode::Basic;
+constexpr ValidationMode VALIDATION_MODE = ValidationMode::Strict;
 #endif
 
 constexpr LogLocation LOG_LOCATION = LogLocation::Both;
@@ -66,4 +66,3 @@ constexpr u32 FRUSTUM_RIGHT_FACE = 3;
 constexpr u32 FRUSTUM_TOP_FACE = 4;
 constexpr u32 FRUSTUM_BOTTOM_FACE = 5;
 constexpr u32 MAX_DEPTH_PYRAMID_MIPS = 16;
-

@@ -16,6 +16,7 @@ void RendererInfrastructure::initDescriptors() {
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
         {vk::DescriptorType::eUniformBuffer, 1},                               // Scene UBO
         {vk::DescriptorType::eStorageImage, 1},                                // Picker Draw Image
+        {vk::DescriptorType::eSampledImage, 1},                                // Culle Depth Pyramid Image
         {vk::DescriptorType::eCombinedImageSampler, 1},                        // Skybox Cubemap
         {vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS},  // Material Textures
     };
@@ -126,8 +127,13 @@ void RendererInfrastructure::initSwapchain() {
         false,
         true
     );
-    mDepthImage =
-        mRenderer->mResources.createImage(mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment, false, true);
+    mDepthImage = mRenderer->mResources.createImage(
+        mDrawImage.imageExtent,
+        vk::Format::eD24UnormS8Uint,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
+        false,
+        true
+    );
     mIntermediateImage = mRenderer->mResources.createImage(
         mDrawImage.imageExtent,
         vk::Format::eR16G16B16A16Sfloat,
@@ -170,7 +176,7 @@ void RendererInfrastructure::initSwapchain() {
             vk::ImageLayout::eUndefined,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::ImageLayout::eDepthStencilAttachmentOptimal,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
             vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
         );

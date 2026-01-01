@@ -58,6 +58,8 @@ void createImagePipelineBarrier(
 
 vk::Extent2D extent3dTo2d(vk::Extent3D extent3d);
 
+u32 fastCeil(u32 x, u32 y);
+
 u32 previousPow2(u32 value);
 
 u32 getMipMapLevelsDepthPyramid(vk::Extent3D extent);
