@@ -266,12 +266,10 @@ void vkhelper::transitionImage(
 void vkhelper::copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image destination, vk::Extent2D srcSize, vk::Extent2D dstSize) {
     vk::ImageBlit2 blitRegion{};
     blitRegion.pNext = nullptr;
-    blitRegion.srcOffsets[1].x = static_cast<u32>(srcSize.width);
-    blitRegion.srcOffsets[1].y = static_cast<u32>(srcSize.height);
-    blitRegion.srcOffsets[1].z = 1;
-    blitRegion.dstOffsets[1].x = static_cast<u32>(dstSize.width);
-    blitRegion.dstOffsets[1].y = static_cast<u32>(dstSize.height);
-    blitRegion.dstOffsets[1].z = 1;
+    blitRegion.srcOffsets[0] = vk::Offset3D{0, 0, 0};
+    blitRegion.srcOffsets[1] = vk::Offset3D{static_cast<i32>(srcSize.width), static_cast<i32>(srcSize.height), 1};
+    blitRegion.dstOffsets[0] = vk::Offset3D{0, 0, 0};
+    blitRegion.dstOffsets[1] = vk::Offset3D{static_cast<i32>(dstSize.width), static_cast<i32>(dstSize.height), 1};
     blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     blitRegion.srcSubresource.baseArrayLayer = 0;
     blitRegion.srcSubresource.layerCount = 1;
@@ -329,12 +327,10 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Exten
             if (mip < mipLevels - 1) {
                 vk::ImageBlit2 blitRegion{};
                 blitRegion.pNext = nullptr;
-                blitRegion.srcOffsets[1].x = imageSize.width;
-                blitRegion.srcOffsets[1].y = imageSize.height;
-                blitRegion.srcOffsets[1].z = 1;
-                blitRegion.dstOffsets[1].x = halfSize.width;
-                blitRegion.dstOffsets[1].y = halfSize.height;
-                blitRegion.dstOffsets[1].z = 1;
+                blitRegion.srcOffsets[0] = vk::Offset3D{0, 0, 0};
+                blitRegion.srcOffsets[1] = vk::Offset3D{static_cast<i32>(imageSize.width), static_cast<i32>(imageSize.height), 1};
+                blitRegion.dstOffsets[0] = vk::Offset3D{0, 0, 0};                
+                blitRegion.dstOffsets[1] = vk::Offset3D{static_cast<i32>(halfSize.width), static_cast<i32>(halfSize.height), 1};
                 blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
                 blitRegion.srcSubresource.baseArrayLayer = face;
                 blitRegion.srcSubresource.layerCount = 1;
@@ -477,7 +473,7 @@ void vkhelper::createImagePipelineBarrier(
         case vk::ImageLayout::eColorAttachmentOptimal:
             aspectMask = vk::ImageAspectFlagBits::eColor;
             break;
-        default: 
+        default:
             aspectMask = vk::ImageAspectFlagBits::eColor;
             break;
     }

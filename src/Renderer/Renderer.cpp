@@ -227,9 +227,9 @@ void Renderer::initPasses() {
             cmd,
             *mScene.mCuller.mDepthPyramidImage.image,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-            vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderRead,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
             vk::ImageLayout::eGeneral
         );
 
@@ -265,9 +265,9 @@ void Renderer::initPasses() {
             cmd,
             *mScene.mCuller.mDepthPyramidImage.image,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead,
             vk::ImageLayout::eGeneral
         );
 
