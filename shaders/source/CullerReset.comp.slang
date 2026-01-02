@@ -1,12 +1,12 @@
 import Culler;
 import RenderItem;
 
-static const uint MAX_CULL_LOCAL_SIZE = 256;
+static const uint MAX_1D_WORKGROUP_THREADS = 1024;
 
 [[vk::push_constant]]
 CullerResetPushConstants cullerResetPc;
 
-[numthreads(MAX_CULL_LOCAL_SIZE, 1, 1)]
+[numthreads(MAX_1D_WORKGROUP_THREADS, 1, 1)]
 void main(CSInput in) {
     // Get thread ID as index into render item
     uint renderItemsIndex = in.dispatchThreadID.x;

@@ -98,7 +98,7 @@ void RendererCore::init() {
     mContext = vk::raii::Context();
 
     vkb::InstanceBuilder vkbInstBuilder;
-    vkbInstBuilder.set_app_name("Vulkan renderer")
+    vkbInstBuilder.set_app_name("Vulkan Renderer")
         .set_debug_messenger_severity(static_cast<VkDebugUtilsMessageSeverityFlagsEXT>(
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
             vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
@@ -166,12 +166,17 @@ void RendererCore::init() {
     features10.shaderInt64 = true;
     vk::PhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusedAttachmentsFeatures{};
     unusedAttachmentsFeatures.dynamicRenderingUnusedAttachments = vk::True;
+    vk::PhysicalDeviceComputeShaderDerivativesFeaturesKHR computeShaderDerivativesFeatures{};
+    computeShaderDerivativesFeatures.computeDerivativeGroupLinear = vk::True;
+    computeShaderDerivativesFeatures.computeDerivativeGroupQuads = vk::True;
 
     vkb::PhysicalDeviceSelector selector{vkbInst};
     vkb::PhysicalDevice physicalDevice = selector.set_minimum_version(MAJOR_VERSION, MINOR_VERSION)
                                              .add_required_extension(vk::KHRSwapchainMutableFormatExtensionName)
                                              .add_required_extension(vk::EXTDynamicRenderingUnusedAttachmentsExtensionName)
+                                             .add_required_extension(vk::KHRComputeShaderDerivativesExtensionName)
                                              .add_required_extension_features(unusedAttachmentsFeatures)
+                                             .add_required_extension_features(computeShaderDerivativesFeatures)
                                              .set_required_features_13(features13)
                                              .set_required_features_12(features12)
                                              .set_required_features_11(features11)

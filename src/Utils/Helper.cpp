@@ -224,7 +224,7 @@ vk::ImageViewCreateInfo vkhelper::imageViewCreateInfo(vk::Format format, vk::Ima
 
 void vkhelper::transitionImage(
     vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask
+    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, std::optional<vk::ImageAspectFlags> aspectFlags
 ) {
     vk::ImageMemoryBarrier2 imageBarrier{};
     imageBarrier.pNext = nullptr;
@@ -236,21 +236,25 @@ void vkhelper::transitionImage(
     imageBarrier.newLayout = newLayout;
 
     vk::ImageAspectFlags aspectMask;
-    switch (newLayout) {
-        case vk::ImageLayout::eDepthAttachmentOptimal:
-        case vk::ImageLayout::eDepthReadOnlyOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eDepth;
-            break;
-        case vk::ImageLayout::eStencilAttachmentOptimal:
-        case vk::ImageLayout::eStencilReadOnlyOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eStencil;
-            break;
-        case vk::ImageLayout::eColorAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eColor;
-            break;
-        default:
-            aspectMask = vk::ImageAspectFlagBits::eColor;
-            break;
+    if (aspectFlags.has_value()) {
+        aspectMask = aspectFlags.value();
+    } else {
+        switch (newLayout) {
+            case vk::ImageLayout::eDepthAttachmentOptimal:
+            case vk::ImageLayout::eDepthReadOnlyOptimal:
+                aspectMask = vk::ImageAspectFlagBits::eDepth;
+                break;
+            case vk::ImageLayout::eStencilAttachmentOptimal:
+            case vk::ImageLayout::eStencilReadOnlyOptimal:
+                aspectMask = vk::ImageAspectFlagBits::eStencil;
+                break;
+            case vk::ImageLayout::eColorAttachmentOptimal:
+                aspectMask = vk::ImageAspectFlagBits::eColor;
+                break;
+            default:
+                aspectMask = vk::ImageAspectFlagBits::eColor;
+                break;
+        }
     }
     imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
     imageBarrier.image = image;
@@ -445,7 +449,7 @@ void vkhelper::createBufferPipelineBarrier(
 
 void vkhelper::createImagePipelineBarrier(
     vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
-    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout
+    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, std::optional<vk::ImageAspectFlags> aspectFlags
 ) {
     vk::ImageMemoryBarrier2 imageBarrier{};
     imageBarrier.pNext = nullptr;
@@ -457,25 +461,25 @@ void vkhelper::createImagePipelineBarrier(
     imageBarrier.newLayout = currentLayout;
 
     vk::ImageAspectFlags aspectMask;
-    switch (currentLayout) {
-        case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eDepth;
-            break;
-        case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eDepth;
-            break;
-        case vk::ImageLayout::eDepthAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eDepth;
-            break;
-        case vk::ImageLayout::eStencilAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eStencil;
-            break;
-        case vk::ImageLayout::eColorAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eColor;
-            break;
-        default:
-            aspectMask = vk::ImageAspectFlagBits::eColor;
-            break;
+    if (aspectFlags.has_value()) {
+        aspectMask = aspectFlags.value();
+    } else {
+        switch (currentLayout) {
+            case vk::ImageLayout::eDepthAttachmentOptimal:
+            case vk::ImageLayout::eDepthReadOnlyOptimal:
+                aspectMask = vk::ImageAspectFlagBits::eDepth;
+                break;
+            case vk::ImageLayout::eStencilAttachmentOptimal:
+            case vk::ImageLayout::eStencilReadOnlyOptimal:
+                aspectMask = vk::ImageAspectFlagBits::eStencil;
+                break;
+            case vk::ImageLayout::eColorAttachmentOptimal:
+                aspectMask = vk::ImageAspectFlagBits::eColor;
+                break;
+            default:
+                aspectMask = vk::ImageAspectFlagBits::eColor;
+                break;
+        }
     }
     imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
     imageBarrier.image = image;

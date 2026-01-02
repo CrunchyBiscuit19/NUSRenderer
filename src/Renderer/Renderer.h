@@ -41,8 +41,8 @@ struct Pass {
 };
 
 enum class TransitionType {
-    SwapchainDepthAttachmentOptimalIntoDepthReadOnlyOptimal,
-    SwapchainDepthReadOnlyOptimalIntoDepthAttachmentOptimal,
+    SwapchainDepthAttachmentOptimalIntoShaderReadOnlyOptimal,
+    SwapchainShaderReadOnlyOptimalIntoDepthAttachmentOptimal,
     PickerGeneralIntoColorAttachment,
     PickerColorAttachmentIntoGeneral,
     IntermediateTransferSrcIntoColorAttachment,
@@ -59,20 +59,23 @@ struct Transition {
     vk::ImageLayout newLayout;
     vk::PipelineStageFlags2 dstStageMask;
     vk::AccessFlags2 dstAccessMask;
+    std::optional<vk::ImageAspectFlags> aspectFlags;
 
     Transition(
         vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::ImageLayout newLayout,
-        vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask
+        vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, std::optional<vk::ImageAspectFlags> aspectFlags = std::nullopt
     )
         : currentLayout(currentLayout),
           srcStageMask(srcStageMask),
           srcAccessMask(srcAccessMask),
           newLayout(newLayout),
           dstStageMask(dstStageMask),
-          dstAccessMask(dstAccessMask) {}
+          dstAccessMask(dstAccessMask),
+          aspectFlags(aspectFlags)
+    {}
 
     void execute(vk::CommandBuffer cmd, vk::Image image) {
-        vkhelper::transitionImage(cmd, image, currentLayout, srcStageMask, srcAccessMask, newLayout, dstStageMask, dstAccessMask);
+        vkhelper::transitionImage(cmd, image, currentLayout, srcStageMask, srcAccessMask, newLayout, dstStageMask, dstAccessMask, aspectFlags);
     }
 };
 

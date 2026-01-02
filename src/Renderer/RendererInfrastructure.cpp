@@ -129,7 +129,7 @@ void RendererInfrastructure::initSwapchain() {
     );
     mDepthImage = mRenderer->mResources.createImage(
         mDrawImage.imageExtent,
-        vk::Format::eD24UnormS8Uint,
+        vk::Format::eD32Sfloat,
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
         false,
         true

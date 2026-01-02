@@ -41,6 +41,7 @@ public struct CullerCompactPushConstants {
 
 public struct CullerDepthPyramidPushConstants {
     public uint2 levelExtent;
+    public uint level;
 };
 
 public struct CSInput {

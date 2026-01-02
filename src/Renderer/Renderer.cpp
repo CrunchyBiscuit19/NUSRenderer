@@ -215,7 +215,7 @@ void Renderer::initPasses() {
                     mScene.mCuller.mResetPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mResetPushConstants
                 );
 
-                cmd.dispatch(vkhelper::fastCeil(batch.renderItems.size(), MAX_CULL_LOCAL_SIZE), 1, 1);
+                cmd.dispatch(vkhelper::fastCeil(batch.renderItems.size(), MAX_1D_WORKGROUP_THREADS), 1, 1);
             }
         }
     });
@@ -247,7 +247,7 @@ void Renderer::initPasses() {
                 mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
             );
 
-            cmd.dispatch(vkhelper::fastCeil(levelWidth, MAX_CULL_LOCAL_SIZE), vkhelper::fastCeil(levelHeight, MAX_CULL_LOCAL_SIZE), 1);
+            cmd.dispatch(vkhelper::fastCeil(levelWidth, MAX_2D_WORKGROUP_THREADS), vkhelper::fastCeil(levelHeight, MAX_1D_WORKGROUP_THREADS), 1);
         }
     });
 
@@ -293,7 +293,7 @@ void Renderer::initPasses() {
                     mScene.mCuller.mCullPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mCullPushConstants
                 );
 
-                cmd.dispatch(vkhelper::fastCeil(batch.renderInstances.size(), MAX_CULL_LOCAL_SIZE), 1, 1);
+                cmd.dispatch(vkhelper::fastCeil(batch.renderInstances.size(), MAX_1D_WORKGROUP_THREADS), 1, 1);
             }
         }
     });
@@ -342,7 +342,7 @@ void Renderer::initPasses() {
                     mScene.mCuller.mCompactPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mCompactPushConstants
                 );
 
-                cmd.dispatch(vkhelper::fastCeil(batch.renderItems.size(), MAX_CULL_LOCAL_SIZE), 1, 1);
+                cmd.dispatch(vkhelper::fastCeil(batch.renderItems.size(), MAX_1D_WORKGROUP_THREADS), 1, 1);
             }
         }
     });
@@ -660,18 +660,19 @@ void Renderer::initPasses() {
 
 void Renderer::initTransitions() {
     mTransitions.try_emplace(
-        TransitionType::SwapchainDepthAttachmentOptimalIntoDepthReadOnlyOptimal,
+        TransitionType::SwapchainDepthAttachmentOptimalIntoShaderReadOnlyOptimal,
         vk::ImageLayout::eDepthAttachmentOptimal,
         vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
         vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::ImageLayout::eDepthReadOnlyOptimal,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
         vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageAspectFlagBits::eDepth
     );
 
     mTransitions.try_emplace(
-        TransitionType::SwapchainDepthReadOnlyOptimalIntoDepthAttachmentOptimal,
-        vk::ImageLayout::eDepthReadOnlyOptimal,
+        TransitionType::SwapchainShaderReadOnlyOptimalIntoDepthAttachmentOptimal,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
         vk::PipelineStageFlagBits2::eComputeShader,
         vk::AccessFlagBits2::eShaderRead,
         vk::ImageLayout::eDepthAttachmentOptimal,
@@ -848,11 +849,11 @@ void Renderer::draw() {
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
-    mTransitions.at(TransitionType::SwapchainDepthAttachmentOptimalIntoDepthReadOnlyOptimal).execute(cmd, *mInfrastructure.mDepthImage.image);
+    mTransitions.at(TransitionType::SwapchainDepthAttachmentOptimalIntoShaderReadOnlyOptimal).execute(cmd, *mInfrastructure.mDepthImage.image);
 
     mPasses.at(PassType::Cull).execute(cmd);
 
-    mTransitions.at(TransitionType::SwapchainDepthReadOnlyOptimalIntoDepthAttachmentOptimal).execute(cmd, *mInfrastructure.mDepthImage.image);
+    mTransitions.at(TransitionType::SwapchainShaderReadOnlyOptimalIntoDepthAttachmentOptimal).execute(cmd, *mInfrastructure.mDepthImage.image);
 
     mPasses.at(PassType::ClearScreen).execute(cmd);
 

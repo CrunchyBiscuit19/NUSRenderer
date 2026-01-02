@@ -12,7 +12,7 @@ enum class LogLocation { Console, File, Both };
 #ifdef RELEASE
 constexpr ValidationMode VALIDATION_MODE = ValidationMode::None;
 #else
-constexpr ValidationMode VALIDATION_MODE = ValidationMode::Basic;
+constexpr ValidationMode VALIDATION_MODE = ValidationMode::Strict;
 #endif
 
 constexpr LogLocation LOG_LOCATION = LogLocation::Both;
@@ -57,7 +57,8 @@ constexpr float FOVY = 70.f;
 constexpr float NEAR_PLANE = 0.1f;
 constexpr float FAR_PLANE = 10000.f;
 
-constexpr u32 MAX_CULL_LOCAL_SIZE = 256;
+constexpr u32 MAX_1D_WORKGROUP_THREADS = 1024;
+constexpr u32 MAX_2D_WORKGROUP_THREADS = 32;
 constexpr u32 FRUSTUM_NUM_PLANES = 6;
 constexpr u32 FRUSTUM_NEAR_FACE = 0;
 constexpr u32 FRUSTUM_FAR_FACE = 1;

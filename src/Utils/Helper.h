@@ -37,7 +37,7 @@ vk::ImageViewCreateInfo imageViewCreateInfo(vk::Format format, vk::Image image, 
 
 void transitionImage(
     vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask
+    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, std::optional<vk::ImageAspectFlags> aspectFlags = std::nullopt
 );
 void copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image destination, vk::Extent2D srcSize, vk::Extent2D dstSize);
 void generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize, bool cubemap = false);
@@ -53,7 +53,7 @@ void createBufferPipelineBarrier(
 );
 void createImagePipelineBarrier(
     vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
-    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout
+    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, std::optional<vk::ImageAspectFlags> aspectFlags = std::nullopt
 );
 
 vk::Extent2D extent3dTo2d(vk::Extent3D extent3d);
