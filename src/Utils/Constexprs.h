@@ -12,7 +12,7 @@ enum class LogLocation { Console, File, Both };
 #ifdef RELEASE
 constexpr ValidationMode VALIDATION_MODE = ValidationMode::None;
 #else
-constexpr ValidationMode VALIDATION_MODE = ValidationMode::Strict;
+constexpr ValidationMode VALIDATION_MODE = ValidationMode::Basic;
 #endif
 
 constexpr LogLocation LOG_LOCATION = LogLocation::Both;

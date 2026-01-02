@@ -46,14 +46,23 @@ void Renderer::initLogger() {
         }(),
         quill::FileEventNotifier{}
     );
+    auto latestFileSink = quill::Frontend::create_or_get_sink<quill::FileSink>(
+        fmt::format("{}Latest.log", LOGS_PATH).c_str(),
+        []() {
+            quill::FileSinkConfig cfg;
+            cfg.set_open_mode('w');
+            return cfg;
+        }(),
+        quill::FileEventNotifier{}
+    );
     auto consoleSink = quill::Frontend::create_or_get_sink<quill::ConsoleSink>("sink1");
 
     if (LOG_LOCATION == LogLocation::File) {
-        mLogger = quill::Frontend::create_or_get_logger("LOGGER", std::move(fileSink));
+        mLogger = quill::Frontend::create_or_get_logger("LOGGER", {std::move(fileSink), std::move(latestFileSink)});
     } else if (LOG_LOCATION == LogLocation::Console) {
         mLogger = quill::Frontend::create_or_get_logger("LOGGER", std::move(consoleSink));
     } else if (LOG_LOCATION == LogLocation::Both) {
-        mLogger = quill::Frontend::create_or_get_logger("LOGGER", {std::move(fileSink), std::move(consoleSink)});
+        mLogger = quill::Frontend::create_or_get_logger("LOGGER", {std::move(fileSink), std::move(latestFileSink), std::move(consoleSink)});
     }
     mLogger->set_log_level(quill::LogLevel::TraceL3);
 }
@@ -213,16 +222,6 @@ void Renderer::initPasses() {
 
     mPasses.try_emplace(PassType::CullDepthPyramid, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mDepthPyramidPipelineBundle.pipeline);
-
-        /*vkhelper::createImagePipelineBarrier(
-            cmd,
-            *mInfrastructure.mDepthImage.image,
-            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-            vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eDepthStencilReadOnlyOptimal
-        );*/
 
         vkhelper::createImagePipelineBarrier(
             cmd,
@@ -829,7 +828,29 @@ void Renderer::draw() {
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
+    vkhelper::transitionImage(
+        cmd,
+        *mInfrastructure.mDepthImage.image,
+        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        vk::ImageLayout::eDepthReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderRead
+    );
+
     mPasses.at(PassType::Cull).execute(cmd);
+
+    vkhelper::transitionImage(
+        cmd,
+        *mInfrastructure.mDepthImage.image,
+        vk::ImageLayout::eDepthReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eDepthStencilAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+    );
 
     mPasses.at(PassType::ClearScreen).execute(cmd);
 

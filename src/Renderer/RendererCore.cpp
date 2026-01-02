@@ -139,6 +139,7 @@ void RendererCore::init() {
     features13.dynamicRendering = true;
     features13.synchronization2 = true;
     vk::PhysicalDeviceVulkan12Features features12{};
+    features12.separateDepthStencilLayouts = true;
     features12.scalarBlockLayout = true;
     features12.samplerFilterMinmax = true;
     features12.bufferDeviceAddress = true;
