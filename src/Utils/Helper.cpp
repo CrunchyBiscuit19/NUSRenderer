@@ -508,6 +508,5 @@ u32 vkhelper::previousPow2(u32 x) {
 }
 
 u32 vkhelper::getMipMapLevelsDepthPyramid(vk::Extent3D extent) {
-    u32 lower = std::min(extent.width, extent.height);
-    return static_cast<u32>(std::log2(lower)) + 1;
+    return std::floor(std::log2(std::max(extent.width, extent.height))) + 1;
 }

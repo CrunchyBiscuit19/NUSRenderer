@@ -52,6 +52,7 @@ struct DescriptorSetBinder {
 
     void bindImage(u32 binding, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
     void bindImageArray(u32 binding, u32 arrayIndex, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
+    void bindSampler(u32 binding, vk::Sampler sampler, vk::DescriptorType type);
     void bindBuffer(u32 binding, vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
 
     void clear();

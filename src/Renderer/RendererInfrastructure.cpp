@@ -130,7 +130,7 @@ void RendererInfrastructure::initSwapchain() {
     mDepthImage = mRenderer->mResources.createImage(
         mDrawImage.imageExtent,
         vk::Format::eD32Sfloat,
-        vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled,
         false,
         true
     );
@@ -205,8 +205,6 @@ void RendererInfrastructure::destroySwapchain() {
 }
 
 void RendererInfrastructure::resizeSwapchain() {
-    mRenderer->mCore.mDevice.waitIdle();
-
     destroySwapchain();
 
     i32 w, h;

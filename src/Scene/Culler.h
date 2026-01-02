@@ -73,16 +73,16 @@ class Culler {
     Culler(Renderer* renderer);
 
     void init();
-    void initDepthPyramidDescriptor();
     void initDepthPyramidImage();
+    void initDepthPyramidSampler();
+    void initDepthPyramidDescriptor();
+    void writeDepthPyramidDescriptor();
     void initDepthPyramidPipeline();
     void initResetPipeline();
     void initCullPipeline();
     void initCompactPipeline();
 
     void reconstructDepthPyramid();
-
-    void bindDepthPyramidDescriptor(u32 depthPyramidLevel);
 
     void cleanup();
 };

@@ -234,7 +234,6 @@ void Renderer::initPasses() {
         );
 
         for (u32 i = 0; i < mScene.mCuller.mDepthPyramidLevels; i++) {
-            mScene.mCuller.bindDepthPyramidDescriptor(i);
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
             );
@@ -774,8 +773,11 @@ void Renderer::run() {
 
         SDL_SetRelativeMouseMode(mCamera.mRelativeMode);
         if (mInfrastructure.mResizeRequested) {
+            mCore.mDevice.waitIdle();
+
             mInfrastructure.resizeSwapchain();
             mScene.mCuller.reconstructDepthPyramid();
+            
             mInfrastructure.mResizeRequested = false;
         }
 

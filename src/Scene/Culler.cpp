@@ -13,24 +13,14 @@ Culler::Culler(Renderer* renderer)
       mDepthPyramidDescriptorSet(nullptr) {}
 
 void Culler::init() {
-    initDepthPyramidDescriptor();
     initDepthPyramidImage();
+    initDepthPyramidSampler();
+    initDepthPyramidDescriptor();
+    writeDepthPyramidDescriptor();
     initDepthPyramidPipeline();
     initResetPipeline();
     initCullPipeline();
     initCompactPipeline();
-}
-
-void Culler::initDepthPyramidDescriptor() {
-    DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler);
-    builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler);
-    builder.addBinding(2, vk::DescriptorType::eStorageImage);
-    mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
-    mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSetLayout, "CullerDepthPyramidDescriptorSetLayout");
-    mDepthPyramidDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDepthPyramidDescriptorSetLayout);
-    mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSet, "CullerDepthPyramidDescriptorSet");
-    LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Descriptor Set and Layout Created");
 }
 
 void Culler::initDepthPyramidImage() {
@@ -78,7 +68,9 @@ void Culler::initDepthPyramidImage() {
         mRenderer->mCore.labelResourceDebug(mDepthPyramidMipViews.back(), fmt::format("CullerDepthPyramidMipView{}", i).c_str());
     }
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Created");
+}
 
+void Culler::initDepthPyramidSampler() {
     // Depth Pyramid Sampler
     vk::SamplerReductionModeCreateInfo reductionModeInfo{};
     reductionModeInfo.reductionMode = vk::SamplerReductionMode::eMin;
@@ -93,6 +85,34 @@ void Culler::initDepthPyramidImage() {
     mDepthPyramidSampler = mRenderer->mResources.getSampler(depthSamplerCreateInfo);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidSampler, "CullerDepthPyramidSampler");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Sampler Created");
+}
+
+void Culler::initDepthPyramidDescriptor() {
+    DescriptorLayoutBuilder builder;
+    builder.addBinding(0, vk::DescriptorType::eSampledImage); // Depth Image
+    builder.addBinding(1, vk::DescriptorType::eSampledImage, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Read
+    builder.addBinding(2, vk::DescriptorType::eStorageImage, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Write
+    builder.addBinding(3, vk::DescriptorType::eSampler); // Depth Pyramid Sampler
+    mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
+    mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSetLayout, "CullerDepthPyramidDescriptorSetLayout");
+    mDepthPyramidDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDepthPyramidDescriptorSetLayout);
+    mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSet, "CullerDepthPyramidDescriptorSet");
+    LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Descriptor Set and Layout Created");
+}
+
+void Culler::writeDepthPyramidDescriptor() {
+    DescriptorSetBinder writer;
+
+    writer.bindImage(0, *mRenderer->mInfrastructure.mDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+
+    for (u32 i = 0; i < mDepthPyramidLevels; i++) {
+        writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
+        writer.bindImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
+    }
+    
+    writer.bindSampler(3, mDepthPyramidSampler, vk::DescriptorType::eSampler);
+    
+    writer.updateSetBindings(mRenderer->mCore.mDevice, *mDepthPyramidDescriptorSet);
 }
 
 void Culler::initDepthPyramidPipeline() {
@@ -215,27 +235,9 @@ void Culler::reconstructDepthPyramid() {
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image Destroyed");
 
     initDepthPyramidImage();
+    writeDepthPyramidDescriptor();
 
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Reconstructed After Resize");
-}
-
-void Culler::bindDepthPyramidDescriptor(u32 depthPyramidLevel) {
-    DescriptorSetBinder writer;
-    if (depthPyramidLevel == 0) {
-        writer.bindImage(
-            0, *mRenderer->mInfrastructure.mDepthImage.imageView, mDepthPyramidSampler, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eCombinedImageSampler
-        );
-    } else {
-        writer.bindImage(
-            1,
-            *mDepthPyramidMipViews[depthPyramidLevel - 1],
-            mDepthPyramidSampler,
-            vk::ImageLayout::eGeneral,
-            vk::DescriptorType::eCombinedImageSampler
-        );
-    }
-    writer.bindImage(2, *mDepthPyramidMipViews[depthPyramidLevel], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
-    writer.updateSetBindings(mRenderer->mCore.mDevice, *mDepthPyramidDescriptorSet);
 }
 
 void Culler::cleanup() {

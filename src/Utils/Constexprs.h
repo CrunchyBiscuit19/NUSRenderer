@@ -59,6 +59,7 @@ constexpr float FAR_PLANE = 10000.f;
 
 constexpr u32 MAX_1D_WORKGROUP_THREADS = 1024;
 constexpr u32 MAX_2D_WORKGROUP_THREADS = 32;
+
 constexpr u32 FRUSTUM_NUM_PLANES = 6;
 constexpr u32 FRUSTUM_NEAR_FACE = 0;
 constexpr u32 FRUSTUM_FAR_FACE = 1;
@@ -66,4 +67,4 @@ constexpr u32 FRUSTUM_LEFT_FACE = 2;
 constexpr u32 FRUSTUM_RIGHT_FACE = 3;
 constexpr u32 FRUSTUM_TOP_FACE = 4;
 constexpr u32 FRUSTUM_BOTTOM_FACE = 5;
-constexpr u32 MAX_DEPTH_PYRAMID_MIPS = 16;
+constexpr u32 MAX_DEPTH_PYRAMID_LEVELS = 16;
