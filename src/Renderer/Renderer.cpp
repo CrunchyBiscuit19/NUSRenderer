@@ -388,7 +388,7 @@ void Renderer::initPasses() {
         vk::RenderingAttachmentInfo colorAttachment =
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
         vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-            *mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthStencilAttachmentOptimal, vk::AttachmentLoadOp::eClear
+            *mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear
         );
         const vk::RenderingInfo renderInfo =
             vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
@@ -423,7 +423,7 @@ void Renderer::initPasses() {
         vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
         vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
             *mScene.mPicker.mDepthImage.imageView,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal,
+            vk::ImageLayout::eDepthAttachmentOptimal,
             vk::AttachmentLoadOp::eClear,
             vk::AttachmentStoreOp::eDontCare
         );
@@ -535,7 +535,7 @@ void Renderer::initPasses() {
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
         vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
             *mInfrastructure.mDepthImage.imageView,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal,
+            vk::ImageLayout::eDepthAttachmentOptimal,
             vk::AttachmentLoadOp::eLoad,
             vk::AttachmentStoreOp::eDontCare
         );
@@ -578,7 +578,7 @@ void Renderer::initPasses() {
         vk::RenderingAttachmentInfo colorAttachment =
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
         vk::RenderingAttachmentInfo depthAttachment =
-            vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+            vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
         const vk::RenderingInfo renderInfo =
             vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
 
@@ -659,6 +659,26 @@ void Renderer::initPasses() {
 }
 
 void Renderer::initTransitions() {
+    mTransitions.try_emplace(
+        TransitionType::SwapchainDepthAttachmentOptimalIntoDepthReadOnlyOptimal,
+        vk::ImageLayout::eDepthAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        vk::ImageLayout::eDepthReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderRead
+    );
+
+    mTransitions.try_emplace(
+        TransitionType::SwapchainDepthReadOnlyOptimalIntoDepthAttachmentOptimal,
+        vk::ImageLayout::eDepthReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eDepthAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+    );
+
     mTransitions.try_emplace(
         TransitionType::PickerGeneralIntoColorAttachment,
         vk::ImageLayout::eGeneral,
@@ -828,29 +848,11 @@ void Renderer::draw() {
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
-    vkhelper::transitionImage(
-        cmd,
-        *mInfrastructure.mDepthImage.image,
-        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::ImageLayout::eDepthReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead
-    );
+    mTransitions.at(TransitionType::SwapchainDepthAttachmentOptimalIntoDepthReadOnlyOptimal).execute(cmd, *mInfrastructure.mDepthImage.image);
 
     mPasses.at(PassType::Cull).execute(cmd);
 
-    vkhelper::transitionImage(
-        cmd,
-        *mInfrastructure.mDepthImage.image,
-        vk::ImageLayout::eDepthReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead,
-        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
-    );
+    mTransitions.at(TransitionType::SwapchainDepthReadOnlyOptimalIntoDepthAttachmentOptimal).execute(cmd, *mInfrastructure.mDepthImage.image);
 
     mPasses.at(PassType::ClearScreen).execute(cmd);
 

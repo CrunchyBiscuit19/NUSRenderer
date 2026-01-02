@@ -68,7 +68,7 @@ void Picker::initImage() {
             vk::ImageLayout::eUndefined,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eDepthStencilAttachmentOptimal,
+            vk::ImageLayout::eDepthAttachmentOptimal,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
             vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
         );

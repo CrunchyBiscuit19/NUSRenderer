@@ -237,17 +237,12 @@ void vkhelper::transitionImage(
 
     vk::ImageAspectFlags aspectMask;
     switch (newLayout) {
-        case vk::ImageLayout::eDepthStencilReadOnlyOptimal:
+        case vk::ImageLayout::eDepthAttachmentOptimal:
         case vk::ImageLayout::eDepthReadOnlyOptimal:
             aspectMask = vk::ImageAspectFlagBits::eDepth;
             break;
-        case vk::ImageLayout::eDepthStencilAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eDepth;
-            break;
-        case vk::ImageLayout::eDepthAttachmentOptimal:
-            aspectMask = vk::ImageAspectFlagBits::eDepth;
-            break;
         case vk::ImageLayout::eStencilAttachmentOptimal:
+        case vk::ImageLayout::eStencilReadOnlyOptimal:
             aspectMask = vk::ImageAspectFlagBits::eStencil;
             break;
         case vk::ImageLayout::eColorAttachmentOptimal:
