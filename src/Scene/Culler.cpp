@@ -89,10 +89,10 @@ void Culler::initDepthPyramidSampler() {
 
 void Culler::initDepthPyramidDescriptor() {
     DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eSampledImage); // Depth Image
-    builder.addBinding(1, vk::DescriptorType::eSampledImage, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Read
+    builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler); // Depth Image
+    builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Read
     builder.addBinding(2, vk::DescriptorType::eStorageImage, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Write
-    builder.addBinding(3, vk::DescriptorType::eSampler); // Depth Pyramid Sampler
+    builder.addBinding(3, vk::DescriptorType::eSampler);                                        // Depth Pyramid Sampler
     mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSetLayout, "CullerDepthPyramidDescriptorSetLayout");
     mDepthPyramidDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDepthPyramidDescriptorSetLayout);
@@ -103,15 +103,19 @@ void Culler::initDepthPyramidDescriptor() {
 void Culler::writeDepthPyramidDescriptor() {
     DescriptorSetBinder writer;
 
-    writer.bindImage(0, *mRenderer->mInfrastructure.mDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
-
+    writer.bindImage(
+        0,
+        *mRenderer->mInfrastructure.mDepthImage.imageView,
+        mDepthPyramidSampler,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::DescriptorType::eCombinedImageSampler
+    );
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
-        writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
+        writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], mDepthPyramidSampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler);
         writer.bindImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
     }
-    
     writer.bindSampler(3, mDepthPyramidSampler, vk::DescriptorType::eSampler);
-    
+
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDepthPyramidDescriptorSet);
 }
 

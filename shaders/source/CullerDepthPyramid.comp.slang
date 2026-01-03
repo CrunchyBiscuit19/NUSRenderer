@@ -3,9 +3,9 @@ import Culler;
 static const uint MAX_2D_WORKGROUP_THREADS = 32;
 
 [[vk::binding(0, 0)]]
-public uniform Texture2D<float> depthImage;
+public uniform Sampler2DMS<float> depthImage;
 [[vk::binding(1, 0)]]
-public uniform Texture2D<float> depthPyramidRead[];
+public uniform Sampler2D<float> depthPyramidRead[];
 [[vk::binding(2, 0)]]
 public uniform RWTexture2D<float> depthPyramidWrite[];
 [[vk::binding(3, 0)]]
@@ -27,9 +27,9 @@ void main(CSInput in) {
     // Record this furthest distance for occlusion culling later
     float minDepth = 0.f;
     if (cullerDepthPyramidPc.level == 0) {
-        minDepth = depthImage.Sample(minReductionSampler, normalizedCentrePos).x;
+        minDepth = depthImage.Sample(normalizedCentrePos).x;
     } else {
-        minDepth = depthPyramidRead[cullerDepthPyramidPc.level - 1].Sample(minReductionSampler, normalizedCentrePos).x;
+        minDepth = depthPyramidRead[cullerDepthPyramidPc.level - 1].Sample(normalizedCentrePos).x;
     }
 
     // Write this min depth to next depth pyramid mip level

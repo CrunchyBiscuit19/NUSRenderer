@@ -14,11 +14,11 @@ RendererInfrastructure::RendererInfrastructure(Renderer* renderer)
 
 void RendererInfrastructure::initDescriptors() {
     std::vector<DescriptorAllocatorGrowable::DescriptorTypeRatio> sizes = {
-        {vk::DescriptorType::eUniformBuffer, 1},                               // Scene UBO
-        {vk::DescriptorType::eStorageImage, 1},                                // Picker Draw Image
-        {vk::DescriptorType::eSampledImage, 1},                                // Culle Depth Pyramid Image
-        {vk::DescriptorType::eCombinedImageSampler, 1},                        // Skybox Cubemap
-        {vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS},  // Material Textures
+        {vk::DescriptorType::eUniformBuffer, 1},
+        {vk::DescriptorType::eStorageImage, 1},
+        {vk::DescriptorType::eSampledImage, 1},
+        {vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS},
+        {vk::DescriptorType::eSampler, 1},  
     };
     mMainDescriptorAllocator.init(MAX_DESCRIPTOR_SETS_PER_POOL, sizes);
 
