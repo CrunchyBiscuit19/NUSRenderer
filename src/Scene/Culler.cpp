@@ -25,8 +25,8 @@ void Culler::init() {
 
 void Culler::initDepthPyramidImage() {
     // Depth Pyramid Image
-    u32 depthPyramidWidth = vkhelper::previousPow2(mRenderer->mInfrastructure.mDrawImage.imageExtent.width);
-    u32 depthPyramidHeight = vkhelper::previousPow2(mRenderer->mInfrastructure.mDrawImage.imageExtent.height);
+    u32 depthPyramidWidth = vkhelper::previousPow2(mRenderer->mInfrastructure.mDepthImage.imageExtent.width);
+    u32 depthPyramidHeight = vkhelper::previousPow2(mRenderer->mInfrastructure.mDepthImage.imageExtent.height);
     mDepthPyramidExtent = vk::Extent3D{
         depthPyramidWidth,
         depthPyramidHeight,
@@ -89,10 +89,9 @@ void Culler::initDepthPyramidSampler() {
 
 void Culler::initDepthPyramidDescriptor() {
     DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler); // Depth Image
-    builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Read
-    builder.addBinding(2, vk::DescriptorType::eStorageImage, MAX_DEPTH_PYRAMID_LEVELS); // Depth Pyramid Write
-    builder.addBinding(3, vk::DescriptorType::eSampler);                                        // Depth Pyramid Sampler
+    builder.addBinding(0, vk::DescriptorType::eSampledImage);                            // Depth Image
+    builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler, MAX_DEPTH_PYRAMID_LEVELS);  // Depth Pyramid Read
+    builder.addBinding(2, vk::DescriptorType::eStorageImage, MAX_DEPTH_PYRAMID_LEVELS);          // Depth Pyramid Write
     mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSetLayout, "CullerDepthPyramidDescriptorSetLayout");
     mDepthPyramidDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDepthPyramidDescriptorSetLayout);
@@ -108,13 +107,12 @@ void Culler::writeDepthPyramidDescriptor() {
         *mRenderer->mInfrastructure.mDepthImage.imageView,
         mDepthPyramidSampler,
         vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::DescriptorType::eCombinedImageSampler
+        vk::DescriptorType::eSampledImage
     );
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
         writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], mDepthPyramidSampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler);
         writer.bindImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
     }
-    writer.bindSampler(3, mDepthPyramidSampler, vk::DescriptorType::eSampler);
 
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDepthPyramidDescriptorSet);
 }

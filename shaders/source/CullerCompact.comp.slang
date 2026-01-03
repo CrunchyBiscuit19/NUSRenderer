@@ -6,6 +6,19 @@ static const uint MAX_1D_WORKGROUP_THREADS = 1024;
 [[vk::push_constant]]
 CullerCompactPushConstants cullerCompactPc;
 
+void copyRenderItem(RenderItem *src, RenderItem *dst) {
+    dst.indexCount = src.indexCount;
+    dst.renderInstanceCount = src.renderInstanceCount;
+    dst.firstIndex = src.firstIndex;
+    dst.vertexOffset = src.vertexOffset;
+    dst.firstRenderInstance = src.firstRenderInstance;
+    dst.materialIndex = src.materialIndex;
+    dst.nodeTransformIndex = src.nodeTransformIndex;
+    dst.modelIndex = src.modelIndex;
+    dst.firstInstance = src.firstInstance;
+    dst.boundsIndex = src.boundsIndex;
+}
+
 [numthreads(MAX_1D_WORKGROUP_THREADS, 1, 1)]
 void main(CSInput in) {
     // Get thread ID as index into render item
@@ -18,6 +31,6 @@ void main(CSInput in) {
     if (renderItem->renderInstanceCount == 0) return;
     
     uint writeRenderItemsIndex;
-    InterlockedAdd(cullerCompactPc.postCullRenderItemsCountBuffer[0], 1, writeRenderItemsIndex);
-    cullerCompactPc.postCullRenderItemsBuffer[writeRenderItemsIndex] = *renderItem;
+    InterlockedAdd(*cullerCompactPc.postCullRenderItemsCountBuffer, 1, writeRenderItemsIndex);
+    copyRenderItem(renderItem, &cullerCompactPc.postCullRenderItemsBuffer[writeRenderItemsIndex]);
 }

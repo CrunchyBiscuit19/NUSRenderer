@@ -223,30 +223,34 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::CullDepthPyramid, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mDepthPyramidPipelineBundle.pipeline);
 
-        vkhelper::createImagePipelineBarrier(
-            cmd,
-            *mScene.mCuller.mDepthPyramidImage.image,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-            vk::ImageLayout::eGeneral
-        );
+        u32 levelWidth = mInfrastructure.mDepthImage.imageExtent.width;
+        u32 levelHeight = mInfrastructure.mDepthImage.imageExtent.height;
 
         for (u32 i = 0; i < mScene.mCuller.mDepthPyramidLevels; i++) {
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
             );
 
-            u32 levelWidth = std::max(static_cast<u32>(1), mScene.mCuller.mDepthPyramidExtent.width >> i);
-            u32 levelHeight = std::max(static_cast<u32>(1), mScene.mCuller.mDepthPyramidExtent.height >> i);
             mScene.mCuller.mDepthPyramidPushConstants.levelExtent = glm::uvec2(levelWidth, levelHeight);
             mScene.mCuller.mDepthPyramidPushConstants.level = i;
             cmd.pushConstants<CullerDepthPyramidPushConstants>(
                 mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
             );
 
-            cmd.dispatch(vkhelper::fastCeil(levelWidth, MAX_2D_WORKGROUP_THREADS), vkhelper::fastCeil(levelHeight, MAX_1D_WORKGROUP_THREADS), 1);
+            vkhelper::createImagePipelineBarrier(
+                cmd,
+                *mScene.mCuller.mDepthPyramidImage.image,
+                vk::PipelineStageFlagBits2::eComputeShader,
+                vk::AccessFlagBits2::eShaderRead,
+                vk::PipelineStageFlagBits2::eComputeShader,
+                vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+                vk::ImageLayout::eGeneral
+            );
+
+            cmd.dispatch(vkhelper::fastCeil(levelWidth, MAX_2D_WORKGROUP_THREADS), vkhelper::fastCeil(levelHeight, MAX_2D_WORKGROUP_THREADS), 1);
+            
+            levelWidth = std::max(static_cast<u32>(1), mScene.mCuller.mDepthPyramidExtent.width >> i);
+            levelHeight = std::max(static_cast<u32>(1), mScene.mCuller.mDepthPyramidExtent.height >> i);
         }
     });
 
@@ -386,9 +390,8 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {
         vk::RenderingAttachmentInfo colorAttachment =
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
-        vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-            *mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear
-        );
+        vk::RenderingAttachmentInfo depthAttachment =
+            vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear);
         const vk::RenderingInfo renderInfo =
             vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
 
@@ -420,12 +423,8 @@ void Renderer::initPasses() {
 
     mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
         vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-        vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-            *mScene.mPicker.mDepthImage.imageView,
-            vk::ImageLayout::eDepthAttachmentOptimal,
-            vk::AttachmentLoadOp::eClear,
-            vk::AttachmentStoreOp::eDontCare
-        );
+        vk::RenderingAttachmentInfo depthAttachment =
+            vkhelper::depthAttachmentInfo(*mScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
         const vk::RenderingInfo renderInfo =
             vkhelper::renderingInfo(vkhelper::extent3dTo2d(mScene.mPicker.mImage.imageExtent), &colorAttachment, &depthAttachment);
 
@@ -532,12 +531,8 @@ void Renderer::initPasses() {
 
         vk::RenderingAttachmentInfo colorAttachment =
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-        vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-            *mInfrastructure.mDepthImage.imageView,
-            vk::ImageLayout::eDepthAttachmentOptimal,
-            vk::AttachmentLoadOp::eLoad,
-            vk::AttachmentStoreOp::eDontCare
-        );
+        vk::RenderingAttachmentInfo depthAttachment =
+            vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
         const vk::RenderingInfo renderInfo =
             vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
 
@@ -777,7 +772,7 @@ void Renderer::run() {
 
             mInfrastructure.resizeSwapchain();
             mScene.mCuller.reconstructDepthPyramid();
-            
+
             mInfrastructure.mResizeRequested = false;
         }
 
