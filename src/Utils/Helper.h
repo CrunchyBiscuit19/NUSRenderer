@@ -19,7 +19,7 @@ vk::RenderingAttachmentInfo colorAttachmentInfo(
 );
 vk::RenderingAttachmentInfo depthAttachmentInfo(
     vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp load = vk::AttachmentLoadOp::eLoad,
-    vk::AttachmentStoreOp store = vk::AttachmentStoreOp::eStore
+    vk::AttachmentStoreOp store = vk::AttachmentStoreOp::eStore, std::optional<vk::ImageView> swapchainResolveView = std::nullopt
 );
 vk::RenderingInfo renderingInfo(
     vk::Extent2D renderExtent, vk::RenderingAttachmentInfo* colorAttachment, vk::RenderingAttachmentInfo* depthAttachment, u32 count = 1

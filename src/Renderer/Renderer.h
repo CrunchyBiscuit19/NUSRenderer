@@ -41,15 +41,15 @@ struct Pass {
 };
 
 enum class TransitionType {
-    SwapchainDepthAttachmentOptimalIntoShaderReadOnlyOptimal,
-    SwapchainShaderReadOnlyOptimalIntoDepthAttachmentOptimal,
+    SwapchainDepthDepthAttachmentIntoTransferSrc,
+    SwapchainDepthTransferSrcIntoDepthAttachment,
     PickerGeneralIntoColorAttachment,
     PickerColorAttachmentIntoGeneral,
     IntermediateTransferSrcIntoColorAttachment,
     IntermediateColorAttachmentIntoTransferSrc,
-    SwapchainPresentIntoTransferDst,
-    SwapchainTransferDstIntoColorAttachment,
-    SwapchainColorAttachmentIntoPresent,
+    SwapchainColorPresentIntoTransferDst,
+    SwapchainColorTransferDstIntoColorAttachment,
+    SwapchainColorColorAttachmentIntoPresent,
 };
 
 struct Transition {

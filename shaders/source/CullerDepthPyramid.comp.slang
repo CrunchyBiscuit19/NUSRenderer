@@ -3,7 +3,7 @@ import Culler;
 static const uint MAX_2D_WORKGROUP_THREADS = 32;
 
 [[vk::binding(0, 0)]]
-public uniform Sampler2DMS<float> depthImage;
+public uniform Sampler2D<float> resolvedDepthImage;
 [[vk::binding(1, 0)]]
 public uniform Sampler2D<float> depthPyramidRead[];
 [[vk::binding(2, 0)]]
@@ -24,7 +24,7 @@ void main(CSInput in) {
     // It takes the minimum depth value from a 2x2 block of texels, which is the furthest distance in reverse-z buffer
     // Record this furthest distance for occlusion culling later
     if (cullerDepthPyramidPc.level == 0) {
-        float depth = depthImage.Sample(normalizedCentrePos, 0);
+        float depth = resolvedDepthImage.Sample(normalizedCentrePos).x;
         depthPyramidWrite[cullerDepthPyramidPc.level].Store(rawPos, depth);
     } else {
         float minDepth = depthPyramidRead[cullerDepthPyramidPc.level - 1].Sample(normalizedCentrePos).x;

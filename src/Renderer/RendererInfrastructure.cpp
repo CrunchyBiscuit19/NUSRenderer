@@ -18,7 +18,7 @@ void RendererInfrastructure::initDescriptors() {
         {vk::DescriptorType::eStorageImage, 1},
         {vk::DescriptorType::eSampledImage, 1},
         {vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS},
-        {vk::DescriptorType::eSampler, 1},  
+        {vk::DescriptorType::eSampler, 1},
     };
     mMainDescriptorAllocator.init(MAX_DESCRIPTOR_SETS_PER_POOL, sizes);
 
@@ -128,11 +128,7 @@ void RendererInfrastructure::initSwapchain() {
         true
     );
     mDepthImage = mRenderer->mResources.createImage(
-        mDrawImage.imageExtent,
-        vk::Format::eD32Sfloat,
-        vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled,
-        false,
-        true
+        mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, false, true
     );
     mIntermediateImage = mRenderer->mResources.createImage(
         mDrawImage.imageExtent,

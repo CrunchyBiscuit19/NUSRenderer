@@ -107,7 +107,7 @@ vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(
 }
 
 vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(
-    vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp
+    vk::ImageView view, vk::ImageLayout layout, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, std::optional<vk::ImageView> resolveImageView
 ) {
     vk::RenderingAttachmentInfo depthAttachment{};
     depthAttachment.pNext = nullptr;
@@ -116,6 +116,12 @@ vk::RenderingAttachmentInfo vkhelper::depthAttachmentInfo(
     depthAttachment.loadOp = loadOp;
     depthAttachment.storeOp = storeOp;
     depthAttachment.clearValue.depthStencil.depth = 0.f;
+    if (resolveImageView.has_value()) {
+        depthAttachment.resolveImageView = resolveImageView.value();
+        depthAttachment.resolveMode = vk::ResolveModeFlagBits::eSampleZero;
+        depthAttachment.resolveImageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+    }
+
     return depthAttachment;
 }
 

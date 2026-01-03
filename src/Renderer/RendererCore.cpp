@@ -135,6 +135,7 @@ void RendererCore::init() {
 
     LOG_INFO(mRenderer->mLogger, "Vulkan Surface Created");
 
+    vk::PhysicalDeviceVulkan14Features features14{};
     vk::PhysicalDeviceVulkan13Features features13{};
     features13.dynamicRendering = true;
     features13.synchronization2 = true;
@@ -164,6 +165,7 @@ void RendererCore::init() {
     features10.fragmentStoresAndAtomics = true;
     features10.vertexPipelineStoresAndAtomics = true;
     features10.shaderInt64 = true;
+
     vk::PhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT unusedAttachmentsFeatures{};
     unusedAttachmentsFeatures.dynamicRenderingUnusedAttachments = vk::True;
     vk::PhysicalDeviceComputeShaderDerivativesFeaturesKHR computeShaderDerivativesFeatures{};
@@ -175,6 +177,7 @@ void RendererCore::init() {
                                              .add_required_extension(vk::KHRSwapchainMutableFormatExtensionName)
                                              .add_required_extension(vk::EXTDynamicRenderingUnusedAttachmentsExtensionName)
                                              .add_required_extension(vk::KHRComputeShaderDerivativesExtensionName)
+                                             .add_required_extension(vk::KHRDepthStencilResolveExtensionName)
                                              .add_required_extension_features(unusedAttachmentsFeatures)
                                              .add_required_extension_features(computeShaderDerivativesFeatures)
                                              .set_required_features_13(features13)

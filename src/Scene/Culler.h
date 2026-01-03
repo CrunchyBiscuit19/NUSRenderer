@@ -62,8 +62,9 @@ class Culler {
     vk::raii::DescriptorSet mDepthPyramidDescriptorSet;
     vk::raii::DescriptorSetLayout mDepthPyramidDescriptorSetLayout;
     AllocatedImage mDepthPyramidImage;
-    vk::Sampler mDepthPyramidSampler;
+    AllocatedImage mResolvedDepthImage;
     std::vector<vk::raii::ImageView> mDepthPyramidMipViews;
+    vk::Sampler mDepthPyramidSampler;
     u32 mDepthPyramidLevels{0};
     vk::Extent3D mDepthPyramidExtent;
     CullerDepthPyramidPushConstants mDepthPyramidPushConstants;

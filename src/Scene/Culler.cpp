@@ -36,25 +36,24 @@ void Culler::initDepthPyramidImage() {
     mDepthPyramidImage = mRenderer->mResources.createImage(
         mDepthPyramidExtent,
         vk::Format::eR32Sfloat,
-        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc,
+        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage,
         true
     );
     mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.image, "CullerDepthPyramidImage");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image Created");
     mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.imageView, "CullerDepthPyramidImageView");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image View Created");
-    mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(
-            cmd,
-            *mDepthPyramidImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eGeneral,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
-        );
-    });
+
+    // Resolved Depth Image
+    mResolvedDepthImage = mRenderer->mResources.createImage(
+        mRenderer->mInfrastructure.mDepthImage.imageExtent,
+        vk::Format::eD32Sfloat,
+        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eDepthStencilAttachment
+    );
+    mRenderer->mCore.labelResourceDebug(mResolvedDepthImage.image, "CullerResolvedDepthImage");
+    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image Created");
+    mRenderer->mCore.labelResourceDebug(mResolvedDepthImage.imageView, "CullerResolvedDepthImageView");
+    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image View Created");
 
     // Depth Pyramid Image Views
     mDepthPyramidMipViews.clear();
@@ -68,6 +67,31 @@ void Culler::initDepthPyramidImage() {
         mRenderer->mCore.labelResourceDebug(mDepthPyramidMipViews.back(), fmt::format("CullerDepthPyramidMipView{}", i).c_str());
     }
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Created");
+
+    // Transition images
+    mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
+        vkhelper::transitionImage(
+            cmd,
+            *mDepthPyramidImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eGeneral,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+        );
+        vkhelper::transitionImage(
+            cmd,
+            *mResolvedDepthImage.image,
+            vk::ImageLayout::eUndefined,
+            vk::PipelineStageFlagBits2::eNone,
+            vk::AccessFlagBits2::eNone,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::ImageAspectFlagBits::eDepth
+        );
+    });
 }
 
 void Culler::initDepthPyramidSampler() {
@@ -89,7 +113,7 @@ void Culler::initDepthPyramidSampler() {
 
 void Culler::initDepthPyramidDescriptor() {
     DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eSampledImage);                            // Depth Image
+    builder.addBinding(0, vk::DescriptorType::eCombinedImageSampler);                            // Depth Image
     builder.addBinding(1, vk::DescriptorType::eCombinedImageSampler, MAX_DEPTH_PYRAMID_LEVELS);  // Depth Pyramid Read
     builder.addBinding(2, vk::DescriptorType::eStorageImage, MAX_DEPTH_PYRAMID_LEVELS);          // Depth Pyramid Write
     mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
@@ -104,10 +128,10 @@ void Culler::writeDepthPyramidDescriptor() {
 
     writer.bindImage(
         0,
-        *mRenderer->mInfrastructure.mDepthImage.imageView,
+        *mResolvedDepthImage.imageView,
         mDepthPyramidSampler,
         vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::DescriptorType::eSampledImage
+        vk::DescriptorType::eCombinedImageSampler
     );
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
         writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], mDepthPyramidSampler, vk::ImageLayout::eGeneral, vk::DescriptorType::eCombinedImageSampler);
@@ -243,6 +267,8 @@ void Culler::reconstructDepthPyramid() {
 }
 
 void Culler::cleanup() {
+    mResolvedDepthImage.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image Destroyed");
     mDepthPyramidMipViews.clear();
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Destroyed");
     mDepthPyramidImage.cleanup();
