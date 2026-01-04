@@ -223,21 +223,47 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::CullDepthPyramid, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mDepthPyramidPipelineBundle.pipeline);
 
-        u32 levelWidth = mInfrastructure.mDepthImage.imageExtent.width;
-        u32 levelHeight = mInfrastructure.mDepthImage.imageExtent.height;
+        vk::Extent3D depthPyramidExtent = mScene.mCuller.mDepthPyramidImage.imageExtent;
+        vk::Extent3D resolvedDepthExtent = mScene.mCuller.mResolvedDepthImage.imageExtent;
+
+        cmd.bindDescriptorSets(
+            vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
+        );
+
+        mScene.mCuller.mDepthPyramidPushConstants.depthPyramidExtent = glm::uvec2(depthPyramidExtent.width, depthPyramidExtent.height);
+        mScene.mCuller.mDepthPyramidPushConstants.resolvedDepthExtent = glm::uvec2(resolvedDepthExtent.width, resolvedDepthExtent.height);
+        mScene.mCuller.mDepthPyramidPushConstants.resolvedDepthRatio = glm::vec2(
+            depthPyramidExtent.width / static_cast<float>(resolvedDepthExtent.width), depthPyramidExtent.height / static_cast<float>(resolvedDepthExtent.height)
+        );
+        mScene.mCuller.mDepthPyramidPushConstants.readFromResolved = true;
+        mScene.mCuller.mDepthPyramidPushConstants.level = 0;
+        cmd.pushConstants<CullerDepthPyramidPushConstants>(
+            mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
+        );
+
+        vkhelper::createImagePipelineBarrier(
+            cmd,
+            *mScene.mCuller.mDepthPyramidImage.image,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+            vk::PipelineStageFlagBits2::eComputeShader,
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+            vk::ImageLayout::eGeneral
+        );
+
+        cmd.dispatch(
+            vkhelper::fastCeil(mScene.mCuller.mResolvedDepthImage.imageExtent.width, MAX_2D_WORKGROUP_THREADS),
+            vkhelper::fastCeil(mScene.mCuller.mResolvedDepthImage.imageExtent.height, MAX_2D_WORKGROUP_THREADS),
+            1
+        );
+
+        mScene.mCuller.mDepthPyramidPushConstants.readFromResolved = false;
 
         for (u32 i = 0; i < mScene.mCuller.mDepthPyramidLevels; i++) {
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
             );
 
-            mScene.mCuller.mDepthPyramidPushConstants.readLevelExtent =
-                (i == 0) ? glm::uvec2(mInfrastructure.mDepthImage.imageExtent.width, mInfrastructure.mDepthImage.imageExtent.height)
-                         : glm::uvec2(mScene.mCuller.mDepthPyramidExtent.width >> i - 1, mScene.mCuller.mDepthPyramidExtent.height >> i - 1);
-            mScene.mCuller.mDepthPyramidPushConstants.writeLevelExtentRatio = glm::vec2(
-                (mScene.mCuller.mDepthPyramidExtent.width >> i) / static_cast<float>(mScene.mCuller.mDepthPyramidPushConstants.readLevelExtent.x),
-                (mScene.mCuller.mDepthPyramidExtent.height >> i) / static_cast<float>(mScene.mCuller.mDepthPyramidPushConstants.readLevelExtent.y)
-            );
             mScene.mCuller.mDepthPyramidPushConstants.level = i;
             cmd.pushConstants<CullerDepthPyramidPushConstants>(
                 mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
@@ -247,16 +273,17 @@ void Renderer::initPasses() {
                 cmd,
                 *mScene.mCuller.mDepthPyramidImage.image,
                 vk::PipelineStageFlagBits2::eComputeShader,
-                vk::AccessFlagBits2::eShaderRead,
+                vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
                 vk::PipelineStageFlagBits2::eComputeShader,
                 vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
                 vk::ImageLayout::eGeneral
             );
 
-            cmd.dispatch(vkhelper::fastCeil(levelWidth, MAX_2D_WORKGROUP_THREADS), vkhelper::fastCeil(levelHeight, MAX_2D_WORKGROUP_THREADS), 1);
-
-            levelWidth = std::max(static_cast<u32>(1), mScene.mCuller.mDepthPyramidExtent.width >> i);
-            levelHeight = std::max(static_cast<u32>(1), mScene.mCuller.mDepthPyramidExtent.height >> i);
+            cmd.dispatch(
+                vkhelper::fastCeil(depthPyramidExtent.width >> i, MAX_2D_WORKGROUP_THREADS),
+                vkhelper::fastCeil(depthPyramidExtent.height >> i, MAX_2D_WORKGROUP_THREADS),
+                1
+            );
         }
     });
 

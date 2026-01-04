@@ -40,9 +40,11 @@ public struct CullerCompactPushConstants {
 };
 
 public struct CullerDepthPyramidPushConstants {
-    public uint2 readLevelExtent;
-    public float2 writeLevelExtentRatio;
+    public uint2 depthPyramidExtent;
+    public uint2 resolvedDepthExtent;
+    public float2 resolvedDepthRatio;
     public uint level;
+    public bool readFromResolved;
 };
 
 public struct CSInput {

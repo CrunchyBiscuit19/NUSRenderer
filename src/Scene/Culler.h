@@ -37,9 +37,11 @@ struct CullerCompactPushConstants {
 };
 
 struct CullerDepthPyramidPushConstants {
-    glm::uvec2 readLevelExtent;
-    glm::vec2 writeLevelExtentRatio;
+    glm::uvec2 depthPyramidExtent;
+    glm::uvec2 resolvedDepthExtent;
+    glm::vec2 resolvedDepthRatio;
     u32 level;
+    bool readFromResolved;
 };
 
 class Culler {
