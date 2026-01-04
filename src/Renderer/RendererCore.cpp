@@ -178,6 +178,7 @@ void RendererCore::init() {
                                              .add_required_extension(vk::EXTDynamicRenderingUnusedAttachmentsExtensionName)
                                              .add_required_extension(vk::KHRComputeShaderDerivativesExtensionName)
                                              .add_required_extension(vk::KHRDepthStencilResolveExtensionName)
+                                             .add_required_extension(vk::EXTSamplerFilterMinmaxExtensionName)
                                              .add_required_extension_features(unusedAttachmentsFeatures)
                                              .add_required_extension_features(computeShaderDerivativesFeatures)
                                              .set_required_features_13(features13)

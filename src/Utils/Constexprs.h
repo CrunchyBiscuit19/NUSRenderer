@@ -12,13 +12,13 @@ enum class LogLocation { Console, File, Both };
 #ifdef RELEASE
 constexpr ValidationMode VALIDATION_MODE = ValidationMode::None;
 #else
-constexpr ValidationMode VALIDATION_MODE = ValidationMode::Strict;
+constexpr ValidationMode VALIDATION_MODE = ValidationMode::Basic;
 #endif
 
 constexpr LogLocation LOG_LOCATION = LogLocation::Both;
 
 constexpr u32 MAJOR_VERSION = 1;
-constexpr u32 MINOR_VERSION = 3;
+constexpr u32 MINOR_VERSION = 4;
 constexpr u32 PATCH_VERSION = 0;
 
 constexpr u32 MAX_DESCRIPTOR_SETS_PER_POOL = 1 << 12;

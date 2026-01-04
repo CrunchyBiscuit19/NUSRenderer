@@ -40,7 +40,8 @@ public struct CullerCompactPushConstants {
 };
 
 public struct CullerDepthPyramidPushConstants {
-    public uint2 levelExtent;
+    public uint2 readLevelExtent;
+    public float2 writeLevelExtentRatio;
     public uint level;
 };
 

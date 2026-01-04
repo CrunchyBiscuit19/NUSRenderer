@@ -105,6 +105,8 @@ void Culler::initDepthPyramidSampler() {
     depthSamplerCreateInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     depthSamplerCreateInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
     depthSamplerCreateInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    depthSamplerCreateInfo.minLod = 0.0f;
+    depthSamplerCreateInfo.maxLod = static_cast<float>(MAX_DEPTH_PYRAMID_LEVELS);
     depthSamplerCreateInfo.pNext = &reductionModeInfo;
     mDepthPyramidSampler = mRenderer->mResources.getSampler(depthSamplerCreateInfo);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidSampler, "CullerDepthPyramidSampler");

@@ -154,51 +154,6 @@ void Renderer::initPasses() {
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
         );
 
-        /*vkhelper::transitionImage(
-            cmd,
-            *mScene.mCuller.mResolvedDepthImage.image,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::ImageAspectFlagBits::eDepth
-        );
-
-        vk::ImageResolve2 depthImageResolveRegion{};
-        depthImageResolveRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eDepth;
-        depthImageResolveRegion.srcSubresource.layerCount = 1;
-        depthImageResolveRegion.srcSubresource.mipLevel = 0;
-        depthImageResolveRegion.srcOffset = vk::Offset3D{0, 0, 0};
-        depthImageResolveRegion.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eDepth;
-        depthImageResolveRegion.dstSubresource.layerCount = 1;
-        depthImageResolveRegion.dstSubresource.mipLevel = 0;
-        depthImageResolveRegion.dstOffset = vk::Offset3D{0, 0, 0};
-        depthImageResolveRegion.extent = mInfrastructure.mDepthImage.imageExtent;
-
-        vk::ResolveImageInfo2 depthImageResolveInfo{};
-        depthImageResolveInfo.srcImage = *mInfrastructure.mDepthImage.image;
-        depthImageResolveInfo.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
-        depthImageResolveInfo.dstImage = *mScene.mCuller.mResolvedDepthImage.image;
-        depthImageResolveInfo.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
-        depthImageResolveInfo.pRegions = &depthImageResolveRegion;
-        depthImageResolveInfo.regionCount = 1;
-            
-        cmd.resolveImage2(depthImageResolveInfo);
-
-        vkhelper::transitionImage(
-            cmd,
-            *mScene.mCuller.mResolvedDepthImage.image,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageAspectFlagBits::eDepth
-        );*/
-
         for (auto batchType : mScene.mBatchTypes) {
             for (auto& batch : *batchType | std::views::values) {
                 if (batch.renderItems.empty()) {
@@ -276,7 +231,13 @@ void Renderer::initPasses() {
                 vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
             );
 
-            mScene.mCuller.mDepthPyramidPushConstants.levelExtent = glm::uvec2(levelWidth, levelHeight);
+            mScene.mCuller.mDepthPyramidPushConstants.readLevelExtent =
+                (i == 0) ? glm::uvec2(mInfrastructure.mDepthImage.imageExtent.width, mInfrastructure.mDepthImage.imageExtent.height)
+                         : glm::uvec2(mScene.mCuller.mDepthPyramidExtent.width >> i - 1, mScene.mCuller.mDepthPyramidExtent.height >> i - 1);
+            mScene.mCuller.mDepthPyramidPushConstants.writeLevelExtentRatio = glm::vec2(
+                (mScene.mCuller.mDepthPyramidExtent.width >> i) / static_cast<float>(mScene.mCuller.mDepthPyramidPushConstants.readLevelExtent.x),
+                (mScene.mCuller.mDepthPyramidExtent.height >> i) / static_cast<float>(mScene.mCuller.mDepthPyramidPushConstants.readLevelExtent.y)
+            );
             mScene.mCuller.mDepthPyramidPushConstants.level = i;
             cmd.pushConstants<CullerDepthPyramidPushConstants>(
                 mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
@@ -667,7 +628,7 @@ void Renderer::initPasses() {
             *mInfrastructure.mDepthImage.imageView,
             vk::ImageLayout::eDepthAttachmentOptimal,
             vk::AttachmentLoadOp::eLoad,
-            vk::AttachmentStoreOp::eDontCare,
+            vk::AttachmentStoreOp::eStore,
             *mScene.mCuller.mResolvedDepthImage.imageView
         );
         const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, &depthAttachment);
@@ -705,27 +666,6 @@ void Renderer::initPasses() {
 }
 
 void Renderer::initTransitions() {
-    mTransitions.try_emplace(
-        TransitionType::SwapchainDepthDepthAttachmentIntoTransferSrc,
-        vk::ImageLayout::eDepthAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::ImageLayout::eTransferSrcOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::ImageAspectFlagBits::eDepth
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::SwapchainDepthTransferSrcIntoDepthAttachment,
-        vk::ImageLayout::eTransferSrcOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::ImageLayout::eDepthAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
-    );
-
     mTransitions.try_emplace(
         TransitionType::PickerGeneralIntoColorAttachment,
         vk::ImageLayout::eGeneral,
@@ -898,11 +838,7 @@ void Renderer::draw() {
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
-    mTransitions.at(TransitionType::SwapchainDepthDepthAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mDepthImage.image);
-
     mPasses.at(PassType::Cull).execute(cmd);
-
-    mTransitions.at(TransitionType::SwapchainDepthTransferSrcIntoDepthAttachment).execute(cmd, *mInfrastructure.mDepthImage.image);
 
     mPasses.at(PassType::ClearScreen).execute(cmd);
 

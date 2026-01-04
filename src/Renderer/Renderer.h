@@ -41,8 +41,6 @@ struct Pass {
 };
 
 enum class TransitionType {
-    SwapchainDepthDepthAttachmentIntoTransferSrc,
-    SwapchainDepthTransferSrcIntoDepthAttachment,
     PickerGeneralIntoColorAttachment,
     PickerColorAttachmentIntoGeneral,
     IntermediateTransferSrcIntoColorAttachment,
