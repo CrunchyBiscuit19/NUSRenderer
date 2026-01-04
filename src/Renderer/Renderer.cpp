@@ -293,6 +293,7 @@ void Renderer::initPasses() {
         mScene.mCuller.mCullPushConstants.renderInstancesCountBuffer = mStats.mRenderInstancesCountBuffer.address;
         mScene.mCuller.mCullPushConstants.mainBoundsBuffer = mScene.mMainBoundsBuffer.address;
         mScene.mCuller.mCullPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
+        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
         mScene.mCuller.mCullPushConstants.mainNodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
         mScene.mCuller.mCullPushConstants.mainInstancesBuffer = mScene.mMainInstancesBuffer.address;
         mScene.mCuller.mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
@@ -320,6 +321,10 @@ void Renderer::initPasses() {
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+                );
+
+                cmd.bindDescriptorSets(
+                    vk::PipelineBindPoint::eCompute, mScene.mCuller.mCullPipelineBundle.layout, 0, *mScene.mCuller.mCullDescriptorSet, nullptr
                 );
 
                 mScene.mCuller.mCullPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;

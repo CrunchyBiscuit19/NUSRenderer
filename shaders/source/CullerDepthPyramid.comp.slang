@@ -3,16 +3,16 @@ import Culler;
 static const uint MAX_2D_WORKGROUP_THREADS = 32;
 
 [[vk::binding(0, 0)]]
-public uniform Sampler2D<float> resolvedDepthImage;
+public uniform Texture2D<float> resolvedDepthImage;
 [[vk::binding(1, 0)]]
-public uniform Sampler2D<float> depthPyramidRead[];
+public uniform Texture2D<float> depthPyramidRead[];
 [[vk::binding(2, 0)]]
 public uniform RWTexture2D<float> depthPyramidWrite[];
 
 [[vk::push_constant]]
 CullerDepthPyramidPushConstants cullerDepthPyramidPc;
 
-float findMinDepth(uint2 readPos, uint2 readExtent, Sampler2D<float> readImage) {
+float findMinDepth(uint2 readPos, uint2 readExtent, Texture2D<float> readImage) {
     // Calculate texel positions surrounding the current read position
     uint3 topLeft = uint3(readPos, 0) + uint3(-1, 1, 0);
     uint3 topCenter = uint3(readPos, 0) + uint3(0, 1, 0);

@@ -22,6 +22,7 @@ struct CullerCullPushConstants {
     vk::DeviceAddress renderInstancesBuffer;
     vk::DeviceAddress renderInstancesCountBuffer;
     vk::DeviceAddress frustumBuffer;
+    vk::DeviceAddress perspectiveBuffer;
     vk::DeviceAddress mainBoundsBuffer;
     vk::DeviceAddress mainNodeTransformsBuffer;
     vk::DeviceAddress mainInstancesBuffer;
@@ -54,6 +55,8 @@ class Culler {
 
     PipelineBundle mCullPipelineBundle;
     vk::raii::PipelineLayout mCullPipelineLayout;
+    vk::raii::DescriptorSet mCullDescriptorSet;
+    vk::raii::DescriptorSetLayout mCullDescriptorSetLayout;
     CullerCullPushConstants mCullPushConstants;
 
     PipelineBundle mCompactPipelineBundle;
@@ -67,7 +70,6 @@ class Culler {
     AllocatedImage mDepthPyramidImage;
     AllocatedImage mResolvedDepthImage;
     std::vector<vk::raii::ImageView> mDepthPyramidMipViews;
-    vk::Sampler mDepthPyramidSampler;
     u32 mDepthPyramidLevels{0};
     vk::Extent3D mDepthPyramidExtent;
     CullerDepthPyramidPushConstants mDepthPyramidPushConstants;
@@ -78,11 +80,12 @@ class Culler {
 
     void init();
     void initDepthPyramidImage();
-    void initDepthPyramidSampler();
     void initDepthPyramidDescriptor();
     void writeDepthPyramidDescriptor();
     void initDepthPyramidPipeline();
     void initResetPipeline();
+    void initCullDescriptor();
+    void writeCullDescriptor();
     void initCullPipeline();
     void initCompactPipeline();
 

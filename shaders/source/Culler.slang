@@ -25,10 +25,11 @@ public struct CullerCullPushConstants {
     public RenderInstance* renderInstancesBuffer;
     public uint* renderInstancesCountBuffer;
     public Plane* frustumBuffer;
+    public Perspective* perspectiveBuffer;
     public AABB* mainBoundsBuffer;
     public NodeTransform* mainNodeTransformsBuffer;
     public Instance* mainInstancesBuffer;
-    public uint* mainVisibleRenderInstancesInstanceIndexBuffer;
+    public uint *mainVisibleRenderInstancesInstanceIndexBuffer;
     public uint renderInstancesLimit;
 };
 

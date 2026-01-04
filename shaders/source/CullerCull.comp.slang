@@ -8,6 +8,9 @@ static const uint MAX_1D_WORKGROUP_THREADS = 1024;
 static const uint NUM_FRUSTUM_PLANES = 6;
 static const uint NUM_AABB_CORNERS = 8;
 
+[[vk::binding(0, 0)]]
+public uniform Texture2D<float> depthPyramidImage;
+
 [[vk::push_constant]]
 CullerCullPushConstants cullerCullPc;
 
@@ -20,7 +23,8 @@ If there is at least one corner inside all 6 planes, it is inside the frustum, t
 */
 bool frustumCull(Plane* frustum, AABB* bounds, Instance* currInstance, NodeTransform* nodeTransform) {
     bool visible = true;
-    float4[NUM_AABB_CORNERS] newCorners = {
+
+    float4[NUM_AABB_CORNERS] aabbCorners = {
         float4(bounds->min.x, bounds->min.y, bounds->min.z, 1.f),
         float4(bounds->min.x, bounds->min.y, bounds->max.z, 1.f),
         float4(bounds->min.x, bounds->max.y, bounds->min.z, 1.f),
@@ -33,9 +37,9 @@ bool frustumCull(Plane* frustum, AABB* bounds, Instance* currInstance, NodeTrans
     float4 newMin = float4(1.f);
     float4 newMax = float4(0.f);
     for (uint j = 0; j < NUM_AABB_CORNERS; j++) {
-        newCorners[j] = mul(currInstance->transformMatrix, mul(*nodeTransform, newCorners[j]));
-        newMin = min(newMin, newCorners[j]);
-        newMax = max(newMax, newCorners[j]);
+        aabbCorners[j] = mul(currInstance->transformMatrix, mul(*nodeTransform, aabbCorners[j]));
+        newMin = min(newMin, aabbCorners[j]);
+        newMax = max(newMax, aabbCorners[j]);
     }
 
     for (uint i = 0; i < NUM_FRUSTUM_PLANES; i++) {
@@ -54,6 +58,12 @@ bool frustumCull(Plane* frustum, AABB* bounds, Instance* currInstance, NodeTrans
     return visible;
 }
 
+bool occlusionCull(float4[] aabbCorners, Perspective* perspective, Texture2D<float> depthPyramidImage) {
+    bool visible = true;
+
+    return visible;
+}
+
 [numthreads(MAX_1D_WORKGROUP_THREADS,1,1)]
 void main(CSInput in) {
     // Get thread ID as index into which render instance for culling check
@@ -69,9 +79,23 @@ void main(CSInput in) {
     NodeTransform* nodeTransform = &cullerCullPc.mainNodeTransformsBuffer[renderItem->nodeTransformIndex];
     AABB* bounds = &cullerCullPc.mainBoundsBuffer[renderItem->boundsIndex];
     Plane* frustum = cullerCullPc.frustumBuffer;
+    Perspective* perspective = cullerCullPc.perspectiveBuffer;
+
+    // Establish AABB corners
+    float4[NUM_AABB_CORNERS] tmp = {
+        float4(0.f),
+        float4(0.f),
+        float4(0.f),
+        float4(0.f),
+        float4(0.f),
+        float4(0.f),
+        float4(0.f),
+        float4(0.f)
+    };
 
     // Culling tests
     bool visible = frustumCull(frustum, bounds, instance, nodeTransform);
+    if (visible) visible = occlusionCull(tmp, perspective, depthPyramidImage);
 
     // Increment counter of unculled render instances
     if (!visible) return;
