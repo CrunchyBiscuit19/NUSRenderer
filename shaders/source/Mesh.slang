@@ -7,11 +7,6 @@ import NodeTransform;
 import Instance;
 import RenderItem;
 
-[[vk::binding(0, 0)]]
-public uniform ConstantBuffer<Perspective> perspectiveBuffer;
-[[vk::binding(0, 1)]]
-public uniform Sampler2D materialResources[];
-
 public struct ForwardPushConstants
 {
     public Vertex *mainVertexBuffer;

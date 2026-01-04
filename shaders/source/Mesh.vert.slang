@@ -2,6 +2,12 @@ import Mesh;
 import Vertex;
 import MaterialConstant;
 import RenderItem;
+import Perspective;
+
+[[vk::binding(0, 0)]]
+public uniform ConstantBuffer<Perspective> perspectiveBuffer;
+[[vk::binding(0, 1)]]
+public uniform Sampler2D materialResources[];
 
 [[vk::push_constant]]
 ForwardPushConstants forwardPc;

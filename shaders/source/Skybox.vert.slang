@@ -1,4 +1,10 @@
 import Skybox;
+import Perspective;
+
+[[vk::binding(0, 0)]]
+public uniform ConstantBuffer<Perspective> perspectiveBuffer;
+[[vk::binding(0, 1)]]
+public uniform SamplerCube skyboxCubemap;
 
 [[vk::push_constant]]
 SkyboxPushConstants skyboxPc;

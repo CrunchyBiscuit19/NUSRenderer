@@ -1,4 +1,10 @@
 import Mesh;
+import Perspective;
+
+[[vk::binding(0, 0)]]
+public uniform ConstantBuffer<Perspective> perspectiveBuffer;
+[[vk::binding(0, 1)]]
+public uniform Sampler2D materialResources[];
 
 float4 main(FSInput in) : SV_Target
 {

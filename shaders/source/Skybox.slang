@@ -2,11 +2,6 @@ module Skybox;
 
 import Perspective;
 
-[[vk::binding(0, 0)]]
-public uniform ConstantBuffer<Perspective> perspectiveBuffer;
-[[vk::binding(0, 1)]]
-public uniform SamplerCube skyboxCubemap;
-
 public struct SkyboxVertex
 {
     public float4 position;
