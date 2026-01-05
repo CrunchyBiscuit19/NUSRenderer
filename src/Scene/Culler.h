@@ -28,6 +28,7 @@ struct CullerCullPushConstants {
     vk::DeviceAddress mainInstancesBuffer;
     vk::DeviceAddress mainVisibleRenderInstancesInstanceIndexBuffer;
     u32 renderInstancesLimit;
+    glm::vec2 drawExtents;
 };
 
 struct CullerCompactPushConstants {

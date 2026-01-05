@@ -297,6 +297,7 @@ void Renderer::initPasses() {
         mScene.mCuller.mCullPushConstants.mainNodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
         mScene.mCuller.mCullPushConstants.mainInstancesBuffer = mScene.mMainInstancesBuffer.address;
         mScene.mCuller.mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
+        mScene.mCuller.mCullPushConstants.drawExtents = glm::vec2(mInfrastructure.mDrawImage.imageExtent.width, mInfrastructure.mDrawImage.imageExtent.height);
 
         vkhelper::createImagePipelineBarrier(
             cmd,

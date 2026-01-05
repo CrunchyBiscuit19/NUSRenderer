@@ -29,8 +29,9 @@ public struct CullerCullPushConstants {
     public AABB* mainBoundsBuffer;
     public NodeTransform* mainNodeTransformsBuffer;
     public Instance* mainInstancesBuffer;
-    public uint *mainVisibleRenderInstancesInstanceIndexBuffer;
+    public uint* mainVisibleRenderInstancesInstanceIndexBuffer;
     public uint renderInstancesLimit;
+    public float2 drawExtents;
 };
 
 public struct CullerCompactPushConstants {

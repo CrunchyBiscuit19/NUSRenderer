@@ -32,8 +32,7 @@ VSOutput main(VSInput in)
     MaterialConstant materialConstant = forwardPc.mainMaterialConstantsBuffer[mainMaterialIndex];
 
     out.position =
-        mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix),
-            position);
+        mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix), position);
     out.normal = v.normal;
     out.uv = float2(v.uv_x, v.uv_y);
     out.color = v.color * materialConstant.baseFactor;
