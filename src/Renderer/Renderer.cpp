@@ -636,8 +636,8 @@ void Renderer::initPasses() {
                 );
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-                mScene.mForwardPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
-                cmd.pushConstants<ForwardPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mForwardPushConstants);
+                mScene.mGeometryPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+                cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mGeometryPushConstants);
 
                 cmd.drawIndexedIndirectCount(
                     *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)

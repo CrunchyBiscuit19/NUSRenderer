@@ -1,4 +1,4 @@
-module Mesh;
+module Geometry;
 
 import Perspective;
 import Vertex;
@@ -7,7 +7,7 @@ import NodeTransform;
 import Instance;
 import RenderItem;
 
-public struct ForwardPushConstants
+public struct GeometryPushConstants
 {
     public Vertex *mainVertexBuffer;
     public MaterialConstant *mainMaterialConstantsBuffer;

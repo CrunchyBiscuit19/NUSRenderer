@@ -86,11 +86,11 @@ void RendererScene::initDescriptor() {
 }
 
 void RendererScene::initPushConstants() {
-    mForwardPushConstants.mainVertexBuffer = mMainVertexBuffer.address;
-    mForwardPushConstants.mainMaterialConstantsBuffer = mMainMaterialConstantsBuffer.address;
-    mForwardPushConstants.mainNodeTransformsBuffer = mMainNodeTransformsBuffer.address;
-    mForwardPushConstants.mainInstancesBuffer = mMainInstancesBuffer.address;
-    mForwardPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mMainVisibleRenderInstancesInstanceIndexBuffer.address;
+    mGeometryPushConstants.mainVertexBuffer = mMainVertexBuffer.address;
+    mGeometryPushConstants.mainMaterialConstantsBuffer = mMainMaterialConstantsBuffer.address;
+    mGeometryPushConstants.mainNodeTransformsBuffer = mMainNodeTransformsBuffer.address;
+    mGeometryPushConstants.mainInstancesBuffer = mMainInstancesBuffer.address;
+    mGeometryPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mMainVisibleRenderInstancesInstanceIndexBuffer.address;
     LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 

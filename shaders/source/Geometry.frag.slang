@@ -1,4 +1,4 @@
-import Mesh;
+import Geometry;
 import Perspective;
 
 [[vk::binding(0, 0)]]

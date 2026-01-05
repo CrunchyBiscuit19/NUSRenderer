@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <vector>
 
-struct ForwardPushConstants {
+struct GeometryPushConstants {
     vk::DeviceAddress mainVertexBuffer;
     vk::DeviceAddress mainMaterialConstantsBuffer;
     vk::DeviceAddress mainNodeTransformsBuffer;
@@ -49,7 +49,7 @@ class RendererScene {
     std::unordered_map<u32, Batch> mMaskBatches;
     std::unordered_map<u32, Batch> mTransparentBatches;
     std::array<std::unordered_map<u32, Batch>*, 3> mBatchTypes;
-    ForwardPushConstants mForwardPushConstants;
+    GeometryPushConstants mGeometryPushConstants;
 
     AddressedBuffer mMainVertexBuffer;
     AllocatedBuffer mMainIndexBuffer;

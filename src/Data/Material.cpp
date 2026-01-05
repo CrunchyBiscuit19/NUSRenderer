@@ -13,7 +13,7 @@ PbrMaterial::PbrMaterial(Renderer* renderer) : mRenderer(renderer), mRelativeMat
 void PbrMaterial::initMaterialPipelineLayout(Renderer* renderer) {
     vk::PushConstantRange materialPushConstantRange{};
     materialPushConstantRange.offset = 0;
-    materialPushConstantRange.size = sizeof(ForwardPushConstants);
+    materialPushConstantRange.size = sizeof(GeometryPushConstants);
     materialPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
     std::vector materialDescriptorLayouts = {*renderer->mScene.mPerspective.mDescriptorSetLayout, *renderer->mScene.mMainMaterialResourcesDescriptorSetLayout};
@@ -40,8 +40,8 @@ void PbrMaterial::getMaterialPipeline() {
 }
 
 void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions) const {
-    vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Mesh.frag.spv");
-    vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Mesh.vert.spv");
+    vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Geometry.frag.spv");
+    vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Geometry.vert.spv");
 
     vk::CullModeFlags cullMode;
     (materialPipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
