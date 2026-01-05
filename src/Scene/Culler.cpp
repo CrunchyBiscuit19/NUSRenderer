@@ -76,9 +76,9 @@ void Culler::initDepthPyramidImage() {
             vk::ImageLayout::eUndefined,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eGeneral,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+            vk::AccessFlagBits2::eShaderRead
         );
         vkhelper::transitionImage(
             cmd,

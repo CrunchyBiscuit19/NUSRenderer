@@ -241,14 +241,15 @@ void Renderer::initPasses() {
             mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
         );
 
-        vkhelper::createImagePipelineBarrier(
+        vkhelper::transitionImage(
             cmd,
             *mScene.mCuller.mDepthPyramidImage.image,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::ImageLayout::eGeneral,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-            vk::ImageLayout::eGeneral
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
         );
 
         cmd.dispatch(
@@ -299,14 +300,15 @@ void Renderer::initPasses() {
         mScene.mCuller.mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
         mScene.mCuller.mCullPushConstants.drawExtents = glm::vec2(mInfrastructure.mDrawImage.imageExtent.width, mInfrastructure.mDrawImage.imageExtent.height);
 
-        vkhelper::createImagePipelineBarrier(
+        vkhelper::transitionImage(
             cmd,
             *mScene.mCuller.mDepthPyramidImage.image,
+            vk::ImageLayout::eGeneral,
             vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eGeneral
+            vk::AccessFlagBits2::eShaderRead
         );
 
         for (auto batchType : mScene.mBatchTypes) {
