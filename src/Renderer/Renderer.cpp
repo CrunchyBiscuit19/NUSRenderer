@@ -260,7 +260,7 @@ void Renderer::initPasses() {
 
         mScene.mCuller.mDepthPyramidPushConstants.readFromResolved = false;
 
-        for (u32 i = 0; i < mScene.mCuller.mDepthPyramidLevels; i++) {
+        for (u32 i = 0; i < mScene.mCuller.mDepthPyramidLevels - 1; i++) {
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
             );
@@ -587,20 +587,7 @@ void Renderer::initPasses() {
             std::vector{*mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, *mScene.mSkybox.mDescriptorSet},
             nullptr
         );
-        vk::Viewport viewport = {
-            0,
-            0,
-            static_cast<float>(mInfrastructure.mDrawImage.imageExtent.width),
-            static_cast<float>(mInfrastructure.mDrawImage.imageExtent.height),
-            0.f,
-            1.f,
-        };
-        cmd.setViewport(0, viewport);
-        vk::Rect2D scissor = {
-            vk::Offset2D{0, 0},
-            vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent),
-        };
-        cmd.setScissor(0, scissor);
+        vkhelper::setViewportScissors(cmd, mInfrastructure.mDrawImage.imageExtent);
         cmd.pushConstants<SkyBoxPushConstants>(mScene.mSkybox.mPipelineBundle.layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mSkybox.mPushConstants);
 
         cmd.draw(NUMBER_OF_SKYBOX_VERTICES, 1, 0, 0);
@@ -801,6 +788,8 @@ void Renderer::run() {
             mScene.mCuller.reconstructDepthPyramid();
 
             mInfrastructure.mResizeRequested = false;
+
+            mCore.mDevice.waitIdle();
         }
 
         mGui.updateFrame();

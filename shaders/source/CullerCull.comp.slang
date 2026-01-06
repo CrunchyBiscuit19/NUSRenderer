@@ -69,23 +69,20 @@ bool occlusionCull(inout float4[NUM_AABB_CORNERS] aabbCorners, Perspective *pers
 
     // Convert NDC XY from [-1,1] to [0, drawExtents], and clamp it
     // Clamping because AABB spills outside of screen, also increase margin to be safe
-    float2 aabbMin = ((aabbMinNdc.xy * float2(0.5f)) + 0.5f) * drawExtents;
-    float2 aabbMax = ((aabbMaxNdc.xy * float2(0.5f)) + 0.5f) * drawExtents;
-    aabbMin = floor(aabbMin - 2.0f); 
-    aabbMax = ceil(aabbMax + 2.0f);  
-    aabbMin = clamp(aabbMin, float2(0.0f, 0.0f), drawExtents);
-    aabbMax = clamp(aabbMax, float2(0.0f, 0.0f), drawExtents);
+    float2 aabbMinScreen = ((aabbMinNdc.xy * float2(0.5f)) + 0.5f) * drawExtents;
+    float2 aabbMaxScreen = ((aabbMaxNdc.xy * float2(0.5f)) + 0.5f) * drawExtents;    
+    aabbMinScreen = clamp(aabbMinScreen, float2(0.f), drawExtents);
+    aabbMaxScreen = clamp(aabbMaxScreen, float2(0.f), drawExtents);
 
     // Compute information needed to look up in the depth pyramid
-    uint width = max(uint(aabbMax.x - aabbMin.x), 1u);
-    uint height = max(uint(aabbMax.y - aabbMin.y), 1u);
-    uint2 topLeft = uint2((uint)aabbMin.x, (uint)aabbMin.y);
-    uint2 topRight = uint2((uint)aabbMax.x, (uint)aabbMin.y);
-    uint2 bottomLeft = uint2((uint)aabbMin.x, (uint)aabbMax.y);
-    uint2 bottomRight = uint2((uint)aabbMax.x, (uint)aabbMax.y);
+    uint width = max(uint(aabbMaxScreen.x - aabbMinScreen.x), 1u);
+    uint height = max(uint(aabbMaxScreen.y - aabbMinScreen.y), 1u);
+    uint2 topLeft = uint2((uint)aabbMinScreen.x, (uint)aabbMinScreen.y);
+    uint2 topRight = uint2((uint)aabbMaxScreen.x, (uint)aabbMinScreen.y);
+    uint2 bottomLeft = uint2((uint)aabbMinScreen.x, (uint)aabbMaxScreen.y);
+    uint2 bottomRight = uint2((uint)aabbMaxScreen.x, (uint)aabbMaxScreen.y);
 
     // Sample the pyramid using the 4 pixels around the centre adjusted for mip level
-    // Not perfect but whatever
     uint level = uint(ceil(log2(float(max(width, height)))));
     float furthestDepthInPyramid = 1.0f;
     furthestDepthInPyramid = min(furthestDepthInPyramid, depthPyramidImage.Load(uint3(topLeft.x >> level, topLeft.y >> level, level)));
@@ -128,7 +125,7 @@ void main(CSInput in) {
 
     // Culling tests
     bool visible = frustumCull(frustum, aabbCorners, bounds, instance, nodeTransform);
-    if (visible) visible = occlusionCull(aabbCorners, perspective, depthPyramidImage, cullerCullPc.drawExtents);
+    //if (visible) visible = occlusionCull(aabbCorners, perspective, depthPyramidImage, cullerCullPc.drawExtents);
 
     // Increment counter of unculled render instances
     if (!visible) return;
