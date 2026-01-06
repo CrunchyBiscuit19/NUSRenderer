@@ -254,12 +254,14 @@ void Culler::reconstructDepthPyramid() {
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Destroyed");
     mDepthPyramidImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image Destroyed");
+    mResolvedDepthImage.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image Destroyed");
 
     initDepthPyramidImage();
     writeDepthPyramidDescriptor();
     writeCullDescriptor();
 
-    LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Reconstructed After Resize");
+    LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid and Resolved Depth Reconstructed After Resize");
 }
 
 void Culler::cleanup() {
