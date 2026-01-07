@@ -13,7 +13,7 @@ void Transparency::initImages() {
     LOG_INFO(mRenderer->mLogger, "Accumulation Image and Image View Created");
 
     mRevealageImage = mRenderer->mResources.createImage(
-        mRenderer->mInfrastructure.mDrawImage.imageExtent, vk::Format::eR8G8B8A8Unorm, vk::ImageUsageFlagBits::eColorAttachment, false, true
+        mRenderer->mInfrastructure.mDrawImage.imageExtent, vk::Format::eR16Unorm, vk::ImageUsageFlagBits::eColorAttachment, false, true
     );
     mRenderer->mCore.labelResourceDebug(mRevealageImage.image, "RevealageImage");
     mRenderer->mCore.labelResourceDebug(mRevealageImage.imageView, "RevealageImageView");

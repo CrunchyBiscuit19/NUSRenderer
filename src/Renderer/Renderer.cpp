@@ -439,7 +439,7 @@ void Renderer::initPasses() {
         accumAttachment.clearValue.color = vk::ClearColorValue(0.f, 0.f, 0.f, 0.f);
         vk::RenderingAttachmentInfo revealageAttachment =
             vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
-        accumAttachment.clearValue.color = vk::ClearColorValue(1.f, 1.f, 1.f, 1.f);
+        revealageAttachment.clearValue.color = vk::ClearColorValue(1.f, 1.f, 1.f, 1.f);
 
         std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
             colorAttachment,

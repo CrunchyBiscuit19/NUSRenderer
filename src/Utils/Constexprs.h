@@ -33,20 +33,20 @@ constexpr auto MSAA_ENABLE = false;
 constexpr auto MSAA_LEVEL = vk::SampleCountFlagBits::e1;
 
 constexpr u32 KIBIBYTE = 1 << 10;
-constexpr u32 MIBIBYTE = 1 << 20;
+constexpr u32 MEBIBYTE = 1 << 20;
 constexpr u32 ONE_SECOND_IN_MS = 1e3;
 
-constexpr u32 MESH_VERTEX_BUFFER_SIZE = 1e4 * KIBIBYTE;
-constexpr u32 MESH_INDEX_BUFFER_SIZE = 1e4 * KIBIBYTE;
+constexpr u32 MESH_VERTEX_BUFFER_SIZE = 1e0 * MEBIBYTE;
+constexpr u32 MESH_INDEX_BUFFER_SIZE = 1e0 * MEBIBYTE;
 constexpr u32 MAIN_VERTEX_BUFFER_SIZE = 1e3 * MESH_VERTEX_BUFFER_SIZE;
 constexpr u32 MAIN_INDEX_BUFFER_SIZE = 1e3 * MESH_INDEX_BUFFER_SIZE;
-constexpr u32 MAX_IMAGE_SIZE = 1e4 * MIBIBYTE;
-constexpr u32 MAX_INSTANCES = 1e3;
-constexpr u32 MAX_MATERIALS = 1e3;
-constexpr u32 MAX_MESHES = 1e3;
-constexpr u32 MAX_NODES = 1e3;
+constexpr u32 MAX_IMAGE_SIZE = 1e4 * MEBIBYTE;
+constexpr u32 MAX_INSTANCES = 1e4;
+constexpr u32 MAX_MATERIALS = 1e4;
+constexpr u32 MAX_MESHES = 1e4;
+constexpr u32 MAX_NODES = 1e4;
 constexpr u32 MAX_RENDER_ITEMS = 1e5;
-constexpr u32 MAX_TEXTURE_ARRAY_SLOTS = 1e3;
+constexpr u32 MAX_TEXTURE_ARRAY_SLOTS = 1e4;
 
 constexpr u32 NUMBER_OF_SKYBOX_VERTICES = 36;
 constexpr u32 NUMBER_OF_CUBEMAP_FACES = 6;
