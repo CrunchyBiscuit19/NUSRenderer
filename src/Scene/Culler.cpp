@@ -19,10 +19,12 @@ void Culler::init() {
     initDepthPyramidDescriptor();
     writeDepthPyramidDescriptor();
     initDepthPyramidPipeline();
+    initDepthPyramidPushConstants();
     initResetPipeline();
     initCullDescriptor();
     writeCullDescriptor();
     initCullPipeline();
+    initCullPushConstants();
     initCompactPipeline();
 }
 
@@ -125,6 +127,15 @@ void Culler::initDepthPyramidPipeline() {
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Pipeline Created");
 }
 
+void Culler::initDepthPyramidPushConstants() {
+    vk::Extent3D depthPyramidExtent = mDepthPyramidImage.imageExtent;
+    vk::Extent3D depthFullExtent = mRenderer->mInfrastructure.mDepthImage.imageExtent;
+    mDepthPyramidPushConstants.depthPyramidExtent = glm::uvec2(depthPyramidExtent.width, depthPyramidExtent.height);
+    mDepthPyramidPushConstants.depthFullExtent = glm::uvec2(depthFullExtent.width, depthFullExtent.height);
+    mDepthPyramidPushConstants.depthFullRatio =
+        glm::vec2(depthPyramidExtent.width / static_cast<float>(depthFullExtent.width), depthPyramidExtent.height / static_cast<float>(depthFullExtent.height));
+}
+
 void Culler::initResetPipeline() {
     vk::PushConstantRange resetPushConstantRange{};
     resetPushConstantRange.offset = 0;
@@ -199,6 +210,19 @@ void Culler::initCullPipeline() {
     LOG_INFO(mRenderer->mLogger, "Culler Cull Pipeline Created");
 }
 
+void Culler::initCullPushConstants() {
+    vk::Extent3D depthPyramidExtent = mDepthPyramidImage.imageExtent;
+    vk::Extent3D drawExtent = mRenderer->mInfrastructure.mDrawImage.imageExtent;
+    mCullPushConstants.renderInstancesCountBuffer = mRenderer->mStats.mRenderInstancesCountBuffer.address;
+    mCullPushConstants.mainBoundsBuffer = mRenderer->mScene.mMainBoundsBuffer.address;
+    mCullPushConstants.frustumBuffer = mRenderer->mCamera.mFrustumBuffer.address;
+    mCullPushConstants.mainNodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address;
+    mCullPushConstants.mainInstancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address;
+    mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
+    mCullPushConstants.drawExtents = glm::vec2(drawExtent.width, drawExtent.height);
+    mCullPushConstants.depthPyramidExtents = glm::vec2(depthPyramidExtent.width, depthPyramidExtent.height);
+}
+
 void Culler::initCompactPipeline() {
     vk::PushConstantRange compactPushConstantRange{};
     compactPushConstantRange.offset = 0;
@@ -227,7 +251,7 @@ void Culler::initCompactPipeline() {
     LOG_INFO(mRenderer->mLogger, "Culler Compact Pipeline Created");
 }
 
-void Culler::reconstructDepthPyramid() {
+void Culler::resizeCuller() {
     mDepthPyramidMipViews.clear();
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Destroyed");
     mDepthPyramidImage.cleanup();
@@ -235,7 +259,9 @@ void Culler::reconstructDepthPyramid() {
 
     initDepthPyramidImage();
     writeDepthPyramidDescriptor();
+    initDepthPyramidPushConstants();
     writeCullDescriptor();
+    initCullPushConstants();
 
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Reconstructed After Resize");
 }

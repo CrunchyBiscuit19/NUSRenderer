@@ -84,13 +84,15 @@ class Culler {
     void initDepthPyramidDescriptor();
     void writeDepthPyramidDescriptor();
     void initDepthPyramidPipeline();
+    void initDepthPyramidPushConstants();
     void initResetPipeline();
     void initCullDescriptor();
     void writeCullDescriptor();
     void initCullPipeline();
+    void initCullPushConstants();
     void initCompactPipeline();
 
-    void reconstructDepthPyramid();
+    void resizeCuller();
 
     void cleanup();
 };

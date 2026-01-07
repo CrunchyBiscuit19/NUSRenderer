@@ -75,9 +75,11 @@ void Renderer::initComponents() {
     mResources.initDefaultSampler();
     mInfrastructure.initSwapchain();
     mInfrastructure.initDescriptors();
+    mCamera.initControls();
+    mCamera.initBuffers();
+    mStats.initBuffers();
     mScene.initBuffers();
     mScene.initDescriptor();
-    mScene.initPushConstants();
     mScene.initKeyBinding();
     mScene.initComponents();
     mInfrastructure.initFrames();
@@ -87,9 +89,7 @@ void Renderer::initComponents() {
     mGui.initFileBrowsers();
     mGui.initComponents();
     mGui.initKeyBinding();
-    mStats.initBuffers();
-    mCamera.initControls();
-    mCamera.initBuffers();
+    mScene.initPushConstants();
 
     PbrMaterial::initMaterialPipelineLayout(this);
     mImmSubmit.queuedSubmit();
@@ -230,11 +230,6 @@ void Renderer::initPasses() {
             vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
         );
 
-        mScene.mCuller.mDepthPyramidPushConstants.depthPyramidExtent = glm::uvec2(depthPyramidExtent.width, depthPyramidExtent.height);
-        mScene.mCuller.mDepthPyramidPushConstants.depthFullExtent = glm::uvec2(depthFullExtent.width, depthFullExtent.height);
-        mScene.mCuller.mDepthPyramidPushConstants.depthFullRatio = glm::vec2(
-            depthPyramidExtent.width / static_cast<float>(depthFullExtent.width), depthPyramidExtent.height / static_cast<float>(depthFullExtent.height)
-        );
         mScene.mCuller.mDepthPyramidPushConstants.readFromFull = true;
         mScene.mCuller.mDepthPyramidPushConstants.level = 0;
         cmd.pushConstants<CullerDepthPyramidPushConstants>(
@@ -291,16 +286,7 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::CullCull, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mCullPipelineBundle.pipeline);
 
-        mScene.mCuller.mCullPushConstants.renderInstancesCountBuffer = mStats.mRenderInstancesCountBuffer.address;
-        mScene.mCuller.mCullPushConstants.mainBoundsBuffer = mScene.mMainBoundsBuffer.address;
-        mScene.mCuller.mCullPushConstants.frustumBuffer = mCamera.mFrustumBuffer.address;
-        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
-        mScene.mCuller.mCullPushConstants.mainNodeTransformsBuffer = mScene.mMainNodeTransformsBuffer.address;
-        mScene.mCuller.mCullPushConstants.mainInstancesBuffer = mScene.mMainInstancesBuffer.address;
-        mScene.mCuller.mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
-        mScene.mCuller.mCullPushConstants.drawExtents = glm::vec2(mInfrastructure.mDrawImage.imageExtent.width, mInfrastructure.mDrawImage.imageExtent.height);
-        mScene.mCuller.mCullPushConstants.depthPyramidExtents =
-            glm::vec2(mScene.mCuller.mDepthPyramidImage.imageExtent.width, mScene.mCuller.mDepthPyramidImage.imageExtent.height);
+        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;        
 
         vkhelper::transitionImage(
             cmd,
@@ -880,7 +866,7 @@ void Renderer::run() {
             mCore.mDevice.waitIdle();
 
             mInfrastructure.resizeSwapchain();
-            mScene.mCuller.reconstructDepthPyramid();
+            mScene.mCuller.resizeCuller();
             mScene.mTransparency.resizeImages();
 
             mInfrastructure.mResizeRequested = false;
