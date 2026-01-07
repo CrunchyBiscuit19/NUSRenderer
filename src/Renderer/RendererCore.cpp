@@ -157,6 +157,7 @@ void RendererCore::init() {
     vk::PhysicalDeviceVulkan11Features features11{};
     features11.shaderDrawParameters = true;
     vk::PhysicalDeviceFeatures features10{};
+    features10.independentBlend = true;
     features10.shaderStorageImageMultisample = true;
     features10.multiDrawIndirect = true;
     features10.samplerAnisotropy = true;

@@ -1,7 +1,6 @@
 #include <Renderer/Renderer.h>
 #include <Renderer/RendererInfrastructure.h>
 #include <Utils/Helper.h>
-
 #include <VkBootstrap.h>
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
@@ -158,16 +157,29 @@ void RendererInfrastructure::initSwapchain() {
                 vk::AccessFlagBits2::eNone
             );
         }
-        vkhelper::transitionImage(
-            cmd,
-            *mDrawImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentWrite
-        );
+        if (MSAA_ENABLE) {
+            vkhelper::transitionImage(
+                cmd,
+                *mDrawImage.image,
+                vk::ImageLayout::eUndefined,
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::ImageLayout::eColorAttachmentOptimal,
+                vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                vk::AccessFlagBits2::eColorAttachmentWrite
+            );
+        } else {
+            vkhelper::transitionImage(
+                cmd,
+                *mDrawImage.image,
+                vk::ImageLayout::eUndefined,
+                vk::PipelineStageFlagBits2::eNone,
+                vk::AccessFlagBits2::eNone,
+                vk::ImageLayout::eTransferSrcOptimal,
+                vk::PipelineStageFlagBits2::eTransfer,
+                vk::AccessFlagBits2::eTransferRead
+            );
+        }
         vkhelper::transitionImage(
             cmd,
             *mDepthImage.image,

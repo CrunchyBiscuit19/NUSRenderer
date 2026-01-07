@@ -64,8 +64,8 @@ void Skybox::initPipeline() {
     skyboxPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
     skyboxPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
     skyboxPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
-    skyboxPipelineBuilder.disableMultisampling();
-    skyboxPipelineBuilder.disableSampleShading();
+    MSAA_ENABLE ? skyboxPipelineBuilder.enableMultisampling() : skyboxPipelineBuilder.disableMultisampling();
+    MSAA_ENABLE ? skyboxPipelineBuilder.enableSampleShading() : skyboxPipelineBuilder.disableSampleShading();
     skyboxPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, skyboxBlendAttachment);
     skyboxPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
     skyboxPipelineBuilder.enableDepthTest(false, vk::CompareOp::eGreaterOrEqual);

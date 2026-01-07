@@ -29,7 +29,7 @@ enum class PassType {
     Transparent,
     Composite,
     ResolveMSAA,
-    IntermediateToSwapchain,
+    FinalColorToSwapchain,
     ImGui
 };
 
@@ -45,8 +45,8 @@ struct Pass {
 enum class TransitionType {
     PickerGeneralIntoColorAttachment,
     PickerColorAttachmentIntoGeneral,
-    IntermediateTransferSrcIntoColorAttachment,
-    IntermediateColorAttachmentIntoTransferSrc,
+    FinalColorUndefinedIntoColorAttachment,
+    FinalColorColorAttachmentIntoTransferSrc,
     SwapchainColorPresentIntoTransferDst,
     SwapchainColorTransferDstIntoColorAttachment,
     SwapchainColorColorAttachmentIntoPresent,

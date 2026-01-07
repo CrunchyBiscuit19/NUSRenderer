@@ -439,7 +439,7 @@ void Renderer::initPasses() {
         accumAttachment.clearValue.color = vk::ClearColorValue(0.f, 0.f, 0.f, 0.f);
         vk::RenderingAttachmentInfo revealageAttachment =
             vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
-        accumAttachment.clearValue.color = vk::ClearColorValue(1.f, 0.f, 0.f, 0.f);
+        accumAttachment.clearValue.color = vk::ClearColorValue(1.f, 1.f, 1.f, 1.f);
 
         std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
             colorAttachment,
@@ -704,6 +704,10 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::ResolveMSAA, [&](vk::CommandBuffer cmd) {
+        if (!MSAA_ENABLE) {
+            return;
+        }
+
         vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
             *mInfrastructure.mDrawImage.imageView,
             vk::ImageLayout::eColorAttachmentOptimal,
@@ -724,14 +728,24 @@ void Renderer::initPasses() {
         cmd.endRendering();
     });
 
-    mPasses.try_emplace(PassType::IntermediateToSwapchain, [&](vk::CommandBuffer cmd) {
-        vkhelper::copyImage(
-            cmd,
-            *mInfrastructure.mIntermediateImage.image,
-            mInfrastructure.getCurrentSwapchainImage().image,
-            vkhelper::extent3dTo2d(mInfrastructure.mIntermediateImage.imageExtent),
-            mInfrastructure.mSwapchainBundle.mExtent
-        );
+    mPasses.try_emplace(PassType::FinalColorToSwapchain, [&](vk::CommandBuffer cmd) {
+        if (MSAA_ENABLE) {
+            vkhelper::copyImage(
+                cmd,
+                *mInfrastructure.mIntermediateImage.image,
+                mInfrastructure.getCurrentSwapchainImage().image,
+                vkhelper::extent3dTo2d(mInfrastructure.mIntermediateImage.imageExtent),
+                mInfrastructure.mSwapchainBundle.mExtent
+            );
+        } else {
+            vkhelper::copyImage(
+                cmd,
+                *mInfrastructure.mDrawImage.image,
+                mInfrastructure.getCurrentSwapchainImage().image,
+                vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent),
+                mInfrastructure.mSwapchainBundle.mExtent
+            );
+        }
     });
 
     mPasses.try_emplace(PassType::ImGui, [&](vk::CommandBuffer cmd) {
@@ -774,8 +788,8 @@ void Renderer::initTransitions() {
     );
 
     mTransitions.try_emplace(
-        TransitionType::IntermediateTransferSrcIntoColorAttachment,
-        vk::ImageLayout::eTransferSrcOptimal,
+        TransitionType::FinalColorUndefinedIntoColorAttachment,
+        vk::ImageLayout::eUndefined,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferRead,
         vk::ImageLayout::eColorAttachmentOptimal,
@@ -784,7 +798,7 @@ void Renderer::initTransitions() {
     );
 
     mTransitions.try_emplace(
-        TransitionType::IntermediateColorAttachmentIntoTransferSrc,
+        TransitionType::FinalColorColorAttachmentIntoTransferSrc,
         vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentWrite,
@@ -930,6 +944,12 @@ void Renderer::draw() {
 
     mPasses.at(PassType::Cull).execute(cmd);
 
+    if (MSAA_ENABLE) {
+        mTransitions.at(TransitionType::FinalColorUndefinedIntoColorAttachment).execute(cmd, *mInfrastructure.mIntermediateImage.image);
+    } else {
+        mTransitions.at(TransitionType::FinalColorUndefinedIntoColorAttachment).execute(cmd, *mInfrastructure.mDrawImage.image);
+    }
+
     mPasses.at(PassType::ClearScreen).execute(cmd);
 
     mPasses.at(PassType::Pick).execute(cmd);
@@ -938,14 +958,16 @@ void Renderer::draw() {
     mPasses.at(PassType::Opaque).execute(cmd);
     mPasses.at(PassType::Transparent).execute(cmd);
 
-    mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(cmd, *mInfrastructure.mIntermediateImage.image);
-
     mPasses.at(PassType::ResolveMSAA).execute(cmd);
 
-    mTransitions.at(TransitionType::IntermediateColorAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mIntermediateImage.image);
+    if (MSAA_ENABLE) {
+        mTransitions.at(TransitionType::FinalColorColorAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mIntermediateImage.image);
+    } else {
+        mTransitions.at(TransitionType::FinalColorColorAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mDrawImage.image);
+    }
     mTransitions.at(TransitionType::SwapchainColorPresentIntoTransferDst).execute(cmd, mInfrastructure.getCurrentSwapchainImage().image);
 
-    mPasses.at(PassType::IntermediateToSwapchain).execute(cmd);
+    mPasses.at(PassType::FinalColorToSwapchain).execute(cmd);
 
     mTransitions.at(TransitionType::SwapchainColorTransferDstIntoColorAttachment).execute(cmd, mInfrastructure.getCurrentSwapchainImage().image);
 
