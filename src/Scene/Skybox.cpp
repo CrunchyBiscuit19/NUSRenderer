@@ -48,15 +48,25 @@ void Skybox::initPipeline() {
     vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Skybox.frag.spv");
     vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Skybox.vert.spv");
 
+    vk::PipelineColorBlendAttachmentState skyboxBlendAttachment{};  
+    skyboxBlendAttachment.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    skyboxBlendAttachment.blendEnable = VK_TRUE;
+    skyboxBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha;
+    skyboxBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
+    skyboxBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
+    skyboxBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    skyboxBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    skyboxBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
+
     GraphicsPipelineBuilder skyboxPipelineBuilder;
     skyboxPipelineBuilder.setShaders(vertexShader, fragShader);
     skyboxPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
     skyboxPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
     skyboxPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
-    skyboxPipelineBuilder.enableMultisampling();
-    skyboxPipelineBuilder.enableSampleShading();
-    skyboxPipelineBuilder.enableBlendingSkybox();
-    skyboxPipelineBuilder.setColorAttachmentFormat(mRenderer->mInfrastructure.mDrawImage.imageFormat);
+    skyboxPipelineBuilder.disableMultisampling();
+    skyboxPipelineBuilder.disableSampleShading();
+    skyboxPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, skyboxBlendAttachment);
     skyboxPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
     skyboxPipelineBuilder.enableDepthTest(false, vk::CompareOp::eGreaterOrEqual);
     skyboxPipelineBuilder.mPipelineLayout = *mRenderer->mScene.mSkybox.mPipelineLayout;

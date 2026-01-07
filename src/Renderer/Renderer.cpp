@@ -433,8 +433,22 @@ void Renderer::initPasses() {
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+
+        vk::RenderingAttachmentInfo accumAttachment =
+            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mAccumImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+        accumAttachment.clearValue.color = vk::ClearColorValue(0.f, 0.f, 0.f, 0.f);
+        vk::RenderingAttachmentInfo revealageAttachment =
+            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+        accumAttachment.clearValue.color = vk::ClearColorValue(1.f, 0.f, 0.f, 0.f);
+
+        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+            colorAttachment,
+            accumAttachment,
+            revealageAttachment
+        };  
+        
         const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
 
         cmd.beginRendering(renderInfo);
         cmd.endRendering();
@@ -837,6 +851,7 @@ void Renderer::run() {
 
             mInfrastructure.resizeSwapchain();
             mScene.mCuller.reconstructDepthPyramid();
+            mScene.mTransparency.resizeImages();
 
             mInfrastructure.mResizeRequested = false;
 

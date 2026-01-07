@@ -28,7 +28,7 @@ constexpr float MAX_CAMERA_SPEED = 100.f;
 constexpr u32 EXPECTED_FRAME_RATE = 60;
 constexpr u32 FRAME_OVERLAP = 2;
 constexpr u32 NUMBER_OF_SWAPCHAIN_IMAGES = 3;
-constexpr auto MSAA_LEVEL = vk::SampleCountFlagBits::e8;
+constexpr auto MSAA_LEVEL = vk::SampleCountFlagBits::e1;
 
 constexpr u32 KIBIBYTE = 1 << 10;
 constexpr u32 MIBIBYTE = 1 << 20;

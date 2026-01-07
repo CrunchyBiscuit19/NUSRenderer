@@ -3,6 +3,7 @@
 #include <Utils/Types.h>
 
 #include <fastgltf/types.hpp>
+#include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
 struct PipelineBundle {
@@ -61,11 +62,11 @@ class GraphicsPipelineBuilder : PipelineBuilder {
     std::vector<vk::PipelineShaderStageCreateInfo> mShaderStages;
     vk::PipelineInputAssemblyStateCreateInfo mInputAssembly;
     vk::PipelineRasterizationStateCreateInfo mRasterizer;
-    vk::PipelineColorBlendAttachmentState mColorBlendAttachment;
     vk::PipelineMultisampleStateCreateInfo mMultisampling;
-    vk::PipelineDepthStencilStateCreateInfo mDepthStencil;
     vk::PipelineRenderingCreateInfo mRenderInfo;
-    vk::Format mColorAttachmentformat;
+    std::vector<vk::Format> mColorAttachmentFormats;
+    std::vector<vk::PipelineColorBlendAttachmentState> mPipelineColorBlendAttachmentStates;
+    vk::PipelineDepthStencilStateCreateInfo mDepthStencil;
     vk::PipelineLayout mPipelineLayout;
 
     GraphicsPipelineBuilder();
@@ -80,11 +81,7 @@ class GraphicsPipelineBuilder : PipelineBuilder {
     void enableMultisampling();
     void disableSampleShading();
     void enableSampleShading();
-    void disableBlending();
-    void enableBlendingAdditive();
-    void enableBlendingAlpha();
-    void enableBlendingSkybox();
-    void setColorAttachmentFormat(vk::Format format);
+    void addColorAttachment(vk::Format format, vk::PipelineColorBlendAttachmentState blendState);
     void setDepthFormat(vk::Format format);
     void disableDepthtest();
     void enableDepthTest(bool depthWriteEnable, vk::CompareOp op);

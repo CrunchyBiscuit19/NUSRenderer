@@ -107,6 +107,11 @@ void Picker::initDrawPipeline() {
     vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "PickerDraw.frag.spv");
     vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "PickerDraw.vert.spv");
 
+    vk::PipelineColorBlendAttachmentState noBlendState{};
+    noBlendState.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    noBlendState.blendEnable = VK_FALSE;
+
     GraphicsPipelineBuilder drawPipelineBuilder;
     drawPipelineBuilder.setShaders(vertexShader, fragShader);
     drawPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
@@ -114,8 +119,7 @@ void Picker::initDrawPipeline() {
     drawPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
     drawPipelineBuilder.disableMultisampling();
     drawPipelineBuilder.disableSampleShading();
-    drawPipelineBuilder.disableBlending();
-    drawPipelineBuilder.setColorAttachmentFormat(mImage.imageFormat);
+    drawPipelineBuilder.addColorAttachment(mImage.imageFormat, noBlendState);
     drawPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
     drawPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
     drawPipelineBuilder.mPipelineLayout = *mDrawPipelineLayout;

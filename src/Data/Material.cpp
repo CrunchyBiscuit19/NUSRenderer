@@ -47,16 +47,43 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     (materialPipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
     bool transparency = materialPipelineOptions.alphaMode == fastgltf::AlphaMode::Blend;
 
+    vk::PipelineColorBlendAttachmentState noBlendState{};
+    noBlendState.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    noBlendState.blendEnable = VK_FALSE;
+
+    vk::PipelineColorBlendAttachmentState accumBlendState{};
+    accumBlendState.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    accumBlendState.blendEnable = VK_TRUE;
+    accumBlendState.srcColorBlendFactor = vk::BlendFactor::eOne;
+    accumBlendState.dstColorBlendFactor = vk::BlendFactor::eOne;
+    accumBlendState.colorBlendOp = vk::BlendOp::eAdd;
+    accumBlendState.srcAlphaBlendFactor = vk::BlendFactor::eZero;
+    accumBlendState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    accumBlendState.alphaBlendOp = vk::BlendOp::eAdd;
+
+    vk::PipelineColorBlendAttachmentState rvlBlendState{};
+    rvlBlendState.colorWriteMask = vk::ColorComponentFlagBits::eR; 
+    rvlBlendState.blendEnable = VK_TRUE;
+    rvlBlendState.srcColorBlendFactor = vk::BlendFactor::eZero;
+    rvlBlendState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcColor;
+    rvlBlendState.colorBlendOp = vk::BlendOp::eAdd;
+    rvlBlendState.srcAlphaBlendFactor = vk::BlendFactor::eZero;
+    rvlBlendState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    rvlBlendState.alphaBlendOp = vk::BlendOp::eAdd;
+
     GraphicsPipelineBuilder materialPipelineBuilder;
     materialPipelineBuilder.setShaders(vertexShader, fragShader);
     materialPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
     materialPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
     materialPipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
-    materialPipelineBuilder.enableMultisampling();
-    materialPipelineBuilder.enableSampleShading();
-    transparency ? materialPipelineBuilder.enableBlendingAdditive() : materialPipelineBuilder.disableBlending();
+    materialPipelineBuilder.disableMultisampling();
+    materialPipelineBuilder.disableSampleShading();
     materialPipelineBuilder.enableDepthTest(!transparency, vk::CompareOp::eGreaterOrEqual);  // TODO transparency
-    materialPipelineBuilder.setColorAttachmentFormat(mRenderer->mInfrastructure.mDrawImage.imageFormat);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, noBlendState);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mAccumImage.imageFormat, accumBlendState);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mRevealageImage.imageFormat, rvlBlendState);
     materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
     materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 

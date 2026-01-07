@@ -26,7 +26,7 @@ FSOutput main(FSInput in) : SV_Target
 
     return FSOutput(
         finalColor,
-        float4(1.f, 1.f, 1.f, 1.f), 
-        0.5f
+        float4(0.f, 1.f, 0.f, 1.f), 
+        1.f
     );
 }

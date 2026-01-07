@@ -12,7 +12,6 @@ void GraphicsPipelineBuilder::clear() {
     // Clear all of the structs we need back to 0 with their correct sType
     mInputAssembly = vk::PipelineInputAssemblyStateCreateInfo{};
     mRasterizer = vk::PipelineRasterizationStateCreateInfo{};
-    mColorBlendAttachment = vk::PipelineColorBlendAttachmentState{};
     mMultisampling = vk::PipelineMultisampleStateCreateInfo{};
     mDepthStencil = vk::PipelineDepthStencilStateCreateInfo{};
     mRenderInfo = vk::PipelineRenderingCreateInfo{};
@@ -27,19 +26,20 @@ vk::raii::Pipeline GraphicsPipelineBuilder::buildPipeline(vk::raii::Device& devi
     viewportState.scissorCount = 1;
 
     vk::PipelineDynamicStateCreateInfo dynamicInfo = {};
-    constexpr vk::DynamicState state[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+    constexpr vk::DynamicState state[] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
     dynamicInfo.pDynamicStates = &state[0];
     dynamicInfo.dynamicStateCount = 2;
 
-    // Setup dummy color blending, no blend.
     vk::PipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.pNext = nullptr;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = vk::LogicOp::eCopy;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &mColorBlendAttachment;
+    colorBlending.attachmentCount = mPipelineColorBlendAttachmentStates.size();
+    colorBlending.pAttachments = mPipelineColorBlendAttachmentStates.data();
 
-    // Completely clear VertexInputStateCreateInfo, as we have no need for it.
+    mRenderInfo.colorAttachmentCount = static_cast<u32>(mColorAttachmentFormats.size());
+    mRenderInfo.pColorAttachmentFormats = mColorAttachmentFormats.data();
+
     constexpr vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 
     vk::GraphicsPipelineCreateInfo graphicsPipelineInfo = {};
@@ -99,54 +99,9 @@ void GraphicsPipelineBuilder::enableSampleShading() {
     mMultisampling.minSampleShading = 1.0f;
 }
 
-void GraphicsPipelineBuilder::disableBlending() {
-    // default write mask
-    mColorBlendAttachment.colorWriteMask =
-        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-    // no blending
-    mColorBlendAttachment.blendEnable = VK_FALSE;
-}
-
-void GraphicsPipelineBuilder::enableBlendingAdditive() {
-    mColorBlendAttachment.colorWriteMask =
-        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-    mColorBlendAttachment.blendEnable = VK_TRUE;
-    mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
-    mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
-    mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
-    mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
-}
-
-void GraphicsPipelineBuilder::enableBlendingAlpha() {
-    mColorBlendAttachment.colorWriteMask =
-        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-    mColorBlendAttachment.blendEnable = VK_TRUE;
-    mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-    mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-    mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
-    mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
-}
-
-void GraphicsPipelineBuilder::enableBlendingSkybox() {
-    mColorBlendAttachment.colorWriteMask =
-        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-    mColorBlendAttachment.blendEnable = VK_TRUE;
-    mColorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha;
-    mColorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eDstAlpha;
-    mColorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
-    mColorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    mColorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    mColorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
-}
-
-void GraphicsPipelineBuilder::setColorAttachmentFormat(vk::Format format) {
-    mColorAttachmentformat = format;
-    mRenderInfo.colorAttachmentCount = 1;
-    mRenderInfo.pColorAttachmentFormats = &mColorAttachmentformat;
+void GraphicsPipelineBuilder::addColorAttachment(vk::Format format, vk::PipelineColorBlendAttachmentState blendState) {
+    mColorAttachmentFormats.emplace_back(format);
+    mPipelineColorBlendAttachmentStates.emplace_back(blendState);
 }
 
 void GraphicsPipelineBuilder::setDepthFormat(vk::Format format) { mRenderInfo.depthAttachmentFormat = format; }
