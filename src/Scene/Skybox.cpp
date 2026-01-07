@@ -69,7 +69,7 @@ void Skybox::initPipeline() {
     skyboxPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, skyboxBlendAttachment);
     skyboxPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
     skyboxPipelineBuilder.enableDepthTest(false, vk::CompareOp::eGreaterOrEqual);
-    skyboxPipelineBuilder.mPipelineLayout = *mRenderer->mScene.mSkybox.mPipelineLayout;
+    skyboxPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
     mPipelineBundle =
         PipelineBundle(mRenderer->mInfrastructure.mLatestPipelineId, skyboxPipelineBuilder.buildPipeline(mRenderer->mCore.mDevice), *mPipelineLayout);
