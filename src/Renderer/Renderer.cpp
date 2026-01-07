@@ -299,6 +299,8 @@ void Renderer::initPasses() {
         mScene.mCuller.mCullPushConstants.mainInstancesBuffer = mScene.mMainInstancesBuffer.address;
         mScene.mCuller.mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
         mScene.mCuller.mCullPushConstants.drawExtents = glm::vec2(mInfrastructure.mDrawImage.imageExtent.width, mInfrastructure.mDrawImage.imageExtent.height);
+        mScene.mCuller.mCullPushConstants.depthPyramidExtents =
+            glm::vec2(mScene.mCuller.mDepthPyramidImage.imageExtent.width, mScene.mCuller.mDepthPyramidImage.imageExtent.height);
 
         vkhelper::transitionImage(
             cmd,
@@ -437,18 +439,16 @@ void Renderer::initPasses() {
         vk::RenderingAttachmentInfo accumAttachment =
             vkhelper::colorAttachmentInfo(*mScene.mTransparency.mAccumImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
         accumAttachment.clearValue.color = vk::ClearColorValue(0.f, 0.f, 0.f, 0.f);
-        vk::RenderingAttachmentInfo revealageAttachment =
-            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+        vk::RenderingAttachmentInfo revealageAttachment = vkhelper::colorAttachmentInfo(
+            *mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear
+        );
         revealageAttachment.clearValue.color = vk::ClearColorValue(1.f, 1.f, 1.f, 1.f);
 
-        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
-            colorAttachment,
-            accumAttachment,
-            revealageAttachment
-        };  
-        
-        const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
+        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {colorAttachment, accumAttachment, revealageAttachment};
+
+        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
+            vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
+        );
 
         cmd.beginRendering(renderInfo);
         cmd.endRendering();
@@ -613,13 +613,14 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::Opaque, [&](vk::CommandBuffer cmd) {
         std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
-            vk::RenderingAttachmentInfo{},  
+            vk::RenderingAttachmentInfo{},
             vk::RenderingAttachmentInfo{},
         };
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-        const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
+        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
+            vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
+        );
 
         cmd.beginRendering(renderInfo);
 
@@ -627,7 +628,7 @@ void Renderer::initPasses() {
             if (i == static_cast<i32>(BatchType::Transparent)) {
                 continue;
             }
-            auto batchType = mScene.mBatchTypes[i];                
+            auto batchType = mScene.mBatchTypes[i];
             for (auto& batch : *batchType | std::views::values) {
                 if (batch.renderItems.empty()) {
                     continue;
@@ -655,7 +656,7 @@ void Renderer::initPasses() {
                 mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();
             }
         }
-        
+
         cmd.endRendering();
     });
 

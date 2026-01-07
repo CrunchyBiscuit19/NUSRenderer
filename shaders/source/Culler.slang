@@ -32,6 +32,7 @@ public struct CullerCullPushConstants {
     public uint* mainVisibleRenderInstancesInstanceIndexBuffer;
     public uint renderInstancesLimit;
     public float2 drawExtents;
+    public uint2 depthPyramidExtents;
 };
 
 public struct CullerCompactPushConstants {

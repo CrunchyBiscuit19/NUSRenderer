@@ -109,7 +109,7 @@ void Culler::initDepthPyramidDescriptor() {
 void Culler::writeDepthPyramidDescriptor() {
     DescriptorSetBinder writer;
 
-    writer.bindImage(0, *mResolvedDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.bindImage(0, *mRenderer->mInfrastructure.mDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
         writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
         writer.bindImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
