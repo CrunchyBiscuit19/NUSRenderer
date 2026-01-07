@@ -1,6 +1,7 @@
 #include <Renderer/Renderer.h>
 #include <Renderer/RendererInfrastructure.h>
 #include <Utils/Helper.h>
+
 #include <VkBootstrap.h>
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
@@ -127,19 +128,20 @@ void RendererInfrastructure::initSwapchain() {
         false,
         true
     );
+    mRenderer->mCore.labelResourceDebug(mDrawImage.image, "DrawImage");
+    mRenderer->mCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
+
     mDepthImage = mRenderer->mResources.createImage(
         mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, false, true
     );
+    mRenderer->mCore.labelResourceDebug(mDepthImage.image, "DepthImage");
+    mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "DepthImageView");
+
     mIntermediateImage = mRenderer->mResources.createImage(
         mDrawImage.imageExtent,
         vk::Format::eR16G16B16A16Sfloat,
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment
     );
-
-    mRenderer->mCore.labelResourceDebug(mDrawImage.image, "DrawImage");
-    mRenderer->mCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
-    mRenderer->mCore.labelResourceDebug(mDepthImage.image, "DepthImage");
-    mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "DepthImageView");
     mRenderer->mCore.labelResourceDebug(mIntermediateImage.image, "IntermediateImage");
     mRenderer->mCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
 

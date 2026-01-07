@@ -24,8 +24,10 @@ enum class PassType {
     PickClear,
     PickDraw,
     PickPick,
-    Geometry,
+    Opaque,
     Skybox,
+    Transparent,
+    Composite,
     ResolveMSAA,
     IntermediateToSwapchain,
     ImGui

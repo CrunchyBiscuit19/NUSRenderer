@@ -6,7 +6,7 @@ public uniform ConstantBuffer<Perspective> perspectiveBuffer;
 [[vk::binding(0, 1)]]
 public uniform Sampler2D materialResources[];
 
-float4 main(FSInput in) : SV_Target
+FSOutput main(FSInput in) : SV_Target
 {
     float3 normal = normalize(in.normal);
     float3 sunlightDir = normalize(perspectiveBuffer.sunlightDirection.xyz);
@@ -23,5 +23,10 @@ float4 main(FSInput in) : SV_Target
     float4 ambient = color * perspectiveBuffer.ambientColor;
 
     float4 finalColor = lightColor + ambient;
-    return finalColor;
+
+    return FSOutput(
+        finalColor,
+        float4(1.f, 1.f, 1.f, 1.f), 
+        0.5f
+    );
 }

@@ -11,6 +11,7 @@ RendererScene::RendererScene(Renderer* renderer)
       mSkybox(Skybox(renderer)),
       mCuller(Culler(renderer)),
       mPicker(Picker(renderer)),
+      mTransparency(Transparency(renderer)),
       mMainMaterialResourcesDescriptorSet(nullptr),
       mMainMaterialResourcesDescriptorSetLayout(nullptr) {
     mBatchTypes[static_cast<u32>(BatchType::Opaque)] = &mOpaqueBatches;
@@ -99,6 +100,7 @@ void RendererScene::initComponents() {
     mSkybox.init(std::filesystem::path(std::string(SKYBOXES_PATH) + "ocean/"));
     mCuller.init();
     mPicker.init();
+    mTransparency.init();
 }
 
 void RendererScene::initKeyBinding() const {
@@ -597,6 +599,7 @@ void RendererScene::cleanup() {
     mSkybox.cleanup();
     mCuller.cleanup();
     mPicker.cleanup();
+    mTransparency.cleanup();
 
     mModelsCache.clear();
     mOpaqueBatches.clear();

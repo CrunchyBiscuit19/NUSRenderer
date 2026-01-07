@@ -50,7 +50,7 @@ bool frustumCull(Plane* frustum, inout float4[NUM_AABB_CORNERS] aabbCorners, AAB
 
 bool occlusionCull(inout float4[NUM_AABB_CORNERS] aabbCorners, Perspective *perspective, Texture2D<float> depthPyramidImage, float2 drawExtents) {
     float4 aabbMinNdc = float4(1.f, 1.f, 1.f, 0.f);
-    float4 aabbMaxNdc = float4(0.f, 0.f, 0.f, 0.f);
+    float4 aabbMaxNdc = float4(-1.f, -1.f, 0.f, 0.f);
     float closestDepthInRenderInstance = 0.f;
 
     // Transform AABB corners to NDC / Screen space and find min/max XY and closest Z
@@ -82,13 +82,13 @@ bool occlusionCull(inout float4[NUM_AABB_CORNERS] aabbCorners, Perspective *pers
     uint2 bottomLeft = uint2((uint)aabbMinScreen.x, (uint)aabbMaxScreen.y);
     uint2 bottomRight = uint2((uint)aabbMaxScreen.x, (uint)aabbMaxScreen.y);
 
-    // Sample the pyramid using the 4 pixels around the centre adjusted for mip level
-    uint level = uint(ceil(log2(float(max(width, height)))));
-    float furthestDepthInPyramid = 1.0f;
-    furthestDepthInPyramid = min(furthestDepthInPyramid, depthPyramidImage.Load(uint3(topLeft.x >> level, topLeft.y >> level, level)));
-    furthestDepthInPyramid = min(furthestDepthInPyramid, depthPyramidImage.Load(uint3(topRight.x >> level, topRight.y >> level, level)));
-    furthestDepthInPyramid = min(furthestDepthInPyramid, depthPyramidImage.Load(uint3(bottomLeft.x >> level, bottomLeft.y >> level, level)));
-    furthestDepthInPyramid = min(furthestDepthInPyramid, depthPyramidImage.Load(uint3(bottomRight.x >> level, bottomRight.y >> level, level)));
+    // Sample the pyramid using the center coordinates adjusted for mip level
+    // Not perfect but whatever
+    uint level = uint(floor(log2(float(max(width, height)))));
+    float furthestDepthInPyramid = depthPyramidImage.Load(uint3(topRight.x >> level, topRight.y >> level, level));
+    furthestDepthInPyramid = depthPyramidImage.Load(uint3(topLeft.x >> level, topLeft.y >> level, level));
+    furthestDepthInPyramid = depthPyramidImage.Load(uint3(bottomLeft.x >> level, bottomLeft.y >> level, level));
+    furthestDepthInPyramid = depthPyramidImage.Load(uint3(bottomRight.x >> level, bottomRight.y >> level, level));
 
     // Visible if closest is closer (greater than because of reverse-Z) than furthest depth
     return closestDepthInRenderInstance > furthestDepthInPyramid;

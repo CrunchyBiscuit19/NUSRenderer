@@ -92,7 +92,7 @@ vk::RenderingAttachmentInfo vkhelper::colorAttachmentInfo(
 ) {
     vk::RenderingAttachmentInfo colorAttachment{};
     colorAttachment.pNext = nullptr;
-    colorAttachment.imageView = view;
+    colorAttachmentw.imageView = view;
     colorAttachment.imageLayout = layout;
     colorAttachment.loadOp = loadOp;
     colorAttachment.storeOp = storeOp;

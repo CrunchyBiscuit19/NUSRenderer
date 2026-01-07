@@ -6,6 +6,7 @@
 #include <Scene/Perspective.h>
 #include <Scene/Picker.h>
 #include <Scene/Skybox.h>
+#include <Scene/Transparency.h>
 
 #include <filesystem>
 #include <vector>
@@ -27,6 +28,7 @@ class RendererScene {
     Skybox mSkybox;
     Culler mCuller;
     Picker mPicker;
+    Transparency mTransparency;
 
     u32 mLatestInstanceId{0};
     u32 mLatestMeshId{0};

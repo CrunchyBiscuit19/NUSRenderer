@@ -596,17 +596,24 @@ void Renderer::initPasses() {
         cmd.endRendering();
     });
 
-    mPasses.try_emplace(PassType::Geometry, [&](vk::CommandBuffer cmd) {
-        vk::RenderingAttachmentInfo colorAttachment =
-            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+    mPasses.try_emplace(PassType::Opaque, [&](vk::CommandBuffer cmd) {
+        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
+            vk::RenderingAttachmentInfo{},  
+            vk::RenderingAttachmentInfo{},
+        };
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
         const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, &depthAttachment);
+            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
 
         cmd.beginRendering(renderInfo);
 
-        for (auto batchType : mScene.mBatchTypes) {
+        for (i32 i = 0; i < mScene.mBatchTypes.size(); i++) {
+            if (i == static_cast<i32>(BatchType::Transparent)) {
+                continue;
+            }
+            auto batchType = mScene.mBatchTypes[i];                
             for (auto& batch : *batchType | std::views::values) {
                 if (batch.renderItems.empty()) {
                     continue;
@@ -633,6 +640,50 @@ void Renderer::initPasses() {
                 mStats.mDrawCallCount++;
                 mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();
             }
+        }
+        
+        cmd.endRendering();
+    });
+
+    mPasses.try_emplace(PassType::Transparent, [&](vk::CommandBuffer cmd) {
+        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+            vk::RenderingAttachmentInfo{},
+            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mAccumImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
+            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
+        };
+        vk::RenderingAttachmentInfo depthAttachment =
+            vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
+            vkhelper::extent3dTo2d(mScene.mTransparency.mAccumImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
+        );
+
+        cmd.beginRendering(renderInfo);
+
+        for (auto& batch : mScene.mTransparentBatches | std::views::values) {
+            if (batch.renderItems.empty()) {
+                continue;
+            }
+
+            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
+
+            vkhelper::setViewportScissors(cmd, mScene.mTransparency.mAccumImage.imageExtent);
+
+            cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0, *mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr
+            );
+            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
+
+            mScene.mGeometryPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+            cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mGeometryPushConstants);
+
+            cmd.drawIndexedIndirectCount(
+                *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
+            );
+
+            mStats.mDrawCallCount++;
+            mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();
         }
 
         cmd.endRendering();
@@ -869,7 +920,8 @@ void Renderer::draw() {
     mPasses.at(PassType::Pick).execute(cmd);
 
     mPasses.at(PassType::Skybox).execute(cmd);
-    mPasses.at(PassType::Geometry).execute(cmd);
+    mPasses.at(PassType::Opaque).execute(cmd);
+    mPasses.at(PassType::Transparent).execute(cmd);
 
     mTransitions.at(TransitionType::IntermediateTransferSrcIntoColorAttachment).execute(cmd, *mInfrastructure.mIntermediateImage.image);
 
