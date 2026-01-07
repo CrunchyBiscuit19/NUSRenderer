@@ -44,17 +44,6 @@ void Culler::initDepthPyramidImage() {
     mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.imageView, "CullerDepthPyramidImageView");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image View Created");
 
-    // Resolved Depth Image
-    mResolvedDepthImage = mRenderer->mResources.createImage(
-        mRenderer->mInfrastructure.mDepthImage.imageExtent,
-        vk::Format::eD32Sfloat,
-        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eDepthStencilAttachment
-    );
-    mRenderer->mCore.labelResourceDebug(mResolvedDepthImage.image, "CullerResolvedDepthImage");
-    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image Created");
-    mRenderer->mCore.labelResourceDebug(mResolvedDepthImage.imageView, "CullerResolvedDepthImageView");
-    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image View Created");
-
     // Depth Pyramid Image Views
     mDepthPyramidMipViews.clear();
     mDepthPyramidMipViews.reserve(mDepthPyramidLevels);
@@ -79,17 +68,6 @@ void Culler::initDepthPyramidImage() {
             vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderRead
-        );
-        vkhelper::transitionImage(
-            cmd,
-            *mResolvedDepthImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageAspectFlagBits::eDepth
         );
     });
 }
@@ -254,19 +232,15 @@ void Culler::reconstructDepthPyramid() {
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Destroyed");
     mDepthPyramidImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image Destroyed");
-    mResolvedDepthImage.cleanup();
-    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image Destroyed");
 
     initDepthPyramidImage();
     writeDepthPyramidDescriptor();
     writeCullDescriptor();
 
-    LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid and Resolved Depth Reconstructed After Resize");
+    LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Reconstructed After Resize");
 }
 
 void Culler::cleanup() {
-    mResolvedDepthImage.cleanup();
-    LOG_INFO(mRenderer->mLogger, "Culler Resolved Depth Image Destroyed");
     mDepthPyramidMipViews.clear();
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Mip Views Destroyed");
     mDepthPyramidImage.cleanup();

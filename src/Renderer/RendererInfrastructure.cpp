@@ -131,7 +131,11 @@ void RendererInfrastructure::initSwapchain() {
     mRenderer->mCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
 
     mDepthImage = mRenderer->mResources.createImage(
-        mDrawImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc, false, true
+        mDrawImage.imageExtent,
+        vk::Format::eD32Sfloat,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
+        false,
+        true
     );
     mRenderer->mCore.labelResourceDebug(mDepthImage.image, "DepthImage");
     mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "DepthImageView");

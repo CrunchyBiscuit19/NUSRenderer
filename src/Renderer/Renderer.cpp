@@ -224,18 +224,18 @@ void Renderer::initPasses() {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mDepthPyramidPipelineBundle.pipeline);
 
         vk::Extent3D depthPyramidExtent = mScene.mCuller.mDepthPyramidImage.imageExtent;
-        vk::Extent3D resolvedDepthExtent = mScene.mCuller.mResolvedDepthImage.imageExtent;
+        vk::Extent3D depthFullExtent = mInfrastructure.mDepthImage.imageExtent;
 
         cmd.bindDescriptorSets(
             vk::PipelineBindPoint::eCompute, mScene.mCuller.mDepthPyramidPipelineBundle.layout, 0, *mScene.mCuller.mDepthPyramidDescriptorSet, nullptr
         );
 
         mScene.mCuller.mDepthPyramidPushConstants.depthPyramidExtent = glm::uvec2(depthPyramidExtent.width, depthPyramidExtent.height);
-        mScene.mCuller.mDepthPyramidPushConstants.resolvedDepthExtent = glm::uvec2(resolvedDepthExtent.width, resolvedDepthExtent.height);
-        mScene.mCuller.mDepthPyramidPushConstants.resolvedDepthRatio = glm::vec2(
-            depthPyramidExtent.width / static_cast<float>(resolvedDepthExtent.width), depthPyramidExtent.height / static_cast<float>(resolvedDepthExtent.height)
+        mScene.mCuller.mDepthPyramidPushConstants.depthFullExtent = glm::uvec2(depthFullExtent.width, depthFullExtent.height);
+        mScene.mCuller.mDepthPyramidPushConstants.depthFullRatio = glm::vec2(
+            depthPyramidExtent.width / static_cast<float>(depthFullExtent.width), depthPyramidExtent.height / static_cast<float>(depthFullExtent.height)
         );
-        mScene.mCuller.mDepthPyramidPushConstants.readFromResolved = true;
+        mScene.mCuller.mDepthPyramidPushConstants.readFromFull = true;
         mScene.mCuller.mDepthPyramidPushConstants.level = 0;
         cmd.pushConstants<CullerDepthPyramidPushConstants>(
             mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
@@ -253,12 +253,12 @@ void Renderer::initPasses() {
         );
 
         cmd.dispatch(
-            vkhelper::fastCeil(mScene.mCuller.mResolvedDepthImage.imageExtent.width, MAX_2D_WORKGROUP_THREADS),
-            vkhelper::fastCeil(mScene.mCuller.mResolvedDepthImage.imageExtent.height, MAX_2D_WORKGROUP_THREADS),
+            vkhelper::fastCeil(mInfrastructure.mDepthImage.imageExtent.width, MAX_2D_WORKGROUP_THREADS),
+            vkhelper::fastCeil(mInfrastructure.mDepthImage.imageExtent.height, MAX_2D_WORKGROUP_THREADS),
             1
         );
 
-        mScene.mCuller.mDepthPyramidPushConstants.readFromResolved = false;
+        mScene.mCuller.mDepthPyramidPushConstants.readFromFull = false;
 
         for (u32 i = 0; i < mScene.mCuller.mDepthPyramidLevels - 1; i++) {
             cmd.bindDescriptorSets(
@@ -716,14 +716,7 @@ void Renderer::initPasses() {
             vk::AttachmentStoreOp::eDontCare,
             *mInfrastructure.mIntermediateImage.imageView
         );
-        vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(
-            *mInfrastructure.mDepthImage.imageView,
-            vk::ImageLayout::eDepthAttachmentOptimal,
-            vk::AttachmentLoadOp::eLoad,
-            vk::AttachmentStoreOp::eStore,
-            *mScene.mCuller.mResolvedDepthImage.imageView
-        );
-        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, &depthAttachment);
+        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(mInfrastructure.mSwapchainBundle.mExtent, &colorAttachment, nullptr);
 
         cmd.beginRendering(renderInfo);
         cmd.endRendering();
@@ -768,6 +761,28 @@ void Renderer::initPasses() {
 }
 
 void Renderer::initTransitions() {
+    mTransitions.try_emplace(
+        TransitionType::DepthDepthAttachmentIntoShaderRead,
+        vk::ImageLayout::eDepthAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageAspectFlagBits::eDepth
+    );
+
+    mTransitions.try_emplace(
+        TransitionType::DepthShaderReadIntoDepthAttachment,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eDepthAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        vk::ImageAspectFlagBits::eDepth
+    );
+
     mTransitions.try_emplace(
         TransitionType::PickerGeneralIntoColorAttachment,
         vk::ImageLayout::eGeneral,
@@ -943,7 +958,11 @@ void Renderer::draw() {
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
+    mTransitions.at(TransitionType::DepthDepthAttachmentIntoShaderRead).execute(cmd, *mInfrastructure.mDepthImage.image);
+
     mPasses.at(PassType::Cull).execute(cmd);
+
+    mTransitions.at(TransitionType::DepthShaderReadIntoDepthAttachment).execute(cmd, *mInfrastructure.mDepthImage.image);
 
     if (MSAA_ENABLE) {
         mTransitions.at(TransitionType::FinalColorUndefinedIntoColorAttachment).execute(cmd, *mInfrastructure.mIntermediateImage.image);

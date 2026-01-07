@@ -41,10 +41,10 @@ struct CullerCompactPushConstants {
 
 struct CullerDepthPyramidPushConstants {
     glm::uvec2 depthPyramidExtent;
-    glm::uvec2 resolvedDepthExtent;
-    glm::vec2 resolvedDepthRatio;
+    glm::uvec2 depthFullExtent;
+    glm::vec2 depthFullRatio;
     u32 level;
-    bool readFromResolved;
+    bool readFromFull;
 };
 
 class Culler {
@@ -70,7 +70,6 @@ class Culler {
     vk::raii::DescriptorSet mDepthPyramidDescriptorSet;
     vk::raii::DescriptorSetLayout mDepthPyramidDescriptorSetLayout;
     AllocatedImage mDepthPyramidImage;
-    AllocatedImage mResolvedDepthImage;
     std::vector<vk::raii::ImageView> mDepthPyramidMipViews;
     u32 mDepthPyramidLevels{0};
     vk::Extent3D mDepthPyramidExtent;
