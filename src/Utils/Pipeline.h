@@ -83,7 +83,7 @@ class GraphicsPipelineBuilder : PipelineBuilder {
     void enableSampleShading();
     void addColorAttachment(vk::Format format, vk::PipelineColorBlendAttachmentState blendState);
     void setDepthFormat(vk::Format format);
-    void disableDepthtest();
+    void disableDepthTest();
     void enableDepthTest(bool depthWriteEnable, vk::CompareOp op);
 };
 

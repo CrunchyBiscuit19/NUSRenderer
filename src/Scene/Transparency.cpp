@@ -108,12 +108,12 @@ void Transparency::initPipeline() {
     transparencyPipelineBuilder.setShaders(vertexShader, fragShader);
     transparencyPipelineBuilder.setInputTopology(vk::PrimitiveTopology::eTriangleList);
     transparencyPipelineBuilder.setPolygonMode(vk::PolygonMode::eFill);
-    transparencyPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
+    transparencyPipelineBuilder.setCullMode(vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise);
     MSAA_ENABLE ? transparencyPipelineBuilder.enableMultisampling() : transparencyPipelineBuilder.disableMultisampling();
     MSAA_ENABLE ? transparencyPipelineBuilder.enableSampleShading() : transparencyPipelineBuilder.disableSampleShading();
     transparencyPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, compositeBlendAttachment);
     transparencyPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
-    transparencyPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
+    transparencyPipelineBuilder.disableDepthTest();
     transparencyPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
     mPipelineBundle =

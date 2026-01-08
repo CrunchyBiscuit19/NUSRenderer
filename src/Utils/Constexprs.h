@@ -71,3 +71,5 @@ constexpr u32 FRUSTUM_RIGHT_FACE = 3;
 constexpr u32 FRUSTUM_TOP_FACE = 4;
 constexpr u32 FRUSTUM_BOTTOM_FACE = 5;
 constexpr u32 MAX_DEPTH_PYRAMID_LEVELS = 16;
+
+constexpr u32 NUM_FULLSCREEN_QUAD_VERTICES = 3;

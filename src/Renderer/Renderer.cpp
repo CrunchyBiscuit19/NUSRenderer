@@ -286,7 +286,7 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::CullCull, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mCullPipelineBundle.pipeline);
 
-        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;        
+        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
 
         vkhelper::transitionImage(
             cmd,
@@ -690,11 +690,26 @@ void Renderer::initPasses() {
         cmd.endRendering();
     });
 
-    mPasses.try_emplace(PassType::ResolveMSAA, [&](vk::CommandBuffer cmd) {
-        if (!MSAA_ENABLE) {
-            return;
-        }
+    mPasses.try_emplace(PassType::Composite, [&](vk::CommandBuffer cmd) {
+        vk::RenderingAttachmentInfo colorAttachment =
+            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
+        const vk::RenderingInfo renderInfo =
+            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, nullptr);
 
+        cmd.beginRendering(renderInfo);
+
+        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mTransparency.mPipelineBundle.pipeline);
+
+        vkhelper::setViewportScissors(cmd, mInfrastructure.mDrawImage.imageExtent);
+
+        cmd.draw(NUM_FULLSCREEN_QUAD_VERTICES, 1, 0, 0);
+
+        mStats.mDrawCallCount++;
+
+        cmd.endRendering();
+    });
+
+    mPasses.try_emplace(PassType::ResolveMSAA, [&](vk::CommandBuffer cmd) {
         vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(
             *mInfrastructure.mDrawImage.imageView,
             vk::ImageLayout::eColorAttachmentOptimal,
@@ -964,7 +979,9 @@ void Renderer::draw() {
     mPasses.at(PassType::Opaque).execute(cmd);
     mPasses.at(PassType::Transparent).execute(cmd);
 
-    mPasses.at(PassType::ResolveMSAA).execute(cmd);
+    mPasses.at(PassType::Composite).execute(cmd);
+
+    if (MSAA_ENABLE) mPasses.at(PassType::ResolveMSAA).execute(cmd);
 
     if (MSAA_ENABLE) {
         mTransitions.at(TransitionType::FinalColorColorAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mIntermediateImage.image);

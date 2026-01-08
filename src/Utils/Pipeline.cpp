@@ -106,7 +106,7 @@ void GraphicsPipelineBuilder::addColorAttachment(vk::Format format, vk::Pipeline
 
 void GraphicsPipelineBuilder::setDepthFormat(vk::Format format) { mRenderInfo.depthAttachmentFormat = format; }
 
-void GraphicsPipelineBuilder::disableDepthtest() {
+void GraphicsPipelineBuilder::disableDepthTest() {
     mDepthStencil.depthTestEnable = VK_FALSE;
     mDepthStencil.depthWriteEnable = VK_FALSE;
     mDepthStencil.depthCompareOp = vk::CompareOp::eNever;

@@ -8,7 +8,7 @@ public uniform Texture2D<float> revealageImage;
 FSOutput main(FSInput in) : SV_Target {
     FSOutput out;
 
-    out.color = float4(1.f);
+    out.color = float4(1.f, 0.f, 1.f, 1.f);
 
     return out;
 }
