@@ -24,7 +24,8 @@ FSOutput main(FSInput in) : SV_Target {
 
     float4 finalColor = lightColor + ambient;
 
+    //float weight = pow(color.a, 2);
     float weight = max(min(1.0, max(max(color.r, color.g), color.b) * color.a), color.a) * clamp(0.03 / (1e-5 + pow(in.position.z / 200, 4.0)), 1e-2, 3e3);
 
-    return FSOutput(finalColor, float4(finalColor.rgb * finalColor.a * weight, finalColor.a * weight), finalColor.a);
+    return FSOutput(finalColor, float4(finalColor.rgb * finalColor.a, finalColor.a) * weight, finalColor.a);
 }

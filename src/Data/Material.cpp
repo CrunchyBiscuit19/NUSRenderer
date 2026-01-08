@@ -59,8 +59,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     accumBlendState.srcColorBlendFactor = vk::BlendFactor::eOne;
     accumBlendState.dstColorBlendFactor = vk::BlendFactor::eOne;
     accumBlendState.colorBlendOp = vk::BlendOp::eAdd;
-    accumBlendState.srcAlphaBlendFactor = vk::BlendFactor::eZero;
-    accumBlendState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    accumBlendState.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    accumBlendState.dstAlphaBlendFactor = vk::BlendFactor::eOne;
     accumBlendState.alphaBlendOp = vk::BlendOp::eAdd;
 
     vk::PipelineColorBlendAttachmentState rvlBlendState{};

@@ -87,12 +87,12 @@ void Culler::initDepthPyramidDescriptor() {
 }
 
 void Culler::writeDepthPyramidDescriptor() {
-    DescriptorSetBinder writer;
+    DescriptorSetWriter writer;
 
-    writer.bindImage(0, *mRenderer->mInfrastructure.mDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mRenderer->mInfrastructure.mDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
-        writer.bindImageArray(1, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
-        writer.bindImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
+        writer.writeImageArray(1, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
+        writer.writeImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
     }
 
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDepthPyramidDescriptorSet);
@@ -175,9 +175,9 @@ void Culler::initCullDescriptor() {
 }
 
 void Culler::writeCullDescriptor() {
-    DescriptorSetBinder writer;
+    DescriptorSetWriter writer;
 
-    writer.bindImage(0, *mDepthPyramidImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mDepthPyramidImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
 
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mCullDescriptorSet);
 }

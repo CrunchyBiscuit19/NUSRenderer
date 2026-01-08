@@ -63,8 +63,8 @@ void RendererInfrastructure::initFrames() {
         mRenderer->mCore.labelResourceDebug(mFrames[i].mPerspectiveDescriptorSet, fmt::format("FramePerspectiveDescriptorSet{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Perspective Descriptor Set Created", i);
 
-        DescriptorSetBinder binder;
-        binder.bindBuffer(0, *mFrames[i].mPerspectiveBuffer.buffer, sizeof(PerspectiveData), 0, vk::DescriptorType::eUniformBuffer);
+        DescriptorSetWriter binder;
+        binder.writeBuffer(0, *mFrames[i].mPerspectiveBuffer.buffer, sizeof(PerspectiveData), 0, vk::DescriptorType::eUniformBuffer);
         binder.updateSetBindings(mRenderer->mCore.mDevice, *mFrames[i].mPerspectiveDescriptorSet);
         LOG_INFO(mRenderer->mLogger, "Frame {} Perspective Descriptor Set Binded", i);
     }

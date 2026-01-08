@@ -146,8 +146,8 @@ void Skybox::initBuffer() {
 }
 
 void Skybox::setBindings() const {
-    DescriptorSetBinder writer;
-    writer.bindImage(
+    DescriptorSetWriter writer;
+    writer.writeImage(
         0,
         *mImage.imageView,
         mRenderer->mResources.getSampler(vk::SamplerCreateInfo()),

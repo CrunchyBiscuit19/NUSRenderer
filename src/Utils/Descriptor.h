@@ -45,15 +45,15 @@ struct DescriptorAllocatorGrowable {
     u32 mSetsPerPool = 0;
 };
 
-struct DescriptorSetBinder {
+struct DescriptorSetWriter {
     std::deque<vk::DescriptorImageInfo> mImageInfos;  // Deques are guaranteed to keep pointers to elements valid
     std::deque<vk::DescriptorBufferInfo> mBufferInfos;
     std::vector<vk::WriteDescriptorSet> mWrites;
 
-    void bindImage(u32 binding, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
-    void bindImageArray(u32 binding, u32 arrayIndex, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
-    void bindSampler(u32 binding, vk::Sampler sampler, vk::DescriptorType type);
-    void bindBuffer(u32 binding, vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
+    void writeImage(u32 binding, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
+    void writeImageArray(u32 binding, u32 arrayIndex, vk::ImageView image, vk::Sampler sampler, vk::ImageLayout layout, vk::DescriptorType type);
+    void writeSampler(u32 binding, vk::Sampler sampler, vk::DescriptorType type);
+    void writeBuffer(u32 binding, vk::Buffer buffer, size_t size, size_t offset, vk::DescriptorType type);
 
     void clear();
     void updateSetBindings(const vk::raii::Device& device, vk::DescriptorSet set);

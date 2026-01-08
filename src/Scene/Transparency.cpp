@@ -62,7 +62,7 @@ void Transparency::initDescriptors() {
     DescriptorLayoutBuilder builder;
     builder.addBinding(0, vk::DescriptorType::eSampledImage);
     builder.addBinding(1, vk::DescriptorType::eSampledImage);
-    mDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
+    mDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eFragment);
     mRenderer->mCore.labelResourceDebug(mDescriptorSetLayout, "CompositeDescriptorSetLayout");
     mDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
     mRenderer->mCore.labelResourceDebug(mDescriptorSet, "CompositeDescriptorSet");
@@ -70,10 +70,10 @@ void Transparency::initDescriptors() {
 }
 
 void Transparency::writeDescriptors() {
-    DescriptorSetBinder writer;
+    DescriptorSetWriter writer;
 
-    writer.bindImage(0, *mAccumImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
-    writer.bindImage(1, *mRevealageImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mAccumImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(1, *mRevealageImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
 
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
@@ -100,8 +100,8 @@ void Transparency::initPipeline() {
     compositeBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
     compositeBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
     compositeBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
-    compositeBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eZero;
-    compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eOne;
+    compositeBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
     compositeBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
 
     GraphicsPipelineBuilder transparencyPipelineBuilder;

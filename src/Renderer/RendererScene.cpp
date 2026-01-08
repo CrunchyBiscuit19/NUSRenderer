@@ -528,8 +528,8 @@ void RendererScene::reloadMainMaterialResourcesArray() {
         for (auto& material : model.mMaterials) {
             u32 materialTextureArrayIndex = (model.mMainFirstMaterial + material.mRelativeMaterialIndex) * 5;
 
-            DescriptorSetBinder writer;
-            writer.bindImageArray(
+            DescriptorSetWriter writer;
+            writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 0,
                 *material.mPbrData.resources.base.image->imageView,
@@ -537,7 +537,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
             );
-            writer.bindImageArray(
+            writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 1,
                 *material.mPbrData.resources.metallicRoughness.image->imageView,
@@ -545,7 +545,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
             );
-            writer.bindImageArray(
+            writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 2,
                 *material.mPbrData.resources.emissive.image->imageView,
@@ -553,7 +553,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
             );
-            writer.bindImageArray(
+            writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 3,
                 *material.mPbrData.resources.normal.image->imageView,
@@ -561,7 +561,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
             );
-            writer.bindImageArray(
+            writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 4,
                 *material.mPbrData.resources.occlusion.image->imageView,

@@ -82,8 +82,8 @@ void Picker::initDescriptor() {
     mDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
     LOG_INFO(mRenderer->mLogger, "Picker Descriptor Set and Layout Created");
 
-    DescriptorSetBinder writer;
-    writer.bindImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
+    DescriptorSetWriter writer;
+    writer.writeImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
 

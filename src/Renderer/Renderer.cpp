@@ -694,11 +694,13 @@ void Renderer::initPasses() {
         vk::RenderingAttachmentInfo colorAttachment =
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
         const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, nullptr);
+            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, nullptr, 1);
 
         cmd.beginRendering(renderInfo);
 
         cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mTransparency.mPipelineBundle.pipeline);
+
+        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mTransparency.mPipelineBundle.layout, 0, *mScene.mTransparency.mDescriptorSet, nullptr);
 
         vkhelper::setViewportScissors(cmd, mInfrastructure.mDrawImage.imageExtent);
 
@@ -822,6 +824,46 @@ void Renderer::initTransitions() {
         vk::ImageLayout::eTransferSrcOptimal,
         vk::PipelineStageFlagBits2::eTransfer,
         vk::AccessFlagBits2::eTransferRead
+    );
+
+    mTransitions.try_emplace(
+        TransitionType::AccumColorAttachmentIntoShaderRead,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead
+    );
+
+    mTransitions.try_emplace(
+        TransitionType::RvlColorAttachmentIntoShaderRead,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead
+    );
+
+    mTransitions.try_emplace(
+        TransitionType::AccumShaderReadIntoColorAttachment,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite
+    );
+
+    mTransitions.try_emplace(
+        TransitionType::RvlShaderReadIntoColorAttachment,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite
     );
 
     mTransitions.try_emplace(
@@ -979,7 +1021,13 @@ void Renderer::draw() {
     mPasses.at(PassType::Opaque).execute(cmd);
     mPasses.at(PassType::Transparent).execute(cmd);
 
+    mTransitions.at(TransitionType::AccumColorAttachmentIntoShaderRead).execute(cmd, *mScene.mTransparency.mAccumImage.image);
+    mTransitions.at(TransitionType::RvlColorAttachmentIntoShaderRead).execute(cmd, *mScene.mTransparency.mRevealageImage.image);
+
     mPasses.at(PassType::Composite).execute(cmd);
+
+    mTransitions.at(TransitionType::AccumShaderReadIntoColorAttachment).execute(cmd, *mScene.mTransparency.mAccumImage.image);
+    mTransitions.at(TransitionType::RvlShaderReadIntoColorAttachment).execute(cmd, *mScene.mTransparency.mRevealageImage.image);
 
     if (MSAA_ENABLE) mPasses.at(PassType::ResolveMSAA).execute(cmd);
 
