@@ -23,7 +23,7 @@ constexpr u32 PATCH_VERSION = 0;
 
 constexpr u32 MAX_DESCRIPTOR_SETS_PER_POOL = 1 << 12;
 
-constexpr float MAX_CAMERA_SPEED = 100.f;
+constexpr float MAX_CAMERA_SPEED = 10.f;
 
 constexpr u32 EXPECTED_FRAME_RATE = 60;
 constexpr u32 FRAME_OVERLAP = 2;

@@ -66,7 +66,7 @@ void Camera::initControls() {
         }
 
         if (e.type == SDL_MOUSEWHEEL) {
-            mSpeed += static_cast<float>(e.wheel.y);
+            mSpeed += static_cast<float>(e.wheel.y) * 0.2f;
             mSpeed = std::clamp(mSpeed, 0.f, MAX_CAMERA_SPEED);
         }
     });
@@ -100,11 +100,9 @@ glm::mat4 Camera::getRotationMatrix() const {
 }
 
 glm::vec3 Camera::getDirectionVector() const {
-    glm::vec3 direction;
-    direction.x = std::cos(mPitch) * std::cos(mYaw);
-    direction.y = std::sin(mPitch);
-    direction.z = std::cos(mPitch) * std::sin(mYaw);
-    return -glm::normalize(direction);
+    glm::mat4 rot = getRotationMatrix();
+    glm::vec3 forward = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0)));
+    return forward;
 }
 
 void Camera::uploadFrameFrustum() const {

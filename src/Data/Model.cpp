@@ -668,7 +668,7 @@ void GLTFModel::createInstance(InstanceData initialData) {
 }
 
 void GLTFModel::createInstanceAtCamera(Camera& camera) {
-    glm::mat4 transformMatrix = glm::translate(glm::mat4(1.f), mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector());
+    glm::mat4 transformMatrix = glm::translate(glm::mat4(1.f), mRenderer->mCamera.mPosition + mRenderer->mCamera.getDirectionVector() * 5.f);
     glm::mat4 rotationMatrix = glm::mat4(1.f);
     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.f), glm::vec3(1.f));
     createInstance(transformMatrix * rotationMatrix * scaleMatrix);

@@ -21,7 +21,7 @@ class Camera {
     glm::vec3 mPosition;
     float mPitch{0.f};
     float mYaw{0.f};
-    float mSpeed{10.f};
+    float mSpeed{1.f};
 
     SDL_bool mRelativeMode{SDL_FALSE};
     MovementMode mMovementMode;

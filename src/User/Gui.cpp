@@ -18,7 +18,7 @@ void Gui::CameraGuiComponent::elements() {
     ImGui::Text("Mouse Mode: %s", (mRenderer->mCamera.mRelativeMode ? "RELATIVE" : "NORMAL"));
     ImGui::Text("Position: [%.1f, %.1f, %.1f]", mRenderer->mCamera.mPosition.x, mRenderer->mCamera.mPosition.y, mRenderer->mCamera.mPosition.z);
     ImGui::Text("Pitch & Yaw: [%.1f, %.1f]", mRenderer->mCamera.mPitch, mRenderer->mCamera.mYaw);
-    ImGui::Text("Speed: %.1f / %.1f", mRenderer->mCamera.mSpeed, MAX_CAMERA_SPEED);
+    ImGui::Text("Speed: %.2f / %.2f", mRenderer->mCamera.mSpeed, MAX_CAMERA_SPEED);
 }
 
 void Gui::SceneGuiComponent::elements() {
@@ -62,7 +62,7 @@ void Gui::SceneGuiComponent::elements() {
     if (ImGui::CollapsingHeader("Sunlight", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::ColorEdit3("Ambient Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.ambientColor));
         ImGui::ColorEdit3("Sunlight Color", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightColor));
-        ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightDirection), 0.f, 1.f);
+        ImGui::SliderFloat3("Sunlight Direction", glm::value_ptr(mRenderer->mScene.mPerspective.mData.sunlightDirection), 0.f, 10.f);
         ImGui::InputFloat("Sunlight Power", &mRenderer->mScene.mPerspective.mData.sunlightDirection[3]);
     }
     if (ImGui::CollapsingHeader("Skybox", ImGuiTreeNodeFlags_DefaultOpen)) {
