@@ -97,8 +97,8 @@ void Transparency::initPipeline() {
     compositeBlendAttachment.colorWriteMask =
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     compositeBlendAttachment.blendEnable = VK_TRUE;
-    compositeBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-    compositeBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    compositeBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    compositeBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOne;
     compositeBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
     compositeBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
     compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;

@@ -597,8 +597,9 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::Opaque, [&](vk::CommandBuffer cmd) {
-        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+        std::array<vk::RenderingAttachmentInfo, 4> colorAttachments = {
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
+            vk::RenderingAttachmentInfo{},
             vk::RenderingAttachmentInfo{},
             vk::RenderingAttachmentInfo{},
         };
@@ -647,8 +648,9 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::Transparent, [&](vk::CommandBuffer cmd) {
-        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+        std::array<vk::RenderingAttachmentInfo, 4> colorAttachments = {
             vk::RenderingAttachmentInfo{},
+            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
             vkhelper::colorAttachmentInfo(*mScene.mTransparency.mAccumImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
             vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
         };

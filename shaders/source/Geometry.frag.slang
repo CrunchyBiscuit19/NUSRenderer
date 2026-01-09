@@ -1,4 +1,4 @@
-import Geometry;
+﻿import Geometry;
 import Perspective;
 
 [[vk::binding(0, 0)]]
@@ -12,11 +12,11 @@ FSOutput main(FSInput in) : SV_Target {
     float sunlightPower = perspectiveBuffer.sunlightDirection.w;
 
     float4 diffuseColor = materialResources[NonUniformResourceIndex(in.materialIndex * 5 + 0)].Sample(in.uv);
-    if (diffuseColor.a < 0.0001)
+    if (diffuseColor.a < 0.0001f)
         discard;
 
     float4 color = in.color * diffuseColor;
-    float diffuse = max(dot(normal, sunlightDir), 0.0);
+    float diffuse = max(dot(normal, sunlightDir), 0.f);
     float4 sunlight = perspectiveBuffer.sunlightColor * sunlightPower;
 
     float4 lightColor = color * diffuse * sunlight;
@@ -24,8 +24,16 @@ FSOutput main(FSInput in) : SV_Target {
 
     float4 finalColor = lightColor + ambient;
 
-    //float weight = pow(color.a, 2);
-    float weight = max(min(1.0, max(max(color.r, color.g), color.b) * color.a), color.a) * clamp(0.03 / (1e-5 + pow(in.position.z / 200, 4.0)), 1e-2, 3e3);
+    finalColor.rgb *= finalColor.a; 
+    finalColor.a *= 1.0 - (color.r + color.g + color.b) * (1.0 / 3.0);
 
-    return FSOutput(finalColor, float4(finalColor.rgb * finalColor.a, finalColor.a) * weight, finalColor.a);
+    float tmp = (color.a * 8.0 + 0.01) * (-in.position.z * 0.95 + 1.0);
+    float weight = clamp(tmp * tmp * tmp * 1e3, 1e-2, 3e2);
+
+    return FSOutput(
+        finalColor,
+        finalColor.a * (float4(1.f) - color), 
+        finalColor * weight, 
+        finalColor.a
+    );
 }

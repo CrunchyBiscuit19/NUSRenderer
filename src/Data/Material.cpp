@@ -52,6 +52,17 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     noBlendState.blendEnable = VK_FALSE;
 
+    vk::PipelineColorBlendAttachmentState opaqueBlendState{};
+    opaqueBlendState.colorWriteMask =
+        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB;
+    opaqueBlendState.blendEnable = VK_TRUE;
+    opaqueBlendState.srcColorBlendFactor = vk::BlendFactor::eZero;
+    opaqueBlendState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcColor;
+    opaqueBlendState.colorBlendOp = vk::BlendOp::eAdd;
+    opaqueBlendState.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    opaqueBlendState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    opaqueBlendState.alphaBlendOp = vk::BlendOp::eAdd;
+
     vk::PipelineColorBlendAttachmentState accumBlendState{};
     accumBlendState.colorWriteMask =
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -82,6 +93,7 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     MSAA_ENABLE ? materialPipelineBuilder.enableSampleShading() : materialPipelineBuilder.disableSampleShading();
     materialPipelineBuilder.enableDepthTest(!transparency, vk::CompareOp::eGreaterOrEqual); 
     materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, noBlendState);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, opaqueBlendState);
     materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mAccumImage.imageFormat, accumBlendState);
     materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mRevealageImage.imageFormat, rvlBlendState);
     materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
