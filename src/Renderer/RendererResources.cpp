@@ -7,6 +7,85 @@
 #include <bit>
 #include <fstream>
 
+AllocatedBuffer::AllocatedBuffer()
+    : buffer(nullptr),
+      address(std::nullopt),
+      allocator(nullptr),
+      allocation(nullptr),
+      info({}),
+      currentStage(vk::PipelineStageFlagBits2::eNone),
+      currentAccess(vk::AccessFlagBits2::eNone) {}
+
+AllocatedBuffer::AllocatedBuffer(
+    vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info
+)
+    : buffer(std::move(buffer)),
+      address(address),
+      allocator(allocator),
+      allocation(allocation),
+      info(info),
+      currentStage(vk::PipelineStageFlagBits2::eNone),
+      currentAccess(vk::AccessFlagBits2::eNone) {}
+
+void AllocatedBuffer::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
+    vkhelper::createBufferPipelineBarrier(cmd, buffer, currentStage, currentAccess, nextStage, nextAccess);
+    currentStage = nextStage;
+    currentAccess = nextAccess;
+}
+
+AllocatedBuffer::AllocatedBuffer(AllocatedBuffer&& other) noexcept
+    : buffer(std::move(other.buffer)),
+      address(other.address),
+      allocator(other.allocator),
+      allocation(other.allocation),
+      info(other.info),
+      currentStage(other.currentStage),
+      currentAccess(other.currentAccess) {
+    other.address = std::nullopt;
+    other.allocator = nullptr;
+    other.allocation = nullptr;
+    other.info = {};
+    other.currentStage = vk::PipelineStageFlagBits2::eNone;
+    other.currentAccess = vk::AccessFlagBits2::eNone;
+}
+
+AllocatedBuffer& AllocatedBuffer::operator=(AllocatedBuffer&& other) noexcept {
+    if (this != &other) {
+        buffer = std::move(other.buffer);
+        address = other.address;
+        allocator = other.allocator;
+        allocation = other.allocation;
+        info = other.info;
+        currentStage = other.currentStage;
+        currentAccess = other.currentAccess;
+
+        other.address = std::nullopt;
+        other.allocator = nullptr;
+        other.allocation = nullptr;
+        other.info = {};
+        other.currentStage = vk::PipelineStageFlagBits2::eNone;
+        other.currentAccess = vk::AccessFlagBits2::eNone;
+    }
+    return *this;
+}
+
+void AllocatedBuffer::cleanup() {
+    if (allocator == nullptr) {
+        return;
+    }  // If destroying a moved AllocatedBuffer
+    buffer.clear();
+    vmaFreeMemory(*allocator, allocation);
+
+    buffer = nullptr;
+    allocator = nullptr;
+    allocation = nullptr;
+    info = {};
+    currentStage = vk::PipelineStageFlagBits2::eNone;
+    currentAccess = vk::AccessFlagBits2::eNone;
+}
+
+AllocatedBuffer::~AllocatedBuffer() { cleanup(); }
+
 RendererResources::RendererResources(Renderer* renderer) : mRenderer(renderer), mColorClearValue(CLEAR_COLOR) {}
 
 void RendererResources::initStaging() {
@@ -167,13 +246,14 @@ AllocatedImage RendererResources::createImage(
 
     vk::ImageAspectFlags aspectFlag = vk::ImageAspectFlagBits::eColor;
     if (format == vk::Format::eD32Sfloat || format == vk::Format::eD24UnormS8Uint) aspectFlag = vk::ImageAspectFlagBits::eDepth;
-    vk::ImageViewCreateInfo newImageViewCreateInfo = vkhelper::imageViewCreateInfo(format, *newImage.image, aspectFlag);
+    newImage.aspect = aspectFlag;
+
+    vk::ImageViewCreateInfo newImageViewCreateInfo = vkhelper::imageViewCreateInfo(format, *newImage.image, newImage.aspect);
     newImageViewCreateInfo.subresourceRange.levelCount = newImageCreateInfo.mipLevels;
     if (cubemap) {
         newImageViewCreateInfo.subresourceRange.layerCount = NUMBER_OF_CUBEMAP_FACES;
         newImageViewCreateInfo.viewType = vk::ImageViewType::eCube;
     }
-
     newImage.imageView = mRenderer->mCore.mDevice.createImageView(newImageViewCreateInfo);
 
     return newImage;

@@ -499,25 +499,11 @@ void GLTFModel::loadBoundsBuffer() {
     boundsCopy.size = boundsSize;
 
     mRenderer->mImmSubmit.individualSubmit([this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *renderer->mResources.mBoundsStagingBuffer.buffer,
-            vk::PipelineStageFlagBits2::eHost,
-            vk::AccessFlagBits2::eHostWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        renderer->mResources.mBoundsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mBoundsStagingBuffer.buffer, *mBoundsBuffer.buffer, boundsCopy);
 
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mBoundsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        mBoundsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Uploading", mName);
@@ -553,35 +539,13 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::
     indexCopy.size = srcIndexVectorSize;
 
     mRenderer->mImmSubmit.individualSubmit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *renderer->mResources.mMeshStagingBuffer.buffer,
-            vk::PipelineStageFlagBits2::eHost,
-            vk::AccessFlagBits2::eHostWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        renderer->mResources.mMeshStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mVertexBuffer.buffer, vertexCopy);
         cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mIndexBuffer.buffer, indexCopy);
 
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mesh.mVertexBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
-
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mesh.mIndexBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        mesh.mVertexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        mesh.mIndexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Model Buffer {} Uploading", mName, mesh.mId);
 }
@@ -599,25 +563,11 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
     materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
 
     mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *renderer->mResources.mMaterialConstantsStagingBuffer.buffer,
-            vk::PipelineStageFlagBits2::eHost,
-            vk::AccessFlagBits2::eHostWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        renderer->mResources.mMaterialConstantsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
 
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mMaterialConstantsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        mMaterialConstantsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 }
@@ -637,25 +587,11 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
     nodeTransformsCopy.size = nodesVector.size() * sizeof(glm::mat4);
 
     mRenderer->mImmSubmit.individualSubmit([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *renderer->mResources.mNodeTransformsStagingBuffer.buffer,
-            vk::PipelineStageFlagBits2::eHost,
-            vk::AccessFlagBits2::eHostWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        renderer->mResources.mNodeTransformsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
 
         cmd.copyBuffer(*renderer->mResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
 
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mNodeTransformsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        mNodeTransformsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
 }

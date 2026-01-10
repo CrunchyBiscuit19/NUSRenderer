@@ -125,31 +125,19 @@ void Renderer::initPasses() {
 
         cmd.fillBuffer(*mStats.mRenderInstancesCountBuffer.buffer, 0, vk::WholeSize, 0);
 
-        vkhelper::createBufferPipelineBarrier(  // Wait for stats total count buffer to be reset to zero
+        mStats.mRenderInstancesCountBuffer.barrier(  // Wait for stats total count buffer to be reset to zero
             cmd,
-            *mStats.mRenderInstancesCountBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
         );
 
-        vkhelper::createBufferPipelineBarrier(  // Wait for visible instances indices buffer to be used finish by the indirect draw commands
-            cmd,
-            *mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer,
-            vk::PipelineStageFlagBits2::eVertexShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite
-        );
+        // Wait for visible instances indices buffer to be used finish by the indirect draw commands
+        mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
 
         cmd.fillBuffer(*mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer, 0, vk::WholeSize, UINT32_MAX);
 
-        vkhelper::createBufferPipelineBarrier(  // Zero out visisble instances indices buffer before writing into it in CullCompact
+        mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.barrier(  // Zero out visisble instances indices buffer before writing into it in CullCompact
             cmd,
-            *mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
             vk::PipelineStageFlagBits2::eComputeShader,
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
         );
@@ -160,51 +148,30 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for post cull render items count buffer to be used finish by the indirect draw commands
-                    cmd,
-                    *batch.postCullRenderItemsCountBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite
-                );
+                // Wait for post cull render items count buffer to be used finish by the indirect draw commands
+                batch.postCullRenderItemsCountBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
 
                 cmd.fillBuffer(*batch.postCullRenderItemsCountBuffer.buffer, 0, vk::WholeSize, 0);
 
-                vkhelper::createBufferPipelineBarrier(  // Zero out render items buffer before writing into it in CullCompact
+                batch.postCullRenderItemsCountBuffer.barrier(  // Zero out render items buffer before writing into it in CullCompact
                     cmd,
-                    *batch.postCullRenderItemsCountBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for post cull render items buffer to be used finish by the indirect draw commands
-                    cmd,
-                    *batch.postCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite
-                );
+                // Wait for post cull render items buffer to be used finish by the indirect draw commands
+                batch.postCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
 
                 cmd.fillBuffer(*batch.postCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
 
-                vkhelper::createBufferPipelineBarrier(  // Zero out render items buffer before writing into it in CullCompact
+                batch.postCullRenderItemsBuffer.barrier(  // Zero out render items buffer before writing into it in CullCompact
                     cmd,
-                    *batch.postCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for preCullRenderItemsBuffer to be copied into postCullRenderItemsBuffer in CullCompact
+                batch.preCullRenderItemsBuffer.barrier(  // Wait for preCullRenderItemsBuffer to be copied into postCullRenderItemsBuffer in CullCompact
                     cmd,
-                    *batch.preCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderRead,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
@@ -305,11 +272,8 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for all render items to have instance count reset in CullReset
+                batch.preCullRenderItemsBuffer.barrier(  // Wait for all render items to have instance count reset in CullReset
                     cmd,
-                    *batch.preCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
@@ -339,29 +303,14 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for preCullRenderItemsBuffer to have instanceCount written in CullCull
-                    cmd,
-                    *batch.preCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderRead
-                );
+                // Wait for preCullRenderItemsBuffer to have instanceCount written in CullCull
+                batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsBuffer to be used finish by the indirect draw commands
-                    cmd,
-                    *batch.postCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderWrite
-                );
+                // Wait for postCullRenderItemsBuffer to be used finish by the indirect draw commands
+                batch.postCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderWrite);
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsCountBuffer to be used finish by the indirect draw commands
+                batch.postCullRenderItemsCountBuffer.barrier(  // Wait for postCullRenderItemsCountBuffer to be used finish by the indirect draw commands
                     cmd,
-                    *batch.postCullRenderItemsCountBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
@@ -386,32 +335,14 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for visible instances indices buffer to be written to in CullCull
-                    cmd,
-                    *mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eVertexShader,
-                    vk::AccessFlagBits2::eShaderRead
-                );
+                // Wait for visible instances indices buffer to be written to in CullCull
+                mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsBuffer to be written to in CullCompact
-                    cmd,
-                    *batch.postCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead
-                );
+                // Wait for postCullRenderItemsBuffer to be written to in CullCompact
+                batch.postCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eDrawIndirect, vk::AccessFlagBits2::eIndirectCommandRead);
 
-                vkhelper::createBufferPipelineBarrier(  // Wait for postCullRenderItemsCountBuffer to be accurately counted in CullCompact
-                    cmd,
-                    *batch.postCullRenderItemsCountBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderWrite,
-                    vk::PipelineStageFlagBits2::eDrawIndirect,
-                    vk::AccessFlagBits2::eIndirectCommandRead
-                );
+                // Wait for postCullRenderItemsBuffer to be written to in CullCompact
+                batch.postCullRenderItemsCountBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eDrawIndirect, vk::AccessFlagBits2::eIndirectCommandRead);
             }
         }
     });
@@ -503,14 +434,7 @@ void Renderer::initPasses() {
             mScene.mPicker.mPickPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mPicker.mPickPushConstants
         );
 
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mScene.mPicker.mBuffer.buffer,
-            vk::PipelineStageFlagBits2::eHost,
-            vk::AccessFlagBits2::eHostWrite,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
-        );
+        mScene.mPicker.mBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
         vkhelper::createImagePipelineBarrier(
             cmd,
@@ -524,14 +448,7 @@ void Renderer::initPasses() {
 
         cmd.dispatch(1, 1, 1);
 
-        vkhelper::createBufferPipelineBarrier(
-            cmd,
-            *mScene.mPicker.mBuffer.buffer,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderWrite,
-            vk::PipelineStageFlagBits2::eHost,
-            vk::AccessFlagBits2::eHostRead
-        );
+        mScene.mPicker.mBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostRead);
 
         glm::uvec2 read(0);
         std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), sizeof(glm::uvec2));
@@ -593,7 +510,7 @@ void Renderer::initPasses() {
         };
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-        
+
         const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
             vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
         );

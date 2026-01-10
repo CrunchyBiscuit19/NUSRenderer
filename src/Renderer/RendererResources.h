@@ -18,6 +18,7 @@ struct AllocatedImage {
     vk::raii::ImageView imageView;
     vk::Format imageFormat;
     vk::Extent3D imageExtent;
+    vk::ImageAspectFlags aspect;
     VmaAllocator* allocator;
     VmaAllocation allocation;
 
@@ -94,52 +95,24 @@ struct AllocatedBuffer {
     VmaAllocation allocation;
     VmaAllocationInfo info;
 
-    AllocatedBuffer() : buffer(nullptr), address(std::nullopt), allocator(nullptr), allocation(nullptr), info({}) {}
+    vk::PipelineStageFlagBits2 currentStage;
+    vk::AccessFlags2 currentAccess;
 
-    AllocatedBuffer(vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info)
-        : buffer(std::move(buffer)), address(address), allocator(allocator), allocation(allocation), info(info) {}
+    AllocatedBuffer();
+    AllocatedBuffer(
+        vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info
+    );
 
-    AllocatedBuffer(AllocatedBuffer&& other) noexcept
-        : buffer(std::move(other.buffer)), address(other.address), allocator(other.allocator), allocation(other.allocation), info(other.info) {
-        other.address = std::nullopt;   
-        other.allocator = nullptr;
-        other.allocation = nullptr;
-        other.info = {};
-    }
-
-    AllocatedBuffer& operator=(AllocatedBuffer&& other) noexcept {
-        if (this != &other) {
-            buffer = std::move(other.buffer);
-            address = other.address;
-            allocator = other.allocator;
-            allocation = other.allocation;
-            info = other.info;
-
-            other.address = std::nullopt;
-            other.allocator = nullptr;
-            other.allocation = nullptr;
-            other.info = {};
-        }
-        return *this;
-    }
+    AllocatedBuffer(AllocatedBuffer&& other) noexcept;
+    AllocatedBuffer& operator=(AllocatedBuffer&& other) noexcept;
 
     AllocatedBuffer(const AllocatedBuffer&) = delete;
     AllocatedBuffer& operator=(const AllocatedBuffer&) = delete;
 
-    void cleanup() {
-        if (allocator == nullptr) {
-            return;
-        }  // If destroying a moved AllocatedBuffer
-        buffer.clear();
-        vmaFreeMemory(*allocator, allocation);
+    void barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
 
-        buffer = nullptr;
-        allocator = nullptr;
-        allocation = nullptr;
-        info = {};
-    }
-
-    ~AllocatedBuffer() { cleanup(); }
+    void cleanup();
+    ~AllocatedBuffer();
 };
 
 struct SamplerOptions {

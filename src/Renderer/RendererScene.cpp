@@ -179,42 +179,22 @@ void RendererScene::regenerateRenderItemsInstances() {
 
             mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
                 cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-                vkhelper::createBufferPipelineBarrier(  // Wait for render items buffer to be flushed
-                    cmd,
-                    *batch.preCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite
-                );
+                
+                // Wait for render items buffer to be flushed
+                batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
+
                 cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
-                vkhelper::createBufferPipelineBarrier(  // Wait for render items to finish uploading
-                    cmd,
-                    *batch.preCullRenderItemsBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderRead
-                );
+
+                // Wait for render items to finish uploading
+                batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
 
                 cmd.fillBuffer(*batch.renderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
-                vkhelper::createBufferPipelineBarrier(
-                    cmd,
-                    *batch.renderInstancesBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite
-                );
+
+                batch.renderInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
+                
                 cmd.copyBuffer(*batch.renderInstancesStagingBuffer.buffer, *batch.renderInstancesBuffer.buffer, renderInstancesCopy);
-                vkhelper::createBufferPipelineBarrier(
-                    cmd,
-                    *batch.renderInstancesBuffer.buffer,
-                    vk::PipelineStageFlagBits2::eTransfer,
-                    vk::AccessFlagBits2::eTransferWrite,
-                    vk::PipelineStageFlagBits2::eComputeShader,
-                    vk::AccessFlagBits2::eShaderRead
-                );
+                
+                batch.renderInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
             });
 
             LOG_INFO(mRenderer->mLogger, "Batch {} Render Items and Render Instances Uploading", batch.pipelineBundle->id);
@@ -333,14 +313,8 @@ void RendererScene::reloadMainVertexBuffer() {
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(  // Wait for main vertex buffer to finish uploading
-            cmd,
-            *mMainVertexBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eVertexShader,
-            vk::AccessFlagBits2::eShaderRead
-        );
+        // Wait for main vertex buffer to finish uploading
+        mMainVertexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Reloading");
@@ -369,14 +343,8 @@ void RendererScene::reloadMainIndexBuffer() {
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(  // Wait for main index buffer to finish uploading
-            cmd,
-            *mMainIndexBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eVertexShader,
-            vk::AccessFlagBits2::eShaderRead
-        );
+        // Wait for main index buffer to finish uploading
+        mMainIndexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Index Buffer Reloading");
@@ -403,14 +371,8 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(  // Wait for main material constants buffer to finish uploading
-            cmd,
-            *mMainMaterialConstantsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eVertexShader,
-            vk::AccessFlagBits2::eShaderRead
-        );
+        // Wait for main material constants buffer to finish uploading
+        mMainMaterialConstantsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Reloading");
@@ -437,14 +399,8 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(  // Wait for main node transforms buffer to finish uploading
-            cmd,
-            *mMainNodeTransformsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eVertexShader,
-            vk::AccessFlagBits2::eShaderRead
-        );
+        // Wait for main node transforms buffer to finish uploading
+        mMainNodeTransformsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Reloading");
@@ -471,14 +427,8 @@ void RendererScene::reloadMainBoundsBuffer() {
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(  // Wait for main bounds buffer to finish uploading
-            cmd,
-            *mMainBoundsBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead
-        );
+        // Wait for main bounds buffer to finish uploading
+        mMainBoundsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Reloading");
@@ -508,14 +458,8 @@ void RendererScene::reloadMainInstancesBuffer() {
     }
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::createBufferPipelineBarrier(  // Wait for main instances buffer to finish uploading
-            cmd,
-            *mMainInstancesBuffer.buffer,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite,
-            vk::PipelineStageFlagBits2::eVertexShader,
-            vk::AccessFlagBits2::eShaderRead
-        );
+        // Wait for main instances buffer to finish uploading
+        mMainInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Main Pre-Cull Instances Buffer Reloading");
