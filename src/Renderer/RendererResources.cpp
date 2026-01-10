@@ -131,13 +131,13 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
     vmaCreateBuffer(mRenderer->mCore.mVmaAllocator, &bufferInfo1, &vmaAllocInfo, &tempBuffer, &newBuffer.allocation, &newBuffer.info);
     newBuffer.buffer = vk::raii::Buffer(mRenderer->mCore.mDevice, tempBuffer);
     newBuffer.allocator = &mRenderer->mCore.mVmaAllocator;
+    if (usage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        vk::BufferDeviceAddressInfo bufferDeviceAddressInfo = {};
+        bufferDeviceAddressInfo.buffer = *newBuffer.buffer;
+        newBuffer.address = mRenderer->mCore.mDevice.getBufferAddress(bufferDeviceAddressInfo);
+    }
 
     return newBuffer;
-}
-
-AddressedBuffer RendererResources::createAddressedBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const {
-    AddressedBuffer tmp = createBuffer(allocSize, usage, memoryUsage);
-    return tmp;
 }
 
 AllocatedImage RendererResources::createImage(

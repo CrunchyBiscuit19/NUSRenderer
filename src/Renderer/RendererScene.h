@@ -52,17 +52,17 @@ class RendererScene {
     std::array<std::unordered_map<u32, Batch>*, 3> mBatchTypes;
     GeometryPushConstants mGeometryPushConstants;
 
-    AddressedBuffer mMainVertexBuffer;
+    AllocatedBuffer mMainVertexBuffer;
     AllocatedBuffer mMainIndexBuffer;
 
-    AddressedBuffer mMainMaterialConstantsBuffer;
+    AllocatedBuffer mMainMaterialConstantsBuffer;
     vk::raii::DescriptorSet mMainMaterialResourcesDescriptorSet;
     vk::raii::DescriptorSetLayout mMainMaterialResourcesDescriptorSetLayout;
 
-    AddressedBuffer mMainNodeTransformsBuffer;
-    AddressedBuffer mMainInstancesBuffer;
-    AddressedBuffer mMainBoundsBuffer;
-    AddressedBuffer mMainVisibleRenderInstancesInstanceIndexBuffer;
+    AllocatedBuffer mMainNodeTransformsBuffer;
+    AllocatedBuffer mMainInstancesBuffer;
+    AllocatedBuffer mMainBoundsBuffer;
+    AllocatedBuffer mMainVisibleRenderInstancesInstanceIndexBuffer;
 
     RendererScene(Renderer* renderer);
 

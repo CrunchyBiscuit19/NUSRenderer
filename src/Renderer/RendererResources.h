@@ -89,17 +89,19 @@ struct AllocatedImage {
 
 struct AllocatedBuffer {
     vk::raii::Buffer buffer;
+    std::optional<vk::DeviceAddress> address;
     VmaAllocator* allocator;
     VmaAllocation allocation;
     VmaAllocationInfo info;
 
-    AllocatedBuffer() : buffer(nullptr), allocator(nullptr), allocation(nullptr), info({}) {}
+    AllocatedBuffer() : buffer(nullptr), address(std::nullopt), allocator(nullptr), allocation(nullptr), info({}) {}
 
-    AllocatedBuffer(vk::raii::Buffer buffer, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info)
-        : buffer(std::move(buffer)), allocator(allocator), allocation(allocation), info(info) {}
+    AllocatedBuffer(vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info)
+        : buffer(std::move(buffer)), address(address), allocator(allocator), allocation(allocation), info(info) {}
 
     AllocatedBuffer(AllocatedBuffer&& other) noexcept
-        : buffer(std::move(other.buffer)), allocator(other.allocator), allocation(other.allocation), info(other.info) {
+        : buffer(std::move(other.buffer)), address(other.address), allocator(other.allocator), allocation(other.allocation), info(other.info) {
+        other.address = std::nullopt;   
         other.allocator = nullptr;
         other.allocation = nullptr;
         other.info = {};
@@ -108,10 +110,12 @@ struct AllocatedBuffer {
     AllocatedBuffer& operator=(AllocatedBuffer&& other) noexcept {
         if (this != &other) {
             buffer = std::move(other.buffer);
+            address = other.address;
             allocator = other.allocator;
             allocation = other.allocation;
             info = other.info;
 
+            other.address = std::nullopt;
             other.allocator = nullptr;
             other.allocation = nullptr;
             other.info = {};
@@ -136,36 +140,6 @@ struct AllocatedBuffer {
     }
 
     ~AllocatedBuffer() { cleanup(); }
-};
-
-struct AddressedBuffer : AllocatedBuffer {
-    vk::DeviceAddress address;
-
-    AddressedBuffer() = default;
-
-    AddressedBuffer(AllocatedBuffer&& other) noexcept : AllocatedBuffer(std::move(other)) {
-        address = buffer.getDevice().getBufferAddress(vk::BufferDeviceAddressInfo(*buffer));
-    }
-
-    AddressedBuffer(AddressedBuffer&& other) noexcept : AllocatedBuffer(std::move(other)), address(other.address) { other.address = 0; }
-
-    AddressedBuffer& operator=(AllocatedBuffer&& other) noexcept {
-        AllocatedBuffer::operator=(std::move(other));
-        address = 0;
-        return *this;
-    }
-
-    AddressedBuffer& operator=(AddressedBuffer&& other) noexcept {
-        if (this != &other) {
-            AllocatedBuffer::operator=(std::move(other));
-            address = other.address;
-            other.address = 0;
-        }
-        return *this;
-    }
-
-    AddressedBuffer(const AddressedBuffer&) = delete;
-    AddressedBuffer& operator=(const AddressedBuffer&) = delete;
 };
 
 struct SamplerOptions {
@@ -252,7 +226,6 @@ class RendererResources {
     vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
     AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
-    AddressedBuffer createAddressedBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
     AllocatedBuffer createStagingBuffer(size_t allocSize) const;
 
     AllocatedImage createImage(

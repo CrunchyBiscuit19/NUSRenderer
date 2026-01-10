@@ -6,7 +6,7 @@ RendererStats::RendererStats(Renderer* renderer)
     : mRenderer(renderer), mFrameTime(0.0f), mDrawTime(0.0f), mDrawCallCount(0), mPreCullRenderInstancesCount(0), mSceneUpdateTime(0.0f) {}
 
 void RendererStats::initBuffers() {
-    mRenderInstancesCountBuffer = mRenderer->mResources.createAddressedBuffer(
+    mRenderInstancesCountBuffer = mRenderer->mResources.createBuffer(
         sizeof(u32),
         vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,

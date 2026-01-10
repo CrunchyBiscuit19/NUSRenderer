@@ -8,7 +8,7 @@ u32 Batch::firstRenderInstanceOffset = 0;
 Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     pipelineBundle = primitive.mMaterial->mPipelineBundle;
 
-    preCullRenderItemsBuffer = renderer->mResources.createAddressedBuffer(
+    preCullRenderItemsBuffer = renderer->mResources.createBuffer(
         MAX_RENDER_ITEMS * sizeof(RenderItem),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
@@ -20,7 +20,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     renderItemsStagingBuffer = renderer->mResources.createStagingBuffer(MAX_RENDER_ITEMS * sizeof(RenderItem));
     LOG_INFO(renderer->mLogger, "Batch {} Render Items Staging Buffer Created", pipelineId);
 
-    postCullRenderItemsBuffer = renderer->mResources.createAddressedBuffer(
+    postCullRenderItemsBuffer = renderer->mResources.createBuffer(
         MAX_RENDER_ITEMS * sizeof(RenderItem),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
@@ -29,7 +29,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     renderer->mCore.labelResourceDebug(postCullRenderItemsBuffer.buffer, fmt::format("PostCullRenderItemsBuffer{}", pipelineId).c_str());
     LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Buffer Created", pipelineId);
 
-    postCullRenderItemsCountBuffer = renderer->mResources.createAddressedBuffer(
+    postCullRenderItemsCountBuffer = renderer->mResources.createBuffer(
         sizeof(uint32_t),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
@@ -38,7 +38,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     renderer->mCore.labelResourceDebug(postCullRenderItemsCountBuffer.buffer, fmt::format("PostCullRenderItemsCountBuffer{}", pipelineId).c_str());
     LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Count Buffer Created", pipelineId);
 
-    renderInstancesBuffer = renderer->mResources.createAddressedBuffer(
+    renderInstancesBuffer = renderer->mResources.createBuffer(
         MAX_RENDER_ITEMS * sizeof(RenderInstance),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY

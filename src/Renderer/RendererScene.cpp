@@ -19,7 +19,7 @@ RendererScene::RendererScene(Renderer* renderer)
 }
 
 void RendererScene::initBuffers() {
-    mMainVertexBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainVertexBuffer = mRenderer->mResources.createBuffer(
         MAIN_VERTEX_BUFFER_SIZE,
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -33,7 +33,7 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
-    mMainMaterialConstantsBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
         MAX_MATERIALS * sizeof(MaterialConstants),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -41,7 +41,7 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainMaterialConstantsBuffer.buffer, "MainMaterialConstantsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Created");
 
-    mMainNodeTransformsBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainNodeTransformsBuffer = mRenderer->mResources.createBuffer(
         MAX_NODES * sizeof(glm::mat4),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -49,7 +49,7 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainNodeTransformsBuffer.buffer, "MainNodeTransformsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
-    mMainInstancesBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainInstancesBuffer = mRenderer->mResources.createBuffer(
         MAX_INSTANCES * sizeof(InstanceData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -57,7 +57,7 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainInstancesBuffer.buffer, "MainInstancesBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 
-    mMainBoundsBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainBoundsBuffer = mRenderer->mResources.createBuffer(
         MAX_RENDER_ITEMS * sizeof(AABB),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -65,7 +65,7 @@ void RendererScene::initBuffers() {
     mRenderer->mCore.labelResourceDebug(mMainBoundsBuffer.buffer, "MainBoundsBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 
-    mMainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createAddressedBuffer(
+    mMainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createBuffer(
         MAX_INSTANCES,
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -86,11 +86,11 @@ void RendererScene::initDescriptor() {
 }
 
 void RendererScene::initPushConstants() {
-    mGeometryPushConstants.mainVertexBuffer = mMainVertexBuffer.address;
-    mGeometryPushConstants.mainMaterialConstantsBuffer = mMainMaterialConstantsBuffer.address;
-    mGeometryPushConstants.mainNodeTransformsBuffer = mMainNodeTransformsBuffer.address;
-    mGeometryPushConstants.mainInstancesBuffer = mMainInstancesBuffer.address;
-    mGeometryPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mMainVisibleRenderInstancesInstanceIndexBuffer.address;
+    mGeometryPushConstants.mainVertexBuffer = mMainVertexBuffer.address.value();
+    mGeometryPushConstants.mainMaterialConstantsBuffer = mMainMaterialConstantsBuffer.address.value();
+    mGeometryPushConstants.mainNodeTransformsBuffer = mMainNodeTransformsBuffer.address.value();
+    mGeometryPushConstants.mainInstancesBuffer = mMainInstancesBuffer.address.value();
+    mGeometryPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mMainVisibleRenderInstancesInstanceIndexBuffer.address.value();
     LOG_INFO(mRenderer->mLogger, "Scene Push Constants Initialized");
 }
 

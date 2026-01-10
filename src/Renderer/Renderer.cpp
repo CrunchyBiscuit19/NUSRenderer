@@ -209,7 +209,7 @@ void Renderer::initPasses() {
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
 
-                mScene.mCuller.mResetPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
+                mScene.mCuller.mResetPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address.value();
                 mScene.mCuller.mResetPushConstants.preCullRenderItemsLimit = batch.renderItems.size();
                 cmd.pushConstants<CullerResetPushConstants>(
                     mScene.mCuller.mResetPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mResetPushConstants
@@ -286,7 +286,7 @@ void Renderer::initPasses() {
     mPasses.try_emplace(PassType::CullCull, [&](vk::CommandBuffer cmd) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mCuller.mCullPipelineBundle.pipeline);
 
-        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address;
+        mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address.value();
 
         vkhelper::transitionImage(
             cmd,
@@ -318,9 +318,9 @@ void Renderer::initPasses() {
                     vk::PipelineBindPoint::eCompute, mScene.mCuller.mCullPipelineBundle.layout, 0, *mScene.mCuller.mCullDescriptorSet, nullptr
                 );
 
-                mScene.mCuller.mCullPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
+                mScene.mCuller.mCullPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address.value();
                 mScene.mCuller.mCullPushConstants.renderInstancesLimit = batch.renderInstances.size();
-                mScene.mCuller.mCullPushConstants.renderInstancesBuffer = batch.renderInstancesBuffer.address;
+                mScene.mCuller.mCullPushConstants.renderInstancesBuffer = batch.renderInstancesBuffer.address.value();
                 cmd.pushConstants<CullerCullPushConstants>(
                     mScene.mCuller.mCullPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mCullPushConstants
                 );
@@ -366,9 +366,9 @@ void Renderer::initPasses() {
                     vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
                 );
 
-                mScene.mCuller.mCompactPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address;
-                mScene.mCuller.mCompactPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
-                mScene.mCuller.mCompactPushConstants.postCullRenderItemsCountBuffer = batch.postCullRenderItemsCountBuffer.address;
+                mScene.mCuller.mCompactPushConstants.preCullRenderItemsBuffer = batch.preCullRenderItemsBuffer.address.value();
+                mScene.mCuller.mCompactPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address.value();
+                mScene.mCuller.mCompactPushConstants.postCullRenderItemsCountBuffer = batch.postCullRenderItemsCountBuffer.address.value();
                 mScene.mCuller.mCompactPushConstants.preCullRenderItemsLimit = batch.renderItems.size();
                 cmd.pushConstants<CullerCompactPushConstants>(
                     mScene.mCuller.mCompactPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mCompactPushConstants
@@ -479,7 +479,7 @@ void Renderer::initPasses() {
                     continue;
                 }
 
-                mScene.mPicker.mDrawPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+                mScene.mPicker.mDrawPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address.value();
                 cmd.pushConstants<PickerDrawPushConstants>(
                     batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mPicker.mDrawPushConstants
                 );
@@ -621,7 +621,7 @@ void Renderer::initPasses() {
                 );
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
 
-                mScene.mGeometryPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
+                mScene.mGeometryPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address.value();
                 cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mGeometryPushConstants);
 
                 cmd.drawIndexedIndirectCount(

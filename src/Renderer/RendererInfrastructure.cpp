@@ -50,7 +50,7 @@ void RendererInfrastructure::initFrames() {
         mRenderer->mCore.labelResourceDebug(mFrames[i].mAvailableSemaphore, fmt::format("FrameAvailableSemaphore{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Available Semaphore Created", i);
 
-        mFrames[i].mPerspectiveBuffer = mRenderer->mResources.createAddressedBuffer(
+        mFrames[i].mPerspectiveBuffer = mRenderer->mResources.createBuffer(
             sizeof(PerspectiveData),
             vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
             VMA_MEMORY_USAGE_CPU_TO_GPU

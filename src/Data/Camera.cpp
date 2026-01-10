@@ -74,7 +74,7 @@ void Camera::initControls() {
 
 void Camera::initBuffers() {
     const vk::DeviceSize frustumBufferSize = sizeof(Plane) * 6;
-    mFrustumBuffer = mRenderer->mResources.createAddressedBuffer(
+    mFrustumBuffer = mRenderer->mResources.createBuffer(
         frustumBufferSize, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
     mRenderer->mCore.labelResourceDebug(mFrustumBuffer.buffer, "FrustumBuffer");

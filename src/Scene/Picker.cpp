@@ -160,10 +160,10 @@ void Picker::initPickPipeline() {
 }
 
 void Picker::initDrawPushConstants() {
-    mDrawPushConstants.mainVertexBuffer = mRenderer->mScene.mMainVertexBuffer.address;
-    mDrawPushConstants.mainNodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address;
-    mDrawPushConstants.mainInstancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address;
-    mDrawPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
+    mDrawPushConstants.mainVertexBuffer = mRenderer->mScene.mMainVertexBuffer.address.value();
+    mDrawPushConstants.mainNodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address.value();
+    mDrawPushConstants.mainInstancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address.value();
+    mDrawPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address.value();
 }
 
 void Picker::initPickPushConstants() {

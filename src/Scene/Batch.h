@@ -30,13 +30,13 @@ struct Batch {
     PipelineBundle* pipelineBundle;
 
     std::vector<RenderItem> renderItems;
-    AddressedBuffer preCullRenderItemsBuffer;
+    AllocatedBuffer preCullRenderItemsBuffer;
     AllocatedBuffer renderItemsStagingBuffer;
-    AddressedBuffer postCullRenderItemsBuffer;
-    AddressedBuffer postCullRenderItemsCountBuffer;
+    AllocatedBuffer postCullRenderItemsBuffer;
+    AllocatedBuffer postCullRenderItemsCountBuffer;
 
     std::vector<RenderInstance> renderInstances;
-    AddressedBuffer renderInstancesBuffer;
+    AllocatedBuffer renderInstancesBuffer;
     AllocatedBuffer renderInstancesStagingBuffer;
 
     Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId);

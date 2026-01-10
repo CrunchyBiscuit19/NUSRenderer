@@ -27,7 +27,7 @@ class Camera {
     MovementMode mMovementMode;
     std::unordered_map<MovementMode, std::function<void()>> mMovementFunctions;
 
-    AddressedBuffer mFrustumBuffer;
+    AllocatedBuffer mFrustumBuffer;
 
     Camera(Renderer* renderer);
 

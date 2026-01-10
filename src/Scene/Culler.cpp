@@ -213,12 +213,12 @@ void Culler::initCullPipeline() {
 void Culler::initCullPushConstants() {
     vk::Extent3D depthPyramidExtent = mDepthPyramidImage.imageExtent;
     vk::Extent3D drawExtent = mRenderer->mInfrastructure.mDrawImage.imageExtent;
-    mCullPushConstants.renderInstancesCountBuffer = mRenderer->mStats.mRenderInstancesCountBuffer.address;
-    mCullPushConstants.mainBoundsBuffer = mRenderer->mScene.mMainBoundsBuffer.address;
-    mCullPushConstants.frustumBuffer = mRenderer->mCamera.mFrustumBuffer.address;
-    mCullPushConstants.mainNodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address;
-    mCullPushConstants.mainInstancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address;
-    mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address;
+    mCullPushConstants.renderInstancesCountBuffer = mRenderer->mStats.mRenderInstancesCountBuffer.address.value();
+    mCullPushConstants.mainBoundsBuffer = mRenderer->mScene.mMainBoundsBuffer.address.value();
+    mCullPushConstants.frustumBuffer = mRenderer->mCamera.mFrustumBuffer.address.value();
+    mCullPushConstants.mainNodeTransformsBuffer = mRenderer->mScene.mMainNodeTransformsBuffer.address.value();
+    mCullPushConstants.mainInstancesBuffer = mRenderer->mScene.mMainInstancesBuffer.address.value();
+    mCullPushConstants.mainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mScene.mMainVisibleRenderInstancesInstanceIndexBuffer.address.value();
     mCullPushConstants.drawExtents = glm::vec2(drawExtent.width, drawExtent.height);
     mCullPushConstants.depthPyramidExtents = glm::vec2(depthPyramidExtent.width, depthPyramidExtent.height);
 }
