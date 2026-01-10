@@ -417,20 +417,11 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::ClearScreen, [&](vk::CommandBuffer cmd) {
-        vk::RenderingAttachmentInfo colorAttachment =
-            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+        std::array<vk::RenderingAttachmentInfo, 1> colorAttachments = {
+            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear)
+        };
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear);
-
-        vk::RenderingAttachmentInfo accumAttachment =
-            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mAccumImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear);
-        accumAttachment.clearValue.color = vk::ClearColorValue(0.f, 0.f, 0.f, 0.f);
-        vk::RenderingAttachmentInfo revealageAttachment = vkhelper::colorAttachmentInfo(
-            *mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear
-        );
-        revealageAttachment.clearValue.color = vk::ClearColorValue(1.f, 1.f, 1.f, 1.f);
-
-        std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {colorAttachment, accumAttachment, revealageAttachment};
 
         const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
             vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
@@ -597,14 +588,12 @@ void Renderer::initPasses() {
     });
 
     mPasses.try_emplace(PassType::Opaque, [&](vk::CommandBuffer cmd) {
-        std::array<vk::RenderingAttachmentInfo, 4> colorAttachments = {
+        std::array<vk::RenderingAttachmentInfo, 1> colorAttachments = {
             vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
-            vk::RenderingAttachmentInfo{},
-            vk::RenderingAttachmentInfo{},
-            vk::RenderingAttachmentInfo{},
         };
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
+        
         const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
             vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
         );
@@ -643,72 +632,6 @@ void Renderer::initPasses() {
                 mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();
             }
         }
-
-        cmd.endRendering();
-    });
-
-    mPasses.try_emplace(PassType::Transparent, [&](vk::CommandBuffer cmd) {
-        std::array<vk::RenderingAttachmentInfo, 4> colorAttachments = {
-            vk::RenderingAttachmentInfo{},
-            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
-            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mAccumImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
-            vkhelper::colorAttachmentInfo(*mScene.mTransparency.mRevealageImage.imageView, vk::ImageLayout::eColorAttachmentOptimal),
-        };
-        vk::RenderingAttachmentInfo depthAttachment =
-            vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal);
-        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-            vkhelper::extent3dTo2d(mScene.mTransparency.mAccumImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
-        );
-
-        cmd.beginRendering(renderInfo);
-
-        for (auto& batch : mScene.mTransparentBatches | std::views::values) {
-            if (batch.renderItems.empty()) {
-                continue;
-            }
-
-            cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *batch.pipelineBundle->pipeline);
-
-            vkhelper::setViewportScissors(cmd, mScene.mTransparency.mAccumImage.imageExtent);
-
-            cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
-
-            cmd.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0, *mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr
-            );
-            cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *mScene.mMainMaterialResourcesDescriptorSet, nullptr);
-
-            mScene.mGeometryPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address;
-            cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, mScene.mGeometryPushConstants);
-
-            cmd.drawIndexedIndirectCount(
-                *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
-            );
-
-            mStats.mDrawCallCount++;
-            mStats.mPreCullRenderInstancesCount += batch.renderInstances.size();
-        }
-
-        cmd.endRendering();
-    });
-
-    mPasses.try_emplace(PassType::Composite, [&](vk::CommandBuffer cmd) {
-        vk::RenderingAttachmentInfo colorAttachment =
-            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.imageView, vk::ImageLayout::eColorAttachmentOptimal);
-        const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mInfrastructure.mDrawImage.imageExtent), &colorAttachment, nullptr, 1);
-
-        cmd.beginRendering(renderInfo);
-
-        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mTransparency.mPipelineBundle.pipeline);
-
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mScene.mTransparency.mPipelineBundle.layout, 0, *mScene.mTransparency.mDescriptorSet, nullptr);
-
-        vkhelper::setViewportScissors(cmd, mInfrastructure.mDrawImage.imageExtent);
-
-        cmd.draw(NUM_FULLSCREEN_QUAD_VERTICES, 1, 0, 0);
-
-        mStats.mDrawCallCount++;
 
         cmd.endRendering();
     });
@@ -926,7 +849,6 @@ void Renderer::run() {
 
             mInfrastructure.resizeSwapchain();
             mScene.mCuller.resizeCuller();
-            mScene.mTransparency.resizeImages();
 
             mInfrastructure.mResizeRequested = false;
 
@@ -1021,15 +943,6 @@ void Renderer::draw() {
 
     mPasses.at(PassType::Skybox).execute(cmd);
     mPasses.at(PassType::Opaque).execute(cmd);
-    mPasses.at(PassType::Transparent).execute(cmd);
-
-    mTransitions.at(TransitionType::AccumColorAttachmentIntoShaderRead).execute(cmd, *mScene.mTransparency.mAccumImage.image);
-    mTransitions.at(TransitionType::RvlColorAttachmentIntoShaderRead).execute(cmd, *mScene.mTransparency.mRevealageImage.image);
-
-    mPasses.at(PassType::Composite).execute(cmd);
-
-    mTransitions.at(TransitionType::AccumShaderReadIntoColorAttachment).execute(cmd, *mScene.mTransparency.mAccumImage.image);
-    mTransitions.at(TransitionType::RvlShaderReadIntoColorAttachment).execute(cmd, *mScene.mTransparency.mRevealageImage.image);
 
     if (MSAA_ENABLE) mPasses.at(PassType::ResolveMSAA).execute(cmd);
 

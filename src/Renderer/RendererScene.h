@@ -28,7 +28,6 @@ class RendererScene {
     Skybox mSkybox;
     Culler mCuller;
     Picker mPicker;
-    Transparency mTransparency;
 
     u32 mLatestInstanceId{0};
     u32 mLatestMeshId{0};
