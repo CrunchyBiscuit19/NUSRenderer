@@ -7,13 +7,12 @@ import Perspective;
 [[vk::binding(0, 0)]]
 public uniform ConstantBuffer<Perspective> perspectiveBuffer;
 [[vk::binding(0, 1)]]
-public uniform Sampler2D materialResources[];
+public uniform Sampler2D mFaterialResources[];
 
 [[vk::push_constant]]
 GeometryPushConstants geometryPc;
 
-VSOutput main(VSInput in)
-{
+VSOutput main(VSInput in) {
     VSOutput out;
 
     Vertex v = geometryPc.mainVertexBuffer[in.vertexIndex];
@@ -31,8 +30,7 @@ VSOutput main(VSInput in)
     uint mainMaterialIndex = geometryPc.postCullRenderItemsBuffer[in.drawIndex].materialIndex;
     MaterialConstant materialConstant = geometryPc.mainMaterialConstantsBuffer[mainMaterialIndex];
 
-    out.position =
-        mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix), position);
+    out.position = mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix), position);
     out.normal = v.normal;
     out.uv = float2(v.uv_x, v.uv_y);
     out.color = v.color * materialConstant.baseFactor;

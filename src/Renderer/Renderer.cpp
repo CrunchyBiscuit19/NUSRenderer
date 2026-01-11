@@ -367,21 +367,32 @@ void Renderer::initPasses() {
             return;
         }
 
-        mPasses.at(PassType::PickClear).execute(cmd);
+        mTransitions.at(TransitionType::PickerShaderReadOnlyIntoColorAttachment).execute(cmd, *mScene.mPicker.mImage.image);
 
-        mTransitions.at(TransitionType::PickerGeneralIntoColorAttachment).execute(cmd, *mScene.mPicker.mImage.image);
+        mPasses.at(PassType::PickClear).execute(cmd);
 
         mPasses.at(PassType::PickDraw).execute(cmd);
 
-        mTransitions.at(TransitionType::PickerColorAttachmentIntoGeneral).execute(cmd, *mScene.mPicker.mImage.image);
+        mTransitions.at(TransitionType::PickerColorAttachmentIntoShaderReadOnly).execute(cmd, *mScene.mPicker.mImage.image);
 
         mPasses.at(PassType::PickPick).execute(cmd);
     });
 
     mPasses.try_emplace(PassType::PickClear, [&](vk::CommandBuffer cmd) {
-        vk::ClearColorValue clearColor(0, 0, 0, 0);
-        vk::ImageSubresourceRange range = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
-        cmd.clearColorImage(*mScene.mPicker.mImage.image, vk::ImageLayout::eGeneral, clearColor, range);
+        std::array<vk::RenderingAttachmentInfo, 1> colorAttachments = {
+            vkhelper::colorAttachmentInfo(*mScene.mPicker.mImage.imageView, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear)
+        };
+        vk::RenderingAttachmentInfo depthAttachment =
+            vkhelper::depthAttachmentInfo(*mScene.mPicker.mDepthImage.imageView, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear);
+
+        colorAttachments[0].clearValue.color = vk::ClearColorValue(0, 0, 0, 0);
+
+        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
+            vkhelper::extent3dTo2d(mScene.mPicker.mImage.imageExtent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
+        );
+
+        cmd.beginRendering(renderInfo);
+        cmd.endRendering();
     });
 
     mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
@@ -394,8 +405,11 @@ void Renderer::initPasses() {
         cmd.beginRendering(renderInfo);
 
         cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mScene.mPicker.mDrawPipelineBundle.pipeline);
+
         vkhelper::setViewportScissors(cmd, mScene.mPicker.mImage.imageExtent);
+
         cmd.bindIndexBuffer(*mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+
         cmd.bindDescriptorSets(
             vk::PipelineBindPoint::eGraphics,
             mScene.mPicker.mDrawPipelineBundle.layout,
@@ -429,45 +443,35 @@ void Renderer::initPasses() {
         std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, mouseClickLocation.data(), sizeof(glm::ivec2));
 
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mPicker.mPickPipelineBundle.pipeline);
+        
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mScene.mPicker.mPickPipelineBundle.layout, 0, *mScene.mPicker.mDescriptorSet, nullptr);
+        
         cmd.pushConstants<PickerPickPushConstants>(
             mScene.mPicker.mPickPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mPicker.mPickPushConstants
         );
 
         mScene.mPicker.mBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite);
 
-        vkhelper::createImagePipelineBarrier(
-            cmd,
-            *mScene.mPicker.mImage.image,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eGeneral
-        );
-
         cmd.dispatch(1, 1, 1);
 
-        mScene.mPicker.mBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostRead);
+        mScene.mPicker.mBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostRead | vk::AccessFlagBits2::eHostWrite);
 
         glm::uvec2 read(0);
         std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), sizeof(glm::uvec2));
 
         u32 modelId = read.x;
 
-        auto reverseIt = mScene.mModelsReverse.find(static_cast<u32>(modelId));
-        if (reverseIt == mScene.mModelsReverse.end()) {
+        if (!mScene.mModelsReverse.contains(modelId)) {
             mScene.mPicker.mClickedInstance = nullptr;
             return;
         }
-        std::string& clickedModelName = reverseIt->second;
+        std::string& clickedModelName = mScene.mModelsReverse.at(modelId);
 
-        auto cacheIt = mScene.mModelsCache.find(clickedModelName);
-        if (cacheIt == mScene.mModelsCache.end()) {
+        if (!mScene.mModelsCache.contains(clickedModelName)) {
             mScene.mPicker.mClickedInstance = nullptr;
             return;
         }
-        GLTFModel& clickedModel = cacheIt->second;
+        GLTFModel& clickedModel = mScene.mModelsCache.at(clickedModelName);
 
         u32 localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
         mScene.mPicker.mClickedInstance = &clickedModel.mInstances[localInstanceIndex];
@@ -629,23 +633,23 @@ void Renderer::initTransitions() {
     );
 
     mTransitions.try_emplace(
-        TransitionType::PickerGeneralIntoColorAttachment,
-        vk::ImageLayout::eGeneral,
-        vk::PipelineStageFlagBits2::eClear,
-        vk::AccessFlagBits2::eTransferWrite,
+        TransitionType::PickerShaderReadOnlyIntoColorAttachment,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
+        vk::PipelineStageFlagBits2::eComputeShader,
+        vk::AccessFlagBits2::eShaderSampledRead,
         vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT
     );
 
     mTransitions.try_emplace(
-        TransitionType::PickerColorAttachmentIntoGeneral,
+        TransitionType::PickerColorAttachmentIntoShaderReadOnly,
         vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
-        vk::ImageLayout::eGeneral,
+        vk::ImageLayout::eShaderReadOnlyOptimal,
         vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+        vk::AccessFlagBits2::eShaderSampledRead
     );
 
     mTransitions.try_emplace(
@@ -766,6 +770,7 @@ void Renderer::run() {
 
             mInfrastructure.resizeSwapchain();
             mScene.mCuller.resizeCuller();
+            mScene.mPicker.resizePicker();
 
             mInfrastructure.mResizeRequested = false;
 

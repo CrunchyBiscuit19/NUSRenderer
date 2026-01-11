@@ -53,10 +53,13 @@ class Picker {
     void initBuffer();
     void initImage();
     void initDescriptor();
+    void writeDescriptor();
     void initDrawPipeline();
     void initPickPipeline();
     void initDrawPushConstants();
     void initPickPushConstants();
+
+    void resizePicker();
 
     void changeImguizmoOperation();
 

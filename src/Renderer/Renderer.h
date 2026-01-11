@@ -45,8 +45,9 @@ struct Pass {
 enum class TransitionType {
     DepthDepthAttachmentIntoShaderRead,
     DepthShaderReadIntoDepthAttachment,
-    PickerGeneralIntoColorAttachment,
-    PickerColorAttachmentIntoGeneral,
+    PickerShaderReadOnlyIntoColorAttachment,
+    PickerTransferDstIntoColorAttachment,
+    PickerColorAttachmentIntoShaderReadOnly,
     FinalColorUndefinedIntoColorAttachment,
     FinalColorColorAttachmentIntoTransferSrc,
     AccumColorAttachmentIntoShaderRead,

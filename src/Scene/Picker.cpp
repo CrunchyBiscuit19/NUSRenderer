@@ -18,6 +18,7 @@ void Picker::init() {
     initBuffer();
     initImage();
     initDescriptor();
+    writeDescriptor();
     initDrawPipeline();
     initPickPipeline();
     initDrawPushConstants();
@@ -38,7 +39,7 @@ void Picker::initImage() {
     mImage = mRenderer->mResources.createImage(
         mRenderer->mInfrastructure.mDrawImage.imageExtent,
         vk::Format::eR32G32Uint,  // Model Id / Instance Id
-        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eStorage
+        vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled
     );
     mRenderer->mCore.labelResourceDebug(mImage.image, "PickerDrawImage");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image Created");
@@ -58,9 +59,9 @@ void Picker::initImage() {
             vk::ImageLayout::eUndefined,
             vk::PipelineStageFlagBits2::eNone,
             vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eGeneral,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead
+            vk::AccessFlagBits2::eShaderSampledRead
         );
         vkhelper::transitionImage(
             cmd,
@@ -77,15 +78,17 @@ void Picker::initImage() {
 
 void Picker::initDescriptor() {
     DescriptorLayoutBuilder builder;
-    builder.addBinding(0, vk::DescriptorType::eStorageImage);
+    builder.addBinding(0, vk::DescriptorType::eSampledImage);
     mDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
     mDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDescriptorSetLayout);
     LOG_INFO(mRenderer->mLogger, "Picker Descriptor Set and Layout Created");
-
-    DescriptorSetWriter writer;
-    writer.writeImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
-    writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
+
+void Picker::writeDescriptor() {
+    DescriptorSetWriter writer;
+    writer.writeImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
+}   
 
 void Picker::initDrawPipeline() {
     vk::PushConstantRange drawPushConstantRange{};
@@ -104,8 +107,8 @@ void Picker::initDrawPipeline() {
     mRenderer->mCore.labelResourceDebug(mDrawPipelineLayout, "PickerDrawPipelineLayout");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Pipeline Layout Created");
 
-    vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "PickerDraw.frag.spv");
     vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "PickerDraw.vert.spv");
+    vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "PickerDraw.frag.spv");
 
     vk::PipelineColorBlendAttachmentState noBlendState{};
     noBlendState.colorWriteMask =
@@ -168,6 +171,18 @@ void Picker::initDrawPushConstants() {
 
 void Picker::initPickPushConstants() {
     mPickPushConstants.pickerBuffer = mRenderer->mCore.mDevice.getBufferAddress(vk::BufferDeviceAddressInfo(*mBuffer.buffer));
+}
+
+void Picker::resizePicker() {
+    mImage.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Picker Image Destroyed");
+    mDepthImage.cleanup();
+    LOG_INFO(mRenderer->mLogger, "Picker Depth Image Destroyed");
+
+    initImage();
+    writeDescriptor();
+
+    LOG_INFO(mRenderer->mLogger, "Picker Resized");
 }
 
 void Picker::changeImguizmoOperation() {

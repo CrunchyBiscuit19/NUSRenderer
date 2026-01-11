@@ -9,8 +9,7 @@ public uniform ConstantBuffer<Perspective> perspectiveBuffer;
 [[vk::push_constant]]
 PickerDrawPushConstants pickerDrawPc;
 
-VSOutput main(VSInput in)
-{
+VSOutput main(VSInput in) {
     VSOutput out;
 
     Vertex v = pickerDrawPc.mainVertexBuffer[in.vertexIndex];
@@ -25,9 +24,7 @@ VSOutput main(VSInput in)
     uint mainNodeTransformIndex = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].nodeTransformIndex;
     float4x4 nodeTransformMatrix = pickerDrawPc.mainNodeTransformsBuffer[mainNodeTransformIndex];
 
-    out.position =
-        mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix),
-            position);
+    out.position = mul(mul(mul(mul(perspectiveBuffer.proj, perspectiveBuffer.view), instanceTransformMatrix), nodeTransformMatrix), position);
     out.modelIndex = pickerDrawPc.postCullRenderItemsBuffer[in.drawIndex].modelIndex;
     out.instanceIndex = mainInstanceIndex;
     return out;
