@@ -395,11 +395,10 @@ AllocatedImage RendererResources::createImage(
 
         cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegions);
 
-        if (mipmapped)
+        if (mipmapped) {
             vkhelper::generateMipmaps(cmd, newImage, cubemap);
-        else {
-            newImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
-        }
+        }        
+        newImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
     });
 
     return newImage;

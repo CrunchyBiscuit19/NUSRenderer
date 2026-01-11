@@ -361,11 +361,10 @@ void vkhelper::generateMipmaps(vk::CommandBuffer cmd, AllocatedImage& allocatedI
     depInfo.pImageMemoryBarriers = &mipBarrier;
     cmd.pipelineBarrier2(depInfo);
 
-    // Transition all mip levels into the final read only layout
+    // Update current layout, stage, access
     allocatedImage.currentLayout = vk::ImageLayout::eTransferSrcOptimal;
     allocatedImage.currentStage = vk::PipelineStageFlagBits2::eTransfer;
     allocatedImage.currentAccess = vk::AccessFlagBits2::eTransferRead;
-    allocatedImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
 }
 
 u32 vkhelper::getFormatTexelSize(vk::Format format) {
