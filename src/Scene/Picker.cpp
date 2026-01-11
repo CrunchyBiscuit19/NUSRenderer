@@ -37,19 +37,19 @@ void Picker::initBuffer() {
 
 void Picker::initImage() {
     mImage = mRenderer->mResources.createImage(
-        mRenderer->mInfrastructure.mDrawImage.imageExtent,
+        mRenderer->mInfrastructure.mDrawImage.extent,
         vk::Format::eR32G32Uint,  // Model Id / Instance Id
         vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled
     );
     mRenderer->mCore.labelResourceDebug(mImage.image, "PickerDrawImage");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image Created");
-    mRenderer->mCore.labelResourceDebug(mImage.imageView, "PickerDrawImageView");
+    mRenderer->mCore.labelResourceDebug(mImage.view, "PickerDrawImageView");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image View Created");
 
-    mDepthImage = mRenderer->mResources.createImage(mImage.imageExtent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment);
+    mDepthImage = mRenderer->mResources.createImage(mImage.extent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment);
     mRenderer->mCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image Created");
-    mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "PickerDepthImageView");
+    mRenderer->mCore.labelResourceDebug(mDepthImage.view, "PickerDepthImageView");
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
@@ -86,7 +86,7 @@ void Picker::initDescriptor() {
 
 void Picker::writeDescriptor() {
     DescriptorSetWriter writer;
-    writer.writeImage(0, *mImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }   
 
@@ -122,8 +122,8 @@ void Picker::initDrawPipeline() {
     drawPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
     drawPipelineBuilder.disableMultisampling();
     drawPipelineBuilder.disableSampleShading();
-    drawPipelineBuilder.addColorAttachment(mImage.imageFormat, noBlendState);
-    drawPipelineBuilder.setDepthFormat(mDepthImage.imageFormat);
+    drawPipelineBuilder.addColorAttachment(mImage.format, noBlendState);
+    drawPipelineBuilder.setDepthFormat(mDepthImage.format);
     drawPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
     drawPipelineBuilder.mPipelineLayout = *mDrawPipelineLayout;
 
@@ -211,8 +211,8 @@ void Picker::imguizmoFrame() const {
     ImGuizmo::SetRect(
         0,
         0,
-        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.width),
-        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.imageExtent.height)
+        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.extent.width),
+        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.extent.height)
     );
     mRenderer->mScene.mPerspective.mData.proj[1][1] *= -1;  // Flip Y-axis in projection for ImGui coordinate system
     ImGuizmo::Manipulate(

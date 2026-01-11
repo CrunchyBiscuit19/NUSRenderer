@@ -7,6 +7,90 @@
 #include <bit>
 #include <fstream>
 
+AllocatedImage::AllocatedImage()
+    : image(nullptr),
+      view(nullptr),
+      format(vk::Format::eUndefined),
+      extent({0, 0, 0}),
+      currentLayout(vk::ImageLayout::eUndefined),
+      currentStage(vk::PipelineStageFlagBits2::eNone),
+      currentAccess(vk::AccessFlagBits2::eNone),
+      allocator(nullptr),
+      allocation(nullptr) {}
+
+AllocatedImage::AllocatedImage(
+    vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, VmaAllocator* allocator, VmaAllocation allocation
+)
+    : image(std::move(image)),
+      view(std::move(view)),
+      format(format),
+      extent(extent),
+      currentLayout(vk::ImageLayout::eUndefined),
+      currentStage(vk::PipelineStageFlagBits2::eNone),
+      currentAccess(vk::AccessFlagBits2::eNone),
+      allocator(allocator),
+      allocation(allocation) {}
+
+AllocatedImage::AllocatedImage(AllocatedImage&& other) noexcept
+    : image(std::move(other.image)),
+      view(std::move(other.view)),
+      format(other.format),
+      extent(other.extent),
+      currentLayout(other.currentLayout),
+      currentStage(other.currentStage),
+      currentAccess(other.currentAccess),
+      allocator(other.allocator),
+      allocation(other.allocation) {
+    other.format = vk::Format::eUndefined;
+    other.extent = vk::Extent3D{};
+    other.currentLayout = vk::ImageLayout::eUndefined;
+    other.currentStage = vk::PipelineStageFlagBits2::eNone;
+    other.currentAccess = vk::AccessFlagBits2::eNone;
+    other.allocator = nullptr;
+    other.allocation = nullptr;
+}
+
+AllocatedImage& AllocatedImage::operator=(AllocatedImage&& other) noexcept {
+    if (this != &other) {
+        image = std::move(other.image);
+        view = std::move(other.view);
+        format = other.format;
+        extent = other.extent;
+        currentLayout = other.currentLayout;
+        currentStage = other.currentStage;
+        currentAccess = other.currentAccess;
+        allocator = other.allocator;
+        allocation = other.allocation;
+
+        other.format = vk::Format::eUndefined;
+        other.extent = vk::Extent3D{};
+        other.currentLayout = vk::ImageLayout::eUndefined;
+        other.currentStage = vk::PipelineStageFlagBits2::eNone;
+        other.currentAccess = vk::AccessFlagBits2::eNone;
+        other.allocator = nullptr;
+        other.allocation = nullptr;
+    }
+    return *this;
+}
+
+void AllocatedImage::cleanup() {
+    if (allocator == nullptr) {
+        return;
+    }  // If destroying a moved AllocatedImage
+    image.clear();
+    view.clear();
+    vmaFreeMemory(*allocator, allocation);
+
+    image = nullptr;
+    view = nullptr;
+    allocator = nullptr;
+    allocation = nullptr;
+    format = {};
+    extent = vk::Extent3D{};
+}
+
+AllocatedImage::~AllocatedImage() { cleanup(); }
+
 AllocatedBuffer::AllocatedBuffer()
     : buffer(nullptr),
       address(std::nullopt),
@@ -132,15 +216,15 @@ void RendererResources::initDefaultImages() {
     );
 
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).image, "DefaultWhiteImage");
-    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).imageView, "DefaultWhiteImageView");
+    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::White).view, "DefaultWhiteImageView");
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).image, "DefaultGreyImage");
-    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).imageView, "DefaultGreyImageView");
+    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Grey).view, "DefaultGreyImageView");
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).image, "DefaultBlackImage");
-    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).imageView, "DefaultBlackImageView");
+    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Black).view, "DefaultBlackImageView");
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).image, "DefaultBlueImage");
-    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).imageView, "DefaultBlueImageView");
+    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Blue).view, "DefaultBlueImageView");
     mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).image, "DefaultCheckboardImage");
-    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).imageView, "DefaultCheckboardImageView");
+    mRenderer->mCore.labelResourceDebug(mDefaultImages.at(DefaultImage::Checkerboard).view, "DefaultCheckboardImageView");
 
     LOG_INFO(mRenderer->mLogger, "Default Images Created");
 }
@@ -237,8 +321,8 @@ AllocatedImage RendererResources::createImage(
     vmaAllocInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
 
     AllocatedImage newImage;
-    newImage.imageFormat = format;
-    newImage.imageExtent = extent;
+    newImage.format = format;
+    newImage.extent = extent;
     VkImage tempImage;
     vmaCreateImage(mRenderer->mCore.mVmaAllocator, &newImageCreateInfo1, &vmaAllocInfo, &tempImage, &newImage.allocation, nullptr);
     newImage.image = vk::raii::Image(mRenderer->mCore.mDevice, tempImage);
@@ -254,7 +338,7 @@ AllocatedImage RendererResources::createImage(
         newImageViewCreateInfo.subresourceRange.layerCount = NUMBER_OF_CUBEMAP_FACES;
         newImageViewCreateInfo.viewType = vk::ImageViewType::eCube;
     }
-    newImage.imageView = mRenderer->mCore.mDevice.createImageView(newImageViewCreateInfo);
+    newImage.view = mRenderer->mCore.mDevice.createImageView(newImageViewCreateInfo);
 
     return newImage;
 }
@@ -302,7 +386,7 @@ AllocatedImage RendererResources::createImage(
         cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegions);
 
         if (mipmapped)
-            vkhelper::generateMipmaps(cmd, *newImage.image, vk::Extent2D{newImage.imageExtent.width, newImage.imageExtent.height}, cubemap);
+            vkhelper::generateMipmaps(cmd, *newImage.image, vk::Extent2D{newImage.extent.width, newImage.extent.height}, cubemap);
         else {
             vkhelper::transitionImage(
                 cmd,

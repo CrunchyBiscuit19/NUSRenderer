@@ -13,25 +13,25 @@ void Transparency::init() {
 
 void Transparency::initImages() {
     mAccumImage = mRenderer->mResources.createImage(
-        mRenderer->mInfrastructure.mDrawImage.imageExtent,
+        mRenderer->mInfrastructure.mDrawImage.extent,
         vk::Format::eR16G16B16A16Sfloat,
         vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,
         false,
         true
     );
     mRenderer->mCore.labelResourceDebug(mAccumImage.image, "AccumImage");
-    mRenderer->mCore.labelResourceDebug(mAccumImage.imageView, "AccumImageView");
+    mRenderer->mCore.labelResourceDebug(mAccumImage.view, "AccumImageView");
     LOG_INFO(mRenderer->mLogger, "Accumulation Image and Image View Created");
 
     mRevealageImage = mRenderer->mResources.createImage(
-        mRenderer->mInfrastructure.mDrawImage.imageExtent,
+        mRenderer->mInfrastructure.mDrawImage.extent,
         vk::Format::eR16Unorm,
         vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,
         false,
         true
     );
     mRenderer->mCore.labelResourceDebug(mRevealageImage.image, "RevealageImage");
-    mRenderer->mCore.labelResourceDebug(mRevealageImage.imageView, "RevealageImageView");
+    mRenderer->mCore.labelResourceDebug(mRevealageImage.view, "RevealageImageView");
     LOG_INFO(mRenderer->mLogger, "Revealage Image and Image View Created");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
@@ -72,8 +72,8 @@ void Transparency::initDescriptors() {
 void Transparency::writeDescriptors() {
     DescriptorSetWriter writer;
 
-    writer.writeImage(0, *mAccumImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
-    writer.writeImage(1, *mRevealageImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mAccumImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(1, *mRevealageImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
 
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
@@ -111,8 +111,8 @@ void Transparency::initPipeline() {
     transparencyPipelineBuilder.setCullMode(vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise);
     MSAA_ENABLE ? transparencyPipelineBuilder.enableMultisampling() : transparencyPipelineBuilder.disableMultisampling();
     MSAA_ENABLE ? transparencyPipelineBuilder.enableSampleShading() : transparencyPipelineBuilder.disableSampleShading();
-    transparencyPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, compositeBlendAttachment);
-    transparencyPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
+    transparencyPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.format, compositeBlendAttachment);
+    transparencyPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.format);
     transparencyPipelineBuilder.disableDepthTest();
     transparencyPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 

@@ -187,7 +187,7 @@ void Gui::initBackend() const {
     vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
     pipelineRenderingCreateInfo.colorAttachmentCount = 1;
     pipelineRenderingCreateInfo.pColorAttachmentFormats = &mRenderer->mInfrastructure.mSwapchainBundle.mFormat;
-    pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mInfrastructure.mDepthImage.imageFormat;
+    pipelineRenderingCreateInfo.depthAttachmentFormat = mRenderer->mInfrastructure.mDepthImage.format;
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
     initInfo.Instance = *mRenderer->mCore.mInstance;

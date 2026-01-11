@@ -474,7 +474,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
             writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 0,
-                *material.mPbrData.resources.base.image->imageView,
+                *material.mPbrData.resources.base.image->view,
                 material.mPbrData.resources.base.sampler,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
@@ -482,7 +482,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
             writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 1,
-                *material.mPbrData.resources.metallicRoughness.image->imageView,
+                *material.mPbrData.resources.metallicRoughness.image->view,
                 material.mPbrData.resources.metallicRoughness.sampler,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
@@ -490,7 +490,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
             writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 2,
-                *material.mPbrData.resources.emissive.image->imageView,
+                *material.mPbrData.resources.emissive.image->view,
                 material.mPbrData.resources.emissive.sampler,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
@@ -498,7 +498,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
             writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 3,
-                *material.mPbrData.resources.normal.image->imageView,
+                *material.mPbrData.resources.normal.image->view,
                 material.mPbrData.resources.normal.sampler,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler
@@ -506,7 +506,7 @@ void RendererScene::reloadMainMaterialResourcesArray() {
             writer.writeImageArray(
                 0,
                 materialTextureArrayIndex + 4,
-                *material.mPbrData.resources.occlusion.image->imageView,
+                *material.mPbrData.resources.occlusion.image->view,
                 material.mPbrData.resources.occlusion.sampler,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::DescriptorType::eCombinedImageSampler

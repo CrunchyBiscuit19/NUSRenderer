@@ -274,7 +274,7 @@ void GLTFModel::loadImages() {
     for (fastgltf::Image& image : mAsset.images) {
         AllocatedImage newImage = loadImage(image);
         mRenderer->mCore.labelResourceDebug(newImage.image, fmt::format("{}Image{}", mName, id).c_str());
-        mRenderer->mCore.labelResourceDebug(newImage.imageView, fmt::format("{}ImageView{}", mName, id).c_str());
+        mRenderer->mCore.labelResourceDebug(newImage.view, fmt::format("{}ImageView{}", mName, id).c_str());
         mImages.emplace_back(std::move(newImage));
         id++;
     }

@@ -115,8 +115,8 @@ void RendererInfrastructure::initSwapchain() {
 
     for (u32 i = 0; i < mSwapchainBundle.mImages.size(); i++) {
         mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].image, fmt::format("SwapchainImage{}", i).c_str());
-        mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].imageView, fmt::format("SwapchainImageView{}", i).c_str());
-        mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].uNormImageView, fmt::format("SwapchainUnormImageView{}", i).c_str());
+        mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].view, fmt::format("SwapchainImageView{}", i).c_str());
+        mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].uNormView, fmt::format("SwapchainUnormImageView{}", i).c_str());
         mRenderer->mCore.labelResourceDebug(mSwapchainBundle.mImages[i].renderedSemaphore, fmt::format("SwapchainRenderedSemaphore{}", i).c_str());
     }
 
@@ -128,25 +128,25 @@ void RendererInfrastructure::initSwapchain() {
         true
     );
     mRenderer->mCore.labelResourceDebug(mDrawImage.image, "DrawImage");
-    mRenderer->mCore.labelResourceDebug(mDrawImage.imageView, "DrawImageView");
+    mRenderer->mCore.labelResourceDebug(mDrawImage.view, "DrawImageView");
 
     mDepthImage = mRenderer->mResources.createImage(
-        mDrawImage.imageExtent,
+        mDrawImage.extent,
         vk::Format::eD32Sfloat,
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
         false,
         true
     );
     mRenderer->mCore.labelResourceDebug(mDepthImage.image, "DepthImage");
-    mRenderer->mCore.labelResourceDebug(mDepthImage.imageView, "DepthImageView");
+    mRenderer->mCore.labelResourceDebug(mDepthImage.view, "DepthImageView");
 
     mIntermediateImage = mRenderer->mResources.createImage(
-        mDrawImage.imageExtent,
+        mDrawImage.extent,
         vk::Format::eR16G16B16A16Sfloat,
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment
     );
     mRenderer->mCore.labelResourceDebug(mIntermediateImage.image, "IntermediateImage");
-    mRenderer->mCore.labelResourceDebug(mIntermediateImage.imageView, "IntermediateImageView");
+    mRenderer->mCore.labelResourceDebug(mIntermediateImage.view, "IntermediateImageView");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
         for (u32 i = 0; i < mSwapchainBundle.mImages.size(); i++) {

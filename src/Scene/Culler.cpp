@@ -30,8 +30,8 @@ void Culler::init() {
 
 void Culler::initDepthPyramidImage() {
     // Depth Pyramid Image
-    u32 depthPyramidWidth = vkhelper::previousPow2(mRenderer->mInfrastructure.mDepthImage.imageExtent.width);
-    u32 depthPyramidHeight = vkhelper::previousPow2(mRenderer->mInfrastructure.mDepthImage.imageExtent.height);
+    u32 depthPyramidWidth = vkhelper::previousPow2(mRenderer->mInfrastructure.mDepthImage.extent.width);
+    u32 depthPyramidHeight = vkhelper::previousPow2(mRenderer->mInfrastructure.mDepthImage.extent.height);
     mDepthPyramidExtent = vk::Extent3D{
         depthPyramidWidth,
         depthPyramidHeight,
@@ -43,7 +43,7 @@ void Culler::initDepthPyramidImage() {
     );
     mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.image, "CullerDepthPyramidImage");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image Created");
-    mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.imageView, "CullerDepthPyramidImageView");
+    mRenderer->mCore.labelResourceDebug(mDepthPyramidImage.view, "CullerDepthPyramidImageView");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Image View Created");
 
     // Depth Pyramid Image Views
@@ -51,7 +51,7 @@ void Culler::initDepthPyramidImage() {
     mDepthPyramidMipViews.reserve(mDepthPyramidLevels);
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
         vk::ImageViewCreateInfo levelInfo =
-            vkhelper::imageViewCreateInfo(mDepthPyramidImage.imageFormat, mDepthPyramidImage.image, vk::ImageAspectFlagBits::eColor);
+            vkhelper::imageViewCreateInfo(mDepthPyramidImage.format, mDepthPyramidImage.image, vk::ImageAspectFlagBits::eColor);
         levelInfo.subresourceRange.levelCount = 1;
         levelInfo.subresourceRange.baseMipLevel = i;
         mDepthPyramidMipViews.emplace_back(std::move(mRenderer->mCore.mDevice.createImageView(levelInfo)));
@@ -89,7 +89,7 @@ void Culler::initDepthPyramidDescriptor() {
 void Culler::writeDepthPyramidDescriptor() {
     DescriptorSetWriter writer;
 
-    writer.writeImage(0, *mRenderer->mInfrastructure.mDepthImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mRenderer->mInfrastructure.mDepthImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
         writer.writeImageArray(1, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eSampledImage);
         writer.writeImageArray(2, i, *mDepthPyramidMipViews[i], nullptr, vk::ImageLayout::eGeneral, vk::DescriptorType::eStorageImage);
@@ -128,8 +128,8 @@ void Culler::initDepthPyramidPipeline() {
 }
 
 void Culler::initDepthPyramidPushConstants() {
-    vk::Extent3D depthPyramidExtent = mDepthPyramidImage.imageExtent;
-    vk::Extent3D depthFullExtent = mRenderer->mInfrastructure.mDepthImage.imageExtent;
+    vk::Extent3D depthPyramidExtent = mDepthPyramidImage.extent;
+    vk::Extent3D depthFullExtent = mRenderer->mInfrastructure.mDepthImage.extent;
     mDepthPyramidPushConstants.depthPyramidExtent = glm::uvec2(depthPyramidExtent.width, depthPyramidExtent.height);
     mDepthPyramidPushConstants.depthFullExtent = glm::uvec2(depthFullExtent.width, depthFullExtent.height);
     mDepthPyramidPushConstants.depthFullRatio =
@@ -177,7 +177,7 @@ void Culler::initCullDescriptor() {
 void Culler::writeCullDescriptor() {
     DescriptorSetWriter writer;
 
-    writer.writeImage(0, *mDepthPyramidImage.imageView, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mDepthPyramidImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
 
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mCullDescriptorSet);
 }
@@ -211,8 +211,8 @@ void Culler::initCullPipeline() {
 }
 
 void Culler::initCullPushConstants() {
-    vk::Extent3D depthPyramidExtent = mDepthPyramidImage.imageExtent;
-    vk::Extent3D drawExtent = mRenderer->mInfrastructure.mDrawImage.imageExtent;
+    vk::Extent3D depthPyramidExtent = mDepthPyramidImage.extent;
+    vk::Extent3D drawExtent = mRenderer->mInfrastructure.mDrawImage.extent;
     mCullPushConstants.renderInstancesCountBuffer = mRenderer->mStats.mRenderInstancesCountBuffer.address.value();
     mCullPushConstants.mainBoundsBuffer = mRenderer->mScene.mMainBoundsBuffer.address.value();
     mCullPushConstants.frustumBuffer = mRenderer->mCamera.mFrustumBuffer.address.value();

@@ -24,8 +24,8 @@ class SwapchainBundle {
    public:
     struct SwapchainImage {
         vk::Image image;
-        vk::raii::ImageView imageView;
-        vk::raii::ImageView uNormImageView;
+        vk::raii::ImageView view;
+        vk::raii::ImageView uNormView;
         vk::raii::Semaphore renderedSemaphore;
     };
 

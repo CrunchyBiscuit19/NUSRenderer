@@ -92,8 +92,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     MSAA_ENABLE ? materialPipelineBuilder.enableMultisampling() : materialPipelineBuilder.disableMultisampling();
     MSAA_ENABLE ? materialPipelineBuilder.enableSampleShading() : materialPipelineBuilder.disableSampleShading();
     materialPipelineBuilder.enableDepthTest(!transparency, vk::CompareOp::eGreaterOrEqual); 
-    materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, noBlendState);
-    materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.format, noBlendState);
+    materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.format);
     materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
     auto [it, _] = mPipelinesCache.try_emplace(

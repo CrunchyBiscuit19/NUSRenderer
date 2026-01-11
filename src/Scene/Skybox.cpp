@@ -66,8 +66,8 @@ void Skybox::initPipeline() {
     skyboxPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
     MSAA_ENABLE ? skyboxPipelineBuilder.enableMultisampling() : skyboxPipelineBuilder.disableMultisampling();
     MSAA_ENABLE ? skyboxPipelineBuilder.enableSampleShading() : skyboxPipelineBuilder.disableSampleShading();
-    skyboxPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.imageFormat, skyboxBlendAttachment);
-    skyboxPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.imageFormat);
+    skyboxPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.format, skyboxBlendAttachment);
+    skyboxPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.format);
     skyboxPipelineBuilder.enableDepthTest(false, vk::CompareOp::eGreaterOrEqual);
     skyboxPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 
@@ -135,7 +135,7 @@ void Skybox::setBindings() const {
     DescriptorSetWriter writer;
     writer.writeImage(
         0,
-        *mImage.imageView,
+        *mImage.view,
         mRenderer->mResources.getSampler(vk::SamplerCreateInfo()),
         vk::ImageLayout::eShaderReadOnlyOptimal,
         vk::DescriptorType::eCombinedImageSampler

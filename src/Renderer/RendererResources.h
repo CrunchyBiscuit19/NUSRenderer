@@ -15,77 +15,28 @@ class Renderer;
 
 struct AllocatedImage {
     vk::raii::Image image;
-    vk::raii::ImageView imageView;
-    vk::Format imageFormat;
-    vk::Extent3D imageExtent;
+    vk::raii::ImageView view;
+    vk::Format format;
+    vk::Extent3D extent;
     vk::ImageAspectFlags aspect;
     VmaAllocator* allocator;
     VmaAllocation allocation;
 
-    AllocatedImage()
-        : image(nullptr), imageView(nullptr), imageFormat(vk::Format::eUndefined), imageExtent({0, 0, 0}), allocator(nullptr), allocation(nullptr) {}
+    vk::ImageLayout currentLayout;
+    vk::PipelineStageFlagBits2 currentStage;
+    vk::AccessFlags2 currentAccess;
 
-    AllocatedImage(
-        vk::raii::Image image, vk::raii::ImageView imageView, vk::Format imageFormat, vk::Extent3D imageExtent, VmaAllocator* allocator,
-        VmaAllocation allocation
-    )
-        : image(std::move(image)),
-          imageView(std::move(imageView)),
-          imageFormat(imageFormat),
-          imageExtent(imageExtent),
-          allocator(allocator),
-          allocation(allocation) {}
+    AllocatedImage();
+    AllocatedImage(vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, VmaAllocator* allocator, VmaAllocation allocation);
 
-    AllocatedImage(AllocatedImage&& other) noexcept
-        : image(std::move(other.image)),
-          imageView(std::move(other.imageView)),
-          imageFormat(other.imageFormat),
-          imageExtent(other.imageExtent),
-          allocator(other.allocator),
-          allocation(other.allocation) {
-        other.allocator = nullptr;
-        other.allocation = nullptr;
-        other.imageFormat = vk::Format::eUndefined;
-        other.imageExtent = vk::Extent3D{};
-    }
-
-    AllocatedImage& operator=(AllocatedImage&& other) noexcept {
-        if (this != &other) {
-            image = std::move(other.image);
-            imageView = std::move(other.imageView);
-            imageFormat = other.imageFormat;
-            imageExtent = other.imageExtent;
-            allocator = other.allocator;
-            allocation = other.allocation;
-
-            other.allocator = nullptr;
-            other.allocation = nullptr;
-            other.imageFormat = vk::Format::eUndefined;
-            other.imageExtent = vk::Extent3D{};
-        }
-        return *this;
-    }
+    AllocatedImage(AllocatedImage&& other) noexcept;
+    AllocatedImage& operator=(AllocatedImage&& other) noexcept;
 
     AllocatedImage(const AllocatedImage&) = delete;
     AllocatedImage& operator=(const AllocatedImage&) = delete;
 
-    void cleanup() {
-        if (allocator == nullptr) {
-            return;
-        }  // If destroying a moved AllocatedImage
-        image.clear();
-        imageView.clear();
-        vmaFreeMemory(*allocator, allocation);
-
-        image = nullptr;
-        imageView = nullptr;
-        allocator = nullptr;
-        allocation = nullptr;
-        imageFormat = {};
-        imageExtent = vk::Extent3D{};
-    }
-
-    ~AllocatedImage() { cleanup(); }
+    void cleanup();
+    ~AllocatedImage();
 };
 
 struct AllocatedBuffer {
