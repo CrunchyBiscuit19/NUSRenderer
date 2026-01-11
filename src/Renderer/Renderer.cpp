@@ -458,8 +458,12 @@ void Renderer::initPasses() {
 
         glm::uvec2 read(0);
         std::memcpy(glm::value_ptr(read), static_cast<char*>(mScene.mPicker.mBuffer.info.pMappedData) + sizeof(glm::ivec2), sizeof(glm::uvec2));
+        if (read.x == 0 || read.y == 0) {
+            mScene.mPicker.mClickedInstance = nullptr;
+            return;
+        }
 
-        u32 modelId = read.x;
+        u32 modelId = read.x - 1;
 
         if (!mScene.mModelsReverse.contains(modelId)) {
             mScene.mPicker.mClickedInstance = nullptr;
@@ -473,7 +477,7 @@ void Renderer::initPasses() {
         }
         GLTFModel& clickedModel = mScene.mModelsCache.at(clickedModelName);
 
-        u32 localInstanceIndex = read.y - clickedModel.mMainFirstInstance;
+        u32 localInstanceIndex = (read.y - 1) - clickedModel.mMainFirstInstance;
         mScene.mPicker.mClickedInstance = &clickedModel.mInstances[localInstanceIndex];
     });
 

@@ -9,5 +9,5 @@ PickerPickPushConstants pickerPickPc;
 [numthreads(1)]
 void main(CSInput in) {
     uint2 read = pickerImage.Load(int3(pickerPickPc.pickerBuffer->coords, 0));
-    pickerPickPc.pickerBuffer->read = uint2(read.x - 1, read.y - 1);
+    pickerPickPc.pickerBuffer->read = uint2(read.x, read.y);
 }
