@@ -229,8 +229,8 @@ vk::ImageViewCreateInfo vkhelper::imageViewCreateInfo(vk::Format format, vk::Ima
 }
 
 void vkhelper::transitionImage(
-    vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, std::optional<vk::ImageAspectFlags> aspectFlags
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageAspectFlags aspectFlags, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask,
+    vk::AccessFlags2 srcAccessMask, vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, u32 baseMipLevel
 ) {
     vk::ImageMemoryBarrier2 imageBarrier{};
     imageBarrier.pNext = nullptr;
@@ -240,29 +240,7 @@ void vkhelper::transitionImage(
     imageBarrier.dstAccessMask = dstAccessMask;
     imageBarrier.oldLayout = currentLayout;
     imageBarrier.newLayout = newLayout;
-
-    vk::ImageAspectFlags aspectMask;
-    if (aspectFlags.has_value()) {
-        aspectMask = aspectFlags.value();
-    } else {
-        switch (newLayout) {
-            case vk::ImageLayout::eDepthAttachmentOptimal:
-            case vk::ImageLayout::eDepthReadOnlyOptimal:
-                aspectMask = vk::ImageAspectFlagBits::eDepth;
-                break;
-            case vk::ImageLayout::eStencilAttachmentOptimal:
-            case vk::ImageLayout::eStencilReadOnlyOptimal:
-                aspectMask = vk::ImageAspectFlagBits::eStencil;
-                break;
-            case vk::ImageLayout::eColorAttachmentOptimal:
-                aspectMask = vk::ImageAspectFlagBits::eColor;
-                break;
-            default:
-                aspectMask = vk::ImageAspectFlagBits::eColor;
-                break;
-        }
-    }
-    imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
+    imageBarrier.subresourceRange = imageSubresourceRange(aspectFlags);
     imageBarrier.image = image;
 
     vk::DependencyInfo depInfo{};
@@ -302,80 +280,92 @@ void vkhelper::copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image dest
     cmd.blitImage2(blitInfo);
 }
 
-void vkhelper::generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize, bool cubemap) {
+void vkhelper::generateMipmaps(vk::CommandBuffer cmd, AllocatedImage& allocatedImage, bool cubemap) {
     u32 numFaces = cubemap ? NUMBER_OF_CUBEMAP_FACES : 1;
-    const u32 mipLevels = static_cast<u32>(std::floor(std::log2(std::max(imageSize.width, imageSize.height)))) + 1;
+    const u32 mipLevels = static_cast<u32>(std::floor(std::log2(std::max(allocatedImage.extent.width, allocatedImage.extent.height)))) + 1;
+    vk::Extent2D imageSize = vkhelper::extent3dTo2d(allocatedImage.extent);
+    constexpr auto aspectMask = vk::ImageAspectFlagBits::eColor;
 
-    for (u32 mip = 0; mip < mipLevels; mip++) {
-        // Transition current mipmap level from eTransferDstOptimal to eTransferSrcOptimal
-        vk::Extent2D halfSize = imageSize;
-        halfSize.width /= 2;
-        halfSize.height /= 2;
-        vk::ImageMemoryBarrier2 imageBarrier{};
-        imageBarrier.pNext = nullptr;
-        imageBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTransfer;
-        imageBarrier.srcAccessMask = vk::AccessFlagBits2::eTransferWrite;
-        imageBarrier.dstStageMask = vk::PipelineStageFlagBits2::eTransfer;
-        imageBarrier.dstAccessMask = vk::AccessFlagBits2::eTransferRead;
-        imageBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-        imageBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-        constexpr auto aspectMask = vk::ImageAspectFlagBits::eColor;
-        imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
-        imageBarrier.subresourceRange.levelCount = 1;
-        imageBarrier.subresourceRange.baseMipLevel = mip;
-        imageBarrier.image = image;
+    for (u32 mip = 0; mip < mipLevels - 1; mip++) {
+        // Transition current mipmap level to eTransferSrcOptimal
+        vk::ImageMemoryBarrier2 mipBarrier{};
+        mipBarrier.pNext = nullptr;
+        mipBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        mipBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTransfer;
+        mipBarrier.srcAccessMask = vk::AccessFlagBits2::eTransferWrite;
+        mipBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+        mipBarrier.dstStageMask = vk::PipelineStageFlagBits2::eTransfer;
+        mipBarrier.dstAccessMask = vk::AccessFlagBits2::eTransferRead;
+        mipBarrier.subresourceRange = imageSubresourceRange(aspectMask);
+        mipBarrier.subresourceRange.baseArrayLayer = 0;
+        mipBarrier.subresourceRange.layerCount = numFaces;
+        mipBarrier.subresourceRange.baseMipLevel = mip;
+        mipBarrier.subresourceRange.levelCount = 1;
+        mipBarrier.image = allocatedImage.image;
         vk::DependencyInfo depInfo{};
         depInfo.pNext = nullptr;
         depInfo.imageMemoryBarrierCount = 1;
-        depInfo.pImageMemoryBarriers = &imageBarrier;
-
-        // Add another barrier to all the mipmap levels to transition the image into VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
+        depInfo.pImageMemoryBarriers = &mipBarrier;
         cmd.pipelineBarrier2(depInfo);
 
-        for (u32 face = 0; face < numFaces; face++) {
-            // Copy the image from previous level into next level at half resolution (except if at last level).
-            if (mip < mipLevels - 1) {
-                vk::ImageBlit2 blitRegion{};
-                blitRegion.pNext = nullptr;
-                blitRegion.srcOffsets[0] = vk::Offset3D{0, 0, 0};
-                blitRegion.srcOffsets[1] = vk::Offset3D{static_cast<i32>(imageSize.width), static_cast<i32>(imageSize.height), 1};
-                blitRegion.dstOffsets[0] = vk::Offset3D{0, 0, 0};                
-                blitRegion.dstOffsets[1] = vk::Offset3D{static_cast<i32>(halfSize.width), static_cast<i32>(halfSize.height), 1};
-                blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-                blitRegion.srcSubresource.baseArrayLayer = face;
-                blitRegion.srcSubresource.layerCount = 1;
-                blitRegion.srcSubresource.mipLevel = mip;
-                blitRegion.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-                blitRegion.dstSubresource.baseArrayLayer = face;
-                blitRegion.dstSubresource.layerCount = 1;
-                blitRegion.dstSubresource.mipLevel = mip + 1;
-                vk::BlitImageInfo2 blitInfo{};
-                blitInfo.pNext = nullptr;
-                blitInfo.dstImage = image;
-                blitInfo.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
-                blitInfo.srcImage = image;
-                blitInfo.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
-                blitInfo.filter = vk::Filter::eLinear;
-                blitInfo.regionCount = 1;
-                blitInfo.pRegions = &blitRegion;
+        vk::Extent2D halfSize = vk::Extent2D(imageSize.width / 2, imageSize.height / 2);
 
-                cmd.blitImage2(blitInfo);
-                imageSize = halfSize;
-            }
-        }
+        // Copy the image from previous level into next level at half resolution
+        vk::ImageBlit2 blitRegion{};
+        blitRegion.pNext = nullptr;
+        blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        blitRegion.srcSubresource.baseArrayLayer = 0;
+        blitRegion.srcSubresource.layerCount = numFaces;
+        blitRegion.srcSubresource.mipLevel = mip; 
+        blitRegion.srcOffsets[0] = vk::Offset3D{0, 0, 0};
+        blitRegion.srcOffsets[1] = vk::Offset3D{static_cast<i32>(imageSize.width), static_cast<i32>(imageSize.height), 1};
+        blitRegion.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        blitRegion.dstSubresource.baseArrayLayer = 0;
+        blitRegion.dstSubresource.layerCount = numFaces;
+        blitRegion.dstSubresource.mipLevel = mip + 1;
+        blitRegion.dstOffsets[0] = vk::Offset3D{0, 0, 0};
+        blitRegion.dstOffsets[1] = vk::Offset3D{static_cast<i32>(halfSize.width), static_cast<i32>(halfSize.height), 1};
+        vk::BlitImageInfo2 blitInfo{};
+        blitInfo.pNext = nullptr;
+        blitInfo.srcImage = allocatedImage.image;
+        blitInfo.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal;
+        blitInfo.dstImage = allocatedImage.image;
+        blitInfo.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
+        blitInfo.filter = vk::Filter::eLinear;
+        blitInfo.regionCount = 1;
+        blitInfo.pRegions = &blitRegion;
+
+        cmd.blitImage2(blitInfo);
+
+        imageSize = halfSize;
     }
 
-    // Transition all mip levels into the final read_only layout
-    transitionImage(
-        cmd,
-        image,
-        vk::ImageLayout::eTransferSrcOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eFragmentShader,
-        vk::AccessFlagBits2::eShaderRead
-    );
+    // Final mip level transition
+    vk::ImageMemoryBarrier2 mipBarrier{};
+    mipBarrier.pNext = nullptr;
+    mipBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+    mipBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTransfer;
+    mipBarrier.srcAccessMask = vk::AccessFlagBits2::eTransferWrite;
+    mipBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+    mipBarrier.dstStageMask = vk::PipelineStageFlagBits2::eTransfer;
+    mipBarrier.dstAccessMask = vk::AccessFlagBits2::eTransferRead;
+    mipBarrier.subresourceRange = imageSubresourceRange(aspectMask);
+    mipBarrier.subresourceRange.baseArrayLayer = 0;
+    mipBarrier.subresourceRange.layerCount = numFaces;
+    mipBarrier.subresourceRange.baseMipLevel = mipLevels - 1;
+    mipBarrier.subresourceRange.levelCount = 1;
+    mipBarrier.image = allocatedImage.image;
+    vk::DependencyInfo depInfo{};
+    depInfo.pNext = nullptr;
+    depInfo.imageMemoryBarrierCount = 1;
+    depInfo.pImageMemoryBarriers = &mipBarrier;
+    cmd.pipelineBarrier2(depInfo);
+
+    // Transition all mip levels into the final read only layout
+    allocatedImage.currentLayout = vk::ImageLayout::eTransferSrcOptimal;
+    allocatedImage.currentStage = vk::PipelineStageFlagBits2::eTransfer;
+    allocatedImage.currentAccess = vk::AccessFlagBits2::eTransferRead;
+    allocatedImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
 }
 
 u32 vkhelper::getFormatTexelSize(vk::Format format) {
@@ -454,9 +444,10 @@ void vkhelper::createBufferPipelineBarrier(
 }
 
 void vkhelper::createImagePipelineBarrier(
-    vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
-    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, std::optional<vk::ImageAspectFlags> aspectFlags
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageAspectFlags aspectFlags, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
+    vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout
 ) {
+
     vk::ImageMemoryBarrier2 imageBarrier{};
     imageBarrier.pNext = nullptr;
     imageBarrier.srcStageMask = srcStageMask;
@@ -466,28 +457,7 @@ void vkhelper::createImagePipelineBarrier(
     imageBarrier.oldLayout = currentLayout;
     imageBarrier.newLayout = currentLayout;
 
-    vk::ImageAspectFlags aspectMask;
-    if (aspectFlags.has_value()) {
-        aspectMask = aspectFlags.value();
-    } else {
-        switch (currentLayout) {
-            case vk::ImageLayout::eDepthAttachmentOptimal:
-            case vk::ImageLayout::eDepthReadOnlyOptimal:
-                aspectMask = vk::ImageAspectFlagBits::eDepth;
-                break;
-            case vk::ImageLayout::eStencilAttachmentOptimal:
-            case vk::ImageLayout::eStencilReadOnlyOptimal:
-                aspectMask = vk::ImageAspectFlagBits::eStencil;
-                break;
-            case vk::ImageLayout::eColorAttachmentOptimal:
-                aspectMask = vk::ImageAspectFlagBits::eColor;
-                break;
-            default:
-                aspectMask = vk::ImageAspectFlagBits::eColor;
-                break;
-        }
-    }
-    imageBarrier.subresourceRange = imageSubresourceRange(aspectMask);
+    imageBarrier.subresourceRange = imageSubresourceRange(aspectFlags);
     imageBarrier.image = image;
 
     vk::DependencyInfo depInfo{};
@@ -513,6 +483,4 @@ u32 vkhelper::previousPow2(u32 x) {
     return x - (x >> 1);
 }
 
-u32 vkhelper::getMipMapLevelsDepthPyramid(vk::Extent3D extent) {
-    return std::floor(std::log2(std::max(extent.width, extent.height))) + 1;
-}
+u32 vkhelper::getMipMapLevelsDepthPyramid(vk::Extent3D extent) { return std::floor(std::log2(std::max(extent.width, extent.height))) + 1; }

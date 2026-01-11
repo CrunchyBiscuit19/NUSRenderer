@@ -53,22 +53,9 @@ void Picker::initImage() {
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(
+        mImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderSampledRead);
+        mDepthImage.transition(
             cmd,
-            *mImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderSampledRead
-        );
-        vkhelper::transitionImage(
-            cmd,
-            *mDepthImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
             vk::ImageLayout::eDepthAttachmentOptimal,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
             vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
@@ -88,7 +75,7 @@ void Picker::writeDescriptor() {
     DescriptorSetWriter writer;
     writer.writeImage(0, *mImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
-}   
+}
 
 void Picker::initDrawPipeline() {
     vk::PushConstantRange drawPushConstantRange{};
@@ -209,10 +196,7 @@ void Picker::imguizmoFrame() const {
     ImGuizmo::SetGizmoSizeClipSpace(IMGUIZMO_SIZE);
 
     ImGuizmo::SetRect(
-        0,
-        0,
-        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.extent.width),
-        static_cast<float>(mRenderer->mInfrastructure.mDrawImage.extent.height)
+        0, 0, static_cast<float>(mRenderer->mInfrastructure.mDrawImage.extent.width), static_cast<float>(mRenderer->mInfrastructure.mDrawImage.extent.height)
     );
     mRenderer->mScene.mPerspective.mData.proj[1][1] *= -1;  // Flip Y-axis in projection for ImGui coordinate system
     ImGuizmo::Manipulate(

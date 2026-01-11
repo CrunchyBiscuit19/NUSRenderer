@@ -35,25 +35,11 @@ void Transparency::initImages() {
     LOG_INFO(mRenderer->mLogger, "Revealage Image and Image View Created");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(
-            cmd,
-            *mAccumImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentWrite
+        mAccumImage.transition(
+            cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
         );
-        vkhelper::transitionImage(
-            cmd,
-            *mRevealageImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentWrite
+        mRevealageImage.transition(
+            cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
         );
     });
 }

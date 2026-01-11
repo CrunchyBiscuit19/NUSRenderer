@@ -27,13 +27,19 @@ struct AllocatedImage {
     vk::AccessFlags2 currentAccess;
 
     AllocatedImage();
-    AllocatedImage(vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, VmaAllocator* allocator, VmaAllocation allocation);
+    AllocatedImage(
+        vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, vk::ImageAspectFlags aspect, VmaAllocator* allocator,
+        VmaAllocation allocation
+    );
 
     AllocatedImage(AllocatedImage&& other) noexcept;
     AllocatedImage& operator=(AllocatedImage&& other) noexcept;
 
     AllocatedImage(const AllocatedImage&) = delete;
     AllocatedImage& operator=(const AllocatedImage&) = delete;
+
+    void barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
+    void transition(vk::CommandBuffer cmd, vk::ImageLayout nexLayout, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
 
     void cleanup();
     ~AllocatedImage();

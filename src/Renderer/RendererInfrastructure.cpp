@@ -86,7 +86,7 @@ void RendererInfrastructure::initSwapchain() {
             .set_desired_format(VkSurfaceFormatKHR{
                 .format = static_cast<VkFormat>(mSwapchainBundle.mFormat), .colorSpace = static_cast<VkColorSpaceKHR>(vk::ColorSpaceKHR::eSrgbNonlinear)
             })
-            .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eFifo))
+            .set_desired_present_mode(static_cast<VkPresentModeKHR>(vk::PresentModeKHR::eMailbox))
             .set_desired_extent(mRenderer->mCore.mWindowExtent.width, mRenderer->mCore.mWindowExtent.height)
             .add_image_usage_flags(static_cast<VkImageUsageFlags>(vk::ImageUsageFlagBits::eTransferDst))
             .set_desired_min_image_count(NUMBER_OF_SWAPCHAIN_IMAGES)
@@ -153,6 +153,7 @@ void RendererInfrastructure::initSwapchain() {
             vkhelper::transitionImage(
                 cmd,
                 mSwapchainBundle.mImages[i].image,
+                vk::ImageAspectFlagBits::eColor,
                 vk::ImageLayout::eUndefined,
                 vk::PipelineStageFlagBits2::eNone,
                 vk::AccessFlagBits2::eNone,
@@ -162,48 +163,19 @@ void RendererInfrastructure::initSwapchain() {
             );
         }
         if (MSAA_ENABLE) {
-            vkhelper::transitionImage(
-                cmd,
-                *mDrawImage.image,
-                vk::ImageLayout::eUndefined,
-                vk::PipelineStageFlagBits2::eNone,
-                vk::AccessFlagBits2::eNone,
-                vk::ImageLayout::eColorAttachmentOptimal,
-                vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                vk::AccessFlagBits2::eColorAttachmentWrite
+            mDrawImage.transition(
+                cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
             );
         } else {
-            vkhelper::transitionImage(
-                cmd,
-                *mDrawImage.image,
-                vk::ImageLayout::eUndefined,
-                vk::PipelineStageFlagBits2::eNone,
-                vk::AccessFlagBits2::eNone,
-                vk::ImageLayout::eTransferSrcOptimal,
-                vk::PipelineStageFlagBits2::eTransfer,
-                vk::AccessFlagBits2::eTransferRead
-            );
+            mDrawImage.transition(cmd, vk::ImageLayout::eTransferSrcOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
         }
-        vkhelper::transitionImage(
+        mDepthImage.transition(
             cmd,
-            *mDepthImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
             vk::ImageLayout::eDepthAttachmentOptimal,
             vk::PipelineStageFlagBits2::eEarlyFragmentTests,
             vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
         );
-        vkhelper::transitionImage(
-            cmd,
-            *mIntermediateImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eTransferSrcOptimal,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferRead
-        );
+        mIntermediateImage.transition(cmd, vk::ImageLayout::eTransferSrcOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
 
     LOG_INFO(mRenderer->mLogger, "Swapchain Created");

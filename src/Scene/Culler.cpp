@@ -50,8 +50,7 @@ void Culler::initDepthPyramidImage() {
     mDepthPyramidMipViews.clear();
     mDepthPyramidMipViews.reserve(mDepthPyramidLevels);
     for (u32 i = 0; i < mDepthPyramidLevels; i++) {
-        vk::ImageViewCreateInfo levelInfo =
-            vkhelper::imageViewCreateInfo(mDepthPyramidImage.format, mDepthPyramidImage.image, vk::ImageAspectFlagBits::eColor);
+        vk::ImageViewCreateInfo levelInfo = vkhelper::imageViewCreateInfo(mDepthPyramidImage.format, mDepthPyramidImage.image, vk::ImageAspectFlagBits::eColor);
         levelInfo.subresourceRange.levelCount = 1;
         levelInfo.subresourceRange.baseMipLevel = i;
         mDepthPyramidMipViews.emplace_back(std::move(mRenderer->mCore.mDevice.createImageView(levelInfo)));
@@ -61,15 +60,8 @@ void Culler::initDepthPyramidImage() {
 
     // Transition images
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(
-            cmd,
-            *mDepthPyramidImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead
+        mDepthPyramidImage.transition(
+            cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead
         );
     });
 }

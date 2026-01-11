@@ -28,7 +28,6 @@ void Renderer::init() {
     initLogger();
     initComponents();
     initPasses();
-    initTransitions();
 
     LOG_INFO(mLogger, "Rendering Started");
 }
@@ -203,15 +202,8 @@ void Renderer::initPasses() {
             mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
         );
 
-        vkhelper::transitionImage(
-            cmd,
-            *mScene.mCuller.mDepthPyramidImage.image,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eGeneral,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
+        mScene.mCuller.mDepthPyramidImage.transition(
+            cmd, vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
         );
 
         cmd.dispatch(
@@ -232,14 +224,8 @@ void Renderer::initPasses() {
                 mScene.mCuller.mDepthPyramidPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mCuller.mDepthPyramidPushConstants
             );
 
-            vkhelper::createImagePipelineBarrier(
-                cmd,
-                *mScene.mCuller.mDepthPyramidImage.image,
-                vk::PipelineStageFlagBits2::eComputeShader,
-                vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-                vk::PipelineStageFlagBits2::eComputeShader,
-                vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-                vk::ImageLayout::eGeneral
+            mScene.mCuller.mDepthPyramidImage.barrier(
+                cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite
             );
 
             cmd.dispatch(
@@ -255,15 +241,8 @@ void Renderer::initPasses() {
 
         mScene.mCuller.mCullPushConstants.perspectiveBuffer = mInfrastructure.getCurrentFrame().mPerspectiveBuffer.address.value();
 
-        vkhelper::transitionImage(
-            cmd,
-            *mScene.mCuller.mDepthPyramidImage.image,
-            vk::ImageLayout::eGeneral,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits2::eComputeShader,
-            vk::AccessFlagBits2::eShaderRead
+        mScene.mCuller.mDepthPyramidImage.transition(
+            cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead
         );
 
         for (auto batchType : mScene.mBatchTypes) {
@@ -367,13 +346,20 @@ void Renderer::initPasses() {
             return;
         }
 
-        mTransitions.at(TransitionType::PickerShaderReadOnlyIntoColorAttachment).execute(cmd, *mScene.mPicker.mImage.image);
+        mScene.mPicker.mImage.transition(
+            cmd,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT
+        );
 
         mPasses.at(PassType::PickClear).execute(cmd);
 
         mPasses.at(PassType::PickDraw).execute(cmd);
 
-        mTransitions.at(TransitionType::PickerColorAttachmentIntoShaderReadOnly).execute(cmd, *mScene.mPicker.mImage.image);
+        mScene.mPicker.mImage.transition(
+            cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderSampledRead
+        );
 
         mPasses.at(PassType::PickPick).execute(cmd);
     });
@@ -387,9 +373,8 @@ void Renderer::initPasses() {
 
         colorAttachments[0].clearValue.color = vk::ClearColorValue(0, 0, 0, 0);
 
-        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(
-            vkhelper::extent3dTo2d(mScene.mPicker.mImage.extent), colorAttachments.data(), &depthAttachment, colorAttachments.size()
-        );
+        const vk::RenderingInfo renderInfo =
+            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mScene.mPicker.mImage.extent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
 
         cmd.beginRendering(renderInfo);
         cmd.endRendering();
@@ -397,10 +382,8 @@ void Renderer::initPasses() {
 
     mPasses.try_emplace(PassType::PickDraw, [&](vk::CommandBuffer cmd) {
         vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mScene.mPicker.mImage.view, vk::ImageLayout::eColorAttachmentOptimal);
-        vk::RenderingAttachmentInfo depthAttachment =
-            vkhelper::depthAttachmentInfo(*mScene.mPicker.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal);
-        const vk::RenderingInfo renderInfo =
-            vkhelper::renderingInfo(vkhelper::extent3dTo2d(mScene.mPicker.mImage.extent), &colorAttachment, &depthAttachment);
+        vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*mScene.mPicker.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal);
+        const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(mScene.mPicker.mImage.extent), &colorAttachment, &depthAttachment);
 
         cmd.beginRendering(renderInfo);
 
@@ -443,9 +426,9 @@ void Renderer::initPasses() {
         std::memcpy(mScene.mPicker.mBuffer.info.pMappedData, mouseClickLocation.data(), sizeof(glm::ivec2));
 
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, *mScene.mPicker.mPickPipelineBundle.pipeline);
-        
+
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, mScene.mPicker.mPickPipelineBundle.layout, 0, *mScene.mPicker.mDescriptorSet, nullptr);
-        
+
         cmd.pushConstants<PickerPickPushConstants>(
             mScene.mPicker.mPickPipelineBundle.layout, vk::ShaderStageFlagBits::eCompute, 0, mScene.mPicker.mPickPushConstants
         );
@@ -486,8 +469,7 @@ void Renderer::initPasses() {
             return;
         }
 
-        vk::RenderingAttachmentInfo colorAttachment =
-            vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.view, vk::ImageLayout::eColorAttachmentOptimal);
+        vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*mInfrastructure.mDrawImage.view, vk::ImageLayout::eColorAttachmentOptimal);
         vk::RenderingAttachmentInfo depthAttachment =
             vkhelper::depthAttachmentInfo(*mInfrastructure.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal);
         const vk::RenderingInfo renderInfo =
@@ -613,140 +595,6 @@ void Renderer::initPasses() {
     });
 }
 
-void Renderer::initTransitions() {
-    mTransitions.try_emplace(
-        TransitionType::DepthDepthAttachmentIntoShaderRead,
-        vk::ImageLayout::eDepthAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead,
-        vk::ImageAspectFlagBits::eDepth
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::DepthShaderReadIntoDepthAttachment,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderRead,
-        vk::ImageLayout::eDepthAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
-        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::ImageAspectFlagBits::eDepth
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::PickerShaderReadOnlyIntoColorAttachment,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderSampledRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::PickerColorAttachmentIntoShaderReadOnly,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentReadNoncoherentEXT,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eComputeShader,
-        vk::AccessFlagBits2::eShaderSampledRead
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::FinalColorUndefinedIntoColorAttachment,
-        vk::ImageLayout::eUndefined,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::FinalColorColorAttachmentIntoTransferSrc,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eTransferSrcOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferRead
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::AccumColorAttachmentIntoShaderRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eFragmentShader,
-        vk::AccessFlagBits2::eShaderRead
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::RvlColorAttachmentIntoShaderRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eFragmentShader,
-        vk::AccessFlagBits2::eShaderRead
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::AccumShaderReadIntoColorAttachment,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eFragmentShader,
-        vk::AccessFlagBits2::eShaderRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::RvlShaderReadIntoColorAttachment,
-        vk::ImageLayout::eShaderReadOnlyOptimal,
-        vk::PipelineStageFlagBits2::eFragmentShader,
-        vk::AccessFlagBits2::eShaderRead,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::SwapchainColorPresentIntoTransferDst,
-        vk::ImageLayout::ePresentSrcKHR,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::ImageLayout::eTransferDstOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::SwapchainColorTransferDstIntoColorAttachment,
-        vk::ImageLayout::eTransferDstOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite
-    );
-
-    mTransitions.try_emplace(
-        TransitionType::SwapchainColorColorAttachmentIntoPresent,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::ePresentSrcKHR,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone
-    );
-}
-
 void Renderer::run() {
     SDL_Event e;
 
@@ -851,16 +699,27 @@ void Renderer::draw() {
     vk::CommandBufferBeginInfo cmdBeginInfo = vkhelper::commandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
     cmd.begin(cmdBeginInfo);
 
-    mTransitions.at(TransitionType::DepthDepthAttachmentIntoShaderRead).execute(cmd, *mInfrastructure.mDepthImage.image);
+    mInfrastructure.mDepthImage.transition(
+        cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead
+    );
 
     mPasses.at(PassType::Cull).execute(cmd);
 
-    mTransitions.at(TransitionType::DepthShaderReadIntoDepthAttachment).execute(cmd, *mInfrastructure.mDepthImage.image);
+    mInfrastructure.mDepthImage.transition(
+        cmd,
+        vk::ImageLayout::eDepthAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+        vk::AccessFlagBits2::eDepthStencilAttachmentRead | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+    );
 
     if (MSAA_ENABLE) {
-        mTransitions.at(TransitionType::FinalColorUndefinedIntoColorAttachment).execute(cmd, *mInfrastructure.mIntermediateImage.image);
+        mInfrastructure.mIntermediateImage.transition(
+            cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
+        );
     } else {
-        mTransitions.at(TransitionType::FinalColorUndefinedIntoColorAttachment).execute(cmd, *mInfrastructure.mDrawImage.image);
+        mInfrastructure.mDrawImage.transition(
+            cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
+        );
     }
 
     mPasses.at(PassType::ClearScreen).execute(cmd);
@@ -873,19 +732,53 @@ void Renderer::draw() {
     if (MSAA_ENABLE) mPasses.at(PassType::ResolveMSAA).execute(cmd);
 
     if (MSAA_ENABLE) {
-        mTransitions.at(TransitionType::FinalColorColorAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mIntermediateImage.image);
+        mInfrastructure.mIntermediateImage.transition(
+            cmd, vk::ImageLayout::eTransferSrcOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead
+        );
     } else {
-        mTransitions.at(TransitionType::FinalColorColorAttachmentIntoTransferSrc).execute(cmd, *mInfrastructure.mDrawImage.image);
+        mInfrastructure.mDrawImage.transition(
+            cmd, vk::ImageLayout::eTransferSrcOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead
+        );
     }
-    mTransitions.at(TransitionType::SwapchainColorPresentIntoTransferDst).execute(cmd, mInfrastructure.getCurrentSwapchainImage().image);
+    vkhelper::transitionImage(
+        cmd,
+        mInfrastructure.getCurrentSwapchainImage().image,
+        vk::ImageAspectFlagBits::eColor,
+        vk::ImageLayout::ePresentSrcKHR,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eNone,
+        vk::ImageLayout::eTransferDstOptimal,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferWrite
+    );
 
     mPasses.at(PassType::FinalColorToSwapchain).execute(cmd);
 
-    mTransitions.at(TransitionType::SwapchainColorTransferDstIntoColorAttachment).execute(cmd, mInfrastructure.getCurrentSwapchainImage().image);
+    vkhelper::transitionImage(
+        cmd,
+        mInfrastructure.getCurrentSwapchainImage().image,
+        vk::ImageAspectFlagBits::eColor,
+        vk::ImageLayout::eTransferDstOptimal,
+        vk::PipelineStageFlagBits2::eTransfer,
+        vk::AccessFlagBits2::eTransferWrite,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite
+    );
 
     mPasses.at(PassType::ImGui).execute(cmd);
 
-    mTransitions.at(TransitionType::SwapchainColorColorAttachmentIntoPresent).execute(cmd, mInfrastructure.getCurrentSwapchainImage().image);
+    vkhelper::transitionImage(
+        cmd,
+        mInfrastructure.getCurrentSwapchainImage().image,
+        vk::ImageAspectFlagBits::eColor,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::ImageLayout::ePresentSrcKHR,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eNone
+    );
 
     cmd.end();
 

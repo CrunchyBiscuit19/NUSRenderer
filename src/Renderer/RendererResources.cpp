@@ -12,6 +12,7 @@ AllocatedImage::AllocatedImage()
       view(nullptr),
       format(vk::Format::eUndefined),
       extent({0, 0, 0}),
+      aspect(vk::ImageAspectFlagBits::eNone),
       currentLayout(vk::ImageLayout::eUndefined),
       currentStage(vk::PipelineStageFlagBits2::eNone),
       currentAccess(vk::AccessFlagBits2::eNone),
@@ -19,12 +20,13 @@ AllocatedImage::AllocatedImage()
       allocation(nullptr) {}
 
 AllocatedImage::AllocatedImage(
-    vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, VmaAllocator* allocator, VmaAllocation allocation
+    vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, vk::ImageAspectFlags aspect, VmaAllocator* allocator, VmaAllocation allocation
 )
     : image(std::move(image)),
       view(std::move(view)),
       format(format),
       extent(extent),
+      aspect(aspect),
       currentLayout(vk::ImageLayout::eUndefined),
       currentStage(vk::PipelineStageFlagBits2::eNone),
       currentAccess(vk::AccessFlagBits2::eNone),
@@ -36,6 +38,7 @@ AllocatedImage::AllocatedImage(AllocatedImage&& other) noexcept
       view(std::move(other.view)),
       format(other.format),
       extent(other.extent),
+      aspect(other.aspect),
       currentLayout(other.currentLayout),
       currentStage(other.currentStage),
       currentAccess(other.currentAccess),
@@ -56,6 +59,7 @@ AllocatedImage& AllocatedImage::operator=(AllocatedImage&& other) noexcept {
         view = std::move(other.view);
         format = other.format;
         extent = other.extent;
+        aspect = other.aspect;
         currentLayout = other.currentLayout;
         currentStage = other.currentStage;
         currentAccess = other.currentAccess;
@@ -64,6 +68,7 @@ AllocatedImage& AllocatedImage::operator=(AllocatedImage&& other) noexcept {
 
         other.format = vk::Format::eUndefined;
         other.extent = vk::Extent3D{};
+        other.aspect = vk::ImageAspectFlagBits::eNone;
         other.currentLayout = vk::ImageLayout::eUndefined;
         other.currentStage = vk::PipelineStageFlagBits2::eNone;
         other.currentAccess = vk::AccessFlagBits2::eNone;
@@ -71,6 +76,20 @@ AllocatedImage& AllocatedImage::operator=(AllocatedImage&& other) noexcept {
         other.allocation = nullptr;
     }
     return *this;
+}
+
+void AllocatedImage::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
+    vkhelper::createImagePipelineBarrier(cmd, *image, aspect, currentStage, currentAccess, nextStage, nextAccess, currentLayout);
+    currentLayout = currentLayout;
+    currentStage = nextStage;
+    currentAccess = nextAccess;
+}
+
+void AllocatedImage::transition(vk::CommandBuffer cmd, vk::ImageLayout nextLayout, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
+    vkhelper::transitionImage(cmd, *image, aspect, currentLayout, currentStage, currentAccess, nextLayout, nextStage, nextAccess);
+    currentLayout = nextLayout;
+    currentStage = nextStage;
+    currentAccess = nextAccess;
 }
 
 void AllocatedImage::cleanup() {
@@ -111,12 +130,6 @@ AllocatedBuffer::AllocatedBuffer(
       currentStage(vk::PipelineStageFlagBits2::eNone),
       currentAccess(vk::AccessFlagBits2::eNone) {}
 
-void AllocatedBuffer::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
-    vkhelper::createBufferPipelineBarrier(cmd, buffer, currentStage, currentAccess, nextStage, nextAccess);
-    currentStage = nextStage;
-    currentAccess = nextAccess;
-}
-
 AllocatedBuffer::AllocatedBuffer(AllocatedBuffer&& other) noexcept
     : buffer(std::move(other.buffer)),
       address(other.address),
@@ -151,6 +164,12 @@ AllocatedBuffer& AllocatedBuffer::operator=(AllocatedBuffer&& other) noexcept {
         other.currentAccess = vk::AccessFlagBits2::eNone;
     }
     return *this;
+}
+
+void AllocatedBuffer::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
+    vkhelper::createBufferPipelineBarrier(cmd, buffer, currentStage, currentAccess, nextStage, nextAccess);
+    currentStage = nextStage;
+    currentAccess = nextAccess;
 }
 
 void AllocatedBuffer::cleanup() {
@@ -357,16 +376,7 @@ AllocatedImage RendererResources::createImage(
         createImage(extent, format, usage | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc, mipmapped, multisampling, cubemap);
 
     mRenderer->mImmSubmit.individualSubmit([&](Renderer* renderer, vk::CommandBuffer cmd) {
-        vkhelper::transitionImage(
-            cmd,
-            *newImage.image,
-            vk::ImageLayout::eUndefined,
-            vk::PipelineStageFlagBits2::eNone,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits2::eTransfer,
-            vk::AccessFlagBits2::eTransferWrite
-        );
+        newImage.transition(cmd, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
 
         std::vector<vk::BufferImageCopy> copyRegions;
         copyRegions.reserve(numFaces);
@@ -386,18 +396,9 @@ AllocatedImage RendererResources::createImage(
         cmd.copyBufferToImage(*mImageStagingBuffer.buffer, *newImage.image, vk::ImageLayout::eTransferDstOptimal, copyRegions);
 
         if (mipmapped)
-            vkhelper::generateMipmaps(cmd, *newImage.image, vk::Extent2D{newImage.extent.width, newImage.extent.height}, cubemap);
+            vkhelper::generateMipmaps(cmd, newImage, cubemap);
         else {
-            vkhelper::transitionImage(
-                cmd,
-                *newImage.image,
-                vk::ImageLayout::eTransferDstOptimal,
-                vk::PipelineStageFlagBits2KHR::eTransfer,
-                vk::AccessFlagBits2::eTransferWrite,
-                vk::ImageLayout::eShaderReadOnlyOptimal,
-                vk::PipelineStageFlagBits2KHR::eFragmentShader,
-                vk::AccessFlagBits2::eShaderRead
-            );
+            newImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
         }
     });
 

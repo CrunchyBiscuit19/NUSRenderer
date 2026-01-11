@@ -36,11 +36,11 @@ vk::ImageCreateInfo imageCreateInfo(vk::Format format, vk::ImageUsageFlags usage
 vk::ImageViewCreateInfo imageViewCreateInfo(vk::Format format, vk::Image image, vk::ImageAspectFlags aspectFlags);
 
 void transitionImage(
-    vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
-    vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, std::optional<vk::ImageAspectFlags> aspectFlags = std::nullopt
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageAspectFlags aspectFlags, vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask,
+    vk::AccessFlags2 srcAccessMask, vk::ImageLayout newLayout, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, u32 baseMipLevel = 0
 );
 void copyImage(vk::CommandBuffer cmd, vk::Image source, vk::Image destination, vk::Extent2D srcSize, vk::Extent2D dstSize);
-void generateMipmaps(vk::CommandBuffer cmd, vk::Image image, vk::Extent2D imageSize, bool cubemap = false);
+void generateMipmaps(vk::CommandBuffer cmd, AllocatedImage& image, bool cubemap = false);
 u32 getFormatTexelSize(vk::Format format);
 
 vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo();
@@ -52,8 +52,8 @@ void createBufferPipelineBarrier(
     vk::AccessFlags2 dstAccessMask
 );
 void createImagePipelineBarrier(
-    vk::CommandBuffer cmd, vk::Image image, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask,
-    vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout, std::optional<vk::ImageAspectFlags> aspectFlags = std::nullopt
+    vk::CommandBuffer cmd, vk::Image image, vk::ImageAspectFlags aspectFlags, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask,
+    vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, vk::ImageLayout currentLayout
 );
 
 vk::Extent2D extent3dTo2d(vk::Extent3D extent3d);

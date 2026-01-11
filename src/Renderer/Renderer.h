@@ -42,50 +42,6 @@ struct Pass {
     void execute(vk::CommandBuffer cmd) const { function(cmd); }
 };
 
-enum class TransitionType {
-    DepthDepthAttachmentIntoShaderRead,
-    DepthShaderReadIntoDepthAttachment,
-    PickerShaderReadOnlyIntoColorAttachment,
-    PickerTransferDstIntoColorAttachment,
-    PickerColorAttachmentIntoShaderReadOnly,
-    FinalColorUndefinedIntoColorAttachment,
-    FinalColorColorAttachmentIntoTransferSrc,
-    AccumColorAttachmentIntoShaderRead,
-    RvlColorAttachmentIntoShaderRead,
-    AccumShaderReadIntoColorAttachment,
-    RvlShaderReadIntoColorAttachment,
-    SwapchainColorPresentIntoTransferDst,
-    SwapchainColorTransferDstIntoColorAttachment,
-    SwapchainColorColorAttachmentIntoPresent,
-};
-
-struct Transition {
-    vk::ImageLayout currentLayout;
-    vk::PipelineStageFlags2 srcStageMask;
-    vk::AccessFlags2 srcAccessMask;
-    vk::ImageLayout newLayout;
-    vk::PipelineStageFlags2 dstStageMask;
-    vk::AccessFlags2 dstAccessMask;
-    std::optional<vk::ImageAspectFlags> aspectFlags;
-
-    Transition(
-        vk::ImageLayout currentLayout, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::ImageLayout newLayout,
-        vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask, std::optional<vk::ImageAspectFlags> aspectFlags = std::nullopt
-    )
-        : currentLayout(currentLayout),
-          srcStageMask(srcStageMask),
-          srcAccessMask(srcAccessMask),
-          newLayout(newLayout),
-          dstStageMask(dstStageMask),
-          dstAccessMask(dstAccessMask),
-          aspectFlags(aspectFlags)
-    {}
-
-    void execute(vk::CommandBuffer cmd, vk::Image image) {
-        vkhelper::transitionImage(cmd, image, currentLayout, srcStageMask, srcAccessMask, newLayout, dstStageMask, dstAccessMask, aspectFlags);
-    }
-};
-
 class Renderer {
    public:
     bool mIsInitialized{false};
@@ -103,7 +59,6 @@ class Renderer {
     quill::Logger* mLogger;
 
     std::unordered_map<PassType, Pass> mPasses;
-    std::unordered_map<TransitionType, Transition> mTransitions;
 
     Renderer();
 
@@ -111,7 +66,6 @@ class Renderer {
     void initLogger();
     void initComponents();
     void initPasses();
-    void initTransitions();
 
     void run();
     void perFrameUpdate();
