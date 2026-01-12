@@ -27,7 +27,7 @@ FSOutput main(FSInput in) : SV_Target {
     if (isinf(maxOf3(abs(accum.rgb)))) accum.rgb = float3(accum.a);
 
     float3 averageColor = accum.rgb / max(accum.a, EPSILON);
-    out.color = float4(averageColor, rvl);
+    out.color = float4(averageColor, 1.f - rvl);
 
     return out;
 }

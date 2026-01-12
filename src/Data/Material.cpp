@@ -52,17 +52,6 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     noBlendState.blendEnable = VK_FALSE;
 
-    vk::PipelineColorBlendAttachmentState opaqueBlendState{};
-    opaqueBlendState.colorWriteMask =
-        vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB;
-    opaqueBlendState.blendEnable = VK_TRUE;
-    opaqueBlendState.srcColorBlendFactor = vk::BlendFactor::eZero;
-    opaqueBlendState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcColor;
-    opaqueBlendState.colorBlendOp = vk::BlendOp::eAdd;
-    opaqueBlendState.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    opaqueBlendState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    opaqueBlendState.alphaBlendOp = vk::BlendOp::eAdd;
-
     vk::PipelineColorBlendAttachmentState accumBlendState{};
     accumBlendState.colorWriteMask =
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -80,8 +69,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     rvlBlendState.srcColorBlendFactor = vk::BlendFactor::eZero;
     rvlBlendState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcColor;
     rvlBlendState.colorBlendOp = vk::BlendOp::eAdd;
-    rvlBlendState.srcAlphaBlendFactor = vk::BlendFactor::eZero;
-    rvlBlendState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    rvlBlendState.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    rvlBlendState.dstAlphaBlendFactor = vk::BlendFactor::eOne;
     rvlBlendState.alphaBlendOp = vk::BlendOp::eAdd;
 
     GraphicsPipelineBuilder materialPipelineBuilder;
@@ -93,6 +82,8 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     MSAA_ENABLE ? materialPipelineBuilder.enableSampleShading() : materialPipelineBuilder.disableSampleShading();
     materialPipelineBuilder.enableDepthTest(!transparency, vk::CompareOp::eGreaterOrEqual); 
     materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.format, noBlendState);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mAccumImage.format, accumBlendState);
+    materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mRevealageImage.format, rvlBlendState);
     materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.format);
     materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 

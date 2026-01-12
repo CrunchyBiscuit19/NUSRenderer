@@ -8,9 +8,9 @@ struct PerspectiveData {
     // Will move global lights away in the future
     glm::mat4 view;
     glm::mat4 proj;
-    glm::vec4 ambientColor;
+    glm::vec3 ambientColor;
     glm::vec4 sunlightDirection;  // w for sun power
-    glm::vec4 sunlightColor;
+    glm::vec3 sunlightColor;
 };
 
 class Perspective {

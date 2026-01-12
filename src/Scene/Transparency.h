@@ -24,7 +24,7 @@ public:
     void initDescriptors();
     void writeDescriptors();
     void initPipeline();
-    void resizeImages();
+    void resizeTransparency();
 
 	void cleanup();
 };

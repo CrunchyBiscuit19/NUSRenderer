@@ -83,11 +83,11 @@ void Transparency::initPipeline() {
     compositeBlendAttachment.colorWriteMask =
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     compositeBlendAttachment.blendEnable = VK_TRUE;
-    compositeBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-    compositeBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOne;
+    compositeBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    compositeBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
     compositeBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
     compositeBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eOne;
     compositeBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
 
     GraphicsPipelineBuilder transparencyPipelineBuilder;
@@ -110,7 +110,7 @@ void Transparency::initPipeline() {
     mRenderer->mInfrastructure.mLatestPipelineId++;
 }
 
-void Transparency::resizeImages() {
+void Transparency::resizeTransparency() {
     mAccumImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Accumulation Image and Image View Destroyed");
     mRevealageImage.cleanup();
