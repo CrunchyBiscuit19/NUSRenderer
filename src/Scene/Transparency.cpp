@@ -101,7 +101,7 @@ void Transparency::initPipeline() {
     compositeBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
     compositeBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
     compositeBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    compositeBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eOne;
     compositeBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
 
     GraphicsPipelineBuilder transparencyPipelineBuilder;

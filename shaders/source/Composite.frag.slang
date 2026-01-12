@@ -16,18 +16,14 @@ float maxOf3(float3 v) {
 }
 
 FSOutput main(FSInput in) : SV_Target {
-    FSOutput out;
+    FSOutput output;
 
     uint3 coords = uint3(uint2(in.position.xy), 0);
-    
-    float rvl = rvlImage.Load(coords);
-    if (isApproximatelyEqual(rvl, 1.0f)) discard;
 
     float4 accum = accumImage.Load(coords);
-    if (isinf(maxOf3(abs(accum.rgb)))) accum.rgb = float3(accum.a);
+    float reveal = saturate(rvlImage.Load(coords).r);
 
-    float3 averageColor = accum.rgb / max(accum.a, EPSILON);
-    out.color = float4(averageColor, 1.0f - rvl);
+    output.color = float4(accum.rgb / max(accum.a, 1e-5), 1.f - reveal);
 
-    return out;
+    return output;
 }
