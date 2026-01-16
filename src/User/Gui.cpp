@@ -89,9 +89,10 @@ void Gui::SceneGuiComponent::elements() {
 void Gui::MiscGuiComponent::elements() {
     if (ImGui::CollapsingHeader("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("VALIDATION MODE: %s", magic_enum::enum_name(VALIDATION_MODE).data());
-        ImGui::Text("Frame Time:  %fms", mRenderer->mStats.mFrameTime);
-        ImGui::Text("Draw Time:  %fms", mRenderer->mStats.mDrawTime);
-        ImGui::Text("Update Time: %fms", mRenderer->mStats.mSceneUpdateTime);
+        ImGui::Text("FPS:  %.2f", 1000.f / mRenderer->mStats.mFrameTime);
+        ImGui::Text("Frame Time:  %.2fms", mRenderer->mStats.mFrameTime);
+        ImGui::Text("Draw Time:  %.2fms", mRenderer->mStats.mDrawTime);
+        ImGui::Text("Update Time: %.2fms", mRenderer->mStats.mSceneUpdateTime);
         ImGui::Text("Draws: %i", mRenderer->mStats.mDrawCallCount);
         ImGui::Text("Pre-Cull Render Instances: %i", mRenderer->mStats.mPreCullRenderInstancesCount);
         ImGui::Text("Post-Cull Render Instances: %i", *static_cast<u32*>(mRenderer->mStats.mRenderInstancesCountBuffer.info.pMappedData));

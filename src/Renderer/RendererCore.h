@@ -101,7 +101,7 @@ class RendererCore {
     SDL_Window* mWindow{nullptr};
     vk::Extent2D mWindowExtent{1700, 900};
     float mAspectRatio{static_cast<float>(mWindowExtent.width) / static_cast<float>(mWindowExtent.height)};
-    bool mWindowFullScreen{false};
+    bool mWindowFullScreen{true};
 
     vk::raii::Queue mComputeQueue;
     u32 mComputeQueueFamily;

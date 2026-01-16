@@ -90,7 +90,7 @@ void RendererCore::init() {
         SDL_WINDOWPOS_UNDEFINED,
         static_cast<u32>(mWindowExtent.width),
         static_cast<u32>(mWindowExtent.height),
-        SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
+        SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | (mWindowFullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0)
     );
 
     LOG_INFO(mRenderer->mLogger, "SDL Window Created");
