@@ -29,8 +29,9 @@ enum class PassType {
     Transparent,
     Composite,
     ResolveMSAA,
-    FinalColorToSwapchain,
-    ImGui
+    TransferSwapchain,
+    ImGui,
+    PresentSwapchain
 };
 
 struct Pass {
