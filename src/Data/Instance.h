@@ -18,7 +18,7 @@ class GLTFInstance {
    public:
     GLTFModel* mModel;
     u32 mId;
-    bool mDeleteSignal;
+    bool mToDelete;
 
     InstanceData mData;
 

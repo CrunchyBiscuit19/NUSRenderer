@@ -629,7 +629,7 @@ void GLTFModel::reloadInstances() {
 }
 
 void GLTFModel::markDelete() {
-    mDeleteSignal = mRenderer->mInfrastructure.mFrameNumber + FRAME_OVERLAP;
+    mToDelete = true;
     for (auto& instance : mInstances) {
         instance.markDelete();
     }
@@ -650,7 +650,7 @@ void GLTFModel::load() {
 Renderer* GLTFModel::getRenderer() const { return mRenderer; }
 
 void GLTFModel::generateRenderItemsInstances() {
-    if (!mDeleteSignal.has_value()) {
+    if (!mToDelete) {
         for (auto& n : mTopNodes) {
             n->generateRenderItemsInstances(mRenderer, this);
         }

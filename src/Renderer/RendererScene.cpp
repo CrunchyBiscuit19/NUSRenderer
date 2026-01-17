@@ -127,16 +127,16 @@ void RendererScene::loadModels(const std::vector<std::filesystem::path>& paths) 
 
 void RendererScene::deleteModels() {
     std::erase_if(mModelsCache, [&](const std::pair<const std::string, GLTFModel>& pair) {
-        if (pair.second.mDeleteSignal.has_value()) {
+        if (pair.second.mToDelete) {
             mFlags.modelDestroyedFlag = true;
         }
-        return pair.second.mDeleteSignal.has_value() && (pair.second.mDeleteSignal.value() == mRenderer->mInfrastructure.mFrameNumber);
+        return pair.second.mToDelete;
     });
 }
 
 void RendererScene::deleteInstances() {
     for (auto& model : mModelsCache | std::views::values) {
-        std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mDeleteSignal; });
+        std::erase_if(model.mInstances, [&](const GLTFInstance& instance) { return instance.mToDelete; });
     }
 }
 
@@ -151,9 +151,6 @@ void RendererScene::regenerateRenderItemsInstances() {
     }
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
         model.generateRenderItemsInstances();
     }
 
@@ -209,10 +206,6 @@ void RendererScene::realignVertexIndexOffset() {
     u32 indexCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         for (auto& mesh : model.mMeshes) {
             mesh.mMainVertexOffset = vertexCumulative;
             mesh.mMainFirstIndex = indexCumulative;
@@ -228,10 +221,6 @@ void RendererScene::realignMaterialOffset() {
     u32 materialCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         model.mMainFirstMaterial = materialCumulative;
         materialCumulative += model.mMaterials.size();
     }
@@ -243,10 +232,6 @@ void RendererScene::realignNodeTransformsOffset() {
     u32 nodeTransformCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         model.mMainFirstNodeTransform = nodeTransformCumulative;
         nodeTransformCumulative += model.mNodes.size();
     }
@@ -258,10 +243,6 @@ void RendererScene::realignBoundsOffset() {
     u32 boundsCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         model.mMainFirstBounds = boundsCumulative;
         boundsCumulative += model.mMeshes.size();
     }
@@ -273,10 +254,6 @@ void RendererScene::realignInstancesOffset() {
     u32 instanceCumulative = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         model.mMainFirstInstance = instanceCumulative;
         instanceCumulative += model.mInstances.size();
     }
@@ -296,10 +273,6 @@ void RendererScene::reloadMainVertexBuffer() {
     u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         for (auto& mesh : model.mMeshes) {
             vk::BufferCopy meshVertexCopy{};
             meshVertexCopy.dstOffset = dstOffset;
@@ -326,10 +299,6 @@ void RendererScene::reloadMainIndexBuffer() {
     u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         for (auto& mesh : model.mMeshes) {
             vk::BufferCopy meshIndexCopy{};
             meshIndexCopy.dstOffset = dstOffset;
@@ -356,10 +325,6 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
     u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         vk::BufferCopy materialConstantCopy{};
         materialConstantCopy.dstOffset = dstOffset;
         materialConstantCopy.srcOffset = 0;
@@ -384,10 +349,6 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
     u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         vk::BufferCopy nodeTransformsCopy{};
         nodeTransformsCopy.dstOffset = dstOffset;
         nodeTransformsCopy.srcOffset = 0;
@@ -412,10 +373,6 @@ void RendererScene::reloadMainBoundsBuffer() {
     u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
-
         vk::BufferCopy boundsCopy{};
         boundsCopy.dstOffset = dstOffset;
         boundsCopy.srcOffset = 0;
@@ -440,9 +397,6 @@ void RendererScene::reloadMainInstancesBuffer() {
     u32 dstOffset = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
-        if (model.mDeleteSignal.has_value()) {
-            continue;
-        }
         if (model.mInstances.empty()) {
             continue;
         }

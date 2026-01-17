@@ -17,7 +17,7 @@ class GLTFModel {
    public:
     std::string mName;
     u32 mId{0};
-    std::optional<u64> mDeleteSignal{std::nullopt};
+    bool mToDelete{false};
     bool mReloadInstances{true};
 
     DescriptorAllocatorGrowable mModelDescriptorAllocator;
