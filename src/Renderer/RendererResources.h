@@ -51,13 +51,16 @@ struct AllocatedBuffer {
     VmaAllocator* allocator;
     VmaAllocation allocation;
     VmaAllocationInfo info;
-
+    vk::BufferUsageFlags usage;
+    VmaAllocationCreateFlags flags;
+    u32 size;
     vk::PipelineStageFlagBits2 currentStage;
     vk::AccessFlags2 currentAccess;
 
     AllocatedBuffer();
     AllocatedBuffer(
-        vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info
+        vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info,
+        vk::BufferUsageFlagBits usage, VmaAllocationCreateFlagBits flags, u32 size
     );
 
     AllocatedBuffer(AllocatedBuffer&& other) noexcept;
@@ -67,6 +70,7 @@ struct AllocatedBuffer {
     AllocatedBuffer& operator=(const AllocatedBuffer&) = delete;
 
     void barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
+    void resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newSize);
 
     void cleanup();
     ~AllocatedBuffer();

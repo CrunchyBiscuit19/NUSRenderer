@@ -20,7 +20,8 @@ AllocatedImage::AllocatedImage()
       allocation(nullptr) {}
 
 AllocatedImage::AllocatedImage(
-    vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, vk::ImageAspectFlags aspect, VmaAllocator* allocator, VmaAllocation allocation
+    vk::raii::Image image, vk::raii::ImageView view, vk::Format format, vk::Extent3D extent, vk::ImageAspectFlags aspect, VmaAllocator* allocator,
+    VmaAllocation allocation
 )
     : image(std::move(image)),
       view(std::move(view)),
@@ -116,17 +117,23 @@ AllocatedBuffer::AllocatedBuffer()
       allocator(nullptr),
       allocation(nullptr),
       info({}),
+      usage(static_cast<vk::BufferUsageFlagBits>(0)),
+      flags(static_cast<VmaAllocationCreateFlagBits>(0)),
+      size(0),
       currentStage(vk::PipelineStageFlagBits2::eNone),
       currentAccess(vk::AccessFlagBits2::eNone) {}
 
-AllocatedBuffer::AllocatedBuffer(
-    vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation, VmaAllocationInfo info
-)
+AllocatedBuffer::AllocatedBuffer(vk::raii::Buffer buffer, std::optional<vk::DeviceAddress> address, VmaAllocator* allocator, VmaAllocation allocation,
+                                 VmaAllocationInfo info, vk::BufferUsageFlagBits usage,
+                                 VmaAllocationCreateFlagBits flags, u32 size)
     : buffer(std::move(buffer)),
       address(address),
       allocator(allocator),
       allocation(allocation),
       info(info),
+      usage(usage),
+      flags(flags),
+      size(size),
       currentStage(vk::PipelineStageFlagBits2::eNone),
       currentAccess(vk::AccessFlagBits2::eNone) {}
 
@@ -136,12 +143,18 @@ AllocatedBuffer::AllocatedBuffer(AllocatedBuffer&& other) noexcept
       allocator(other.allocator),
       allocation(other.allocation),
       info(other.info),
+      usage(other.usage),
+      flags(other.flags),
+      size(other.size),
       currentStage(other.currentStage),
       currentAccess(other.currentAccess) {
     other.address = std::nullopt;
     other.allocator = nullptr;
     other.allocation = nullptr;
     other.info = {};
+    other.usage = static_cast<vk::BufferUsageFlagBits>(0);
+    other.flags = static_cast<VmaAllocationCreateFlagBits>(0);
+    other.size = 0;
     other.currentStage = vk::PipelineStageFlagBits2::eNone;
     other.currentAccess = vk::AccessFlagBits2::eNone;
 }
@@ -153,6 +166,9 @@ AllocatedBuffer& AllocatedBuffer::operator=(AllocatedBuffer&& other) noexcept {
         allocator = other.allocator;
         allocation = other.allocation;
         info = other.info;
+        usage = other.usage;
+        flags = other.flags;
+        size = other.size;
         currentStage = other.currentStage;
         currentAccess = other.currentAccess;
 
@@ -160,6 +176,9 @@ AllocatedBuffer& AllocatedBuffer::operator=(AllocatedBuffer&& other) noexcept {
         other.allocator = nullptr;
         other.allocation = nullptr;
         other.info = {};
+        other.usage = static_cast<vk::BufferUsageFlagBits>(0);
+        other.flags = static_cast<VmaAllocationCreateFlagBits>(0);
+        other.size = 0;
         other.currentStage = vk::PipelineStageFlagBits2::eNone;
         other.currentAccess = vk::AccessFlagBits2::eNone;
     }
@@ -170,6 +189,27 @@ void AllocatedBuffer::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 
     vkhelper::createBufferPipelineBarrier(cmd, buffer, currentStage, currentAccess, nextStage, nextAccess);
     currentStage = nextStage;
     currentAccess = nextAccess;
+}
+
+void AllocatedBuffer::resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newSize) {
+    vk::PipelineStageFlagBits2 oldStage = currentStage;
+    vk::AccessFlags2 oldAccess = currentAccess;
+    barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+
+    AllocatedBuffer newBuffer = renderer->mResources.createBuffer(newSize, usage, flags);
+    newBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
+
+    vk::BufferCopy copyRegion{};
+    copyRegion.size = size;
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    cmd.copyBuffer(*buffer, *newBuffer.buffer, copyRegion);
+
+    newBuffer.barrier(cmd, oldStage, oldAccess);
+
+    *this = std::move(newBuffer);
+
+    cleanup();
 }
 
 void AllocatedBuffer::cleanup() {
@@ -183,6 +223,9 @@ void AllocatedBuffer::cleanup() {
     allocator = nullptr;
     allocation = nullptr;
     info = {};
+    usage = static_cast<vk::BufferUsageFlagBits>(0);
+    flags = static_cast<VmaAllocationCreateFlagBits>(0);
+    size = 0;
     currentStage = vk::PipelineStageFlagBits2::eNone;
     currentAccess = vk::AccessFlagBits2::eNone;
 }
@@ -313,6 +356,9 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
     vmaCreateBuffer(mRenderer->mCore.mVmaAllocator, &bufferInfo1, &vmaAllocInfo, &tempBuffer, &newBuffer.allocation, &newBuffer.info);
     newBuffer.buffer = vk::raii::Buffer(mRenderer->mCore.mDevice, tempBuffer);
     newBuffer.allocator = &mRenderer->mCore.mVmaAllocator;
+    newBuffer.usage = usage;
+    newBuffer.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | flags;
+    newBuffer.size = allocSize;
     if (usage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
         vk::BufferDeviceAddressInfo bufferDeviceAddressInfo = {};
         bufferDeviceAddressInfo.buffer = *newBuffer.buffer;
@@ -397,7 +443,7 @@ AllocatedImage RendererResources::createImage(
 
         if (mipmapped) {
             vkhelper::generateMipmaps(cmd, newImage, cubemap);
-        }        
+        }
         newImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2KHR::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
     });
 
