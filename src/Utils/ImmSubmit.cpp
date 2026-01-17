@@ -57,6 +57,8 @@ void ImmSubmit::queuedSubmit() {
 
     mRenderer->mCore.mGraphicsQueue.submit2(submitInfo, *mFence);
     mRenderer->mCore.mDevice.waitForFences(*mFence, true, 1e9);  // DO NOT MOVE THIS TO THE TOP
+
+    mCallbacks.clear();
 }
 
 void ImmSubmit::cleanup() {

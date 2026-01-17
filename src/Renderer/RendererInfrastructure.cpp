@@ -192,6 +192,8 @@ void RendererInfrastructure::initSwapchain() {
         mIntermediateImage.transition(cmd, vk::ImageLayout::eTransferSrcOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
 
+    mRenderer->mCore.mWindowFullScreen ? mResizeRequested = true : mResizeRequested = false;  // Initial resize for fullscreen
+
     LOG_INFO(mRenderer->mLogger, "Swapchain Created");
 }
 
