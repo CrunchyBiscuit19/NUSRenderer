@@ -10,7 +10,7 @@ void RendererStats::initBuffers() {
         sizeof(u32),
         vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
     );
     mRenderer->mCore.labelResourceDebug(mRenderInstancesCountBuffer.buffer, "RenderInstancesCountBuffer");
     LOG_INFO(mRenderer->mLogger, "Render Instances Count Buffer Created");

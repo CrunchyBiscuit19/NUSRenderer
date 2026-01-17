@@ -67,7 +67,7 @@ void RendererInfrastructure::initFrames() {
         mFrames[i].mPerspectiveBuffer = mRenderer->mResources.createBuffer(
             sizeof(PerspectiveData),
             vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-            VMA_MEMORY_USAGE_CPU_TO_GPU
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
         );
         mRenderer->mCore.labelResourceDebug(mFrames[i].mPerspectiveBuffer.buffer, fmt::format("FramePerspectiveBuffer{}", i).c_str());
         LOG_INFO(mRenderer->mLogger, "Frame {} Perspective Buffer Created", i);

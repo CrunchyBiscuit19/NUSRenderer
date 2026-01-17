@@ -2,6 +2,7 @@
 #include <Scene/Batch.h>
 #include <fmt/core.h>
 #include <quill/LogMacros.h>
+#include <vma/vk_mem_alloc.h>
 
 u32 Batch::firstRenderInstanceOffset = 0;
 
@@ -12,7 +13,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
         MAX_RENDER_ITEMS * sizeof(RenderItem),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     renderer->mCore.labelResourceDebug(preCullRenderItemsBuffer.buffer, fmt::format("PreCullRenderItemsBuffer{}", pipelineId).c_str());
     LOG_INFO(renderer->mLogger, "Batch {} Pre-Cull Render Items Buffer Created", pipelineId);
@@ -24,7 +25,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
         MAX_RENDER_ITEMS * sizeof(RenderItem),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     renderer->mCore.labelResourceDebug(postCullRenderItemsBuffer.buffer, fmt::format("PostCullRenderItemsBuffer{}", pipelineId).c_str());
     LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Buffer Created", pipelineId);
@@ -33,7 +34,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
         sizeof(uint32_t),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
             vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     renderer->mCore.labelResourceDebug(postCullRenderItemsCountBuffer.buffer, fmt::format("PostCullRenderItemsCountBuffer{}", pipelineId).c_str());
     LOG_INFO(renderer->mLogger, "Batch {} Post-Cull Render Items Count Buffer Created", pipelineId);
@@ -41,7 +42,7 @@ Batch::Batch(Renderer* renderer, Primitive& primitive, u32 pipelineId) {
     renderInstancesBuffer = renderer->mResources.createBuffer(
         MAX_RENDER_ITEMS * sizeof(RenderInstance),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     renderer->mCore.labelResourceDebug(renderInstancesBuffer.buffer, fmt::format("RenderInstancesBuffer{}", pipelineId).c_str());
     LOG_INFO(renderer->mLogger, "Batch {} Render Instances Buffer Created", pipelineId);

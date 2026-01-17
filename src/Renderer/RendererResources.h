@@ -155,7 +155,7 @@ class RendererResources {
     );
     vk::ShaderModule getShader(std::filesystem::path shaderFileName);
 
-    AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const;
+    AllocatedBuffer createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaAllocationCreateFlags flags = 0) const;
     AllocatedBuffer createStagingBuffer(size_t allocSize) const;
 
     AllocatedImage createImage(

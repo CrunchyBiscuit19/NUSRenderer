@@ -219,15 +219,14 @@ void GLTFModel::initBuffers() {
     mMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
         MAX_MATERIALS * sizeof(MaterialConstants),
         vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
 
     mNodeTransformsBuffer = mRenderer->mResources.createBuffer(
-        MAX_NODES * sizeof(glm::mat4),
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
@@ -235,15 +234,14 @@ void GLTFModel::initBuffers() {
     mInstancesBuffer = mRenderer->mResources.createBuffer(
         MAX_INSTANCES * sizeof(InstanceData),
         vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
     );
     mRenderer->mCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 
     mBoundsBuffer = mRenderer->mResources.createBuffer(
-        MAX_MESHES * sizeof(AABB),
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        MAX_MESHES * sizeof(AABB), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mBoundsBuffer.buffer, fmt::format("{}BoundsBuffer", mName).c_str());
     LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Created", mName);
@@ -514,15 +512,13 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::
     const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(u32);
 
     mesh.mVertexBuffer = mRenderer->mResources.createBuffer(
-        srcVertexVectorSize,
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mesh.mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh.mName).c_str());
     mesh.mIndexBuffer = mRenderer->mResources.createBuffer(
-        srcIndexVectorSize,
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mesh.mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh.mName).c_str());
 

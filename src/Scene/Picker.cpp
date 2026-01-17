@@ -29,7 +29,7 @@ void Picker::initBuffer() {
     mBuffer = mRenderer->mResources.createBuffer(
         sizeof(PickerData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
     );
     mRenderer->mCore.labelResourceDebug(mBuffer.buffer, "PickerBuffer");
     LOG_INFO(mRenderer->mLogger, "Picker Buffer Created");

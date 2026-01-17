@@ -48,7 +48,7 @@ void Skybox::initPipeline() {
     vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Skybox.frag.spv");
     vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Skybox.vert.spv");
 
-    vk::PipelineColorBlendAttachmentState skyboxBlendAttachment{};  
+    vk::PipelineColorBlendAttachmentState skyboxBlendAttachment{};
     skyboxBlendAttachment.colorWriteMask =
         vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     skyboxBlendAttachment.blendEnable = VK_TRUE;
@@ -103,9 +103,7 @@ void Skybox::initBuffer() {
     u32 skyboxVertexSize = mVertices.size() * sizeof(float);
 
     mVertexBuffer = mRenderer->mResources.createBuffer(
-        skyboxVertexSize,
-        vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        skyboxVertexSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress
     );
     mRenderer->mCore.labelResourceDebug(mVertexBuffer.buffer, "SkyboxVertexBuffer");
     LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Created");

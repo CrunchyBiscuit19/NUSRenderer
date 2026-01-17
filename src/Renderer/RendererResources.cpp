@@ -297,7 +297,7 @@ vk::ShaderModule RendererResources::getShader(std::filesystem::path shaderPath) 
     return *mShadersCache.at(shaderFileName);
 }
 
-AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) const {
+AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsageFlags usage, VmaAllocationCreateFlags flags) const {
     vk::BufferCreateInfo bufferInfo = {};
     bufferInfo.pNext = nullptr;
     bufferInfo.size = allocSize;
@@ -305,8 +305,8 @@ AllocatedBuffer RendererResources::createBuffer(size_t allocSize, vk::BufferUsag
     auto bufferInfo1 = static_cast<VkBufferCreateInfo>(bufferInfo);
 
     VmaAllocationCreateInfo vmaAllocInfo = {};
-    vmaAllocInfo.usage = memoryUsage;
-    vmaAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    vmaAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | flags;
 
     AllocatedBuffer newBuffer;
     VkBuffer tempBuffer;
@@ -336,8 +336,8 @@ AllocatedImage RendererResources::createImage(
     VkImageCreateInfo newImageCreateInfo1 = newImageCreateInfo;
 
     VmaAllocationCreateInfo vmaAllocInfo = {};
-    vmaAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    vmaAllocInfo.requiredFlags = static_cast<VkMemoryPropertyFlags>(vk::MemoryPropertyFlagBits::eDeviceLocal);
+    vmaAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    vmaAllocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     AllocatedImage newImage;
     newImage.format = format;
@@ -405,7 +405,7 @@ AllocatedImage RendererResources::createImage(
 }
 
 AllocatedBuffer RendererResources::createStagingBuffer(size_t allocSize) const {
-    return createBuffer(allocSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    return createBuffer(allocSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 }
 
 void RendererResources::cleanup() {
