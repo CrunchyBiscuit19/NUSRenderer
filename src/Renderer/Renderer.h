@@ -12,6 +12,8 @@
 #include <Utils/ImmSubmit.h>
 #include <quill/Logger.h>
 
+using PassFn = void (*)(Renderer*, vk::CommandBuffer);
+
 enum class PassType {
     Cull,
     CullReset,
@@ -34,13 +36,26 @@ enum class PassType {
     PresentSwapchain
 };
 
-struct Pass {
-    static Renderer* renderer;
-    std::function<void(vk::CommandBuffer)> function;
-
-    Pass(const std::function<void(vk::CommandBuffer)>& function) : function(function) {}
-
-    void execute(vk::CommandBuffer cmd) const { function(cmd); }
+namespace PassFns {
+void cull(Renderer* r, vk::CommandBuffer cmd);
+void cullReset(Renderer* r, vk::CommandBuffer cmd);
+void cullDepthPyramid(Renderer* r, vk::CommandBuffer cmd);
+void cullCull(Renderer* r, vk::CommandBuffer cmd);
+void cullCompact(Renderer* r, vk::CommandBuffer cmd);
+void cullSyncBeforeDraw(Renderer* r, vk::CommandBuffer cmd);
+void clearScreen(Renderer* r, vk::CommandBuffer cmd);
+void pick(Renderer* r, vk::CommandBuffer cmd);
+void pickClear(Renderer* r, vk::CommandBuffer cmd);
+void pickDraw(Renderer* r, vk::CommandBuffer cmd);
+void pickPick(Renderer* r, vk::CommandBuffer cmd);
+void opaque(Renderer* r, vk::CommandBuffer cmd);
+void skybox(Renderer* r, vk::CommandBuffer cmd);
+void transparent(Renderer* r, vk::CommandBuffer cmd);
+void composite(Renderer* r, vk::CommandBuffer cmd);
+void resolveMSAA(Renderer* r, vk::CommandBuffer cmd);
+void transferSwapchain(Renderer* r, vk::CommandBuffer cmd);
+void imgui(Renderer* r, vk::CommandBuffer cmd);
+void presentSwapchain(Renderer* r, vk::CommandBuffer cmd);
 };
 
 class Renderer {
@@ -59,7 +74,7 @@ class Renderer {
     Camera mCamera;
     quill::Logger* mLogger;
 
-    std::unordered_map<PassType, Pass> mPasses;
+    std::array<PassFn, static_cast<size_t>(PassType::PresentSwapchain) + 1> mPassTable;
 
     Renderer();
 
@@ -67,6 +82,8 @@ class Renderer {
     void initLogger();
     void initComponents();
     void initPasses();
+
+    void executePass(PassType type, vk::CommandBuffer cmd);
 
     void run();
     void perFrameUpdate();
