@@ -830,44 +830,21 @@ void Renderer::draw() {
             cmd, vk::ImageLayout::eTransferSrcOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead
         );
     }
-    vkhelper::transitionImage(
-        cmd,
-        mInfrastructure.getCurrentSwapchainImage().image,
-        vk::ImageAspectFlagBits::eColor,
-        vk::ImageLayout::ePresentSrcKHR,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone,
-        vk::ImageLayout::eTransferDstOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite
+
+    mInfrastructure.getCurrentSwapchainImage().transition(
+        cmd, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite
     );
 
     mPasses.at(PassType::FinalColorToSwapchain).execute(cmd);
 
-    vkhelper::transitionImage(
-        cmd,
-        mInfrastructure.getCurrentSwapchainImage().image,
-        vk::ImageAspectFlagBits::eColor,
-        vk::ImageLayout::eTransferDstOptimal,
-        vk::PipelineStageFlagBits2::eTransfer,
-        vk::AccessFlagBits2::eTransferWrite,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite
+    mInfrastructure.getCurrentSwapchainImage().transition(
+        cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
     );
 
     mPasses.at(PassType::ImGui).execute(cmd);
 
-    vkhelper::transitionImage(
-        cmd,
-        mInfrastructure.getCurrentSwapchainImage().image,
-        vk::ImageAspectFlagBits::eColor,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eColorAttachmentWrite,
-        vk::ImageLayout::ePresentSrcKHR,
-        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        vk::AccessFlagBits2::eNone
+    mInfrastructure.getCurrentSwapchainImage().transition(
+        cmd, vk::ImageLayout::ePresentSrcKHR, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eNone
     );
 
     cmd.end();

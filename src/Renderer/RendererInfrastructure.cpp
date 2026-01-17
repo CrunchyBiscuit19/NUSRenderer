@@ -7,6 +7,20 @@
 
 std::filesystem::path shaderDir = SHADERS_PATH;
 
+void SwapchainImage::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
+    vkhelper::createImagePipelineBarrier(cmd, image, vk::ImageAspectFlagBits::eColor, currentStage, currentAccess, nextStage, nextAccess, currentLayout);
+    currentLayout = currentLayout;
+    currentStage = nextStage;
+    currentAccess = nextAccess;
+}
+
+void SwapchainImage::transition(vk::CommandBuffer cmd, vk::ImageLayout nextLayout, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess) {
+    vkhelper::transitionImage(cmd, image, vk::ImageAspectFlagBits::eColor, currentLayout, currentStage, currentAccess, nextLayout, nextStage, nextAccess);
+    currentLayout = nextLayout;
+    currentStage = nextStage;
+    currentAccess = nextAccess;
+}
+
 RendererInfrastructure::RendererInfrastructure(Renderer* renderer)
     : mRenderer(renderer), mSwapchainBundle(nullptr), mMainDescriptorAllocator(DescriptorAllocatorGrowable(renderer)) {
     mFrames.resize(FRAME_OVERLAP);

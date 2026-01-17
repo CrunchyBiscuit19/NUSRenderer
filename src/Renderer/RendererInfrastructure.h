@@ -20,15 +20,23 @@ struct Frame {
     void cleanup();
 };
 
-class SwapchainBundle {
-   public:
-    struct SwapchainImage {
-        vk::Image image;
-        vk::raii::ImageView view;
-        vk::raii::ImageView uNormView;
-        vk::raii::Semaphore renderedSemaphore;
-    };
+class SwapchainImage {
+public:
+    vk::Image image;
+    vk::raii::ImageView view;
+    vk::raii::ImageView uNormView;
+    vk::raii::Semaphore renderedSemaphore;
+    
+    vk::ImageLayout currentLayout;
+    vk::PipelineStageFlagBits2 currentStage;
+    vk::AccessFlags2 currentAccess;
 
+    void barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
+    void transition(vk::CommandBuffer cmd, vk::ImageLayout nexLayout, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
+};
+
+class SwapchainBundle {
+public:
     vk::raii::SwapchainKHR mSwapchain;
     vk::Extent2D mExtent;
     vk::Format mFormat;
@@ -46,7 +54,7 @@ class RendererInfrastructure {
     std::vector<Frame> mFrames;
     inline Frame& getCurrentFrame() { return mFrames[mFrameNumber % FRAME_OVERLAP]; }
     inline Frame& getPreviousFrame() { return mFrames[(mFrameNumber - 1) % FRAME_OVERLAP]; }
-    inline SwapchainBundle::SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
+    inline SwapchainImage& getCurrentSwapchainImage() { return mSwapchainBundle.mImages[mSwapchainIndex]; }
 
     bool mResizeRequested{false};
     SwapchainBundle mSwapchainBundle;
