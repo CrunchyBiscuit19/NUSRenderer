@@ -225,7 +225,8 @@ void GLTFModel::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
 
     mNodeTransformsBuffer = mRenderer->mResources.createBuffer(
-        MAX_NODES * sizeof(glm::mat4), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        MAX_NODES * sizeof(glm::mat4),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
@@ -240,7 +241,8 @@ void GLTFModel::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 
     mBoundsBuffer = mRenderer->mResources.createBuffer(
-        MAX_MESHES * sizeof(AABB), vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        MAX_MESHES * sizeof(AABB),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mBoundsBuffer.buffer, fmt::format("{}BoundsBuffer", mName).c_str());
@@ -498,9 +500,7 @@ void GLTFModel::loadBoundsBuffer() {
 
     mRenderer->mImmSubmit.individualSubmit([this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
         renderer->mResources.mBoundsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-
-        cmd.copyBuffer(*renderer->mResources.mBoundsStagingBuffer.buffer, *mBoundsBuffer.buffer, boundsCopy);
-
+        mBoundsBuffer.copyFrom(cmd, renderer, renderer->mResources.mBoundsStagingBuffer, boundsCopy, boundsCopy.size);
         mBoundsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
 
@@ -512,12 +512,14 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::
     const vk::DeviceSize srcIndexVectorSize = srcIndexVector.size() * sizeof(u32);
 
     mesh.mVertexBuffer = mRenderer->mResources.createBuffer(
-        srcVertexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        srcVertexVectorSize,
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mesh.mVertexBuffer.buffer, fmt::format("{}VertexBuffer", mesh.mName).c_str());
     mesh.mIndexBuffer = mRenderer->mResources.createBuffer(
-        srcIndexVectorSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+        srcIndexVectorSize,
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mesh.mIndexBuffer.buffer, fmt::format("{}IndexBuffer", mesh.mName).c_str());
@@ -536,10 +538,8 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::
 
     mRenderer->mImmSubmit.individualSubmit([&mesh, vertexCopy, indexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
         renderer->mResources.mMeshStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-
-        cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mVertexBuffer.buffer, vertexCopy);
-        cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mesh.mIndexBuffer.buffer, indexCopy);
-
+        mesh.mVertexBuffer.copyFrom(cmd, renderer, renderer->mResources.mMeshStagingBuffer, vertexCopy, vertexCopy.size);
+        mesh.mIndexBuffer.copyFrom(cmd, renderer, renderer->mResources.mMeshStagingBuffer, indexCopy, indexCopy.size);
         mesh.mVertexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
         mesh.mIndexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
@@ -560,9 +560,9 @@ void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materi
 
     mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
         renderer->mResources.mMaterialConstantsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-
-        cmd.copyBuffer(*renderer->mResources.mMaterialConstantsStagingBuffer.buffer, *mMaterialConstantsBuffer.buffer, materialConstantsCopy);
-
+        mMaterialConstantsBuffer.copyFrom(
+            cmd, renderer, renderer->mResources.mMaterialConstantsStagingBuffer, materialConstantsCopy, materialConstantsCopy.size
+        );
         mMaterialConstantsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
@@ -584,9 +584,7 @@ void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesV
 
     mRenderer->mImmSubmit.individualSubmit([this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
         renderer->mResources.mNodeTransformsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-
-        cmd.copyBuffer(*renderer->mResources.mNodeTransformsStagingBuffer.buffer, *mNodeTransformsBuffer.buffer, nodeTransformsCopy);
-
+        mNodeTransformsBuffer.copyFrom(cmd, renderer, renderer->mResources.mNodeTransformsStagingBuffer, nodeTransformsCopy, nodeTransformsCopy.size);
         mNodeTransformsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffers Uploading", mName);
