@@ -35,9 +35,14 @@ public struct VSOutput
 
 public typedef VSOutput FSInput;
 
-public struct FSOutput
+public struct FSOutputOpaque
 {
     public float4 color : SV_Target0;
-    public float4 accum : SV_Target1;
-    public float4 rvl : SV_Target2;
 };
+
+public struct FSOutputTransparent
+{
+    public float4 accum : SV_Target0;
+    public float4 rvl : SV_Target1;
+};
+

@@ -40,12 +40,12 @@ void PbrMaterial::getMaterialPipeline() {
 }
 
 void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions) const {
-    vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Geometry.frag.spv");
-    vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Geometry.vert.spv");
-
     vk::CullModeFlags cullMode;
     (materialPipelineOptions.doubleSided) ? (cullMode = vk::CullModeFlagBits::eNone) : (cullMode = vk::CullModeFlagBits::eBack);
-    bool transparency = materialPipelineOptions.alphaMode == fastgltf::AlphaMode::Blend;
+    bool opaque = materialPipelineOptions.alphaMode != fastgltf::AlphaMode::Blend;
+    
+    vk::ShaderModule vertexShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / "Geometry.vert.spv");
+    vk::ShaderModule fragShader = mRenderer->mResources.getShader(std::filesystem::path(SHADERS_PATH) / (opaque ? "GeometryOpaque.frag.spv" : "GeometryTransparent.frag.spv"));
 
     vk::PipelineColorBlendAttachmentState noBlendState{};
     noBlendState.colorWriteMask =
@@ -80,10 +80,13 @@ void PbrMaterial::createMaterialPipeline(PipelineOptions materialPipelineOptions
     materialPipelineBuilder.setCullMode(cullMode, vk::FrontFace::eCounterClockwise);
     MSAA_ENABLE ? materialPipelineBuilder.enableMultisampling() : materialPipelineBuilder.disableMultisampling();
     MSAA_ENABLE ? materialPipelineBuilder.enableSampleShading() : materialPipelineBuilder.disableSampleShading();
-    materialPipelineBuilder.enableDepthTest(!transparency, vk::CompareOp::eGreaterOrEqual); 
-    materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.format, noBlendState);
-    materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mAccumImage.format, accumBlendState);
-    materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mRevealageImage.format, rvlBlendState);
+    materialPipelineBuilder.enableDepthTest(opaque, vk::CompareOp::eGreaterOrEqual); 
+    if (opaque) {
+        materialPipelineBuilder.addColorAttachment(mRenderer->mInfrastructure.mDrawImage.format, noBlendState);
+    } else {
+        materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mAccumImage.format, accumBlendState);
+        materialPipelineBuilder.addColorAttachment(mRenderer->mScene.mTransparency.mRevealageImage.format, rvlBlendState);
+    }
     materialPipelineBuilder.setDepthFormat(mRenderer->mInfrastructure.mDepthImage.format);
     materialPipelineBuilder.mPipelineLayout = *mPipelineLayout;
 

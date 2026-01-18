@@ -192,6 +192,8 @@ void AllocatedBuffer::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 
 }
 
 void AllocatedBuffer::resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newSize) {
+    renderer->mCore.mDevice.waitIdle();
+
     AllocatedBuffer newBuffer = renderer->mResources.createBuffer(newSize, usage, flags);
 
     vk::BufferCopy copyRegion{};
@@ -201,6 +203,8 @@ void AllocatedBuffer::resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newS
     cmd.copyBuffer(*buffer, *newBuffer.buffer, copyRegion);
 
     *this = std::move(newBuffer);
+
+    renderer->mCore.mDevice.waitIdle();
 }
 
 void AllocatedBuffer::copyFrom(vk::CommandBuffer cmd, Renderer* renderer, AllocatedBuffer& src, vk::ArrayProxy<vk::BufferCopy> bufferCopies, u32 maxSize) {

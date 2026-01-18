@@ -415,10 +415,8 @@ void skybox(Renderer* r, vk::CommandBuffer cmd) {
 };
 
 void opaque(Renderer* r, vk::CommandBuffer cmd) {
-    std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+    std::array<vk::RenderingAttachmentInfo, 1> colorAttachments = {
         vkhelper::colorAttachmentInfo(*r->mInfrastructure.mDrawImage.view, vk::ImageLayout::eColorAttachmentOptimal),
-        vk::RenderingAttachmentInfo{},
-        vk::RenderingAttachmentInfo{},
     };
     vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*r->mInfrastructure.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal);
 
@@ -465,8 +463,7 @@ void opaque(Renderer* r, vk::CommandBuffer cmd) {
 };
 
 void transparent(Renderer* r, vk::CommandBuffer cmd) {
-    std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
-        vk::RenderingAttachmentInfo{},
+    std::array<vk::RenderingAttachmentInfo, 2> colorAttachments = {
         vkhelper::colorAttachmentInfo(*r->mScene.mTransparency.mAccumImage.view, vk::ImageLayout::eColorAttachmentOptimal),
         vkhelper::colorAttachmentInfo(*r->mScene.mTransparency.mRevealageImage.view, vk::ImageLayout::eColorAttachmentOptimal),
     };

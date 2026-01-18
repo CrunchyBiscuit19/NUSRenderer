@@ -67,7 +67,7 @@ void RendererScene::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 
     mMainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createBuffer(
-        MAIN_MAX_RENDER_ITEMS,
+        MAIN_MAX_RENDER_INSTANCES * sizeof(u32),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
