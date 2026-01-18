@@ -179,12 +179,12 @@ void RendererScene::regenerateRenderItemsInstances() {
             mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
                 cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
                 batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
-                cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
+                batch.preCullRenderItemsBuffer.copyFrom(cmd, renderer, batch.renderItemsStagingBuffer, renderItemsCopy, renderItemsCopy.size);
                 batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
 
                 cmd.fillBuffer(*batch.renderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
                 batch.renderInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
-                cmd.copyBuffer(*batch.renderInstancesStagingBuffer.buffer, *batch.renderInstancesBuffer.buffer, renderInstancesCopy);
+                batch.renderInstancesBuffer.copyFrom(cmd, renderer, batch.renderInstancesStagingBuffer, renderInstancesCopy, renderInstancesCopy.size);
                 batch.renderInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
             });
 
@@ -263,6 +263,7 @@ void RendererScene::realignOffsets() {
 
 void RendererScene::reloadMainVertexBuffer() {
     u32 dstOffset = 0;
+    u32 maxPos = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         for (auto& mesh : model.mMeshes) {
@@ -272,9 +273,10 @@ void RendererScene::reloadMainVertexBuffer() {
             meshVertexCopy.size = mesh.mNumVertices * sizeof(Vertex);
 
             dstOffset += meshVertexCopy.size;
+            maxPos = dstOffset;
 
-            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-                cmd.copyBuffer(*mesh.mVertexBuffer.buffer, *mMainVertexBuffer.buffer, meshVertexCopy);
+            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshVertexCopy, maxPos](Renderer* renderer, vk::CommandBuffer cmd) {
+                mMainVertexBuffer.copyFrom(cmd, renderer, mesh.mVertexBuffer, meshVertexCopy, maxPos);
             });
         }
     }
@@ -289,6 +291,7 @@ void RendererScene::reloadMainVertexBuffer() {
 
 void RendererScene::reloadMainIndexBuffer() {
     u32 dstOffset = 0;
+    u32 maxPos = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         for (auto& mesh : model.mMeshes) {
@@ -298,9 +301,10 @@ void RendererScene::reloadMainIndexBuffer() {
             meshIndexCopy.size = mesh.mNumIndices * sizeof(u32);
 
             dstOffset += meshIndexCopy.size;
+            maxPos = dstOffset;
 
-            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-                cmd.copyBuffer(*mesh.mIndexBuffer.buffer, *mMainIndexBuffer.buffer, meshIndexCopy);
+            mRenderer->mImmSubmit.mCallbacks.push_back([&mesh, this, meshIndexCopy, maxPos](Renderer* renderer, vk::CommandBuffer cmd) {
+                mMainIndexBuffer.copyFrom(cmd, renderer, mesh.mIndexBuffer, meshIndexCopy, maxPos);
             });
         }
     }
@@ -315,6 +319,7 @@ void RendererScene::reloadMainIndexBuffer() {
 
 void RendererScene::reloadMainMaterialConstantsBuffer() {
     u32 dstOffset = 0;
+    u32 maxPos = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         vk::BufferCopy materialConstantCopy{};
@@ -323,10 +328,13 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
         materialConstantCopy.size = model.mMaterials.size() * sizeof(MaterialConstants);
 
         dstOffset += materialConstantCopy.size;
+        maxPos = dstOffset;
 
-        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, materialConstantCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-            cmd.copyBuffer(*model.mMaterialConstantsBuffer.buffer, *mMainMaterialConstantsBuffer.buffer, materialConstantCopy);
-        });
+        mRenderer->mImmSubmit.mCallbacks.push_back(
+            [&model, this, materialConstantCopy, maxPos](Renderer* renderer, vk::CommandBuffer cmd) {
+                mMainMaterialConstantsBuffer.copyFrom(cmd, renderer, model.mMaterialConstantsBuffer, materialConstantCopy, maxPos);
+            }
+        );
     }
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
@@ -339,6 +347,7 @@ void RendererScene::reloadMainMaterialConstantsBuffer() {
 
 void RendererScene::reloadMainNodeTransformsBuffer() {
     u32 dstOffset = 0;
+    u32 maxPos = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         vk::BufferCopy nodeTransformsCopy{};
@@ -347,9 +356,10 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
         nodeTransformsCopy.size = model.mNodes.size() * sizeof(glm::mat4);
 
         dstOffset += nodeTransformsCopy.size;
+        maxPos = dstOffset;
 
-        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, nodeTransformsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-            cmd.copyBuffer(*model.mNodeTransformsBuffer.buffer, *mMainNodeTransformsBuffer.buffer, nodeTransformsCopy);
+        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, nodeTransformsCopy, maxPos](Renderer* renderer, vk::CommandBuffer cmd) {
+            mMainNodeTransformsBuffer.copyFrom(cmd, renderer, model.mNodeTransformsBuffer, nodeTransformsCopy, maxPos);
         });
     }
 
@@ -363,6 +373,7 @@ void RendererScene::reloadMainNodeTransformsBuffer() {
 
 void RendererScene::reloadMainBoundsBuffer() {
     u32 dstOffset = 0;
+    u32 maxPos = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         vk::BufferCopy boundsCopy{};
@@ -371,9 +382,10 @@ void RendererScene::reloadMainBoundsBuffer() {
         boundsCopy.size = model.mMeshes.size() * sizeof(AABB);
 
         dstOffset += boundsCopy.size;
+        maxPos = dstOffset;
 
-        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, boundsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-            cmd.copyBuffer(*model.mBoundsBuffer.buffer, *mMainBoundsBuffer.buffer, boundsCopy);
+        mRenderer->mImmSubmit.mCallbacks.push_back([&model, this, boundsCopy, maxPos](Renderer* renderer, vk::CommandBuffer cmd) {
+            mMainBoundsBuffer.copyFrom(cmd, renderer, model.mBoundsBuffer, boundsCopy, maxPos);
         });
     }
 
@@ -387,6 +399,7 @@ void RendererScene::reloadMainBoundsBuffer() {
 
 void RendererScene::reloadMainInstancesBuffer() {
     u32 dstOffset = 0;
+    u32 maxPos = 0;
 
     for (auto& model : mModelsCache | std::views::values) {
         if (model.mInstances.empty()) {
@@ -399,9 +412,10 @@ void RendererScene::reloadMainInstancesBuffer() {
         instancesCopy.size = model.mInstances.size() * sizeof(InstanceData);
 
         dstOffset += instancesCopy.size;
+        maxPos = dstOffset;
 
-        mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-            cmd.copyBuffer(*model.mInstancesBuffer.buffer, *mMainInstancesBuffer.buffer, instancesCopy);
+        mRenderer->mImmSubmit.mCallbacks.emplace_back([&model, this, instancesCopy, maxPos](Renderer* renderer, vk::CommandBuffer cmd) {
+            mMainInstancesBuffer.copyFrom(cmd, renderer, model.mInstancesBuffer, instancesCopy, maxPos);
         });
     }
 
