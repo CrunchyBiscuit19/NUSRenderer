@@ -148,7 +148,7 @@ void Skybox::loadImage(const std::filesystem::path& skyboxImageDir) {
         skyboxImageDir / "pz.png",
         skyboxImageDir / "nz.png"
     };
-    std::vector<std::byte> skyboxImageData(MAX_IMAGE_SIZE);
+    std::vector<std::byte> skyboxImageData(IMAGE_STAGING_BUFFER_SIZE);
 
     i32 width = 0, height = 0, nrChannels = 0;
     i32 offset = 0;
@@ -171,6 +171,8 @@ void Skybox::loadImage(const std::filesystem::path& skyboxImageDir) {
         false,
         true
     );
+
+    skyboxImageData.clear();
 
     LOG_INFO(mRenderer->mLogger, "Skybox Loaded");
 }

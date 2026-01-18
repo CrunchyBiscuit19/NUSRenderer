@@ -334,7 +334,7 @@ void pickDraw(Renderer* r, vk::CommandBuffer cmd) {
             cmd.pushConstants<PickerDrawPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, r->mScene.mPicker.mDrawPushConstants);
 
             cmd.drawIndexedIndirectCount(
-                *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
+                *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, DRAW_MAX_RENDER_ITEMS, sizeof(RenderItem)
             );
         }
     }
@@ -453,7 +453,7 @@ void opaque(Renderer* r, vk::CommandBuffer cmd) {
             cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, r->mScene.mGeometryPushConstants);
 
             cmd.drawIndexedIndirectCount(
-                *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
+                *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, DRAW_MAX_RENDER_ITEMS, sizeof(RenderItem)
             );
 
             r->mStats.mDrawCallCount++;
@@ -497,7 +497,7 @@ void transparent(Renderer* r, vk::CommandBuffer cmd) {
         cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, r->mScene.mGeometryPushConstants);
 
         cmd.drawIndexedIndirectCount(
-            *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, MAX_RENDER_ITEMS, sizeof(RenderItem)
+            *batch.postCullRenderItemsBuffer.buffer, 0, *batch.postCullRenderItemsCountBuffer.buffer, 0, DRAW_MAX_RENDER_ITEMS, sizeof(RenderItem)
         );
 
         r->mStats.mDrawCallCount++;

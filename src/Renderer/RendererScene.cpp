@@ -21,7 +21,7 @@ RendererScene::RendererScene(Renderer* renderer)
 
 void RendererScene::initBuffers() {
     mMainVertexBuffer = mRenderer->mResources.createBuffer(
-        MAIN_VERTEX_BUFFER_SIZE,
+        INITIAL_MAIN_VERTEX_BUFFER_SIZE,
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -29,13 +29,13 @@ void RendererScene::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "Main Vertex Buffer Created");
 
     mMainIndexBuffer = mRenderer->mResources.createBuffer(
-        MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
+        INITIAL_MAIN_INDEX_BUFFER_SIZE, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
     mRenderer->mCore.labelResourceDebug(mMainIndexBuffer.buffer, "MainIndexBuffer");
     LOG_INFO(mRenderer->mLogger, "Main Index Buffer Created");
 
     mMainMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
-        MAX_MATERIALS * sizeof(MaterialConstants),
+        INITIAL_MAIN_MATERIALS * sizeof(MaterialConstants),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -43,7 +43,7 @@ void RendererScene::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "Main Material Constants Buffer Created");
 
     mMainNodeTransformsBuffer = mRenderer->mResources.createBuffer(
-        MAX_NODES * sizeof(glm::mat4),
+        INITIAL_MAIN_NODES * sizeof(glm::mat4),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -51,7 +51,7 @@ void RendererScene::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "Main Node Transforms Buffer Created");
 
     mMainInstancesBuffer = mRenderer->mResources.createBuffer(
-        MAX_INSTANCES * sizeof(InstanceData),
+        INITIAL_MAIN_INSTANCES * sizeof(InstanceData),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -59,7 +59,7 @@ void RendererScene::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "Main Instances Buffer Created");
 
     mMainBoundsBuffer = mRenderer->mResources.createBuffer(
-        MAX_RENDER_ITEMS * sizeof(AABB),
+        INITIAL_MAIN_BOUNDS * sizeof(AABB),
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -67,7 +67,7 @@ void RendererScene::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "Main Bounds Buffer Created");
 
     mMainVisibleRenderInstancesInstanceIndexBuffer = mRenderer->mResources.createBuffer(
-        MAX_INSTANCES,
+        MAIN_MAX_RENDER_ITEMS,
         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );

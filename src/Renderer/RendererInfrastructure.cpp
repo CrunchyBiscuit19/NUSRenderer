@@ -31,7 +31,7 @@ void RendererInfrastructure::initDescriptors() {
         {vk::DescriptorType::eUniformBuffer, 1},
         {vk::DescriptorType::eStorageImage, 1},
         {vk::DescriptorType::eSampledImage, 1},
-        {vk::DescriptorType::eCombinedImageSampler, MAX_TEXTURE_ARRAY_SLOTS},
+        {vk::DescriptorType::eCombinedImageSampler, 100},
         {vk::DescriptorType::eSampler, 1},
     };
     mMainDescriptorAllocator.init(MAX_DESCRIPTOR_SETS_PER_POOL, sizes);

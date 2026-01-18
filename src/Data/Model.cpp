@@ -217,7 +217,7 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
 
 void GLTFModel::initBuffers() {
     mMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
-        MAX_MATERIALS * sizeof(MaterialConstants),
+        INITIAL_MODEL_MATERIALS * sizeof(MaterialConstants),
         vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -225,7 +225,7 @@ void GLTFModel::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
 
     mNodeTransformsBuffer = mRenderer->mResources.createBuffer(
-        MAX_NODES * sizeof(glm::mat4),
+        INITIAL_MODEL_NODES * sizeof(glm::mat4),
         vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );
@@ -233,7 +233,7 @@ void GLTFModel::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
 
     mInstancesBuffer = mRenderer->mResources.createBuffer(
-        MAX_INSTANCES * sizeof(InstanceData),
+        INITIAL_MODEL_INSTANCES * sizeof(InstanceData),
         vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
     );
@@ -241,7 +241,7 @@ void GLTFModel::initBuffers() {
     LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
 
     mBoundsBuffer = mRenderer->mResources.createBuffer(
-        MAX_MESHES * sizeof(AABB),
+        INITIAL_MODEL_BOUNDS * sizeof(AABB),
         vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
     );

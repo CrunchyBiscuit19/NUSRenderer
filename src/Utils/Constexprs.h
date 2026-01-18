@@ -1,8 +1,10 @@
 #pragma once
 
 #include <Utils/Types.h>
-#include <imgui.h>
+#include <Data/Mesh.h>
+#include <Scene/Batch.h>
 
+#include <imgui.h>
 #include <vulkan/vulkan.hpp>
 
 enum class ValidationMode { None, Basic, Strict };
@@ -36,17 +38,31 @@ constexpr u32 KIBIBYTE = 1 << 10;
 constexpr u32 MEBIBYTE = 1 << 20;
 constexpr u32 ONE_SECOND_IN_MS = 1e3;
 
-constexpr u32 MESH_VERTEX_BUFFER_SIZE = 1e1 * MEBIBYTE;
-constexpr u32 MESH_INDEX_BUFFER_SIZE = 1e1 * MEBIBYTE;
-constexpr u32 MAIN_VERTEX_BUFFER_SIZE = 1e3 * MESH_VERTEX_BUFFER_SIZE;
-constexpr u32 MAIN_INDEX_BUFFER_SIZE = 1e3 * MESH_INDEX_BUFFER_SIZE;
-constexpr u32 MAX_IMAGE_SIZE = 1e4 * MEBIBYTE;
-constexpr u32 MAX_INSTANCES = 1e4;
-constexpr u32 MAX_MATERIALS = 1e4;
-constexpr u32 MAX_MESHES = 1e4;
-constexpr u32 MAX_NODES = 1e4;
-constexpr u32 MAX_RENDER_ITEMS = 1e5;
+constexpr u32 INITIAL_MESH_VERTEX_BUFFER_SIZE = 1e0 * MEBIBYTE;
+constexpr u32 INITIAL_MESH_INDEX_BUFFER_SIZE = 1e0 * MEBIBYTE;
+constexpr u32 INITIAL_MAIN_VERTEX_BUFFER_SIZE = 1e3 * INITIAL_MESH_VERTEX_BUFFER_SIZE;
+constexpr u32 INITIAL_MAIN_INDEX_BUFFER_SIZE = 1e3 * INITIAL_MESH_INDEX_BUFFER_SIZE;
+constexpr u32 INITIAL_MODEL_INSTANCES = 1e2;
+constexpr u32 INITIAL_MAIN_INSTANCES = 1e4;
+constexpr u32 INITIAL_MODEL_MATERIALS = 1e2;
+constexpr u32 INITIAL_MAIN_MATERIALS = 1e4;
+constexpr u32 INITIAL_MODEL_NODES = 1e2;
+constexpr u32 INITIAL_MAIN_NODES = 1e4;
+constexpr u32 INITIAL_MAIN_BOUNDS = 1e4;
+constexpr u32 INITIAL_MODEL_BOUNDS = 1e6;
+constexpr u32 DRAW_MAX_RENDER_ITEMS = 1e6;
+constexpr u32 MAIN_MAX_RENDER_ITEMS = 1e6;
+constexpr u32 BATCH_MAX_RENDER_ITEMS = 1e5;
+constexpr u32 BATCH_MAX_RENDER_INSTANCES = 1e6;
 constexpr u32 MAX_TEXTURE_ARRAY_SLOTS = 1e4;
+
+constexpr u32 IMAGE_STAGING_BUFFER_SIZE = (1 << 10) * MEBIBYTE;
+constexpr u32 MESH_STAGING_BUFFER_SIZE = (1 << 6) * MEBIBYTE;
+constexpr u32 MATERIAL_CONSTANTS_STAGING_BUFFER_SIZE = (1 << 6) * INITIAL_MODEL_MATERIALS * sizeof(MaterialConstants);
+constexpr u32 NODE_TRANSFORMS_STAGING_BUFFER_SIZE = (1 << 6) * INITIAL_MODEL_NODES * sizeof(glm::mat4);
+constexpr u32 BOUNDS_STAGING_BUFFER_SIZE = (1 << 6) * INITIAL_MODEL_BOUNDS * sizeof(AABB);
+constexpr u32 RENDER_ITEMS_STAGING_BUFFER_SIZE = (1 << 6) * BATCH_MAX_RENDER_ITEMS * sizeof(RenderItem);
+constexpr u32 RENDER_INSTANCES_STAGING_BUFFER_SIZE = (1 << 6) * BATCH_MAX_RENDER_INSTANCES * sizeof(RenderInstance);
 
 constexpr u32 NUMBER_OF_SKYBOX_VERTICES = 36;
 constexpr u32 NUMBER_OF_CUBEMAP_FACES = 6;

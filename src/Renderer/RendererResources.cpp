@@ -234,23 +234,23 @@ AllocatedBuffer::~AllocatedBuffer() { cleanup(); }
 RendererResources::RendererResources(Renderer* renderer) : mRenderer(renderer), mColorClearValue(CLEAR_COLOR) {}
 
 void RendererResources::initStaging() {
-    mImageStagingBuffer = createStagingBuffer(MAX_IMAGE_SIZE);
+    mImageStagingBuffer = createStagingBuffer(IMAGE_STAGING_BUFFER_SIZE);
     mRenderer->mCore.labelResourceDebug(mImageStagingBuffer.buffer, "ImageStagingBuffer");
     LOG_INFO(mRenderer->mLogger, "Image Staging Buffer Created");
 
-    mMeshStagingBuffer = createStagingBuffer(MESH_VERTEX_BUFFER_SIZE + MESH_INDEX_BUFFER_SIZE);
+    mMeshStagingBuffer = createStagingBuffer(MESH_STAGING_BUFFER_SIZE);
     mRenderer->mCore.labelResourceDebug(mMeshStagingBuffer.buffer, "MeshStagingBuffer");
     LOG_INFO(mRenderer->mLogger, "Mesh Staging Buffer Created");
 
-    mMaterialConstantsStagingBuffer = createStagingBuffer(MAX_MATERIALS * sizeof(MaterialConstants));
+    mMaterialConstantsStagingBuffer = createStagingBuffer(MATERIAL_CONSTANTS_STAGING_BUFFER_SIZE);
     mRenderer->mCore.labelResourceDebug(mMaterialConstantsStagingBuffer.buffer, "MaterialConstantsStagingBuffer");
     LOG_INFO(mRenderer->mLogger, "Material Constants Staging Buffer Created");
 
-    mNodeTransformsStagingBuffer = createStagingBuffer(MAX_NODES * sizeof(glm::mat4));
+    mNodeTransformsStagingBuffer = createStagingBuffer(NODE_TRANSFORMS_STAGING_BUFFER_SIZE);
     mRenderer->mCore.labelResourceDebug(mNodeTransformsStagingBuffer.buffer, "NodeTransformsStagingBuffer");
     LOG_INFO(mRenderer->mLogger, "Node Transforms Staging Buffer Created");
 
-    mBoundsStagingBuffer = createStagingBuffer(MAX_MESHES * sizeof(AABB));
+    mBoundsStagingBuffer = createStagingBuffer(BOUNDS_STAGING_BUFFER_SIZE);
     mRenderer->mCore.labelResourceDebug(mBoundsStagingBuffer.buffer, "BoundsStagingBuffer");
     LOG_INFO(mRenderer->mLogger, "Bounds Staging Buffer Created");
 }

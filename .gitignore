@@ -11,3 +11,4 @@ resources/models
 logs/
 src/includes*
 /tools/*.exe
+*.hdr
