@@ -208,8 +208,14 @@ void AllocatedBuffer::resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newS
     newBuffer.barrier(cmd, oldStage, oldAccess);
 
     *this = std::move(newBuffer);
+}
 
-    cleanup();
+void AllocatedBuffer::copyFrom(vk::CommandBuffer cmd, Renderer* renderer, vk::Buffer other, vk::ArrayProxy<vk::BufferCopy> bufferCopies, u32 maxSize) {
+    if (maxSize > size) {
+        resize(cmd, renderer, vkhelper::nextPow2(maxSize));
+    }
+    cmd.copyBuffer(*buffer, other, bufferCopies);
+    return;
 }
 
 void AllocatedBuffer::cleanup() {

@@ -71,6 +71,7 @@ struct AllocatedBuffer {
 
     void barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 nextStage, vk::AccessFlags2 nextAccess);
     void resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newSize);
+    void copyFrom(vk::CommandBuffer cmd, Renderer* renderer, vk::Buffer other, vk::ArrayProxy<vk::BufferCopy> bufferCopies, u32 maxPos);
 
     void cleanup();
     ~AllocatedBuffer();

@@ -482,4 +482,15 @@ u32 vkhelper::previousPow2(u32 x) {
     return x - (x >> 1);
 }
 
+u32 vkhelper::nextPow2(u32 x) {
+    if (x == 0) return 1;
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return x + 1;
+}
+
 u32 vkhelper::getMipMapLevelsDepthPyramid(vk::Extent3D extent) { return std::floor(std::log2(std::max(extent.width, extent.height))) + 1; }
