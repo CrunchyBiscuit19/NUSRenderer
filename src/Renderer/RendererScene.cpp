@@ -178,21 +178,13 @@ void RendererScene::regenerateRenderItemsInstances() {
 
             mRenderer->mImmSubmit.mCallbacks.push_back([&batch, renderItemsCopy, renderInstancesCopy](Renderer* renderer, vk::CommandBuffer cmd) {
                 cmd.fillBuffer(*batch.preCullRenderItemsBuffer.buffer, 0, vk::WholeSize, 0);
-                
-                // Wait for render items buffer to be flushed
                 batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
-
                 cmd.copyBuffer(*batch.renderItemsStagingBuffer.buffer, *batch.preCullRenderItemsBuffer.buffer, renderItemsCopy);
-
-                // Wait for render items to finish uploading
                 batch.preCullRenderItemsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
 
                 cmd.fillBuffer(*batch.renderInstancesBuffer.buffer, 0, vk::WholeSize, 0);
-
                 batch.renderInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
-                
                 cmd.copyBuffer(*batch.renderInstancesStagingBuffer.buffer, *batch.renderInstancesBuffer.buffer, renderInstancesCopy);
-                
                 batch.renderInstancesBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderRead);
             });
 

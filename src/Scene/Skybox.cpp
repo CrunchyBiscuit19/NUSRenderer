@@ -116,10 +116,8 @@ void Skybox::initBuffer() {
     skyboxVertexCopy.size = skyboxVertexSize;
 
     mRenderer->mImmSubmit.mCallbacks.push_back([this, skyboxVertexCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        renderer->mResources.mMeshStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-
-        cmd.copyBuffer(*renderer->mResources.mMeshStagingBuffer.buffer, *mVertexBuffer.buffer, skyboxVertexCopy);
-
+        renderer->mResources.mMeshStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eHost, vk::AccessFlagBits2::eHostWrite);
+        mVertexBuffer.copyFrom(cmd, renderer, renderer->mResources.mMeshStagingBuffer, skyboxVertexCopy, skyboxVertexCopy.size);
         mVertexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eVertexShader, vk::AccessFlagBits2::eShaderRead);
     });
     LOG_INFO(mRenderer->mLogger, "Skybox Vertex Buffer Uploading");

@@ -192,12 +192,7 @@ void AllocatedBuffer::barrier(vk::CommandBuffer cmd, vk::PipelineStageFlagBits2 
 }
 
 void AllocatedBuffer::resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newSize) {
-    vk::PipelineStageFlagBits2 oldStage = currentStage;
-    vk::AccessFlags2 oldAccess = currentAccess;
-    barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-
     AllocatedBuffer newBuffer = renderer->mResources.createBuffer(newSize, usage, flags);
-    newBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferWrite);
 
     vk::BufferCopy copyRegion{};
     copyRegion.size = size;
@@ -205,16 +200,14 @@ void AllocatedBuffer::resize(vk::CommandBuffer cmd, Renderer* renderer, u32 newS
     copyRegion.dstOffset = 0;
     cmd.copyBuffer(*buffer, *newBuffer.buffer, copyRegion);
 
-    newBuffer.barrier(cmd, oldStage, oldAccess);
-
     *this = std::move(newBuffer);
 }
 
-void AllocatedBuffer::copyFrom(vk::CommandBuffer cmd, Renderer* renderer, vk::Buffer other, vk::ArrayProxy<vk::BufferCopy> bufferCopies, u32 maxSize) {
+void AllocatedBuffer::copyFrom(vk::CommandBuffer cmd, Renderer* renderer, AllocatedBuffer& src, vk::ArrayProxy<vk::BufferCopy> bufferCopies, u32 maxSize) {
     if (maxSize > size) {
         resize(cmd, renderer, vkhelper::nextPow2(maxSize));
     }
-    cmd.copyBuffer(*buffer, other, bufferCopies);
+    cmd.copyBuffer(*src.buffer, *buffer, bufferCopies);
     return;
 }
 
