@@ -30,7 +30,7 @@ class Picker {
    public:
     AllocatedBuffer mBuffer;
 
-    AllocatedImage mImage;
+    AllocatedImage mPickImage;
     AllocatedImage mDepthImage;
 
     vk::raii::DescriptorSet mDescriptorSet;

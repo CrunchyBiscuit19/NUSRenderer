@@ -215,40 +215,6 @@ void GLTFModel::assignOcclusion(MaterialConstants& constants, MaterialResources&
     }
 }
 
-void GLTFModel::initBuffers() {
-    mMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
-        INITIAL_MODEL_MATERIALS * sizeof(MaterialConstants),
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
-    );
-    mRenderer->mCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
-    LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
-
-    mNodeTransformsBuffer = mRenderer->mResources.createBuffer(
-        INITIAL_MODEL_NODES * sizeof(glm::mat4),
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
-    );
-    mRenderer->mCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
-    LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
-
-    mInstancesBuffer = mRenderer->mResources.createBuffer(
-        INITIAL_MODEL_INSTANCES * sizeof(InstanceData),
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-    );
-    mRenderer->mCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
-    LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
-
-    mBoundsBuffer = mRenderer->mResources.createBuffer(
-        INITIAL_MODEL_BOUNDS * sizeof(AABB),
-        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
-        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
-    );
-    mRenderer->mCore.labelResourceDebug(mBoundsBuffer.buffer, fmt::format("{}BoundsBuffer", mName).c_str());
-    LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Created", mName);
-}
-
 void GLTFModel::loadSamplerCreateInfos() {
     mSamplerCreateInfos.reserve(mAsset.samplers.size());
     for (fastgltf::Sampler& sampler : mAsset.samplers) {
@@ -484,6 +450,62 @@ void GLTFModel::loadNodes() {
     loadNodeTransformsBuffer(mNodes);
 }
 
+void GLTFModel::initBuffers() {
+    mMaterialConstantsBuffer = mRenderer->mResources.createBuffer(
+        INITIAL_MODEL_MATERIALS * sizeof(MaterialConstants),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
+    );
+    mRenderer->mCore.labelResourceDebug(mMaterialConstantsBuffer.buffer, fmt::format("{}MaterialConstantsBuffer", mName).c_str());
+    LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffer Created", mName);
+
+    mBoundsBuffer = mRenderer->mResources.createBuffer(
+        INITIAL_MODEL_BOUNDS * sizeof(AABB),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
+    );
+    mRenderer->mCore.labelResourceDebug(mBoundsBuffer.buffer, fmt::format("{}BoundsBuffer", mName).c_str());
+    LOG_INFO(mRenderer->mLogger, "{} Bounds Buffer Created", mName);
+
+    mNodeTransformsBuffer = mRenderer->mResources.createBuffer(
+        INITIAL_MODEL_NODES * sizeof(glm::mat4),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT
+    );
+    mRenderer->mCore.labelResourceDebug(mNodeTransformsBuffer.buffer, fmt::format("{}NodeTransformsBuffer", mName).c_str());
+    LOG_INFO(mRenderer->mLogger, "{} Node Transforms Buffer Created", mName);
+
+    mInstancesBuffer = mRenderer->mResources.createBuffer(
+        INITIAL_MODEL_INSTANCES * sizeof(InstanceData),
+        vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+    );
+    mRenderer->mCore.labelResourceDebug(mInstancesBuffer.buffer, fmt::format("{}InstancesBuffer", mName).c_str());
+    LOG_INFO(mRenderer->mLogger, "{} Instances Buffer Created", mName);
+}
+
+void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector) {
+    std::memcpy(
+        mRenderer->mResources.mMaterialConstantsStagingBuffer.info.pMappedData,
+        materialConstantsVector.data(),
+        materialConstantsVector.size() * sizeof(MaterialConstants)
+    );
+
+    vk::BufferCopy materialConstantsCopy{};
+    materialConstantsCopy.dstOffset = 0;
+    materialConstantsCopy.srcOffset = 0;
+    materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
+
+    mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
+        renderer->mResources.mMaterialConstantsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+        mMaterialConstantsBuffer.copyFrom(
+            cmd, renderer, renderer->mResources.mMaterialConstantsStagingBuffer, materialConstantsCopy, materialConstantsCopy.size
+        );
+        mMaterialConstantsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
+    });
+    LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
+}
+
 void GLTFModel::loadBoundsBuffer() {
     const vk::DeviceSize boundsSize = mMeshes.size() * sizeof(AABB);
     std::vector<AABB> boundsVector;
@@ -544,28 +566,6 @@ void GLTFModel::loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::
         mesh.mIndexBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
     });
     LOG_INFO(mRenderer->mLogger, "{} Model Buffer {} Uploading", mName, mesh.mId);
-}
-
-void GLTFModel::loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector) {
-    std::memcpy(
-        mRenderer->mResources.mMaterialConstantsStagingBuffer.info.pMappedData,
-        materialConstantsVector.data(),
-        materialConstantsVector.size() * sizeof(MaterialConstants)
-    );
-
-    vk::BufferCopy materialConstantsCopy{};
-    materialConstantsCopy.dstOffset = 0;
-    materialConstantsCopy.srcOffset = 0;
-    materialConstantsCopy.size = materialConstantsVector.size() * sizeof(MaterialConstants);
-
-    mRenderer->mImmSubmit.individualSubmit([this, materialConstantsCopy](Renderer* renderer, vk::CommandBuffer cmd) {
-        renderer->mResources.mMaterialConstantsStagingBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-        mMaterialConstantsBuffer.copyFrom(
-            cmd, renderer, renderer->mResources.mMaterialConstantsStagingBuffer, materialConstantsCopy, materialConstantsCopy.size
-        );
-        mMaterialConstantsBuffer.barrier(cmd, vk::PipelineStageFlagBits2::eTransfer, vk::AccessFlagBits2::eTransferRead);
-    });
-    LOG_INFO(mRenderer->mLogger, "{} Material Constants Buffers Uploading", mName);
 }
 
 void GLTFModel::loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector) {

@@ -36,24 +36,24 @@ void Picker::initBuffer() {
 }
 
 void Picker::initImage() {
-    mImage = mRenderer->mResources.createImage(
+    mPickImage = mRenderer->mResources.createImage(
         mRenderer->mInfrastructure.mDrawImage.extent,
         vk::Format::eR32G32Uint,  // Model Id / Instance Id
         vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled
     );
-    mRenderer->mCore.labelResourceDebug(mImage.image, "PickerDrawImage");
+    mRenderer->mCore.labelResourceDebug(mPickImage.image, "PickerDrawImage");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image Created");
-    mRenderer->mCore.labelResourceDebug(mImage.view, "PickerDrawImageView");
+    mRenderer->mCore.labelResourceDebug(mPickImage.view, "PickerDrawImageView");
     LOG_INFO(mRenderer->mLogger, "Picker Draw Image View Created");
 
-    mDepthImage = mRenderer->mResources.createImage(mImage.extent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment);
+    mDepthImage = mRenderer->mResources.createImage(mPickImage.extent, vk::Format::eD32Sfloat, vk::ImageUsageFlagBits::eDepthStencilAttachment);
     mRenderer->mCore.labelResourceDebug(mDepthImage.image, "PickerDepthImage");
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image Created");
     mRenderer->mCore.labelResourceDebug(mDepthImage.view, "PickerDepthImageView");
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image View Created");
 
     mRenderer->mImmSubmit.mCallbacks.emplace_back([this](Renderer* renderer, vk::CommandBuffer cmd) {
-        mImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderSampledRead);
+        mPickImage.transition(cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderSampledRead);
         mDepthImage.transition(
             cmd,
             vk::ImageLayout::eDepthAttachmentOptimal,
@@ -73,7 +73,7 @@ void Picker::initDescriptor() {
 
 void Picker::writeDescriptor() {
     DescriptorSetWriter writer;
-    writer.writeImage(0, *mImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
+    writer.writeImage(0, *mPickImage.view, nullptr, vk::ImageLayout::eShaderReadOnlyOptimal, vk::DescriptorType::eSampledImage);
     writer.updateSetBindings(mRenderer->mCore.mDevice, *mDescriptorSet);
 }
 
@@ -109,7 +109,7 @@ void Picker::initDrawPipeline() {
     drawPipelineBuilder.setCullMode(vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise);
     drawPipelineBuilder.disableMultisampling();
     drawPipelineBuilder.disableSampleShading();
-    drawPipelineBuilder.addColorAttachment(mImage.format, noBlendState);
+    drawPipelineBuilder.addColorAttachment(mPickImage.format, noBlendState);
     drawPipelineBuilder.setDepthFormat(mDepthImage.format);
     drawPipelineBuilder.enableDepthTest(true, vk::CompareOp::eGreaterOrEqual);
     drawPipelineBuilder.mPipelineLayout = *mDrawPipelineLayout;
@@ -161,7 +161,7 @@ void Picker::initPickPushConstants() {
 }
 
 void Picker::resizePicker() {
-    mImage.cleanup();
+    mPickImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Picker Image Destroyed");
     mDepthImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image Destroyed");
@@ -215,7 +215,7 @@ void Picker::imguizmoFrame() const {
 void Picker::cleanup() {
     mBuffer.cleanup();
     LOG_INFO(mRenderer->mLogger, "Picker Buffer Destroyed");
-    mImage.cleanup();
+    mPickImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Picker Image Destroyed");
     mDepthImage.cleanup();
     LOG_INFO(mRenderer->mLogger, "Picker Depth Image Destroyed");

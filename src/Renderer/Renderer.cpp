@@ -273,7 +273,7 @@ void pick(Renderer* r, vk::CommandBuffer cmd) {
         return;
     }
 
-    r->mScene.mPicker.mImage.transition(
+    r->mScene.mPicker.mPickImage.transition(
         cmd,
         vk::ImageLayout::eColorAttachmentOptimal,
         vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -284,7 +284,7 @@ void pick(Renderer* r, vk::CommandBuffer cmd) {
 
     r->executePass(PassType::PickDraw, cmd);
 
-    r->mScene.mPicker.mImage.transition(
+    r->mScene.mPicker.mPickImage.transition(
         cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eComputeShader, vk::AccessFlagBits2::eShaderSampledRead
     );
     
@@ -293,7 +293,7 @@ void pick(Renderer* r, vk::CommandBuffer cmd) {
 
 void pickClear(Renderer* r, vk::CommandBuffer cmd) {
     std::array<vk::RenderingAttachmentInfo, 1> colorAttachments = {
-        vkhelper::colorAttachmentInfo(*r->mScene.mPicker.mImage.view, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear)
+        vkhelper::colorAttachmentInfo(*r->mScene.mPicker.mPickImage.view, vk::ImageLayout::eColorAttachmentOptimal, vk::AttachmentLoadOp::eClear)
     };
     vk::RenderingAttachmentInfo depthAttachment =
         vkhelper::depthAttachmentInfo(*r->mScene.mPicker.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal, vk::AttachmentLoadOp::eClear);
@@ -301,22 +301,22 @@ void pickClear(Renderer* r, vk::CommandBuffer cmd) {
     colorAttachments[0].clearValue.color = vk::ClearColorValue(0, 0, 0, 0);
 
     const vk::RenderingInfo renderInfo =
-        vkhelper::renderingInfo(vkhelper::extent3dTo2d(r->mScene.mPicker.mImage.extent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
+        vkhelper::renderingInfo(vkhelper::extent3dTo2d(r->mScene.mPicker.mPickImage.extent), colorAttachments.data(), &depthAttachment, colorAttachments.size());
 
     cmd.beginRendering(renderInfo);
     cmd.endRendering();
 };
 
 void pickDraw(Renderer* r, vk::CommandBuffer cmd) {
-    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*r->mScene.mPicker.mImage.view, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*r->mScene.mPicker.mPickImage.view, vk::ImageLayout::eColorAttachmentOptimal);
     vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*r->mScene.mPicker.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal);
-    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(r->mScene.mPicker.mImage.extent), &colorAttachment, &depthAttachment);
+    const vk::RenderingInfo renderInfo = vkhelper::renderingInfo(vkhelper::extent3dTo2d(r->mScene.mPicker.mPickImage.extent), &colorAttachment, &depthAttachment);
 
     cmd.beginRendering(renderInfo);
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *r->mScene.mPicker.mDrawPipelineBundle.pipeline);
 
-    vkhelper::setViewportScissors(cmd, r->mScene.mPicker.mImage.extent);
+    vkhelper::setViewportScissors(cmd, r->mScene.mPicker.mPickImage.extent);
 
     cmd.bindIndexBuffer(*r->mScene.mMainIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 

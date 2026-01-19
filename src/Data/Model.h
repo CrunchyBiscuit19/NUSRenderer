@@ -40,6 +40,7 @@ class GLTFModel {
     AllocatedBuffer mInstancesBuffer;
     u32 mMainFirstInstance{0};
 
+    u32 mNumBounds;
     AllocatedBuffer mBoundsBuffer;
     u32 mMainFirstBounds{0};
 
@@ -56,16 +57,16 @@ class GLTFModel {
     void assignNormal(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material);
     void assignOcclusion(MaterialConstants& constants, MaterialResources& resources, const fastgltf::Material& material);
 
-    void initBuffers();
     void loadSamplerCreateInfos();
     void loadImages();
     void loadMaterials();
     void loadMeshes();
     void loadNodes();
-    void loadBoundsBuffer();
-
-    void loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::span<Vertex> srcVertexVector);
+    void initBuffers();
+    
     void loadMaterialsConstantsBuffer(std::span<MaterialConstants> materialConstantsVector);
+    void loadBoundsBuffer();
+    void loadMeshBuffers(Mesh& mesh, std::span<u32> srcIndexVector, std::span<Vertex> srcVertexVector);
     void loadNodeTransformsBuffer(std::span<std::shared_ptr<Node>> nodesVector);
 
    public:
