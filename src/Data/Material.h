@@ -51,13 +51,24 @@ class PbrMaterial {
     u32 mConstantsBufferOffset;
 
     static std::unordered_map<PipelineOptions, PipelineBundle> mPipelinesCache;
-    static vk::raii::PipelineLayout mPipelineLayout;
+    static vk::raii::PipelineLayout mOpaquePipelineLayout;
+    static vk::raii::PipelineLayout mTransparentPipelineLayout;
+
+    static vk::raii::DescriptorSetLayout mDrawImageDescriptorSetLayout;
+    static vk::raii::DescriptorSet mDrawImageDescriptorSet;
 
     PbrMaterial(Renderer* renderer);
 
-    static void initMaterialPipelineLayout(Renderer* renderer);
+    static void init(Renderer* renderer);
+
     void getMaterialPipeline();
     void createMaterialPipeline(PipelineOptions materialPipelineOptions) const;
+    
+    static void resizeDrawImageView(Renderer* renderer);
 
     static void cleanup(Renderer* renderer);
+
+   private:
+    static void initMaterialPipelineLayout(Renderer* renderer);
+    static void initMaterialDescriptor(Renderer* renderer);
 };

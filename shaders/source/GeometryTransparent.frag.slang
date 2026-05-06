@@ -5,6 +5,8 @@ import Perspective;
 public uniform ConstantBuffer<Perspective> perspectiveBuffer;
 [[vk::binding(0, 1)]]
 public uniform Sampler2D materialResources[];
+[[vk::binding(0, 2)]]
+public uniform Texture2D<float4> drawImage;
 
 FSOutputTransparent main(FSInput in) : SV_Target {
     FSOutputTransparent output;
@@ -17,20 +19,24 @@ FSOutputTransparent main(FSInput in) : SV_Target {
     if (diffuseColor.a < 0.0001f)
         discard;
 
-    float4 color = in.color * diffuseColor;
-    float finalAlpha = color.a;
+    float4 baseColor = in.color * diffuseColor;
+
     float diffuse = max(dot(normal, sunlightDir), 0.f);
-    float4 sunlight = float4(perspectiveBuffer.sunlightColor, 1.f) * sunlightPower;
+    float3 sunlightContrib = perspectiveBuffer.sunlightColor * sunlightPower * diffuse;
+    float3 ambientContrib = perspectiveBuffer.ambientColor;
 
-    float4 lightColor = color * diffuse * sunlight;
-    float4 ambient = color * float4(perspectiveBuffer.ambientColor, 1.f);
+    float3 litRGB = baseColor.rgb * (sunlightContrib + ambientContrib);
+    float4 finalColor = float4(litRGB, baseColor.a);
 
-    float4 finalColor = lightColor + ambient;
-    finalColor.a = finalAlpha;
+    float depth = in.position.z;
+    float weight = clamp(
+        pow(min(1.0, finalColor.a * 10.0) + 0.01, 3.0) * 1e3 * 
+        pow(1.0 - depth * 0.9, 3.0),
+        1e-2, 3e3
+    );
 
-    float weight = clamp(pow(min(1.f, finalColor.a * 10.f) + 0.01f, 3.f) * 1e8 * pow(1.f - (1.f - in.position.z) * 0.9f, 3.f), 1e-2, 3e3);
     output.accum = float4(finalColor.rgb * finalColor.a, finalColor.a) * weight;
-    output.rvl = finalColor.a;
+    output.rvl = float4(finalColor.a * (1.0 - finalColor.rgb * 0.5), finalColor.a);
 
     return output;
 }

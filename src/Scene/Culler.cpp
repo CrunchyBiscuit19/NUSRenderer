@@ -73,6 +73,7 @@ void Culler::initDepthPyramidDescriptor() {
     builder.addBinding(2, vk::DescriptorType::eStorageImage, MAX_DEPTH_PYRAMID_LEVELS);  // Depth Pyramid Write
     mDepthPyramidDescriptorSetLayout = builder.build(mRenderer->mCore.mDevice, vk::ShaderStageFlagBits::eCompute);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSetLayout, "CullerDepthPyramidDescriptorSetLayout");
+
     mDepthPyramidDescriptorSet = mRenderer->mInfrastructure.mMainDescriptorAllocator.allocate(*mDepthPyramidDescriptorSetLayout);
     mRenderer->mCore.labelResourceDebug(mDepthPyramidDescriptorSet, "CullerDepthPyramidDescriptorSet");
     LOG_INFO(mRenderer->mLogger, "Culler Depth Pyramid Descriptor Set and Layout Created");

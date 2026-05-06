@@ -137,7 +137,7 @@ void RendererInfrastructure::initSwapchain() {
     mDrawImage = mRenderer->mResources.createImage(
         vk::Extent3D{mRenderer->mCore.mWindowExtent, 1},
         vk::Format::eR16G16B16A16Sfloat,
-        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment,
+        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eStorage,
         false,
         true
     );
