@@ -463,14 +463,9 @@ void opaque(Renderer* r, vk::CommandBuffer cmd) {
 };
 
 void transparent(Renderer* r, vk::CommandBuffer cmd) {
-    r->mInfrastructure.mDrawImage.transition(
-        cmd, vk::ImageLayout::eGeneral, vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderStorageRead
-    );
-
-    std::array<vk::RenderingAttachmentInfo, 3> colorAttachments = {
+    std::array<vk::RenderingAttachmentInfo, 2> colorAttachments = {
         vkhelper::colorAttachmentInfo(*r->mScene.mTransparency.mAccumImage.view, vk::ImageLayout::eColorAttachmentOptimal),
         vkhelper::colorAttachmentInfo(*r->mScene.mTransparency.mRevealageImage.view, vk::ImageLayout::eColorAttachmentOptimal),
-        vkhelper::colorAttachmentInfo(*r->mInfrastructure.mDrawImage.view, vk::ImageLayout::eGeneral),
     };
     vk::RenderingAttachmentInfo depthAttachment = vkhelper::depthAttachmentInfo(*r->mInfrastructure.mDepthImage.view, vk::ImageLayout::eDepthAttachmentOptimal);
 
@@ -494,7 +489,6 @@ void transparent(Renderer* r, vk::CommandBuffer cmd) {
             vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 0, *r->mInfrastructure.getCurrentFrame().mPerspectiveDescriptorSet, nullptr
         );
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 1, *r->mScene.mMainMaterialResourcesDescriptorSet, nullptr);
-        cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, batch.pipelineBundle->layout, 2, *PbrMaterial::mDrawImageDescriptorSet, nullptr);
 
         r->mScene.mGeometryPushConstants.postCullRenderItemsBuffer = batch.postCullRenderItemsBuffer.address.value();
         cmd.pushConstants<GeometryPushConstants>(batch.pipelineBundle->layout, vk::ShaderStageFlagBits::eVertex, 0, r->mScene.mGeometryPushConstants);
@@ -516,9 +510,6 @@ void composite(Renderer* r, vk::CommandBuffer cmd) {
     );
     r->mScene.mTransparency.mRevealageImage.transition(
         cmd, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead
-    );
-    r->mInfrastructure.mDrawImage.transition(
-        cmd, vk::ImageLayout::eColorAttachmentOptimal, vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite
     );
 
     vk::RenderingAttachmentInfo colorAttachment = vkhelper::colorAttachmentInfo(*r->mInfrastructure.mDrawImage.view, vk::ImageLayout::eColorAttachmentOptimal);
@@ -663,7 +654,7 @@ void Renderer::initLogger() {
     } else if (LOG_LOCATION == LogLocation::Both) {
         mLogger = quill::Frontend::create_or_get_logger("LOGGER", {std::move(fileSink), std::move(latestFileSink), std::move(consoleSink)});
     }
-    mLogger->set_log_level(quill::LogLevel::TraceL3);
+    mLogger->set_log_level(quill::LogLevel::Warning);
 }
 
 void Renderer::initComponents() {
@@ -766,7 +757,6 @@ void Renderer::run() {
             mScene.mCuller.resizeCuller();
             mScene.mPicker.resizePicker();
             mScene.mTransparency.resizeTransparency();
-            PbrMaterial::resizeDrawImageView(this);
 
             mInfrastructure.mResizeRequested = false;
 

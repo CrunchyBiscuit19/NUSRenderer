@@ -64,11 +64,8 @@ class PbrMaterial {
     void getMaterialPipeline();
     void createMaterialPipeline(PipelineOptions materialPipelineOptions) const;
     
-    static void resizeDrawImageView(Renderer* renderer);
-
     static void cleanup(Renderer* renderer);
 
    private:
     static void initMaterialPipelineLayout(Renderer* renderer);
-    static void initMaterialDescriptor(Renderer* renderer);
 };

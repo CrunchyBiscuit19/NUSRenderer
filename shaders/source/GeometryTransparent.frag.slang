@@ -5,8 +5,6 @@ import Perspective;
 public uniform ConstantBuffer<Perspective> perspectiveBuffer;
 [[vk::binding(0, 1)]]
 public uniform Sampler2D materialResources[];
-[[vk::binding(0, 2)]]
-public uniform Texture2D<float4> drawImage;
 
 FSOutputTransparent main(FSInput in) : SV_Target {
     FSOutputTransparent output;
@@ -25,8 +23,8 @@ FSOutputTransparent main(FSInput in) : SV_Target {
     float3 sunlightContrib = perspectiveBuffer.sunlightColor * sunlightPower * diffuse;
     float3 ambientContrib = perspectiveBuffer.ambientColor;
 
-    float3 litRGB = baseColor.rgb * (sunlightContrib + ambientContrib);
-    float4 finalColor = float4(litRGB, baseColor.a);
+    float3 litColor = baseColor.rgb * (sunlightContrib + ambientContrib);
+    float4 finalColor = float4(litColor, baseColor.a);
 
     float depth = in.position.z;
     float weight = clamp(
